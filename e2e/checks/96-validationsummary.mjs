@@ -25,6 +25,22 @@ export default async function ({ page, base, check, axeSource }) {
     await page.keyboard.press('Tab');
     await page.waitForTimeout(300);
     check('a field that passes leaves the list', (await lines.allTextContents()).length === 2);
+    // Fields that change while a line has focus: the line keeps it; a line that goes hands it to the next one.
+    const write = (name, value) => page.getByRole('textbox', { name }).evaluate((input, v) => {
+        input.value = v;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, value);
+    await lines.nth(1).focus();
+    const before = await page.evaluate(() => (window.__line = document.activeElement).textContent ?? '');
+    await write('E-mail', 'not an address');
+    await page.waitForTimeout(300);
+    const kept = await page.evaluate(() => ({ same: document.activeElement === window.__line, lines: [...document.querySelectorAll('.vs-form .mx-validation-summary__item')].map(b => b.textContent.split(':')[0]) }));
+    check('a line keeps its focus while another field fails', before.startsWith('Guests:') && kept.same && kept.lines.join() === 'Name,E-mail,Guests', JSON.stringify({ before, ...kept }));
+    await lines.nth(0).focus();
+    await write('Name', 'Ada');
+    await page.waitForTimeout(300);
+    const next = await page.evaluate(() => document.activeElement?.textContent ?? '');
+    check('the focused line that goes hands focus to the next line', next.startsWith('E-mail:'), next);
     // Leaving a field checks it on its own: the focus goes out first, then the form starts again.
     await page.mouse.click(5, 5);
     await page.waitForTimeout(300);

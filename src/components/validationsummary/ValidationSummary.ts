@@ -155,22 +155,45 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
         return label && message ? `${label}: ${message}` : label || message;
     }
 
+    // A line stays as long as its field fails, so focus on it and its place in the list survive other fields' changes.
     draw(): void {
         const failed = this.targets.filter(target => !target.isValid);
-        for (const row of this.rows) void row.li.dispose();
-        this.rows = failed.map(target => {
-            const li = new Component<HTMLLIElement>('li');
-            li.element.className = 'mx-validation-summary__line';
-            this.list.controls.add(li);
-            const button = part<HTMLButtonElement>(li, 'button', 'mx-validation-summary__item');
-            button.element.type = 'button';
-            const line = this.textOf(target);
-            text(button.element, line);
-            return { target, text: line, li, button };
+        const keep = new Set(failed);
+        const focused = this.element.ownerDocument.activeElement;
+        let lostAt = -1;
+        this.rows.forEach((row, index) => {
+            if (keep.has(row.target)) return;
+            if (row.button.element === focused) lostAt = index;
+            void row.li.dispose();
         });
+        const old = new Map(this.rows.map(row => [row.target, row]));
+        this.rows = failed.map((target, index) => {
+            const row = old.get(target);
+            if (!row) return this.addLine(target, index);
+            if (this.list.element.children[index] !== row.li.element) this.list.controls.moveToIndex(row.li, index);
+            const line = this.textOf(target);
+            if (line !== row.text) {
+                text(row.button.element, line);
+                row.text = line;
+            }
+            return row;
+        });
+        // The focused line went away: its neighbour takes focus, as in any list.
+        if (lostAt >= 0 && this.rows.length) this.rows[Math.min(lostAt, this.rows.length - 1)].button.element.focus();
         // Out of sight while nothing has failed; `hidden` is the page's, so an attribute of its own.
         mark(this.element, 'data-empty', this.rows.length === 0);
         this.drawHeader();
+    }
+
+    addLine(target: ValidationTarget, index: number): Row {
+        const li = new Component<HTMLLIElement>('li');
+        li.element.className = 'mx-validation-summary__line';
+        this.list.controls.insert(index, li);
+        const button = part<HTMLButtonElement>(li, 'button', 'mx-validation-summary__item');
+        button.element.type = 'button';
+        const line = this.textOf(target);
+        text(button.element, line);
+        return { target, text: line, li, button };
     }
 
     drawHeader(): void {

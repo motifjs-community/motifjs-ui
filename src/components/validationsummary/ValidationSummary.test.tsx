@@ -66,6 +66,51 @@ describe('ValidationSummary', () => {
         expect(s.element.hasAttribute('data-empty')).toBe(true);
     });
 
+    it('keeps a line, and the focus on it, while other fields change; a line that goes hands focus to its neighbour', async () => {
+        const group = new ValidationGroup();
+        let s!: ValidationSummary;
+        let name!: TextBox;
+        let email!: TextBox;
+        let town!: TextBox;
+        page(
+            <div>
+                <ValidationSummary ref={(x: ValidationSummary) => (s = x)} group={group} focusOnClick={false} />
+                <TextBox ref={(x: TextBox) => (name = x)} label="Name" required validationGroup={group} />
+                <TextBox ref={(x: TextBox) => (email = x)} label="E-mail" required validationGroup={group} />
+                <TextBox ref={(x: TextBox) => (town = x)} label="Town" required validationGroup={group} />
+            </div>
+        );
+        await settle();
+        town.value = 'Ankara';
+        await group.validate({ focus: false });
+        await settle();
+        const items = () => Array.from(s.element.querySelectorAll<HTMLButtonElement>('.mx-validation-summary__item'));
+        const emailLine = items()[1];
+        emailLine.focus();
+
+        // Another field fails: its line comes in its own place, the focused line is the same element.
+        town.value = '';
+        await town.validate();
+        await settle();
+        expect(lines(s).map(l => l!.split(':')[0])).toEqual(['Name', 'E-mail', 'Town']);
+        expect(items()[1]).toBe(emailLine);
+        expect(document.activeElement).toBe(emailLine);
+
+        // Another field is fixed: its line goes, focus stays.
+        name.value = 'Ada';
+        await name.validate();
+        await settle();
+        expect(lines(s).map(l => l!.split(':')[0])).toEqual(['E-mail', 'Town']);
+        expect(document.activeElement).toBe(emailLine);
+
+        // The focused field is fixed: the next line takes focus.
+        email.value = 'a@b.c';
+        await email.validate();
+        await settle();
+        expect(lines(s).map(l => l!.split(':')[0])).toEqual(['Town']);
+        expect(document.activeElement).toBe(items()[0]);
+    });
+
     it('writes a label without its access key marker', async () => {
         const group = new ValidationGroup();
         let s!: ValidationSummary;
