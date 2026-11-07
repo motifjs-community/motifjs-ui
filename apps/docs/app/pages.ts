@@ -13,6 +13,7 @@ export const GROUPS = [
     title: 'Foundations',
     section: 'Foundations',
     pages: [
+      { id: 'foundations', label: 'Overview', title: 'Foundations', path: '/foundations', related: ['control', 'keyboard', 'language'] },
       { id: 'control', label: 'Control', title: 'Control', path: '/control', related: ['keyboard', 'button'] },
       { id: 'keyboard', label: 'Keyboard and focus', title: 'Keyboard and focus', path: '/keyboard', related: ['control', 'button'] },
       { id: 'language', label: 'Language', title: 'Language', path: '/language', related: ['keyboard', 'control', 'datebox'] },
@@ -22,6 +23,7 @@ export const GROUPS = [
     title: 'Buttons',
     section: 'Components',
     pages: [
+      { id: 'buttons', label: 'Overview', title: 'Buttons', path: '/buttons', related: ['button', 'toolbar', 'menus'] },
       { id: 'button', label: 'Button', title: 'Button', path: '/button', related: ['control', 'keyboard', 'tokens'] },
       { id: 'buttongroup', label: 'ButtonGroup', title: 'ButtonGroup', path: '/buttongroup', related: ['button', 'toolbar', 'radiogroup'] },
       { id: 'toolbar', label: 'Toolbar', title: 'Toolbar', path: '/toolbar', related: ['button', 'menus'] },
@@ -33,6 +35,7 @@ export const GROUPS = [
     title: 'Editors',
     section: 'Components',
     pages: [
+      { id: 'editors', label: 'Overview', title: 'Editors', path: '/editors', related: ['textbox', 'datebox', 'validationsummary'] },
       { id: 'textbox', label: 'TextBox', title: 'TextBox', path: '/textbox', related: ['textarea', 'numberbox', 'control'] },
       { id: 'textarea', label: 'TextArea', title: 'TextArea', path: '/textarea', related: ['textbox', 'numberbox'] },
       { id: 'numberbox', label: 'NumberBox', title: 'NumberBox', path: '/numberbox', related: ['textbox', 'slider'] },
@@ -52,6 +55,7 @@ export const GROUPS = [
     title: 'Choice',
     section: 'Components',
     pages: [
+      { id: 'choice', label: 'Overview', title: 'Choice', path: '/choice', related: ['checkbox', 'dropdown', 'lookup'] },
       { id: 'checkbox', label: 'CheckBox', title: 'CheckBox', path: '/checkbox', related: ['switch', 'radiogroup'] },
       { id: 'switch', label: 'Switch', title: 'Switch', path: '/switch', related: ['checkbox', 'button'] },
       { id: 'radiogroup', label: 'RadioGroup', title: 'RadioGroup', path: '/radiogroup', related: ['checkbox', 'dropdown'] },
@@ -64,6 +68,7 @@ export const GROUPS = [
     title: 'Feedback',
     section: 'Components',
     pages: [
+      { id: 'feedback', label: 'Overview', title: 'Feedback', path: '/feedback', related: ['progress', 'toast', 'popover'] },
       { id: 'progress', label: 'ProgressBar and Spinner', title: 'ProgressBar and Spinner', path: '/progress', related: ['toast', 'button'] },
       { id: 'tooltip', label: 'Tooltip', title: 'Tooltip', path: '/tooltip', related: ['toast', 'button'] },
       { id: 'popover', label: 'Popover', title: 'Popover', path: '/popover', related: ['tooltip', 'window', 'menus'] },
@@ -75,6 +80,7 @@ export const GROUPS = [
     title: 'Display',
     section: 'Components',
     pages: [
+      { id: 'display', label: 'Overview', title: 'Display', path: '/display', related: ['card', 'avatar', 'timeline'] },
       { id: 'qrcode', label: 'QRCode', title: 'QRCode', path: '/qrcode', related: ['barcode', 'card'] },
       { id: 'barcode', label: 'Barcode', title: 'Barcode', path: '/barcode', related: ['qrcode', 'card'] },
       { id: 'badge', label: 'Badge', title: 'Badge', path: '/badge', related: ['button', 'avatar'] },
@@ -91,6 +97,7 @@ export const GROUPS = [
     title: 'Navigation',
     section: 'Components',
     pages: [
+      { id: 'navigation', label: 'Overview', title: 'Navigation', path: '/navigation', related: ['appbar', 'tabs', 'drawer'] },
       { id: 'appbar', label: 'AppBar', title: 'AppBar', path: '/appbar', related: ['toolbar', 'bottomnavigation', 'drawer'] },
       { id: 'bottomnavigation', label: 'BottomNavigation', title: 'BottomNavigation', path: '/bottomnavigation', related: ['appbar', 'tabs', 'badge'] },
       { id: 'tabs', label: 'Tabs', title: 'Tabs', path: '/tabs', related: ['accordion', 'keyboard'] },
@@ -157,6 +164,7 @@ export const GROUPS = [
     title: 'Data',
     section: 'Components',
     pages: [
+      { id: 'data', label: 'Overview', title: 'Data', path: '/data', related: ['treeview', 'listbox', 'filterbuilder'] },
       { id: 'treeview', label: 'TreeView', title: 'TreeView', path: '/treeview', related: ['dropdown', 'checkbox'] },
       { id: 'listbox', label: 'ListBox', title: 'ListBox', path: '/listbox', related: ['tagbox', 'combobox'] },
       { id: 'tagbox', label: 'TagBox', title: 'TagBox', path: '/tagbox', related: ['listbox', 'combobox'] },

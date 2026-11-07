@@ -935,6 +935,147 @@ ul.docs-list {
   padding-block-start: var(--mx-space-3);
 }
 
+/* Category overviews: a screen made of the group's components. */
+
+.ov-frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-3);
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding: var(--mx-space-4);
+  background: var(--mx-color-bg-card);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+}
+
+.ov-frame--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ov-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mx-space-2);
+}
+
+.ov-page {
+  min-block-size: 9rem;
+  padding: var(--mx-space-4);
+  background: var(--mx-color-bg-surface);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+  border-radius: var(--mx-radius-md);
+  line-height: var(--mx-font-line-body);
+}
+
+.ov-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mx-space-3);
+  color: var(--mx-color-fg-secondary);
+}
+
+.ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--mx-space-4);
+  align-items: start;
+}
+
+.ov-wide {
+  grid-column: 1 / -1;
+}
+
+.ov-split {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: var(--mx-space-4);
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .ov-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ov-title {
+  margin: 0;
+  font-size: var(--mx-font-size-body-large);
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+.ov-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-3);
+  min-inline-size: 0;
+}
+
+.ov-indent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-2);
+  padding-inline-start: var(--mx-space-6);
+}
+
+.ov-pad {
+  padding: var(--mx-space-4);
+}
+
+.ov-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-3);
+  padding: var(--mx-space-4);
+}
+
+.ov-muted {
+  color: var(--mx-color-fg-secondary);
+}
+
+.ov-copy {
+  margin: 0;
+  line-height: var(--mx-font-line-body);
+}
+
+.ov-file-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--mx-space-1) var(--mx-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ov-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  block-size: 100%;
+  padding-inline: var(--mx-space-3);
+}
+
+.ov-stat strong {
+  font-size: var(--mx-font-size-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-codes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mx-space-4);
+}
+
+.ov-sync {
+  min-block-size: 3rem;
+}
+
 /* Scheduler page. */
 
 .sched-demo {

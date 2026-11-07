@@ -66,6 +66,23 @@ describe('ValidationSummary', () => {
         expect(s.element.hasAttribute('data-empty')).toBe(true);
     });
 
+    it('writes a label without its access key marker', async () => {
+        const group = new ValidationGroup();
+        let s!: ValidationSummary;
+        page(
+            <div>
+                <ValidationSummary ref={(x: ValidationSummary) => (s = x)} group={group} />
+                <TextBox label="&Name" required validationGroup={group} />
+                <TextBox label="E-&mail" required validationGroup={group} />
+                <TextBox label="Q&&A" required validationGroup={group} />
+            </div>
+        );
+        await settle();
+        await group.validate({ focus: false });
+        await settle();
+        expect(lines(s).map(l => l!.split(':')[0])).toEqual(['Name', 'E-mail', 'Q&A']);
+    });
+
     it('its own header, no header, another group, and the texts of the language', async () => {
         const one = new ValidationGroup();
         const two = new ValidationGroup();

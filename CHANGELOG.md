@@ -60,16 +60,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `min` above `max` runs it down. `ranges` with a tone, a color of your own or the next chart color; the fill takes the
   color of the range it is in. The value shows as a fill from `baseValue`, and with `marker`: a needle (`needleShape`), a
   triangle, a circle, a rhombus, a line or a callout. `marks` show targets and limits with names, read with the value. It
-  is a meter for assistive technology, and values that come quicker than the motion are drawn at once.
+  is a meter for assistive technology, and values that come quicker than the motion are drawn at once. Its tones are
+  the design system's chart status colors (`color.chart.good`, `warning`, `danger`), clear on light themes too, and
+  its track shows on every background.
 - `BarGauge`: several values against one scale, as bars bent round one middle. Values at the ends of the bars on lines
   that move apart, a `legend`, a tooltip, `baseValue` for bars both ways, rows read through `valueField`, `nameField` and
   `colorField`, and a changing number of bars, each new one growing from the base value.
+
+### Fixed
+
+- `ValidationSummary` writes a field's label without its access key marker: `&Name` reads as Name.
 
 ### Documentation
 
 - The README says that design languages are independent interpretations.
 - Charts and gauges have their own groups in the sidebar, an overview and a page for each kind and part. The sidebar
   starts with its groups closed, and remembers which are open and how far it was scrolled.
+- Every group of components has an overview: what the group is for, a demo that puts its components to work in one
+  screen, which component to choose for a job, and what they share.
 
 ## [0.1.0-beta.5] - 2026-11-06
 

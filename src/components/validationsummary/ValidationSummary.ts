@@ -1,4 +1,5 @@
 import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { parseAccessKey } from "../../core/access-key";
 import { Control } from "../../core/control";
 import { glyphPart, mark, part, shown, text } from "../../core/draw-parts";
 import { follow } from "../../core/follow";
@@ -148,7 +149,8 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
     // The field's label and message, as a field tells them; another target gives its element's name.
     textOf(target: ValidationTarget): string {
         const told = target as unknown as Told;
-        const label = typeof told.label === 'string' ? told.label : target.element.getAttribute('aria-label') ?? '';
+        // A label's access key marker is for the field, not for this text.
+        const label = typeof told.label === 'string' ? parseAccessKey(told.label).text : target.element.getAttribute('aria-label') ?? '';
         const message = this.messageOf(target);
         return label && message ? `${label}: ${message}` : label || message;
     }
