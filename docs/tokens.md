@@ -257,6 +257,40 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `badge.badge.outline-danger.color` | `--mx-badge-badge-outline-danger-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.outline-danger.border-color` | `--mx-badge-badge-outline-danger-border-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.dot.padding-inline` | `--mx-badge-badge-dot-padding-inline` | `space.0` | `0px` |
+| `bar-gauge.size` | `--mx-bar-gauge-size` | `` | `200px` |
+| `bar-gauge.thickness` | `--mx-bar-gauge-thickness` | `` | `12px` |
+| `bar-gauge.gap` | `--mx-bar-gauge-gap` | `` | `4px` |
+| `bar-gauge.indent` | `--mx-bar-gauge-indent` | `` | `12px` |
+| `bar-gauge.spacing` | `--mx-bar-gauge-spacing` | `space.1` | `0.25rem` |
+| `bar-gauge.connector-width` | `--mx-bar-gauge-connector-width` | `` | `1px` |
+| `bar-gauge.swatch` | `--mx-bar-gauge-swatch` | `` | `10px` |
+| `bar-gauge.swatch-radius` | `--mx-bar-gauge-swatch-radius` | `radius.xs` | `0.25rem` |
+| `bar-gauge.series-1` | `--mx-bar-gauge-series-1` | `color.chart.series-1` | `#c24523` |
+| `bar-gauge.series-2` | `--mx-bar-gauge-series-2` | `color.chart.series-2` | `#853c70` |
+| `bar-gauge.series-3` | `--mx-bar-gauge-series-3` | `color.chart.series-3` | `#008c80` |
+| `bar-gauge.series-4` | `--mx-bar-gauge-series-4` | `color.chart.series-4` | `#7d5800` |
+| `bar-gauge.series-5` | `--mx-bar-gauge-series-5` | `color.chart.series-5` | `#6f6bb3` |
+| `bar-gauge.series-6` | `--mx-bar-gauge-series-6` | `color.chart.series-6` | `#587a30` |
+| `bar-gauge.series-7` | `--mx-bar-gauge-series-7` | `color.chart.series-7` | `#3b80b6` |
+| `bar-gauge.series-8` | `--mx-bar-gauge-series-8` | `color.chart.series-8` | `#a44247` |
+| `bar-gauge.root.color` | `--mx-bar-gauge-root-color` | `color.fg.primary` | `#1d1c1a` |
+| `bar-gauge.root.gap` | `--mx-bar-gauge-root-gap` | `space.2` | `0.5rem` |
+| `bar-gauge.track.color` | `--mx-bar-gauge-track-color` | `` | `color-mix(in srgb, rgb(0 0 0 / 0.4458) 60%, transparent)` |
+| `bar-gauge.labels.color` | `--mx-bar-gauge-labels-color` | `color.fg.secondary` | `#5e5c55` |
+| `bar-gauge.labels.font-size` | `--mx-bar-gauge-labels-font-size` | `font.size.caption` | `0.75rem` |
+| `bar-gauge.labels.line-height` | `--mx-bar-gauge-labels-line-height` | `font.line.caption` | `1rem` |
+| `bar-gauge.connector.color` | `--mx-bar-gauge-connector-color` | `color.fg.tertiary` | `#8c8a82` |
+| `bar-gauge.legend.color` | `--mx-bar-gauge-legend-color` | `color.fg.secondary` | `#5e5c55` |
+| `bar-gauge.legend.font-size` | `--mx-bar-gauge-legend-font-size` | `font.size.caption` | `0.75rem` |
+| `bar-gauge.legend.line-height` | `--mx-bar-gauge-legend-line-height` | `font.line.caption` | `1rem` |
+| `bar-gauge.tip.color` | `--mx-bar-gauge-tip-color` | `color.fg.primary` | `#1d1c1a` |
+| `bar-gauge.tip.bg` | `--mx-bar-gauge-tip-bg` | `color.bg.surface` | `#f8f7f3` |
+| `bar-gauge.tip.font-size` | `--mx-bar-gauge-tip-font-size` | `font.size.caption` | `0.75rem` |
+| `bar-gauge.tip.line-height` | `--mx-bar-gauge-tip-line-height` | `font.line.caption` | `1rem` |
+| `bar-gauge.tip.padding-inline` | `--mx-bar-gauge-tip-padding-inline` | `space.1` | `0.25rem` |
+| `bar-gauge.tip.radius` | `--mx-bar-gauge-tip-radius` | `radius.xs` | `0.25rem` |
+| `bar-gauge.tip.shadow` | `--mx-bar-gauge-tip-shadow` | `elevation.tooltip` | `0px 4px 8px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `bar-gauge.tip.margin-bottom` | `--mx-bar-gauge-tip-margin-bottom` | `space.1` | `0.25rem` |
 | `barcode.height` | `--mx-barcode-height` | `` | `64px` |
 | `barcode.sheet.bg` | `--mx-barcode-sheet-bg` | `` | `#ffffff` |
 | `barcode.sheet.color` | `--mx-barcode-sheet-color` | `` | `#000000` |
@@ -630,6 +664,7 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `card.content.line-height` | `--mx-card-content-line-height` | `font.line.body` | `1.25rem` |
 | `card.content.color` | `--mx-card-content-color` | `color.fg.primary` | `#1d1c1a` |
 | `chart.height` | `--mx-chart-height` | `` | `20rem` |
+| `chart.table-min-height` | `--mx-chart-table-min-height` | `` | `calc(2rem * 11)` |
 | `chart.series-1` | `--mx-chart-series-1` | `color.chart.series-1` | `#c24523` |
 | `chart.series-2` | `--mx-chart-series-2` | `color.chart.series-2` | `#853c70` |
 | `chart.series-3` | `--mx-chart-series-3` | `color.chart.series-3` | `#008c80` |
@@ -724,19 +759,6 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `chart.legend-key.width` | `--mx-chart-legend-key-width` | `` | `12px` |
 | `chart.legend-key.height` | `--mx-chart-legend-key-height` | `` | `12px` |
 | `chart.legend-key.radius` | `--mx-chart-legend-key-radius` | `radius.xs` | `0.25rem` |
-| `chart.table.radius` | `--mx-chart-table-radius` | `radius.sm` | `0.25rem` |
-| `chart.table.font-size` | `--mx-chart-table-font-size` | `font.size.caption` | `0.75rem` |
-| `chart.table-head.color` | `--mx-chart-table-head-color` | `color.fg.secondary` | `#5e5c55` |
-| `chart.table-head.font-weight` | `--mx-chart-table-head-font-weight` | `font.weight.medium` | `500` |
-| `chart.table-head.padding-block` | `--mx-chart-table-head-padding-block` | `space.2` | `0.5rem` |
-| `chart.table-head.padding-inline` | `--mx-chart-table-head-padding-inline` | `space.3` | `0.75rem` |
-| `chart.table-head.border-bottom-width` | `--mx-chart-table-head-border-bottom-width` | `border.width.1` | `1px` |
-| `chart.table-head.border-bottom-color` | `--mx-chart-table-head-border-bottom-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
-| `chart.table-cell.color` | `--mx-chart-table-cell-color` | `color.fg.primary` | `#1d1c1a` |
-| `chart.table-cell.padding-block` | `--mx-chart-table-cell-padding-block` | `space.2` | `0.5rem` |
-| `chart.table-cell.padding-inline` | `--mx-chart-table-cell-padding-inline` | `space.3` | `0.75rem` |
-| `chart.table-cell.border-bottom-width` | `--mx-chart-table-cell-border-bottom-width` | `border.width.1` | `1px` |
-| `chart.table-cell.border-bottom-color` | `--mx-chart-table-cell-border-bottom-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
 | `chart.rise` | `--mx-chart-rise` | `color.success.fg` | `#006402` |
 | `chart.fall` | `--mx-chart-fall` | `color.danger.fg` | `#b03659` |
 | `chart.connector` | `--mx-chart-connector` | `color.chart.grid` | `rgb(0 0 0 / 0.1)` |
@@ -1941,6 +1963,54 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `gallery.play-glyph.icon` | `--mx-gallery-play-glyph-icon` | `` | `var(--mx-icon-play)` |
 | `gallery.play-glyph.playing.icon` | `--mx-gallery-play-glyph-playing-icon` | `` | `var(--mx-icon-pause)` |
 | `gallery.item.radius` | `--mx-gallery-item-radius` | `` | `initial` |
+| `gauge.size` | `--mx-gauge-size` | `` | `160px` |
+| `gauge.thickness` | `--mx-gauge-thickness` | `` | `12px` |
+| `gauge.range-width` | `--mx-gauge-range-width` | `` | `4px` |
+| `gauge.length` | `--mx-gauge-length` | `` | `200px` |
+| `gauge.tick-length` | `--mx-gauge-tick-length` | `` | `6px` |
+| `gauge.tick-width` | `--mx-gauge-tick-width` | `` | `1px` |
+| `gauge.marker-size` | `--mx-gauge-marker-size` | `` | `14px` |
+| `gauge.spacing` | `--mx-gauge-spacing` | `space.1` | `0.25rem` |
+| `gauge.series-1` | `--mx-gauge-series-1` | `color.chart.series-1` | `#c24523` |
+| `gauge.series-2` | `--mx-gauge-series-2` | `color.chart.series-2` | `#853c70` |
+| `gauge.series-3` | `--mx-gauge-series-3` | `color.chart.series-3` | `#008c80` |
+| `gauge.series-4` | `--mx-gauge-series-4` | `color.chart.series-4` | `#7d5800` |
+| `gauge.series-5` | `--mx-gauge-series-5` | `color.chart.series-5` | `#6f6bb3` |
+| `gauge.series-6` | `--mx-gauge-series-6` | `color.chart.series-6` | `#587a30` |
+| `gauge.series-7` | `--mx-gauge-series-7` | `color.chart.series-7` | `#3b80b6` |
+| `gauge.series-8` | `--mx-gauge-series-8` | `color.chart.series-8` | `#a44247` |
+| `gauge.fill` | `--mx-gauge-fill` | `color.accent.solid` | `#c24523` |
+| `gauge.good` | `--mx-gauge-good` | `color.chart.good` | `#06915f` |
+| `gauge.warning` | `--mx-gauge-warning` | `color.chart.warning` | `#b26f06` |
+| `gauge.danger` | `--mx-gauge-danger` | `color.chart.danger` | `#ba0329` |
+| `gauge.root.color` | `--mx-gauge-root-color` | `color.fg.primary` | `#1d1c1a` |
+| `gauge.root.gap` | `--mx-gauge-root-gap` | `space.1` | `0.25rem` |
+| `gauge.track.color` | `--mx-gauge-track-color` | `` | `color-mix(in srgb, rgb(0 0 0 / 0.4458) 60%, transparent)` |
+| `gauge.needle.color` | `--mx-gauge-needle-color` | `color.fg.primary` | `#1d1c1a` |
+| `gauge.value.color` | `--mx-gauge-value-color` | `color.fg.primary` | `#1d1c1a` |
+| `gauge.value.font-size` | `--mx-gauge-value-font-size` | `font.size.title` | `1.75rem` |
+| `gauge.value.font-weight` | `--mx-gauge-value-font-weight` | `font.weight.semibold` | `600` |
+| `gauge.value.line-height` | `--mx-gauge-value-line-height` | `font.line.title` | `2.25rem` |
+| `gauge.label.color` | `--mx-gauge-label-color` | `color.fg.secondary` | `#5e5c55` |
+| `gauge.label.font-size` | `--mx-gauge-label-font-size` | `font.size.caption` | `0.75rem` |
+| `gauge.label.line-height` | `--mx-gauge-label-line-height` | `font.line.caption` | `1rem` |
+| `gauge.scale.color` | `--mx-gauge-scale-color` | `color.fg.tertiary` | `#8c8a82` |
+| `gauge.scale.font-size` | `--mx-gauge-scale-font-size` | `font.size.caption` | `0.75rem` |
+| `gauge.scale.line-height` | `--mx-gauge-scale-line-height` | `font.line.caption` | `1rem` |
+| `gauge.tick.color` | `--mx-gauge-tick-color` | `color.fg.tertiary` | `#8c8a82` |
+| `gauge.mark.color` | `--mx-gauge-mark-color` | `color.fg.primary` | `#1d1c1a` |
+| `gauge.callout.color` | `--mx-gauge-callout-color` | `color.fg.primary` | `#1d1c1a` |
+| `gauge.callout.bg` | `--mx-gauge-callout-bg` | `color.bg.surface` | `#f8f7f3` |
+| `gauge.callout.font-size` | `--mx-gauge-callout-font-size` | `font.size.caption` | `0.75rem` |
+| `gauge.callout.line-height` | `--mx-gauge-callout-line-height` | `font.line.caption` | `1rem` |
+| `gauge.tip.color` | `--mx-gauge-tip-color` | `color.fg.primary` | `#1d1c1a` |
+| `gauge.tip.bg` | `--mx-gauge-tip-bg` | `color.bg.surface` | `#f8f7f3` |
+| `gauge.tip.font-size` | `--mx-gauge-tip-font-size` | `font.size.caption` | `0.75rem` |
+| `gauge.tip.line-height` | `--mx-gauge-tip-line-height` | `font.line.caption` | `1rem` |
+| `gauge.tip.padding-inline` | `--mx-gauge-tip-padding-inline` | `space.1` | `0.25rem` |
+| `gauge.tip.radius` | `--mx-gauge-tip-radius` | `radius.xs` | `0.25rem` |
+| `gauge.tip.shadow` | `--mx-gauge-tip-shadow` | `elevation.tooltip` | `0px 4px 8px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `gauge.tip.margin-bottom` | `--mx-gauge-tip-margin-bottom` | `space.1` | `0.25rem` |
 | `glyph.size` | `--mx-glyph-size` | `icon.size.sm` | `0.75rem` |
 | `layout.space.xxs` | `--mx-layout-space-xxs` | `space.1` | `0.25rem` |
 | `layout.space.xs` | `--mx-layout-space-xs` | `space.2` | `0.5rem` |
@@ -3285,6 +3355,27 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `sortable.ghost.radius` | `--mx-sortable-ghost-radius` | `radius.md` | `0.375rem` |
 | `sortable.ghost.shadow` | `--mx-sortable-ghost-shadow` | `elevation.popup` | `0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
 | `sortable.ghost.opacity` | `--mx-sortable-ghost-opacity` | `` | `0.9` |
+| `sparkline.width` | `--mx-sparkline-width` | `` | `96px` |
+| `sparkline.height` | `--mx-sparkline-height` | `` | `24px` |
+| `sparkline.color` | `--mx-sparkline-color` | `color.chart.series-1` | `#c24523` |
+| `sparkline.rise` | `--mx-sparkline-rise` | `color.success.fg` | `#006402` |
+| `sparkline.fall` | `--mx-sparkline-fall` | `color.danger.fg` | `#b03659` |
+| `sparkline.line-width` | `--mx-sparkline-line-width` | `` | `1.5px` |
+| `sparkline.area-opacity` | `--mx-sparkline-area-opacity` | `` | `0.16` |
+| `sparkline.bar-gap` | `--mx-sparkline-bar-gap` | `` | `1px` |
+| `sparkline.bar-radius` | `--mx-sparkline-bar-radius` | `` | `1px` |
+| `sparkline.marker-size` | `--mx-sparkline-marker-size` | `` | `6px` |
+| `sparkline.marker-ring` | `--mx-sparkline-marker-ring` | `` | `1.5px` |
+| `sparkline.reference-width` | `--mx-sparkline-reference-width` | `border.width.1` | `1px` |
+| `sparkline.root.color` | `--mx-sparkline-root-color` | `color.fg.tertiary` | `#8c8a82` |
+| `sparkline.tip.color` | `--mx-sparkline-tip-color` | `color.fg.primary` | `#1d1c1a` |
+| `sparkline.tip.bg` | `--mx-sparkline-tip-bg` | `color.bg.surface` | `#f8f7f3` |
+| `sparkline.tip.font-size` | `--mx-sparkline-tip-font-size` | `font.size.caption` | `0.75rem` |
+| `sparkline.tip.line-height` | `--mx-sparkline-tip-line-height` | `font.line.caption` | `1rem` |
+| `sparkline.tip.padding-inline` | `--mx-sparkline-tip-padding-inline` | `space.1` | `0.25rem` |
+| `sparkline.tip.radius` | `--mx-sparkline-tip-radius` | `radius.xs` | `0.25rem` |
+| `sparkline.tip.shadow` | `--mx-sparkline-tip-shadow` | `elevation.tooltip` | `0px 4px 8px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `sparkline.tip.margin-bottom` | `--mx-sparkline-tip-margin-bottom` | `space.1` | `0.25rem` |
 | `speed-dial.inset` | `--mx-speed-dial-inset` | `space.6` | `1.5rem` |
 | `speed-dial.gap` | `--mx-speed-dial-gap` | `space.3` | `0.75rem` |
 | `speed-dial.label-gap` | `--mx-speed-dial-label-gap` | `space.3` | `0.75rem` |
@@ -4512,6 +4603,9 @@ Semantic tokens are the only layer a theme redefines. Switch the theme at the to
 | `color.chart.series-6` | `--mx-color-chart-series-6` | `#587a30` | `#7ca055` | `#ff8080` |
 | `color.chart.series-7` | `--mx-color-chart-series-7` | `#3b80b6` | `#5499d1` | `#ffee32` |
 | `color.chart.series-8` | `--mx-color-chart-series-8` | `#a44247` | `#d16a6c` | `#ff9ae0` |
+| `color.chart.good` | `--mx-color-chart-good` | `#06915f` | `#1bcd89` | `#1bfdd5` |
+| `color.chart.warning` | `--mx-color-chart-warning` | `#b26f06` | `#e39f08` | `#febe4e` |
+| `color.chart.danger` | `--mx-color-chart-danger` | `#ba0329` | `#e6424c` | `#ff6367` |
 | `color.chart.scale-low` | `--mx-color-chart-scale-low` | `#fbe6e0` | `#3b2923` | `#202020` |
 | `color.chart.scale-high` | `--mx-color-chart-scale-high` | `#781d00` | `#ffac96` | `#ffffff` |
 | `color.chart.scale-negative` | `--mx-color-chart-scale-negative` | `#ab3511` | `#ea856a` | `#ffa64d` |
