@@ -7,9 +7,11 @@ import { glyph } from "../../core/glyphs";
 import { onLookChanged } from "../../core/look-watch";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
+import { onFontsLoaded } from "../../core/fonts-loaded";
 import { ResizeWatch } from "../../core/resize-watch";
 import { uiLocale } from "../../core/ui-locale";
 import { surfaceBehind } from "../../parts/chart/chart-text";
+import { TokenLengths } from "../../parts/chart/token-lengths";
 import { Button } from "../button/Button";
 import type { ChartAxis } from "./chart-axis";
 import type { ChartDataErrorEventArgs } from "./chart-data-error-event-args";
@@ -17,7 +19,7 @@ import { chartCanvas, chartSvg } from "./chart-export";
 import type { ChartExportOptions } from "./chart-export-options";
 import type { ChartField } from "./chart-field";
 import type { ChartLegendOptions } from "./chart-legend-options";
-import { readLook, type ChartLook } from "./chart-look";
+import { LOOK_TOKENS, readLook, type ChartLook } from "./chart-look";
 import { buildModel, familyOf, type ChartFamily, type ChartModel, type ModelPoint, type ModelSlot } from "./chart-model";
 import type { ChartPoint } from "./chart-point";
 import type { ChartPointEventArgs } from "./chart-point-event-args";
@@ -105,6 +107,8 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     drawnOnce = false;
     watch: ResizeWatch | null = null;
     stopLook: (() => void) | null = null;
+    stopFonts: (() => void) | null = null;
+    tokens: TokenLengths;
     listening: IDisposable | null = null;
     source: data.DataSource<T, any> | null = null;
     failedWith: unknown = null;
@@ -181,9 +185,16 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         surface.addEventListener('keydown', e => this.plotKeyDown(e));
         surface.addEventListener('focus', () => this.plotFocused());
         surface.addEventListener('blur', () => this.clearActive());
+        // A stylesheet that comes late or changes the chart's sizes draws it again with them.
+        this.tokens = new TokenLengths(this.element, LOOK_TOKENS, () => {
+            this.look = null;
+            this.again();
+        });
         this.motif.setDisposable(() => {
+            this.tokens.dispose();
             this.watch?.disconnect();
             this.stopLook?.();
+            this.stopFonts?.();
             this.listening?.dispose();
             for (const emitter of [this.pointClick, this.pointFocused, this.seriesToggled, this.modeChanged, this.dataError, this.zoomChanged, this.selectionChanged]) emitter.dispose();
         });
@@ -200,6 +211,11 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         this.watch = new ResizeWatch(() => this.again());
         this.watch.observe(this.surface.element);
         this.stopLook = onLookChanged(() => {
+            this.look = null;
+            this.again();
+        });
+        // Texts measured before the font arrived are measured again with it.
+        this.stopFonts = onFontsLoaded(this.element, () => {
             this.look = null;
             this.again();
         });
@@ -555,7 +571,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const height = surface.clientHeight || (measured ? 0 : UNMEASURED_HEIGHT);
         if (!width || !height) return;
         const el = this.element;
-        this.look ??= readLook(el, this.cartesian.labelGroup);
+        this.look ??= readLook(el, this.cartesian.labelGroup, this.tokens);
         css(el, '--_surface', surfaceBehind(el));
         const rtl = el.ownerDocument.defaultView?.getComputedStyle(el).direction === 'rtl';
         // The same size as last time: the values changed, and the marks move from where they were.

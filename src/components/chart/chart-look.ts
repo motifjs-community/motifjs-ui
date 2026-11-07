@@ -1,3 +1,5 @@
+import type { TokenLengths } from "../../parts/chart/token-lengths";
+
 /** Sizes a chart takes from its design language, in pixels, and the font of its axes. */
 export interface ChartLook {
     barWidth: number;
@@ -30,28 +32,25 @@ const SIZES = {
     tickPad: ['--_chart-tick-pad', 8]
 } as const;
 
+/** The donut's hole is a share, not a length: its probe measures it as thousandths of a pixel. */
+const HOLE = 'calc(var(--_chart-donut-hole) * 1000px)';
+
+/** What the chart's probes measure (see `TokenLengths`). */
+export const LOOK_TOKENS: readonly string[] = [...Object.values(SIZES).map(([token]) => token), HOLE];
+
 /**
- * The look as it stands on `root`. Tokens may be in `rem`: a measuring part turns each into pixels, which the geometry
- * needs. The numbers here only stand where nothing is laid out, as in a test without a browser.
+ * The look as it stands on `root`. Tokens may be in `rem`: the probes turn each into pixels, which the geometry needs.
+ * The numbers here only stand where nothing is laid out, as in a test without a browser.
  */
-export function readLook(root: HTMLElement, labels: Element): ChartLook {
-    const doc = root.ownerDocument;
-    const view = doc.defaultView;
-    const probe = doc.createElement('div');
-    probe.style.cssText = 'position:absolute;visibility:hidden;block-size:0;';
-    root.append(probe);
+export function readLook(root: HTMLElement, labels: Element, lengths: TokenLengths): ChartLook {
+    const view = root.ownerDocument.defaultView;
     const look = {} as Record<keyof typeof SIZES, number>;
     for (const name of Object.keys(SIZES) as (keyof typeof SIZES)[]) {
         const [token, fallback] = SIZES[name];
-        probe.style.inlineSize = `var(${token})`;
-        const size = parseFloat(view?.getComputedStyle(probe).inlineSize ?? '');
-        look[name] = Number.isFinite(size) ? size : fallback;
+        look[name] = lengths.get(token, fallback);
     }
-    probe.remove();
     const style = view?.getComputedStyle(labels);
     const fontSize = parseFloat(style?.fontSize ?? '') || 12;
     const font = `${style?.fontStyle || 'normal'} ${style?.fontWeight || '400'} ${fontSize}px ${style?.fontFamily || 'sans-serif'}`;
-    // A share, not a length: read as a number.
-    const hole = parseFloat(view?.getComputedStyle(root).getPropertyValue('--_chart-donut-hole') ?? '');
-    return { ...look, donutHole: Number.isFinite(hole) ? hole : 0.6, font, line: Math.round(fontSize * 1.34) };
+    return { ...look, donutHole: lengths.get(HOLE, 600) / 1000, font, line: Math.round(fontSize * 1.34) };
 }

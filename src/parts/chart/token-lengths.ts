@@ -13,7 +13,9 @@ export class TokenLengths {
             const probe = doc.createElement('span');
             probe.className = 'mx-token-probe';
             probe.setAttribute('aria-hidden', 'true');
-            probe.style.cssText = `position:absolute;inset-block-start:0;inset-inline-start:0;block-size:0;inline-size:var(${token});visibility:hidden;pointer-events:none;`;
+            // A token name, or a length worked out from tokens (`calc(var(--share) * 1000px)`).
+            const length = token.includes('(') ? token : `var(${token})`;
+            probe.style.cssText = `position:absolute;inset-block-start:0;inset-inline-start:0;block-size:0;inline-size:${length};visibility:hidden;pointer-events:none;`;
             host.append(probe);
             this.probes.set(token, probe);
         }

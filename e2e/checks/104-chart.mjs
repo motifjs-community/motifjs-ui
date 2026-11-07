@@ -268,4 +268,21 @@ export default async function ({ page, base, check, axeSource }) {
     await page.waitForTimeout(100);
     check('a new value is drawn', (await live.locator('.mx-chart__line').getAttribute('d')) !== pathBefore);
 
+    // A stylesheet that changes the chart's sizes after it drew (a late sheet): the chart draws again with them.
+    await page.goto(base + 'chart/bars', { waitUntil: 'load' });
+    await page.locator('.mx-chart').first().waitFor();
+    await page.waitForTimeout(600);
+    const barPath = () => page.locator('.mx-chart').first().evaluate(el => el.querySelector('.mx-chart__bars')?.getAttribute('d') ?? '');
+    const unstyled = await barPath();
+    await page.evaluate(() => {
+        const sheet = document.createElement('style');
+        sheet.id = 'late-sheet';
+        sheet.textContent = '.mx-chart { --_chart-bar-radius: 0px !important; --_chart-bar-width: 6px !important; }';
+        document.head.append(sheet);
+    });
+    await page.waitForTimeout(500);
+    const restyled = await barPath();
+    await page.evaluate(() => document.getElementById('late-sheet').remove());
+    await page.waitForTimeout(500);
+    check('a stylesheet that changes the sizes after drawing is followed, and left again', restyled !== unstyled && (await barPath()) === unstyled);
 }
