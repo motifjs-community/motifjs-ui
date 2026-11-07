@@ -1673,6 +1673,17 @@
     color: var(--_chart-table-cell-color, inherit);
   }
 
+  .mx-chart__center-value {
+    color: var(--_chart-center-value-color, inherit);
+    font-size: var(--_chart-center-value-font-size, inherit);
+    font-weight: var(--_chart-center-value-font-weight, inherit);
+  }
+
+  .mx-chart__center-label {
+    color: var(--_chart-center-label-color, inherit);
+    font-size: var(--_chart-center-label-font-size, inherit);
+  }
+
   .mx-toggle-field.mx-field:not([data-label-mode='hidden']) > .mx-field__label {
     margin-block-start: 0px;
     margin-inline-end: 0px;

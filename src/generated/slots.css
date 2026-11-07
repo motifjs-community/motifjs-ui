@@ -652,6 +652,18 @@
     --_chart-crosshair-width: var(--mx-chart-crosshair-width);
     --_chart-active-opacity: var(--mx-chart-active-opacity);
     --_chart-loading-opacity: var(--mx-chart-loading-opacity);
+    --_chart-rise: var(--mx-chart-rise);
+    --_chart-fall: var(--mx-chart-fall);
+    --_chart-connector: var(--mx-chart-connector);
+    --_chart-wick-width: var(--mx-chart-wick-width);
+    --_chart-scale-low: var(--mx-chart-scale-low);
+    --_chart-scale-high: var(--mx-chart-scale-high);
+    --_chart-scale-negative: var(--mx-chart-scale-negative);
+    --_chart-scale-middle: var(--mx-chart-scale-middle);
+    --_chart-scale-positive: var(--mx-chart-scale-positive);
+    --_chart-cell-radius: var(--mx-chart-cell-radius);
+    --_chart-slice-lift: var(--mx-chart-slice-lift);
+    --_chart-donut-hole: var(--mx-chart-donut-hole);
     --_chart-root-color: var(--mx-chart-root-color);
     --_chart-root-font-size: var(--mx-chart-root-font-size);
     --_chart-root-gap: var(--mx-chart-root-gap);
@@ -733,6 +745,11 @@
     --_chart-table-cell-padding-inline: var(--mx-chart-table-cell-padding-inline);
     --_chart-table-cell-border-bottom-width: var(--mx-chart-table-cell-border-bottom-width);
     --_chart-table-cell-border-bottom-color: var(--mx-chart-table-cell-border-bottom-color);
+    --_chart-center-value-color: var(--mx-chart-center-value-color);
+    --_chart-center-value-font-size: var(--mx-chart-center-value-font-size);
+    --_chart-center-value-font-weight: var(--mx-chart-center-value-font-weight);
+    --_chart-center-label-color: var(--mx-chart-center-label-color);
+    --_chart-center-label-font-size: var(--mx-chart-center-label-font-size);
   }
 
   .mx-toggle-field, .mx-check-box {

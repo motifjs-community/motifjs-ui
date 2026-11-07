@@ -633,5 +633,8 @@
   "chartLegend": "Seriler",
   "chartPosition": "Kategori",
   "chartShowTable": "Tablo olarak göster",
-  "chartShowChart": "Grafik olarak göster"
+  "chartShowChart": "Grafik olarak göster",
+  "chartShare": "Pay",
+  "chartRange": "{low} – {high}",
+  "chartPrices": "Açılış {open}, en yüksek {high}, en düşük {low}, kapanış {close}"
 }

@@ -1,41 +1,27 @@
 import { nextId } from '../../core/next-id';
-import { areaPath, barPath, circlesPath, linePath, smoothPath, stepPath, type Place } from '../../parts/chart/chart-paths';
+import { areaPath, barPath, circlesPath, linePath, roundRectPath, smoothPath, stepPath, type Place } from '../../parts/chart/chart-paths';
 import { bandScale, linearScale, logScale, type ChartScale } from '../../parts/chart/chart-scale';
-import { formatDate, formatNumber, textWidth } from '../../parts/chart/chart-text';
+import { formatNumber, textWidth } from '../../parts/chart/chart-text';
 import { logTicks, niceTicks } from '../../parts/chart/nice-ticks';
 import { svgPart, svgPut, TextPool } from '../../parts/chart/svg-parts';
 import { thinOut } from '../../parts/chart/thin-out';
 import { timeTicks } from '../../parts/chart/time-ticks';
-import type { ChartAxis } from './chart-axis';
-import type { ChartLook } from './chart-look';
 import type { ChartModel, ModelPoint, ModelSeries, ModelSlot } from './chart-model';
+import type { ChartSeriesType } from './chart-series-type';
+import { laneText, pointText, positionText } from './plot-text';
+import type { HeatClass, PlotInput, PlotView, Rect } from './plot-view';
 
-/** What a plot is drawn from. */
-export interface PlotInput {
-    model: ChartModel;
-    xAxis: ChartAxis;
-    yAxis: ChartAxis;
-    horizontal: boolean;
-    rtl: boolean;
-    width: number;
-    height: number;
-    look: ChartLook;
-    locale: string;
-}
+export type { PlotInput } from './plot-view';
 
 interface SeriesPart {
     group: SVGGElement;
     area: SVGPathElement;
     bars: SVGPathElement;
+    rise: SVGPathElement;
+    fall: SVGPathElement;
+    cells: SVGGElement;
     line: SVGPathElement;
     dots: SVGPathElement;
-}
-
-interface Rect {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
 }
 
 interface Tick {
@@ -49,8 +35,15 @@ const BAND_FILL = 0.7;
 
 const asNumber = (value: number | Date | undefined) => (value instanceof Date ? value.getTime() : value);
 
+/** Types drawn as a bar in a band; they share the band with each other. */
+const BANDED: ReadonlySet<ChartSeriesType> = new Set(['bar', 'rangeBar', 'candlestick', 'ohlc', 'waterfall']);
+/** How many colors a heat map uses: past about seven, neighbors stop reading apart. */
+const HEAT_STEPS = 7;
+
+const heatOn = (model: ChartModel) => model.series.some(s => s.shown && s.type === 'heatmap');
+
 /** The SVG of a chart: grid, marks, axes and what shows the value under the pointer. It reads a model and writes paths. */
-export class ChartPlot {
+export class ChartPlot implements PlotView {
     svg: SVGSVGElement;
     clip: SVGRectElement;
     grid: SVGPathElement;
@@ -69,6 +62,8 @@ export class ChartPlot {
     bars = new Map<ModelPoint, Rect>();
     order: ModelSlot[] = [];
     xFormat: Intl.DateTimeFormatOptions | undefined;
+    /** The colors of a heat map, low to high, for its legend. */
+    heatClasses: HeatClass[] = [];
 
     constructor(host: Element) {
         const svg = svgPart(host, 'svg', 'mx-chart__svg');
@@ -100,20 +95,20 @@ export class ChartPlot {
 
     /** The position of a slot, as it reads. */
     xText(key: unknown, tick = false): string {
-        const { model, xAxis, locale } = this.input!;
-        const format = xAxis.format;
-        if (key instanceof Date || model.kind === 'time') {
-            const time = key instanceof Date ? key : new Date(Number(key));
-            return formatDate(time, format, locale, tick && this.xFormat ? this.xFormat : { dateStyle: 'medium' });
-        }
-        if (typeof key === 'number') return formatNumber(key, format, locale, { useGrouping: model.kind !== 'category' });
-        return typeof format === 'function' ? format(key) : String(key ?? '');
+        return positionText(this.input!, key, tick ? this.xFormat : undefined);
     }
 
     /** A value of a series, as it reads. */
     valueText(point: ModelPoint): string {
-        const { model, yAxis, locale } = this.input!;
-        return formatNumber(point.y ?? 0, model.series[point.series].source.format ?? yAxis.format, locale);
+        return pointText(this.input!, point);
+    }
+
+    markOfPoint(point: ModelPoint): string {
+        const series = this.input!.model.series[point.series];
+        if (series.type === 'heatmap') return this.heatColor(point.heat ?? 0);
+        if (point.kind === 'rise') return 'var(--_chart-rise)';
+        if (point.kind === 'fall') return 'var(--_chart-fall)';
+        return markOf(series);
     }
 
     draw(input: PlotInput): void {
@@ -175,7 +170,11 @@ export class ChartPlot {
 
         const from = horizontal ? (rtl ? box.left + box.width : box.left) : box.top + box.height;
         const to = horizontal ? (rtl ? box.left : box.left + box.width) : box.top;
-        const valueScale = (yAxis.kind === 'log' ? logScale : linearScale)(value.min, value.max, yAxis.reversed ? to : from, yAxis.reversed ? from : to);
+        const heat = heatOn(model);
+        const valueScale = heat
+            ? linearScale(value.min, value.max, horizontal ? from : to, horizontal ? to : from)
+            : (yAxis.kind === 'log' ? logScale : linearScale)(value.min, value.max, yAxis.reversed ? to : from, yAxis.reversed ? from : to);
+        this.heatClasses = heat ? this.classesOf(model) : [];
         const positionScale = this.positionScale(box);
         this.placePoints(positionScale, valueScale);
 
@@ -194,6 +193,7 @@ export class ChartPlot {
 
     valueRange(count: number): { min: number; max: number; ticks: Tick[] } {
         const { model, yAxis, locale } = this.input!;
+        if (heatOn(model)) return { min: -0.5, max: Math.max(1, model.lanes.length) - 0.5, ticks: model.lanes.map((_, i) => ({ value: i, text: laneText(this.input!, i) })) };
         const low = model.any && Number.isFinite(model.yMin) ? model.yMin : 0;
         const high = model.any && Number.isFinite(model.yMax) ? model.yMax : 1;
         const fixedMin = asNumber(yAxis.min);
@@ -264,12 +264,15 @@ export class ChartPlot {
         for (const s of model.series) {
             if (!s.shown) continue;
             const offset = bars.offset.get(s.index) ?? 0;
+            const own = s.type === 'rangeArea' || s.type === 'rangeBar' || s.type === 'candlestick' || s.type === 'ohlc';
             for (const p of s.points) {
                 const along = position.at(p.x) + offset;
-                const across = value.at(p.to);
+                const across = value.at(s.type === 'heatmap' ? p.lane : own ? (p.y ?? 0) : p.to);
                 p.px = horizontal ? across : along;
                 p.py = horizontal ? along : across;
-                if (s.type === 'bar' && p.y !== null) this.bars.set(p, this.barRect(along, value.at(p.from), across, bars.thick, p));
+                if (p.y === null) continue;
+                if (s.type === 'heatmap') this.bars.set(p, this.cellRect(along, across, position, value));
+                else if (BANDED.has(s.type)) this.bars.set(p, this.barRect(along, value.at(p.from), value.at(p.to), bars.thick, p));
             }
         }
         for (const slot of model.slots) slot.at = position.at(slot.x);
@@ -281,7 +284,7 @@ export class ChartPlot {
         const groups: string[] = [];
         const groupOf = new Map<number, number>();
         for (const s of model.series) {
-            if (!s.shown || s.type !== 'bar') continue;
+            if (!s.shown || !BANDED.has(s.type)) continue;
             const key = s.stack ?? `alone:${s.index}`;
             if (!groups.includes(key)) groups.push(key);
             groupOf.set(s.index, groups.indexOf(key));
@@ -307,6 +310,55 @@ export class ChartPlot {
         return horizontal ? { left: low, top: along - thick / 2, width: size, height: thick } : { left: along - thick / 2, top: low, width: thick, height: size };
     }
 
+    /** A cell of a heat map: its column's band, its row's band, a gap around it. */
+    cellRect(along: number, across: number, position: ChartScale & { size?: number }, value: ChartScale): Rect {
+        const { horizontal, look } = this.input!;
+        const gap = look.barGap;
+        const band = position.size ?? 0;
+        const lane = Math.abs(value.at(1) - value.at(0));
+        const w = Math.max(1, band - gap);
+        const h = Math.max(1, lane - gap);
+        return horizontal ? { left: across - h / 2, top: along - w / 2, width: h, height: w } : { left: along - w / 2, top: across - h / 2, width: w, height: h };
+    }
+
+    /** Seven classes from low to high; across zero, two hues that meet in a neutral middle. */
+    classesOf(model: ChartModel): HeatClass[] {
+        const { heatMin: min, heatMax: max } = model;
+        if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+        const out: HeatClass[] = [];
+        if (min < 0 && max > 0) {
+            const reach = Math.max(-min, max);
+            const step = (reach * 2) / HEAT_STEPS;
+            for (let i = 0; i < HEAT_STEPS; i++) {
+                const from = -reach + i * step;
+                const middle = from + step / 2;
+                const strength = Math.round((Math.abs(middle) / reach) * 100);
+                const pole = middle < 0 ? 'negative' : 'positive';
+                out.push({ from, to: from + step, color: `color-mix(in oklab, var(--_chart-scale-${pole}) ${strength}%, var(--_chart-scale-middle))` });
+            }
+            return out;
+        }
+        const step = (max - min) / HEAT_STEPS || 1;
+        for (let i = 0; i < HEAT_STEPS; i++) {
+            const strength = Math.round(((i + 0.5) / HEAT_STEPS) * 100);
+            out.push({ from: min + i * step, to: min + (i + 1) * step, color: `color-mix(in oklab, var(--_chart-scale-high) ${strength}%, var(--_chart-scale-low))` });
+            if (max === min) break;
+        }
+        return out;
+    }
+
+    classIndex(value: number): number {
+        const classes = this.heatClasses;
+        if (!classes.length) return 0;
+        const first = classes[0].from;
+        const step = classes[0].to - first || 1;
+        return Math.max(0, Math.min(classes.length - 1, Math.floor((value - first) / step)));
+    }
+
+    heatColor(value: number): string {
+        return this.heatClasses[this.classIndex(value)]?.color ?? 'transparent';
+    }
+
     drawGrid(range: { min: number; max: number; ticks: Tick[] }, value: ChartScale, positions: Tick[], position: ChartScale): void {
         const { model, xAxis, yAxis, horizontal } = this.input!;
         const box = this.box;
@@ -314,6 +366,11 @@ export class ChartPlot {
         const across = (at: number) => (horizontal ? `M${edge(at)} ${box.top}v${box.height}` : `M${box.left} ${edge(at)}h${box.width}`);
         const down = (at: number) => (horizontal ? `M${box.left} ${edge(at)}h${box.width}` : `M${edge(at)} ${box.top}v${box.height}`);
         let grid = '';
+        if (heatOn(model)) {
+            svgPut(this.grid, 'd', null);
+            svgPut(this.axis, 'd', null);
+            return;
+        }
         if (yAxis.grid !== false) for (const t of range.ticks) grid += across(value.at(t.value));
         if (xAxis.grid ?? (model.kind === 'linear' && !model.hasBars)) for (const t of positions) grid += down(position.at(t.value));
         svgPut(this.grid, 'd', grid);
@@ -404,6 +461,9 @@ export class ChartPlot {
                 group,
                 area: svgPart(group, 'path', 'mx-chart__area'),
                 bars: svgPart(group, 'path', 'mx-chart__bars'),
+                rise: svgPart(group, 'path', 'mx-chart__rise'),
+                fall: svgPart(group, 'path', 'mx-chart__fall'),
+                cells: svgPart(group, 'g', 'mx-chart__cells'),
                 line: svgPart(group, 'path', 'mx-chart__line'),
                 dots: svgPart(group, 'path', 'mx-chart__dots')
             };
@@ -424,7 +484,10 @@ export class ChartPlot {
             svgPut(part.line, 'stroke-dasharray', s.wrapped ? '6 4' : null);
             if (!s.shown) continue;
             this.drawSeriesMarks(s, part, value);
-            if (s.source.labels && s.source.labels !== 'none') this.drawDataLabels(s, measure, taken);
+            if (s.source.labels && s.source.labels !== 'none') {
+                if (s.type === 'heatmap') this.drawCellLabels(s, measure);
+                else this.drawDataLabels(s, measure, taken);
+            }
         }
         this.dataLabels.done();
     }
@@ -434,10 +497,59 @@ export class ChartPlot {
         let line = '';
         let area = '';
         let bars = '';
+        let rise = '';
+        let fall = '';
         const dots: { x: number; y: number; r: number }[] = [];
         const radius = look.markerSize / 2;
+        const cells = new Map<number, string>();
 
-        if (s.type === 'bar') {
+        if (s.type === 'heatmap') {
+            for (const p of s.points) {
+                const rect = this.bars.get(p);
+                if (!rect || p.heat === null) continue;
+                const index = this.classIndex(p.heat);
+                cells.set(index, (cells.get(index) ?? '') + roundRectPath(rect.left, rect.top, rect.width, rect.height, look.cellRadius));
+            }
+        } else if (s.type === 'rangeBar') {
+            for (const p of s.points) {
+                const rect = this.bars.get(p);
+                if (rect) bars += roundRectPath(rect.left, rect.top, rect.width, rect.height, look.barRadius);
+            }
+        } else if (s.type === 'waterfall') {
+            let last: Rect | null = null;
+            let lastEnd = 0;
+            for (const p of s.points) {
+                const rect = this.bars.get(p);
+                if (!rect) continue;
+                const shape = barPath(rect.left, rect.top, rect.width, rect.height, look.barRadius, p.kind === 'total' ? this.endOf(p, value) : null);
+                if (p.kind === 'rise') rise += shape;
+                else if (p.kind === 'fall') fall += shape;
+                else bars += shape;
+                // A thin line carries the running total from one step to the next.
+                if (last) {
+                    const at = Math.round(value.at(lastEnd)) + 0.5;
+                    line += horizontal ? `M${at} ${last.top + last.height}V${rect.top}` : `M${last.left + last.width} ${at}H${rect.left}`;
+                }
+                last = rect;
+                lastEnd = p.to;
+            }
+        } else if (s.type === 'candlestick' || s.type === 'ohlc') {
+            for (const p of s.points) {
+                const rect = this.bars.get(p);
+                if (!rect || p.open === null || p.close === null || p.high === null || p.low === null) continue;
+                const shape = this.candlePath(p, rect, value, s.type === 'ohlc');
+                if (p.kind === 'rise') rise += shape;
+                else fall += shape;
+            }
+        } else if (s.type === 'rangeArea') {
+            for (const run of this.runsOf(s)) {
+                const upper = this.pathOf(s, run.map(p => [p.px, p.py] as Place), horizontal);
+                const lower = [...run].reverse().map(p => (horizontal ? [value.at(p.from), p.py] : [p.px, value.at(p.from)]) as Place);
+                const lowerPath = this.pathOf(s, lower, horizontal);
+                line += upper + lowerPath;
+                area += areaPath(upper, lowerPath);
+            }
+        } else if (s.type === 'bar') {
             for (const p of s.points) {
                 const rect = this.bars.get(p);
                 if (!rect || !p.to) continue;
@@ -461,7 +573,41 @@ export class ChartPlot {
         svgPut(part.line, 'd', line);
         svgPut(part.area, 'd', area);
         svgPut(part.bars, 'd', bars);
+        svgPut(part.rise, 'd', rise);
+        svgPut(part.fall, 'd', fall);
         svgPut(part.dots, 'd', circlesPath(dots));
+        this.drawCells(part.cells, cells);
+    }
+
+    /** One path for each color of a heat map. */
+    drawCells(group: SVGGElement, cells: Map<number, string>): void {
+        const used = [...cells.keys()].sort((a, b) => a - b);
+        while (group.children.length > used.length) group.lastElementChild!.remove();
+        used.forEach((index, i) => {
+            const path = (group.children[i] as SVGPathElement | undefined) ?? svgPart(group, 'path', 'mx-chart__cell');
+            path.style.setProperty('--_mark', this.heatClasses[index].color);
+            svgPut(path, 'd', cells.get(index)!);
+        });
+    }
+
+    /** A candle: its body from the first price to the last, and its wick from the lowest to the highest. An OHLC bar: ticks for the first and the last. */
+    candlePath(p: ModelPoint, rect: Rect, value: ChartScale, ticks: boolean): string {
+        const { horizontal } = this.input!;
+        const o = value.at(p.open!);
+        const c = value.at(p.close!);
+        const h = value.at(p.high!);
+        const l = value.at(p.low!);
+        const n = (v: number) => Math.round(v * 10) / 10;
+        if (horizontal) {
+            const middle = n(rect.top + rect.height / 2);
+            if (ticks) return `M${n(l)} ${middle}H${n(h)}M${n(o)} ${middle}V${n(rect.top)}M${n(c)} ${middle}V${n(rect.top + rect.height)}`;
+            return `M${n(l)} ${middle}H${n(Math.min(o, c))}M${n(Math.max(o, c))} ${middle}H${n(h)}` + `M${n(Math.min(o, c))} ${n(rect.top)}H${n(Math.max(o, c))}V${n(rect.top + rect.height)}H${n(Math.min(o, c))}Z`;
+        }
+        const middle = n(rect.left + rect.width / 2);
+        if (ticks) return `M${middle} ${n(h)}V${n(l)}M${middle} ${n(o)}H${n(rect.left)}M${middle} ${n(c)}H${n(rect.left + rect.width)}`;
+        const top = Math.min(o, c);
+        const bottom = Math.max(o, c, top + 1);
+        return `M${middle} ${n(h)}V${n(top)}M${middle} ${n(bottom)}V${n(l)}` + `M${n(rect.left)} ${n(top)}H${n(rect.left + rect.width)}V${n(bottom)}H${n(rect.left)}Z`;
     }
 
     pathOf(s: ModelSeries, places: readonly Place[], sideways: boolean): string {
@@ -550,6 +696,18 @@ export class ChartPlot {
         }
     }
 
+    /** The value in each cell of a heat map, where it fits. */
+    drawCellLabels(s: ModelSeries, measure: (text: string) => number): void {
+        const { look } = this.input!;
+        for (const p of s.points) {
+            const rect = this.bars.get(p);
+            if (!rect) continue;
+            const text = this.valueText(p);
+            if (measure(text) + look.tickPad > rect.width || look.line > rect.height) continue;
+            this.dataLabels.add(text, rect.left + rect.width / 2, rect.top + rect.height / 2 + look.line * 0.34, 'middle');
+        }
+    }
+
     /** The slot and value nearest to a place in the SVG, or null when nothing is near. */
     find(x: number, y: number): { slot: ModelSlot; point: ModelPoint | null } | null {
         const input = this.input;
@@ -625,7 +783,7 @@ export class ChartPlot {
         const { model, horizontal, look } = input;
         const lines = slot.points.some(p => {
             const type = model.series[p.series].type;
-            return type === 'line' || type === 'area';
+            return type === 'line' || type === 'area' || type === 'rangeArea';
         });
         const at = Math.round(slot.at) + 0.5;
         svgPut(this.cross, 'd', crosshair && lines ? (horizontal ? `M${box.left} ${at}h${box.width}` : `M${at} ${box.top}v${box.height}`) : null);
@@ -634,13 +792,13 @@ export class ChartPlot {
         const dots = this.activeDots;
         const wanted = slot.points.filter(p => {
             const type = model.series[p.series].type;
-            return type === 'line' || type === 'area' || p === point;
+            return type === 'line' || type === 'area' || type === 'rangeArea' || p === point;
         }).filter(p => !this.bars.has(p));
         while (dots.children.length > wanted.length) dots.lastElementChild!.remove();
         wanted.forEach((p, i) => {
             const series = model.series[p.series];
             const dot = (dots.children[i] as SVGPathElement | undefined) ?? svgPart(dots, 'path', 'mx-chart__active-dot');
-            dot.style.setProperty('--_mark', markOf(series));
+            dot.style.setProperty('--_mark', this.markOfPoint(p));
             const r = series.type === 'bubble' ? this.bubbleRadius(p) : look.markerSize / 2 + (p === point ? 1 : 0);
             svgPut(dot, 'd', circlesPath([{ x: p.px, y: p.py, r }]));
         });

@@ -5,5 +5,7 @@ import type { ChartSeries } from './chart-series';
 export interface ChartSeriesToggledEventArgs<T = any> {
     series: ChartSeries<T>;
     visible: boolean;
+    /** The row of the part of a pie, a donut or a funnel that was hidden or shown. */
+    part?: number;
     source: Chart<T>;
 }

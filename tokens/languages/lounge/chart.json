@@ -431,6 +431,67 @@
       "border-bottom-color": {
         "$value": "{color.stroke.divider}"
       }
+    },
+    "rise": {
+      "$value": "{color.success.fg}"
+    },
+    "fall": {
+      "$value": "{color.danger.fg}"
+    },
+    "connector": {
+      "$value": "{color.chart.grid}"
+    },
+    "wick-width": {
+      "$value": "{border.width.1}"
+    },
+    "scale-low": {
+      "$value": "{color.chart.scale-low}"
+    },
+    "scale-high": {
+      "$value": "{color.chart.scale-high}"
+    },
+    "scale-negative": {
+      "$value": "{color.chart.scale-negative}"
+    },
+    "scale-middle": {
+      "$value": "{color.chart.scale-middle}"
+    },
+    "scale-positive": {
+      "$value": "{color.chart.scale-positive}"
+    },
+    "cell-radius": {
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      }
+    },
+    "slice-lift": {
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      }
+    },
+    "donut-hole": {
+      "$value": 0.72
+    },
+    "center-value": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "font-size": {
+        "$value": "{font.size.title}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "center-label": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      }
     }
   }
 }

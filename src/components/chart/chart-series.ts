@@ -9,12 +9,26 @@ export interface ChartSeries<T = any> {
     type?: ChartSeriesType;
     /** The name in the legend, the tooltip and the table. Default: `yField` when it is a name. */
     name?: string;
-    /** The field that holds the value. */
-    yField: ChartField<T>;
+    /** The field that holds the value. On a heat map, the row; on a range or a candle, leave it out. */
+    yField?: ChartField<T>;
     /** The field of the position along the axis, for a series with its own. Default: the chart's `xField`. */
     xField?: ChartField<T>;
     /** The field that holds the size of a bubble. */
     sizeField?: ChartField<T>;
+    /** The ends of a range (`rangeArea`, `rangeBar`), and the lowest and highest price of a candle. */
+    lowField?: ChartField<T>;
+    highField?: ChartField<T>;
+    /** The first and last price of a candle (`candlestick`, `ohlc`). */
+    openField?: ChartField<T>;
+    closeField?: ChartField<T>;
+    /** The value a heat map shows as a color. */
+    valueField?: ChartField<T>;
+    /** A row of a waterfall that shows the total so far instead of a change. */
+    totalField?: ChartField<T>;
+    /** The hole of a donut, as a share of its radius. Default: from the design language. */
+    innerRadius?: number;
+    /** Where the first slice of a pie or a donut starts, in degrees from the top, clockwise. Default: `0`. */
+    startAngle?: number;
     /** Rows of its own. Default: the chart's rows. */
     data?: readonly T[];
     /** A color of your own. Default: the color of its place in `series`, which it keeps when others are hidden. */

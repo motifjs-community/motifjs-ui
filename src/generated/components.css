@@ -203,6 +203,9 @@
     --mx-chart-tooltip-key-height: 3px;
     --mx-chart-legend-key-width: 12px;
     --mx-chart-legend-key-height: 12px;
+    --mx-chart-cell-radius: 2px;
+    --mx-chart-slice-lift: 6px;
+    --mx-chart-donut-hole: 0.6;
     --mx-checkbox-size-sm: 0.875rem;
     --mx-checkbox-focus-scope: box;
     --mx-checkbox-field-label-mode: top;
@@ -1709,6 +1712,15 @@
     --mx-chart-table-cell-padding-inline: var(--mx-space-3);
     --mx-chart-table-cell-border-bottom-width: var(--mx-border-width-1);
     --mx-chart-table-cell-border-bottom-color: var(--mx-color-stroke-divider);
+    --mx-chart-wick-width: var(--mx-border-width-1);
+    --mx-chart-scale-low: var(--mx-color-chart-scale-low);
+    --mx-chart-scale-high: var(--mx-color-chart-scale-high);
+    --mx-chart-scale-negative: var(--mx-color-chart-scale-negative);
+    --mx-chart-scale-middle: var(--mx-color-chart-scale-middle);
+    --mx-chart-scale-positive: var(--mx-color-chart-scale-positive);
+    --mx-chart-center-value-font-size: var(--mx-font-size-title);
+    --mx-chart-center-value-font-weight: var(--mx-font-weight-semibold);
+    --mx-chart-center-label-font-size: var(--mx-font-size-caption);
     --mx-checkbox-gap: var(--mx-space-2);
     --mx-checkbox-size-md: var(--mx-icon-size-md);
     --mx-checkbox-size-lg: var(--mx-icon-size-lg);
@@ -3479,6 +3491,11 @@
     --mx-chart-legend-item-off-color: var(--mx-color-fg-disabled);
     --mx-chart-table-head-color: var(--mx-color-fg-secondary);
     --mx-chart-table-cell-color: var(--mx-color-fg-primary);
+    --mx-chart-rise: var(--mx-color-success-fg);
+    --mx-chart-fall: var(--mx-color-danger-fg);
+    --mx-chart-connector: var(--mx-color-chart-grid);
+    --mx-chart-center-value-color: var(--mx-color-fg-primary);
+    --mx-chart-center-label-color: var(--mx-color-fg-secondary);
     --mx-checkbox-label-color: var(--mx-color-fg-primary);
     --mx-checkbox-label-disabled-color: var(--mx-color-fg-disabled);
     --mx-checkbox-box-bg: var(--mx-color-fill-control-default);
@@ -4439,6 +4456,7 @@
     --mx-chart-bar-width: 20px;
     --mx-chart-bar-radius: 2px;
     --mx-chart-area-opacity: 0.12;
+    --mx-chart-donut-hole: 0.62;
     --mx-checkbox-size-sm: 1rem;
     --mx-checkbox-size-md: 1.25rem;
     --mx-checkbox-size-lg: 1.5rem;
@@ -5035,6 +5053,8 @@
     --mx-chart-line-width: 2.5px;
     --mx-chart-marker-size: 10px;
     --mx-chart-area-opacity: 0.18;
+    --mx-chart-cell-radius: 4px;
+    --mx-chart-donut-hole: 0.56;
     --mx-checkbox-size-sm: 1rem;
     --mx-checkbox-size-md: 1.125rem;
     --mx-checkbox-size-lg: 1.25rem;
@@ -5414,6 +5434,7 @@
     --mx-chart-line-width: 1.5px;
     --mx-chart-marker-size: 7px;
     --mx-chart-area-opacity: 0.1;
+    --mx-chart-donut-hole: 0.72;
     --mx-field-box-focus-bg: initial;
     --mx-field-box-invalid-focus-bg: initial;
     --mx-field-frame-focus-border-bottom-color: initial;
@@ -5707,6 +5728,7 @@
     --mx-chart-tooltip-border-width: initial;
     --mx-chart-tooltip-border-color: initial;
     --mx-chart-tooltip-shadow: initial;
+    --mx-chart-donut-hole: 0.62;
     --mx-checkbox-size-sm: 1rem;
     --mx-checkbox-size-md: 1.125rem;
     --mx-checkbox-size-lg: 1.25rem;

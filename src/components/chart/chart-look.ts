@@ -7,6 +7,9 @@ export interface ChartLook {
     bubbleMin: number;
     bubbleMax: number;
     hitSize: number;
+    cellRadius: number;
+    sliceLift: number;
+    donutHole: number;
     tickGap: number;
     tickPad: number;
     font: string;
@@ -21,6 +24,8 @@ const SIZES = {
     bubbleMin: ['--_chart-bubble-min', 6],
     bubbleMax: ['--_chart-bubble-max', 28],
     hitSize: ['--_chart-hit-size', 24],
+    cellRadius: ['--_chart-cell-radius', 2],
+    sliceLift: ['--_chart-slice-lift', 6],
     tickGap: ['--_chart-tick-gap', 48],
     tickPad: ['--_chart-tick-pad', 8]
 } as const;
@@ -46,5 +51,7 @@ export function readLook(root: HTMLElement, labels: Element): ChartLook {
     const style = view?.getComputedStyle(labels);
     const fontSize = parseFloat(style?.fontSize ?? '') || 12;
     const font = `${style?.fontStyle || 'normal'} ${style?.fontWeight || '400'} ${fontSize}px ${style?.fontFamily || 'sans-serif'}`;
-    return { ...look, font, line: Math.round(fontSize * 1.34) };
+    // A share, not a length: read as a number.
+    const hole = parseFloat(view?.getComputedStyle(root).getPropertyValue('--_chart-donut-hole') ?? '');
+    return { ...look, donutHole: Number.isFinite(hole) ? hole : 0.6, font, line: Math.round(fontSize * 1.34) };
 }

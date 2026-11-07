@@ -1,6 +1,13 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Areas from './examples/Areas';
+import Waterfall from './examples/Waterfall';
+import Ranges from './examples/Ranges';
+import Radar from './examples/Radar';
+import Parts from './examples/Parts';
+import Heatmap from './examples/Heatmap';
+import Funnel from './examples/Funnel';
+import Candles from './examples/Candles';
 import Basic from './examples/Basic';
 import Export from './examples/Export';
 import Gaps from './examples/Gaps';
@@ -42,10 +49,16 @@ const PROPS = [
 
 const SERIES = [
     ['yField', '`string | (row) => unknown`', 'Required', 'The field that holds the value.'],
-    ['type', "`'line' | 'area' | 'bar' | 'scatter' | 'bubble'`", "`'line'`", 'How the series is drawn.'],
+    ['type', '`ChartSeriesType`', "`'line'`", 'How the series is drawn: `line`, `area`, `bar`, `scatter`, `bubble`, `rangeArea`, `rangeBar`, `candlestick`, `ohlc`, `waterfall`, `heatmap`, `pie`, `donut`, `funnel` or `radar`. A chart draws the family of its first series.'],
     ['name', '`string`', '`yField`', 'The name in the legend, the tooltip and the table view.'],
     ['xField', '`string | (row) => unknown`', 'The chart\'s', 'The position, for a series with its own values.'],
     ['sizeField', '`string | (row) => unknown`', '', 'The size of a bubble.'],
+    ['lowField, highField', '`string | (row) => unknown`', '', 'The ends of a range, and the lowest and highest price of a candle.'],
+    ['openField, closeField', '`string | (row) => unknown`', '', 'The first and the last price of a candle.'],
+    ['valueField', '`string | (row) => unknown`', '', 'The value a heat map shows as a color.'],
+    ['totalField', '`string | (row) => unknown`', '', 'A row of a waterfall that shows the total so far.'],
+    ['innerRadius', '`number`', 'From the design language', 'The hole of a donut, as a share of its radius.'],
+    ['startAngle', '`number`', '`0`', 'Where the first slice starts, in degrees from the top, clockwise.'],
     ['data', '`T[]`', 'The chart\'s rows', 'The rows of this series.'],
     ['color', '`string`', 'The color of its position in `series`', 'A custom color.'],
     ['stack', '`string | boolean`', 'The chart\'s `stacked`', 'Series with the same name stack on each other.'],
@@ -206,6 +219,69 @@ import { Chart } from '@motifx-community/ui';
                 </p>
                 <Example files={code('Scatter.tsx')}>
                     <Scatter />
+                </Example>
+            </Section>
+
+            <Section anchor="parts" title="Pie and donut">
+                <p>
+                    <Rich text="`pie` and `donut` split one whole into its parts. Shares are written inside the slices that have room for them, the legend names every part, and a donut shows the total in its middle. For close values, bars compare more exactly." />
+                </p>
+                <Example stack files={code('Parts.tsx')}>
+                    <Parts />
+                </Example>
+            </Section>
+
+            <Section anchor="funnel" title="Funnel">
+                <p>
+                    <Rich text="`funnel` shows stages in the order of the rows, each with the share of the first stage that is left. The stages take one hue, darker towards the first, as they are in order." />
+                </p>
+                <Example files={code('Funnel.tsx')}>
+                    <Funnel />
+                </Example>
+            </Section>
+
+            <Section anchor="radar" title="Radar">
+                <p>
+                    <Rich text="`radar` places a spoke for each category around a center and draws a shape for each series." />
+                </p>
+                <Example files={code('Radar.tsx')}>
+                    <Radar />
+                </Example>
+            </Section>
+
+            <Section anchor="heatmap" title="Heat map">
+                <p>
+                    <Rich text="`heatmap` places a cell at each pair of `xField` and `yField`, colored by `valueField` in seven steps of one hue. Values on both sides of zero take two hues that meet in a neutral middle." />
+                </p>
+                <Example files={code('Heatmap.tsx')}>
+                    <Heatmap />
+                </Example>
+            </Section>
+
+            <Section anchor="ranges" title="Ranges">
+                <p>
+                    <Rich text="`rangeArea` and `rangeBar` draw from `lowField` to `highField`, and other series share the axis." />
+                </p>
+                <Example files={code('Ranges.tsx')}>
+                    <Ranges />
+                </Example>
+            </Section>
+
+            <Section anchor="candles" title="Candles">
+                <p>
+                    <Rich text="`candlestick` and `ohlc` show four prices for each position: `openField`, `highField`, `lowField` and `closeField`. Rising and falling take the design language's colors for good and bad, and a rising candle is hollow as well." />
+                </p>
+                <Example stack files={code('Candles.tsx')}>
+                    <Candles />
+                </Example>
+            </Section>
+
+            <Section anchor="waterfall" title="Waterfall">
+                <p>
+                    <Rich text="`waterfall` adds each change to the last one, and a row with `totalField` set shows the total so far. A thin line carries the total from one step to the next." />
+                </p>
+                <Example files={code('Waterfall.tsx')}>
+                    <Waterfall />
                 </Example>
             </Section>
 

@@ -40,7 +40,7 @@ export function chartImage(chart: Chart, options: ChartExportOptions): { svg: SV
     const titleFont = `${title.fontWeight} ${parseFloat(title.fontSize) || 16}px ${title.fontFamily}`;
     const titleLine = Math.round((parseFloat(title.fontSize) || 16) * 1.4);
     const legendOn = root.hasAttribute('data-legend');
-    const series = chart.model?.series.filter(s => s.source.legend !== false) ?? [];
+    const series = chart.legendEntries;
 
     let top = pad;
     if (chart.title) top += titleLine;
@@ -99,8 +99,7 @@ export function chartImage(chart: Chart, options: ChartExportOptions): { svg: SV
 
     for (const key of keys) {
         const rowTop = legendTop + key.row * (line + pad / 2);
-        const group = chart.plot.parts[key.series.index]?.group;
-        const mark = group ? view.getComputedStyle(group).getPropertyValue('--_mark') : '';
+        const mark = key.series.mark;
         const swatch = svgPart(page, 'rect');
         swatch.setAttribute('x', String(key.x));
         swatch.setAttribute('y', String(rowTop + line / 4));

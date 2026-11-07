@@ -1085,6 +1085,23 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `chart.table-cell.padding-inline` | `--mx-chart-table-cell-padding-inline` | `space.3` | `0.75rem` |
 | `chart.table-cell.border-bottom-width` | `--mx-chart-table-cell-border-bottom-width` | `border.width.1` | `1px` |
 | `chart.table-cell.border-bottom-color` | `--mx-chart-table-cell-border-bottom-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `chart.rise` | `--mx-chart-rise` | `color.success.fg` | `#006402` |
+| `chart.fall` | `--mx-chart-fall` | `color.danger.fg` | `#b03659` |
+| `chart.connector` | `--mx-chart-connector` | `color.chart.grid` | `rgb(0 0 0 / 0.1)` |
+| `chart.wick-width` | `--mx-chart-wick-width` | `border.width.1` | `1px` |
+| `chart.scale-low` | `--mx-chart-scale-low` | `color.chart.scale-low` | `#fbe6e0` |
+| `chart.scale-high` | `--mx-chart-scale-high` | `color.chart.scale-high` | `#781d00` |
+| `chart.scale-negative` | `--mx-chart-scale-negative` | `color.chart.scale-negative` | `#ab3511` |
+| `chart.scale-middle` | `--mx-chart-scale-middle` | `color.chart.scale-middle` | `#eae7e6` |
+| `chart.scale-positive` | `--mx-chart-scale-positive` | `color.chart.scale-positive` | `#0465af` |
+| `chart.cell-radius` | `--mx-chart-cell-radius` | `` | `2px` |
+| `chart.slice-lift` | `--mx-chart-slice-lift` | `` | `6px` |
+| `chart.donut-hole` | `--mx-chart-donut-hole` | `` | `0.6` |
+| `chart.center-value.color` | `--mx-chart-center-value-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.center-value.font-size` | `--mx-chart-center-value-font-size` | `font.size.title` | `1.75rem` |
+| `chart.center-value.font-weight` | `--mx-chart-center-value-font-weight` | `font.weight.semibold` | `600` |
+| `chart.center-label.color` | `--mx-chart-center-label-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.center-label.font-size` | `--mx-chart-center-label-font-size` | `font.size.caption` | `0.75rem` |
 | `checkbox.gap` | `--mx-checkbox-gap` | `space.2` | `0.5rem` |
 | `checkbox.size.sm` | `--mx-checkbox-size-sm` | `` | `0.875rem` |
 | `checkbox.size.md` | `--mx-checkbox-size-md` | `icon.size.md` | `1rem` |
@@ -14285,6 +14302,216 @@ export default function Scatter() {
 }
 ```
 
+## Pie and donut
+
+`pie` and `donut` split one whole into its parts. Shares are written inside the slices that have room for them, the legend names every part, and a donut shows the total in its middle. For close values, bars compare more exactly.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, Chart, Stack, type ChartSeriesType } from '@motifx-community/ui';
+
+const TRAFFIC = [
+    { source: 'Search', visits: 4820 },
+    { source: 'Direct', visits: 2610 },
+    { source: 'Social', visits: 1480 },
+    { source: 'Email', visits: 920 },
+    { source: 'Referral', visits: 540 }
+];
+
+/** One whole and its parts. Hide a part in the legend: the others share the whole again, and keep their colors. */
+export default function Parts() {
+    const s = reactive({ type: 'donut' as ChartSeriesType });
+    return (
+        <Stack class="docs-wide" gap="md">
+            <ButtonGroup
+                label="Shape"
+                x-model={() => s.type}
+                items={[
+                    { value: 'donut', text: 'Donut' },
+                    { value: 'pie', text: 'Pie' }
+                ]}
+            />
+            <Chart class="ch-parts" title="Visits by source" data={TRAFFIC} xField="source" series={() => [{ type: s.type, yField: 'visits', name: 'Visits' }]} />
+        </Stack>
+    );
+}
+```
+
+## Funnel
+
+`funnel` shows stages in the order of the rows, each with the share of the first stage that is left. The stages take one hue, darker towards the first, as they are in order.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const STEPS = [
+    { step: 'Visited the shop', people: 12000 },
+    { step: 'Viewed a product', people: 7400 },
+    { step: 'Added to the cart', people: 2900 },
+    { step: 'Started to pay', people: 1650 },
+    { step: 'Paid', people: 1180 }
+];
+
+/** Stages in order, each with what is left of the first one. */
+export default function Funnel() {
+    return <Chart class="ch-funnel" title="From visit to order" data={STEPS} xField="step" legend={false} series={[{ type: 'funnel', yField: 'people', name: 'People' }]} />;
+}
+```
+
+## Radar
+
+`radar` places a spoke for each category around a center and draws a shape for each series.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const SCORES = [
+    { skill: 'Speed', a: 82, b: 64 },
+    { skill: 'Battery', a: 58, b: 88 },
+    { skill: 'Camera', a: 90, b: 72 },
+    { skill: 'Screen', a: 76, b: 80 },
+    { skill: 'Sound', a: 64, b: 70 },
+    { skill: 'Price', a: 48, b: 84 }
+];
+
+/** Several measures around a center, one shape for each series. */
+export default function Radar() {
+    return (
+        <Chart
+            class="ch-radar"
+            title="Two phones compared"
+            data={SCORES}
+            xField="skill"
+            series={[
+                { type: 'radar', yField: 'a', name: 'Phone A', markers: true },
+                { type: 'radar', yField: 'b', name: 'Phone B', markers: true }
+            ]}
+        />
+    );
+}
+```
+
+## Heat map
+
+`heatmap` places a cell at each pair of `xField` and `yField`, colored by `valueField` in seven steps of one hue. Values on both sides of zero take two hues that meet in a neutral middle.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const HOURS = ['8', '10', '12', '14', '16', '18', '20'];
+const LOAD = DAYS.flatMap((day, d) => HOURS.map((hour, h) => ({ day, hour, orders: Math.round(20 + 60 * Math.sin(((h + 1) / 8) * Math.PI) * (d < 5 ? 1 : 0.55) + d * 3) })));
+
+/** A value for each pair, as a color in seven steps. The legend gives each step its values. */
+export default function Heatmap() {
+    return <Chart class="ch-heat" title="Orders by day and hour" data={LOAD} xField="hour" series={[{ type: 'heatmap', yField: 'day', valueField: 'orders', name: 'Orders', labels: 'all' }]} />;
+}
+```
+
+## Ranges
+
+`rangeArea` and `rangeBar` draw from `lowField` to `highField`, and other series share the axis.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const WEATHER = [
+    { month: 'Jan', low: 2, high: 9, mean: 5 },
+    { month: 'Feb', low: 3, high: 11, mean: 7 },
+    { month: 'Mar', low: 5, high: 14, mean: 9 },
+    { month: 'Apr', low: 8, high: 18, mean: 13 },
+    { month: 'May', low: 12, high: 23, mean: 17 },
+    { month: 'Jun', low: 16, high: 28, mean: 22 },
+    { month: 'Jul', low: 19, high: 31, mean: 25 },
+    { month: 'Aug', low: 19, high: 31, mean: 25 },
+    { month: 'Sep', low: 15, high: 26, mean: 21 },
+    { month: 'Oct', low: 11, high: 21, mean: 16 },
+    { month: 'Nov', low: 7, high: 15, mean: 11 },
+    { month: 'Dec', low: 4, high: 11, mean: 7 }
+];
+
+/** A band from the lowest to the highest value, with a line through it. */
+export default function Ranges() {
+    return (
+        <Chart
+            class="ch-range"
+            title="Temperature over the year"
+            data={WEATHER}
+            xField="month"
+            yAxis={{ format: { style: 'unit', unit: 'celsius' } }}
+            series={[
+                { type: 'rangeArea', lowField: 'low', highField: 'high', name: 'Range' },
+                { yField: 'mean', name: 'Mean', smooth: true }
+            ]}
+        />
+    );
+}
+```
+
+## Candles
+
+`candlestick` and `ohlc` show four prices for each position: `openField`, `highField`, `lowField` and `closeField`. Rising and falling take the design language's colors for good and bad, and a rising candle is hollow as well.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, Chart, Stack, type ChartSeriesType } from '@motifx-community/ui';
+
+const PRICES = Array.from({ length: 24 }, (_, i) => {
+    const open = 100 + Math.round(Math.sin(i / 3) * 12 + i * 0.8);
+    const close = open + Math.round(Math.cos(i * 1.7) * 6);
+    return { day: new Date(2026, 9, i + 1), open, close, high: Math.max(open, close) + 2 + (i % 3), low: Math.min(open, close) - 2 - (i % 4) };
+});
+
+/** Four prices a day. A rising candle is hollow and a falling one filled, so they read apart without their colors. */
+export default function Candles() {
+    const s = reactive({ type: 'candlestick' as ChartSeriesType });
+    return (
+        <Stack class="docs-wide" gap="md">
+            <ButtonGroup
+                label="Shape"
+                x-model={() => s.type}
+                items={[
+                    { value: 'candlestick', text: 'Candles' },
+                    { value: 'ohlc', text: 'OHLC bars' }
+                ]}
+            />
+            <Chart
+                class="ch-candles"
+                title="Share price in October"
+                data={PRICES}
+                xField="day"
+                xAxis={{ format: { day: 'numeric' } }}
+                series={() => [{ type: s.type, openField: 'open', highField: 'high', lowField: 'low', closeField: 'close', name: 'Price' }]}
+            />
+        </Stack>
+    );
+}
+```
+
+## Waterfall
+
+`waterfall` adds each change to the last one, and a row with `totalField` set shows the total so far. A thin line carries the total from one step to the next.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const BUDGET = [
+    { item: 'Start', change: 1200 },
+    { item: 'Sales', change: 860 },
+    { item: 'Services', change: 340 },
+    { item: 'Salaries', change: -690 },
+    { item: 'Rent', change: -240 },
+    { item: 'Half year', total: true },
+    { item: 'Taxes', change: -310 },
+    { item: 'End', total: true }
+];
+
+/** Each step adds or takes away, and a total row shows where it stands. */
+export default function Waterfall() {
+    return <Chart class="ch-waterfall" title="Cash over the year" data={BUDGET} xField="item" series={[{ type: 'waterfall', yField: 'change', totalField: 'total', name: 'Cash', labels: 'all' }]} />;
+}
+```
+
 ## Dates
 
 Date values produce a time axis, with marks on round days and months in the language of the page. Long series are reduced to what the width can display, and their peaks are preserved.
@@ -14485,10 +14712,16 @@ export const SALES = [
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `yField` | `string \| (row) => unknown` | Required | The field that holds the value. |
-| `type` | `'line' \| 'area' \| 'bar' \| 'scatter' \| 'bubble'` | `'line'` | How the series is drawn. |
+| `type` | `ChartSeriesType` | `'line'` | How the series is drawn: `line`, `area`, `bar`, `scatter`, `bubble`, `rangeArea`, `rangeBar`, `candlestick`, `ohlc`, `waterfall`, `heatmap`, `pie`, `donut`, `funnel` or `radar`. A chart draws the family of its first series. |
 | `name` | `string` | `yField` | The name in the legend, the tooltip and the table view. |
 | `xField` | `string \| (row) => unknown` | The chart's | The position, for a series with its own values. |
 | `sizeField` | `string \| (row) => unknown` |  | The size of a bubble. |
+| `lowField, highField` | `string \| (row) => unknown` |  | The ends of a range, and the lowest and highest price of a candle. |
+| `openField, closeField` | `string \| (row) => unknown` |  | The first and the last price of a candle. |
+| `valueField` | `string \| (row) => unknown` |  | The value a heat map shows as a color. |
+| `totalField` | `string \| (row) => unknown` |  | A row of a waterfall that shows the total so far. |
+| `innerRadius` | `number` | From the design language | The hole of a donut, as a share of its radius. |
+| `startAngle` | `number` | `0` | Where the first slice starts, in degrees from the top, clockwise. |
 | `data` | `T[]` | The chart's rows | The rows of this series. |
 | `color` | `string` | The color of its position in `series` | A custom color. |
 | `stack` | `string \| boolean` | The chart's `stacked` | Series with the same name stack on each other. |

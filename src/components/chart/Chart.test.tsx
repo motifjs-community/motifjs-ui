@@ -88,7 +88,7 @@ describe('Chart', () => {
     it('hides a series from the legend, keeps the other color, and tells', async () => {
         const toggled = vi.fn();
         const chart = make({ onSeriesToggled: toggled });
-        const other = (chart.plot.parts[1].group as SVGGElement).style.getPropertyValue('--_mark');
+        const other = (chart.cartesian.parts[1].group as SVGGElement).style.getPropertyValue('--_mark');
         const item = $$(chart, '.mx-chart__legend-item')[0];
         expect(item.getAttribute('aria-pressed')).toBe('true');
         item.click();
@@ -97,8 +97,8 @@ describe('Chart', () => {
         expect(item.hasAttribute('data-off')).toBe(true);
         expect(chart.isSeriesVisible(0)).toBe(false);
         expect(toggled.mock.calls[0][0].visible).toBe(false);
-        expect((chart.plot.parts[1].group as SVGGElement).style.getPropertyValue('--_mark')).toBe(other);
-        expect(chart.plot.parts[0].group.style.display).toBe('none');
+        expect((chart.cartesian.parts[1].group as SVGGElement).style.getPropertyValue('--_mark')).toBe(other);
+        expect(chart.cartesian.parts[0].group.style.display).toBe('none');
     });
 
     it('can keep the legend from hiding anything', () => {
@@ -334,21 +334,21 @@ describe('Chart', () => {
     it('breaks a line at an empty value', () => {
         const rows = [{ k: 'a', v: 1 }, { k: 'b', v: 2 }, { k: 'c', v: null }, { k: 'd', v: 4 }, { k: 'e', v: 5 }];
         const chart = make({ data: rows, xField: 'k', series: [{ yField: 'v' }] });
-        expect(chart.plot.parts[0].line.getAttribute('d')?.match(/M/g)).toHaveLength(2);
+        expect(chart.cartesian.parts[0].line.getAttribute('d')?.match(/M/g)).toHaveLength(2);
         const joined = make({ data: rows, xField: 'k', series: [{ yField: 'v', gaps: 'connect' }] });
-        expect(joined.plot.parts[0].line.getAttribute('d')?.match(/M/g)).toHaveLength(1);
+        expect(joined.cartesian.parts[0].line.getAttribute('d')?.match(/M/g)).toHaveLength(1);
     });
 
     it('shows a value alone between gaps as a dot', () => {
         const rows = [{ k: 'a', v: null }, { k: 'b', v: 2 }, { k: 'c', v: null }];
         const chart = make({ data: rows, xField: 'k', series: [{ yField: 'v' }] });
-        expect(chart.plot.parts[0].dots.getAttribute('d')).toContain('a');
+        expect(chart.cartesian.parts[0].dots.getAttribute('d')).toContain('a');
     });
 
     it('thins a long line to the width, and keeps every value to read', () => {
         const rows = Array.from({ length: 20000 }, (_, i) => ({ k: i, v: Math.sin(i / 50) }));
         const chart = make({ data: rows, xField: 'k', series: [{ yField: 'v' }] });
-        expect(chart.plot.parts[0].line.getAttribute('d')?.match(/L/g)?.length).toBeLessThan(2000);
+        expect(chart.cartesian.parts[0].line.getAttribute('d')?.match(/L/g)?.length).toBeLessThan(2000);
         expect(chart.model?.slots).toHaveLength(20000);
     });
 

@@ -103,3 +103,39 @@ export function circlesPath(circles: readonly { x: number; y: number; r: number 
         })
         .join('');
 }
+
+/** A rectangle with all four corners rounded: a bar whose both ends are values, as in a range. */
+export function roundRectPath(left: number, top: number, width: number, height: number, radius: number): string {
+    const w = n(width);
+    const h = n(height);
+    if (w <= 0 || h <= 0) return '';
+    const r = n(Math.min(radius, w / 2, h / 2));
+    const x = n(left);
+    const y = n(top);
+    if (!r) return `M${x} ${y}h${w}v${h}h${-w}z`;
+    const arc = (dx: number, dy: number) => `a${r} ${r} 0 0 1 ${dx} ${dy}`;
+    return `M${n(x + r)} ${y}h${n(w - 2 * r)}${arc(r, r)}v${n(h - 2 * r)}${arc(-r, r)}h${n(2 * r - w)}${arc(-r, -r)}v${n(2 * r - h)}${arc(r, -r)}z`;
+}
+
+/** A point at an angle from the top, clockwise, in radians. */
+export function polar(cx: number, cy: number, radius: number, angle: number): Place {
+    return [cx + radius * Math.sin(angle), cy - radius * Math.cos(angle)];
+}
+
+/** A slice of a ring between two angles from the top, clockwise; a hole of 0 makes a slice of a pie. */
+export function arcPath(cx: number, cy: number, hole: number, radius: number, from: number, to: number): string {
+    const sweep = to - from;
+    if (sweep <= 0 || radius <= 0) return '';
+    // A whole circle cannot be one arc: it is drawn as two halves.
+    if (sweep >= Math.PI * 2 - 1e-6) return arcPath(cx, cy, hole, radius, from, from + Math.PI) + arcPath(cx, cy, hole, radius, from + Math.PI, from + Math.PI * 2);
+    const large = sweep > Math.PI ? 1 : 0;
+    const [x0, y0] = polar(cx, cy, radius, from);
+    const [x1, y1] = polar(cx, cy, radius, to);
+    let d = `M${n(x0)} ${n(y0)}A${n(radius)} ${n(radius)} 0 ${large} 1 ${n(x1)} ${n(y1)}`;
+    if (hole > 0) {
+        const [x2, y2] = polar(cx, cy, hole, to);
+        const [x3, y3] = polar(cx, cy, hole, from);
+        d += `L${n(x2)} ${n(y2)}A${n(hole)} ${n(hole)} 0 ${large} 0 ${n(x3)} ${n(y3)}Z`;
+    } else d += `L${n(cx)} ${n(cy)}Z`;
+    return d;
+}

@@ -44,6 +44,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   labels on chosen values, and rows from an array or a `DataSource`. Every value can be reached with the keyboard and
   read as a table, and `toSVG()` and `toDataURL()` give an image. Needs the design system's new `color.chart.*` tokens,
   and `@motifx/core` and `@motifx/compiler` 1.2.0-rc.25, whose compiler keeps JSX props that start with `x`.
+  Also `pie`, `donut` and `funnel` for the parts of one whole, `radar`, `heatmap` with seven steps of one hue (two
+  hues across zero), `rangeArea`, `rangeBar`, `candlestick`, `ohlc` and `waterfall`. Rising and falling candles differ in
+  shape as well as color, and the legend lists the parts of a whole or the steps of a heat map.
 
 ### Documentation
 

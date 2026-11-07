@@ -1,26 +1,25 @@
 import { css, mark, put, text } from '../../core/draw-parts';
 import { uiLocale } from '../../core/ui-locale';
-import type { ChartModel, ModelSeries } from './chart-model';
-import { markOf } from './ChartPlot';
+import type { LegendEntry } from './legend-entry';
 
 interface LegendItem {
     button: HTMLButtonElement;
     key: HTMLSpanElement;
     name: HTMLSpanElement;
-    series: number;
+    id: string;
 }
 
 /**
- * The legend: a key that mirrors the mark and a name for each series, so identity never rests on color alone. With
- * `toggle` each is a button that hides or shows its series; one Tab stop, and the arrow keys walk it.
+ * The legend: a key that mirrors the mark and a name for each entry, so identity never rests on color alone. An entry
+ * that can be hidden is a button; one Tab stop, and the arrow keys walk the legend.
  */
 export class ChartLegend {
     element: HTMLDivElement;
     items: LegendItem[] = [];
-    toggled: (series: number) => void;
+    toggled: (id: string) => void;
     current = 0;
 
-    constructor(doc: Document, toggled: (series: number) => void) {
+    constructor(doc: Document, toggled: (id: string) => void) {
         this.toggled = toggled;
         this.element = doc.createElement('div');
         this.element.className = 'mx-chart__legend';
@@ -29,16 +28,21 @@ export class ChartLegend {
         this.element.addEventListener('keydown', e => this.keyDown(e));
     }
 
-    draw(model: ChartModel, toggle: boolean): void {
-        const listed = model.series.filter(s => s.source.legend !== false);
+    draw(entries: readonly LegendEntry[], toggle: boolean): void {
         const doc = this.element.ownerDocument;
-        while (this.items.length > listed.length) this.items.pop()!.button.remove();
-        listed.forEach((s, i) => {
+        while (this.items.length > entries.length) this.items.pop()!.button.remove();
+        entries.forEach((entry, i) => {
             const item = this.items[i] ?? this.addItem(doc);
-            item.series = s.index;
-            this.drawItem(item, s, toggle);
+            item.id = entry.id;
+            const pressable = toggle && entry.pressable;
+            text(item.name, entry.name);
+            css(item.button, '--_mark', entry.mark);
+            put(item.key, 'data-type', entry.type);
+            put(item.button, 'aria-pressed', pressable ? String(entry.shown) : null);
+            item.button.disabled = !pressable;
+            mark(item.button, 'data-off', !entry.shown);
         });
-        this.current = Math.min(this.current, Math.max(0, listed.length - 1));
+        this.current = Math.min(this.current, Math.max(0, entries.length - 1));
         this.drawStops();
         this.element.setAttribute('aria-label', uiLocale.strings.chartLegend);
     }
@@ -53,35 +57,29 @@ export class ChartLegend {
         name.className = 'mx-chart__legend-name';
         button.append(key, name);
         this.element.append(button);
-        const item = { button, key, name, series: 0 };
+        const item = { button, key, name, id: '' };
         this.items.push(item);
         return item;
     }
 
-    drawItem(item: LegendItem, s: ModelSeries, toggle: boolean): void {
-        text(item.name, s.name);
-        css(item.button, '--_mark', markOf(s));
-        put(item.key, 'data-type', s.type);
-        put(item.button, 'aria-pressed', toggle ? String(s.shown) : null);
-        item.button.disabled = !toggle;
-        mark(item.button, 'data-off', !s.shown);
-    }
-
     drawStops(): void {
-        this.items.forEach((item, i) => (item.button.tabIndex = i === this.current ? 0 : -1));
+        const live = this.items.filter(item => !item.button.disabled);
+        this.items.forEach(item => (item.button.tabIndex = item === live[Math.min(this.current, live.length - 1)] ? 0 : -1));
     }
 
     click(e: Event): void {
         const button = (e.target as Element).closest('button');
-        const index = this.items.findIndex(item => item.button === button);
+        const live = this.items.filter(item => !item.button.disabled);
+        const index = live.findIndex(item => item.button === button);
         if (index < 0) return;
         this.current = index;
         this.drawStops();
-        this.toggled(this.items[index].series);
+        this.toggled(live[index].id);
     }
 
     keyDown(e: KeyboardEvent): void {
-        const count = this.items.length;
+        const live = this.items.filter(item => !item.button.disabled);
+        const count = live.length;
         if (!count) return;
         const rtl = getComputedStyle(this.element).direction === 'rtl';
         let next = this.current;
@@ -93,6 +91,6 @@ export class ChartLegend {
         e.preventDefault();
         this.current = (next + count) % count;
         this.drawStops();
-        this.items[this.current].button.focus();
+        live[this.current].button.focus();
     }
 }

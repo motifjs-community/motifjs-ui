@@ -457,6 +457,9 @@ export interface UiStrings {
   chartPosition: string;
   chartShowTable: string;
   chartShowChart: string;
+  chartShare: string;
+  chartRange: string;
+  chartPrices: string;
   /** BottomSheet, ActionSheet and Drawer: their names when they have no title, the sheet's handle and its heights. `{height}` is filled in. */
   sheetLabel: string;
   sheetHandle: string;

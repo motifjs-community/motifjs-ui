@@ -5089,6 +5089,125 @@
     "value": "rgb(0 0 0 / 0.1)"
   },
   {
+    "name": "chart.rise",
+    "cssVar": "--mx-chart-rise",
+    "type": "color",
+    "ref": "color.success.fg",
+    "value": "#006402"
+  },
+  {
+    "name": "chart.fall",
+    "cssVar": "--mx-chart-fall",
+    "type": "color",
+    "ref": "color.danger.fg",
+    "value": "#b03659"
+  },
+  {
+    "name": "chart.connector",
+    "cssVar": "--mx-chart-connector",
+    "type": "color",
+    "ref": "color.chart.grid",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "chart.wick-width",
+    "cssVar": "--mx-chart-wick-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "chart.scale-low",
+    "cssVar": "--mx-chart-scale-low",
+    "type": "color",
+    "ref": "color.chart.scale-low",
+    "value": "#fbe6e0"
+  },
+  {
+    "name": "chart.scale-high",
+    "cssVar": "--mx-chart-scale-high",
+    "type": "color",
+    "ref": "color.chart.scale-high",
+    "value": "#781d00"
+  },
+  {
+    "name": "chart.scale-negative",
+    "cssVar": "--mx-chart-scale-negative",
+    "type": "color",
+    "ref": "color.chart.scale-negative",
+    "value": "#ab3511"
+  },
+  {
+    "name": "chart.scale-middle",
+    "cssVar": "--mx-chart-scale-middle",
+    "type": "color",
+    "ref": "color.chart.scale-middle",
+    "value": "#eae7e6"
+  },
+  {
+    "name": "chart.scale-positive",
+    "cssVar": "--mx-chart-scale-positive",
+    "type": "color",
+    "ref": "color.chart.scale-positive",
+    "value": "#0465af"
+  },
+  {
+    "name": "chart.cell-radius",
+    "cssVar": "--mx-chart-cell-radius",
+    "type": "dimension",
+    "ref": null,
+    "value": "2px"
+  },
+  {
+    "name": "chart.slice-lift",
+    "cssVar": "--mx-chart-slice-lift",
+    "type": "dimension",
+    "ref": null,
+    "value": "6px"
+  },
+  {
+    "name": "chart.donut-hole",
+    "cssVar": "--mx-chart-donut-hole",
+    "type": "number",
+    "ref": null,
+    "value": 0.6
+  },
+  {
+    "name": "chart.center-value.color",
+    "cssVar": "--mx-chart-center-value-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chart.center-value.font-size",
+    "cssVar": "--mx-chart-center-value-font-size",
+    "type": "dimension",
+    "ref": "font.size.title",
+    "value": "1.75rem"
+  },
+  {
+    "name": "chart.center-value.font-weight",
+    "cssVar": "--mx-chart-center-value-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "chart.center-label.color",
+    "cssVar": "--mx-chart-center-label-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "chart.center-label.font-size",
+    "cssVar": "--mx-chart-center-label-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
     "name": "checkbox.gap",
     "cssVar": "--mx-checkbox-gap",
     "type": "dimension",

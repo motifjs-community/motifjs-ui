@@ -737,6 +737,23 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `chart.table-cell.padding-inline` | `--mx-chart-table-cell-padding-inline` | `space.3` | `0.75rem` |
 | `chart.table-cell.border-bottom-width` | `--mx-chart-table-cell-border-bottom-width` | `border.width.1` | `1px` |
 | `chart.table-cell.border-bottom-color` | `--mx-chart-table-cell-border-bottom-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `chart.rise` | `--mx-chart-rise` | `color.success.fg` | `#006402` |
+| `chart.fall` | `--mx-chart-fall` | `color.danger.fg` | `#b03659` |
+| `chart.connector` | `--mx-chart-connector` | `color.chart.grid` | `rgb(0 0 0 / 0.1)` |
+| `chart.wick-width` | `--mx-chart-wick-width` | `border.width.1` | `1px` |
+| `chart.scale-low` | `--mx-chart-scale-low` | `color.chart.scale-low` | `#fbe6e0` |
+| `chart.scale-high` | `--mx-chart-scale-high` | `color.chart.scale-high` | `#781d00` |
+| `chart.scale-negative` | `--mx-chart-scale-negative` | `color.chart.scale-negative` | `#ab3511` |
+| `chart.scale-middle` | `--mx-chart-scale-middle` | `color.chart.scale-middle` | `#eae7e6` |
+| `chart.scale-positive` | `--mx-chart-scale-positive` | `color.chart.scale-positive` | `#0465af` |
+| `chart.cell-radius` | `--mx-chart-cell-radius` | `` | `2px` |
+| `chart.slice-lift` | `--mx-chart-slice-lift` | `` | `6px` |
+| `chart.donut-hole` | `--mx-chart-donut-hole` | `` | `0.6` |
+| `chart.center-value.color` | `--mx-chart-center-value-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.center-value.font-size` | `--mx-chart-center-value-font-size` | `font.size.title` | `1.75rem` |
+| `chart.center-value.font-weight` | `--mx-chart-center-value-font-weight` | `font.weight.semibold` | `600` |
+| `chart.center-label.color` | `--mx-chart-center-label-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.center-label.font-size` | `--mx-chart-center-label-font-size` | `font.size.caption` | `0.75rem` |
 | `checkbox.gap` | `--mx-checkbox-gap` | `space.2` | `0.5rem` |
 | `checkbox.size.sm` | `--mx-checkbox-size-sm` | `` | `0.875rem` |
 | `checkbox.size.md` | `--mx-checkbox-size-md` | `icon.size.md` | `1rem` |

@@ -192,7 +192,8 @@ export default async function ({ page, base, check, axeSource }) {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.waitForTimeout(350);
     const narrow = await page.evaluate(() => [...document.querySelectorAll('.mx-chart')].map(c => {
-        const svg = c.querySelector('svg');
+        // A chart has a plot for each family it drew; the one in view is the one that counts.
+        const svg = [...c.querySelectorAll('svg.mx-chart__svg')].find(s => s.style.display !== 'none');
         const plot = c.querySelector('.mx-chart__plot');
         return Math.abs(Number(svg.getAttribute('width')) - plot.clientWidth);
     }));

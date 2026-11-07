@@ -633,5 +633,8 @@
   "chartLegend": "Series",
   "chartPosition": "Category",
   "chartShowTable": "Show as a table",
-  "chartShowChart": "Show as a chart"
+  "chartShowChart": "Show as a chart",
+  "chartShare": "Share",
+  "chartRange": "{low} – {high}",
+  "chartPrices": "Open {open}, high {high}, low {low}, close {close}"
 }

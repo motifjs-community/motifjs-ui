@@ -131,6 +131,71 @@
         fill-opacity: var(--_chart-bubble-opacity);
     }
 
+    .mx-chart__rise,
+    .mx-chart__fall {
+        fill: var(--_mark);
+        stroke: var(--_mark);
+        stroke-width: var(--_chart-wick-width);
+        stroke-linejoin: round;
+    }
+
+    .mx-chart__rise {
+        --_mark: var(--_chart-rise);
+    }
+
+    .mx-chart__fall {
+        --_mark: var(--_chart-fall);
+    }
+
+    /* A rising candle is hollow, so rise and fall read apart without their colors. */
+    .mx-chart__series[data-type='candlestick'] .mx-chart__rise {
+        fill: var(--_surface);
+    }
+
+    .mx-chart__series[data-type='ohlc'] .mx-chart__rise,
+    .mx-chart__series[data-type='ohlc'] .mx-chart__fall {
+        fill: none;
+        stroke-width: var(--_chart-line-width);
+    }
+
+    .mx-chart__series[data-type='waterfall'] .mx-chart__rise,
+    .mx-chart__series[data-type='waterfall'] .mx-chart__fall {
+        stroke: none;
+    }
+
+    .mx-chart__series[data-type='waterfall'] .mx-chart__line {
+        stroke: var(--_chart-connector);
+        stroke-width: var(--_chart-grid-width);
+        stroke-dasharray: none;
+        shape-rendering: crispedges;
+    }
+
+    .mx-chart__series[data-type='rangeArea'] .mx-chart__area,
+    .mx-chart__series[data-type='radar'] .mx-chart__area {
+        fill: var(--_mark);
+        fill-opacity: var(--_chart-area-opacity);
+    }
+
+    .mx-chart__cell {
+        fill: var(--_mark);
+    }
+
+    .mx-chart__slice,
+    .mx-chart__active-slice {
+        fill: var(--_mark);
+        stroke: var(--_surface);
+        stroke-width: var(--_chart-bar-gap);
+        stroke-linejoin: round;
+    }
+
+    .mx-chart__active-slice {
+        pointer-events: none;
+    }
+
+    .mx-chart__center {
+        fill: currentcolor;
+    }
+
     .mx-chart__marks[data-reveal] .mx-chart__series {
         animation: mx-chart-reveal var(--mx-motion-duration-slow) var(--mx-motion-easing-out);
     }

@@ -159,3 +159,28 @@ describe('thinning out', () => {
         expect(thinOut(items, 2000, p => p.x, p => p.y)).toHaveLength(1000);
     });
 });
+
+describe('round shapes', () => {
+    it('rounds every corner of a range bar, never more than half its side', async () => {
+        const { roundRectPath } = await import('./chart-paths');
+        expect(roundRectPath(0, 0, 20, 100, 4).match(/a4 4/g)).toHaveLength(4);
+        expect(roundRectPath(0, 0, 6, 100, 4)).toContain('a3 3');
+        expect(roundRectPath(0, 0, 0, 10, 4)).toBe('');
+    });
+
+    it('places angles from the top, clockwise', async () => {
+        const { polar } = await import('./chart-paths');
+        const [x, y] = polar(0, 0, 10, Math.PI / 2);
+        expect(x).toBeCloseTo(10, 8);
+        expect(y).toBeCloseTo(0, 8);
+        expect(polar(0, 0, 10, 0)[1]).toBeCloseTo(-10, 8);
+    });
+
+    it('draws a slice, a ring piece and a whole circle', async () => {
+        const { arcPath } = await import('./chart-paths');
+        expect(arcPath(50, 50, 0, 40, 0, Math.PI / 2)).toMatch(/^M50 10A40 40 0 0 1 90 50L50 50Z$/);
+        expect(arcPath(50, 50, 20, 40, 0, Math.PI).match(/A/g)).toHaveLength(2);
+        expect(arcPath(50, 50, 0, 40, 0, Math.PI * 2).match(/M/g)).toHaveLength(2);
+        expect(arcPath(50, 50, 0, 40, 1, 1)).toBe('');
+    });
+});

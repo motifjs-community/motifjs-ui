@@ -16,6 +16,8 @@ export interface ChartPoint<T = any> {
     yText: string;
     /** The size of a bubble. */
     size: number | null;
+    /** Its share of the whole, for a part of a pie, a donut or a funnel. */
+    share: number | null;
     /** The row you gave. */
     row: T;
 }

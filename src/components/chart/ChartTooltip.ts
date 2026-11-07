@@ -1,4 +1,6 @@
 import { css, shown, text } from '../../core/draw-parts';
+import { uiLocale } from '../../core/ui-locale';
+import { shareText } from './plot-text';
 import type { ChartPoint } from './chart-point';
 import type { ChartTooltipContext } from './chart-tooltip-context';
 
@@ -58,7 +60,9 @@ export class ChartTooltip {
             css(key, '--_mark', row.mark);
             const value = doc.createElement('span');
             value.className = 'mx-chart__tooltip-value';
-            value.textContent = row.point.size === null ? row.point.yText : `${row.point.yText} (${row.point.size})`;
+            const size = row.point.size === null ? '' : ` (${row.point.size})`;
+            const share = row.point.share === null ? '' : ` · ${shareText(uiLocale.locale, row.point.share)}`;
+            value.textContent = row.point.yText + size + share;
             const name = doc.createElement('span');
             name.className = 'mx-chart__tooltip-name';
             name.textContent = row.point.series;

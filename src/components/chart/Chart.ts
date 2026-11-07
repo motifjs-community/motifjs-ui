@@ -18,7 +18,7 @@ import type { ChartExportOptions } from "./chart-export-options";
 import type { ChartField } from "./chart-field";
 import type { ChartLegendOptions } from "./chart-legend-options";
 import { readLook, type ChartLook } from "./chart-look";
-import { buildModel, type ChartModel, type ModelPoint, type ModelSlot } from "./chart-model";
+import { buildModel, familyOf, type ChartFamily, type ChartModel, type ModelPoint, type ModelSlot } from "./chart-model";
 import type { ChartPoint } from "./chart-point";
 import type { ChartPointEventArgs } from "./chart-point-event-args";
 import type { ChartProps } from "./chart-props";
@@ -33,6 +33,11 @@ import { ChartLegend } from "./ChartLegend";
 import { ChartPlot, markOf } from "./ChartPlot";
 import { ChartTable } from "./ChartTable";
 import { ChartTooltip } from "./ChartTooltip";
+import type { LegendEntry } from "./legend-entry";
+import { PartsPlot } from "./PartsPlot";
+import type { PlotView } from "./plot-view";
+import { RadarPlot } from "./RadarPlot";
+import { formatNumber } from "../../parts/chart/chart-text";
 
 const OWN = ['data', 'dataSource', 'xField', 'series', 'horizontal', 'stacked', 'title', 'subtitle', 'label', 'xAxis', 'yAxis', 'legend', 'tooltip', 'crosshair', 'height', 'animation', 'tableButton', 'mode', 'emptyText', 'loading'] as const;
 
@@ -64,7 +69,11 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     surface: Component<HTMLDivElement>;
     message: Component<HTMLDivElement>;
     status: Component<HTMLDivElement>;
-    plot: ChartPlot;
+    plot: PlotView;
+    cartesian: ChartPlot;
+    plots = new Map<ChartFamily, PlotView>();
+    hiddenParts = new Set<number>();
+    legendEntries: LegendEntry[] = [];
     legendPart: ChartLegend;
     tooltipPart: ChartTooltip;
     tablePart: ChartTable;
@@ -107,11 +116,13 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const surface = this.surface.element;
         surface.tabIndex = 0;
         surface.setAttribute('role', 'group');
-        this.plot = new ChartPlot(surface);
+        this.cartesian = new ChartPlot(surface);
+        this.plot = this.cartesian;
+        this.plots.set('cartesian', this.cartesian);
         this.message = part<HTMLDivElement>(this.surface, 'div', 'mx-chart__message');
         this.tooltipPart = new ChartTooltip(el.ownerDocument);
         surface.append(this.tooltipPart.element);
-        this.legendPart = new ChartLegend(el.ownerDocument, series => this.toggleSeries(series));
+        this.legendPart = new ChartLegend(el.ownerDocument, id => this.toggleEntry(id));
         el.append(this.legendPart.element);
         this.tablePart = new ChartTable(el.ownerDocument);
         el.append(this.tablePart.element);
@@ -390,8 +401,11 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const series = givenList(this.series);
         const xAxis = this.xAxis;
         const yAxis = this.yAxis;
-        const model = buildModel({ rows: this.rows, series, xField: this.xField, xAxis, yAxis, stacked: this.stacked, hidden: this.hidden });
+        const model = buildModel({ rows: this.rows, series, xField: this.xField, xAxis, yAxis, stacked: this.stacked, hidden: this.hidden, hiddenParts: this.hiddenParts });
         this.model = model;
+        this.usePlot(model.family);
+        // The texts of the legend and the table read through the plot, before it has room to draw.
+        this.plot.input = { model, xAxis, yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look as ChartLook, locale: uiLocale.locale };
         this.activeSlot = null;
         this.activePoint = null;
         this.tooltipPart.hide();
@@ -407,9 +421,11 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         shown(this.head.element, !!(this.title || this.subtitle || this.tableButton));
 
         const legend = this.legendOptions;
-        const listed = model.series.filter(s => s.source.legend !== false).length;
-        const legendOn = (legend.visible ?? listed >= 2) && listed > 0;
-        this.legendPart.draw(model, legend.toggle !== false);
+        const entries = this.entriesOf(model);
+        this.legendEntries = entries;
+        const always = model.family !== 'cartesian' || entries.some(e => e.id.startsWith('heat:'));
+        const legendOn = (legend.visible ?? (always || entries.length >= 2)) && entries.length > 0;
+        this.legendPart.draw(entries, legend.toggle !== false);
         put(el, 'data-legend', legendOn ? (legend.position ?? 'bottom') : null);
 
         const table = this.mode === 'table';
@@ -445,7 +461,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const height = surface.clientHeight || (measured ? 0 : UNMEASURED_HEIGHT);
         if (!width || !height) return;
         const el = this.element;
-        this.look ??= readLook(el, this.plot.labelGroup);
+        this.look ??= readLook(el, this.cartesian.labelGroup);
         css(el, '--_surface', surfaceBehind(el));
         const rtl = el.ownerDocument.defaultView?.getComputedStyle(el).direction === 'rtl';
         this.plot.draw({ model, xAxis, yAxis, horizontal: this.horizontal, rtl, width, height, look: this.look, locale: uiLocale.locale });
@@ -459,9 +475,48 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         // The plot's formats are the table's: it needs the model it would draw.
         const model = this.model;
         if (!model) return;
+        this.tablePart.draw(model, this.plot, this.accessibleName, this.xAxis.title ?? uiLocale.strings.chartPosition);
+    }
+
+    /** The plot of a family, made the first time it is needed; the others step aside. */
+    usePlot(family: ChartFamily): void {
+        let plot = this.plots.get(family);
+        if (!plot) {
+            plot = family === 'parts' ? new PartsPlot(this.surface.element) : new RadarPlot(this.surface.element);
+            this.plots.set(family, plot);
+        }
+        for (const [name, each] of this.plots) css(each.svg as unknown as HTMLElement, 'display', name === family ? '' : 'none');
+        this.plot = plot;
+    }
+
+    /** What the legend lists: the parts of a whole, the colors of a heat map, or the series of the chart's family. */
+    entriesOf(model: ChartModel): LegendEntry[] {
         const plot = this.plot;
-        plot.input = { model, xAxis: this.xAxis, yAxis: this.yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look as ChartLook, locale: uiLocale.locale };
-        this.tablePart.draw(model, plot, this.accessibleName, this.xAxis.title ?? uiLocale.strings.chartPosition);
+        if (model.family === 'parts') {
+            const whole = model.series.find(s => s.shown);
+            if (!whole || whole.source.legend === false) return [];
+            return whole.points.filter(p => p.off || (p.y !== null && p.y > 0)).map(p => ({ id: `part:${p.index}`, name: plot.xText(p.key), mark: plot.markOfPoint(p), type: 'bar', shown: !p.off, pressable: true }));
+        }
+        const heat = model.series.find(s => s.shown && s.type === 'heatmap');
+        if (heat) {
+            const format = heat.source.format ?? this.yAxis.format;
+            const number = (v: number) => formatNumber(v, format, uiLocale.locale, { maximumFractionDigits: 1 });
+            return this.cartesian.classesOf(model).map((c, i) => ({ id: `heat:${i}`, name: `${number(c.from)} – ${number(c.to)}`, mark: c.color, type: 'bar', shown: true, pressable: false }));
+        }
+        return model.series.filter(s => familyOf(s.type) === model.family && s.source.legend !== false).map(s => ({ id: `series:${s.index}`, name: s.name, mark: markOf(s), type: s.type, shown: s.shown, pressable: true }));
+    }
+
+    toggleEntry(id: string): void {
+        const [kind, number] = id.split(':');
+        const index = Number(number);
+        if (kind === 'series') return this.toggleSeries(index);
+        if (kind !== 'part') return;
+        const visible = this.hiddenParts.has(index);
+        if (visible) this.hiddenParts.delete(index);
+        else this.hiddenParts.add(index);
+        const whole = this.model?.series.find(s => s.shown);
+        if (whole) this.seriesToggled.fire({ series: whole.source as ChartSeries<T>, visible, part: index, source: this });
+        this.again();
     }
 
     toggleSeries(index: number): void {
@@ -482,7 +537,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     pointOf(p: ModelPoint): ChartPoint<T> {
         const model = this.model as ChartModel;
         const plot = this.plot;
-        return { series: model.series[p.series].name, seriesIndex: p.series, index: p.index, x: p.key, y: p.y as number, xText: plot.xText(p.key), yText: plot.valueText(p), size: p.size, row: p.row as T };
+        return { series: model.series[p.series].name, seriesIndex: p.series, index: p.index, x: p.key, y: p.y as number, xText: plot.xText(p.key), yText: plot.valueText(p), size: p.size, share: p.share, row: p.row as T };
     }
 
     localPlace(e: MouseEvent): { x: number; y: number } {
@@ -528,8 +583,9 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const options = this.tooltipOptions;
         const model = this.model as ChartModel;
         if (options.visible === false) return;
-        const dots = model.series.every(s => !s.shown || s.type === 'scatter' || s.type === 'bubble');
-        const shared = options.shared ?? !dots;
+        // A dot, a cell, a slice: the reader points at one value, and the tooltip names that one.
+        const single = model.family === 'parts' || model.series.every(s => !s.shown || s.type === 'scatter' || s.type === 'bubble' || s.type === 'heatmap');
+        const shared = options.shared ?? !single;
         const chosen = (shared || !point ? slot.points : [point]).filter(p => model.series[p.series].source.tooltip !== false);
         if (!chosen.length) {
             this.tooltipPart.hide();
@@ -537,7 +593,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         }
         const points = chosen.map(p => this.pointOf(p));
         const context: ChartTooltipContext<T> = { title: this.plot.xText(slot.key), points, point: point ? this.pointOf(point) : null };
-        const rows = chosen.map((p, i) => ({ mark: markOf(model.series[p.series]), point: points[i], active: p === point }));
+        const rows = chosen.map((p, i) => ({ mark: this.plot.markOfPoint(p), point: points[i], active: p === point }));
         this.tooltipPart.show(context, rows, options.format);
     }
 
@@ -548,8 +604,10 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const box = this.plot.box;
         const point = this.activePoint ?? slot.points[0];
         const place = e && 'clientX' in e ? this.localPlace(e) : { x: point.px, y: point.py };
-        const x = this.horizontal ? place.x : slot.at;
-        const y = this.horizontal ? slot.at : place.y;
+        // On two axes it follows the position; around a center, the pointer or the value.
+        const around = this.model?.family !== 'cartesian';
+        const x = around || this.horizontal ? place.x : slot.at;
+        const y = around || !this.horizontal ? place.y : slot.at;
         const input = this.plot.input;
         this.tooltipPart.place(x, y, input?.width ?? box.width, input?.height ?? box.height, look.tickPad * 2);
     }
