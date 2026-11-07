@@ -50,7 +50,10 @@ export default async function ({ page, base, check, axeSource }) {
   // A link card: a press anywhere on it follows its link; its own button does not.
   await links.getByRole('button', { name: 'Later' }).click();
   check('the button of a link card stays a button', new URL(page.url()).pathname.endsWith('/card'));
-  await links.getByRole('group', { name: 'Keyboard' }).locator('.mx-card__subtitle').click();
+  const subtitle = links.getByRole('group', { name: 'Keyboard' }).locator('.mx-card__subtitle');
+  await subtitle.scrollIntoViewIfNeeded();
+  const spot = await subtitle.boundingBox();
+  await page.mouse.click(spot.x + spot.width / 2, spot.y + spot.height / 2);
   await page.waitForFunction(() => location.pathname.endsWith('/keyboard'), null, { timeout: 3000 }).catch(() => {});
   check('a press anywhere on a link card follows the link', new URL(page.url()).pathname.endsWith('/keyboard'), page.url());
   await page.goto(base + 'card', { waitUntil: 'load' });

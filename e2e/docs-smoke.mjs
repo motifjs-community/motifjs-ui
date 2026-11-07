@@ -90,7 +90,11 @@ try {
   const box = (loc) => loc.evaluate((el) => el.getBoundingClientRect().toJSON());
   for (const file of readdirSync(join(root, 'e2e', 'checks')).filter((f) => f.endsWith('.mjs')).sort()) {
     const run = (await import(pathToFileURL(join(root, 'e2e', 'checks', file)).href)).default;
-    await run({ page, base, check, axeSource, box });
+    try {
+      await run({ page, base, check, axeSource, box });
+    } catch (e) {
+      check(`${file} ran to the end`, false, String(e).slice(0, 400));
+    }
   }
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '));

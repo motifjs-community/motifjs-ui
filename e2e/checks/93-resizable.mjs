@@ -5,11 +5,16 @@ export default async function ({ page, base, check, axeSource }) {
     await box.waitFor();
     const size = loc => loc.evaluate(el => [Math.round(el.getBoundingClientRect().width), Math.round(el.getBoundingClientRect().height)]);
     const told = page.locator('.rs-box-told');
+    // The mouse only reaches what is on screen, and the box grows as it is dragged.
+    const handleBox = async edge => {
+        await box.scrollIntoViewIfNeeded();
+        return box.locator(`.mx-resizable__handle[data-edge="${edge}"]`).boundingBox();
+    };
     let s = await size(box);
     check('a box of 280 × 140 with eight handles and a grip named Resize', s.join('x') === '280x140' && (await box.locator('.mx-resizable__handle:not([hidden])').count()) === 8 && (await box.locator('.mx-resizable__grip').getAttribute('aria-label')) === 'Resize' && (await box.locator('.mx-resizable__grip').getAttribute('role')) === 'button');
 
     // The end side dragged 60 px: wider by 60, as tall; the corner: both; the limits hold.
-    const end = await box.locator('.mx-resizable__handle[data-edge="end"]').boundingBox();
+    const end = await handleBox('end');
     await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2);
     await page.mouse.down();
     await page.mouse.move(end.x + end.width / 2 + 60, end.y + end.height / 2, { steps: 6 });
@@ -17,14 +22,14 @@ export default async function ({ page, base, check, axeSource }) {
     await page.mouse.up();
     s = await size(box);
     check('the end side dragged 60 px makes it 340 wide, as tall as before', s.join('x') === '340x140' && (await told.textContent()) === '340 × 140, from the end', `${s.join('x')} ${await told.textContent()}`);
-    const corner = await box.locator('.mx-resizable__handle[data-edge="bottom-end"]').boundingBox();
+    const corner = await handleBox('bottom-end');
     await page.mouse.move(corner.x + corner.width / 2, corner.y + corner.height / 2);
     await page.mouse.down();
     await page.mouse.move(corner.x + corner.width / 2 + 300, corner.y + corner.height / 2 + 300, { steps: 6 });
     await page.mouse.up();
     s = await size(box);
     check('dragged past the most, the corner stops at 480 × 240', s.join('x') === '480x240', s.join('x'));
-    const top = await box.locator('.mx-resizable__handle[data-edge="top"]').boundingBox();
+    const top = await handleBox('top');
     await page.mouse.move(top.x + top.width / 2, top.y + top.height / 2);
     await page.mouse.down();
     await page.mouse.move(top.x + top.width / 2, top.y + top.height / 2 + 400, { steps: 6 });

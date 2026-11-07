@@ -15,6 +15,8 @@ export default async function ({ page, base, check, axeSource }) {
   });
 
   await page.goto(base + 'button', { waitUntil: 'load' });
+  await page.evaluate(() => sessionStorage.removeItem('mx-docs-issues'));
+  await page.reload({ waitUntil: 'load' });
   const feedback = page.locator('.docs-feedback');
   await feedback.waitFor();
   check('the issues wait until the reader gets there', requests === 0, String(requests));

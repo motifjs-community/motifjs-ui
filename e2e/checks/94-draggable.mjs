@@ -6,11 +6,16 @@ export default async function ({ page, base, check, axeSource }) {
     // Where it lies in its room, so a scrolled page does not change the numbers.
     const at = loc => loc.evaluate(el => { const b = el.getBoundingClientRect(); const p = el.parentElement.getBoundingClientRect(); return [Math.round(b.x - p.x), Math.round(b.y - p.y)]; });
     const told = page.locator('.dg-free-told');
+    // The mouse only reaches what is on screen.
+    const boxOf = async loc => {
+        await loc.scrollIntoViewIfNeeded();
+        return loc.boundingBox();
+    };
     check('a group named Move that is a Tab stop', (await free.getAttribute('role')) === 'group' && (await free.getAttribute('aria-roledescription')) === 'draggable' && (await free.getAttribute('aria-label')) === 'Move' && (await free.getAttribute('tabindex')) === '0');
 
     // A drag moves it; past the room's edge it stops at the edge.
     const start = await at(free);
-    let box = await free.boundingBox();
+    let box = await boxOf(free);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2 + 10, box.y + box.height / 2, { steps: 2 });
@@ -20,7 +25,7 @@ export default async function ({ page, base, check, axeSource }) {
     let now = await at(free);
     check('dragged 80 across and 40 down, it is there and tells', now[0] - start[0] === 80 && now[1] - start[1] === 40 && (await told.textContent()) === 'free: 80, 40', `${now} vs ${start}: ${await told.textContent()}`);
     const room = await page.locator('.dg-room').boundingBox();
-    box = await free.boundingBox();
+    box = await boxOf(free);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2 - 500, box.y + box.height / 2 - 500, { steps: 8 });
@@ -31,7 +36,7 @@ export default async function ({ page, base, check, axeSource }) {
     // Sideways only; by the grip only; the keys.
     const axis = page.locator('.dg-axis');
     const axisStart = await at(axis);
-    box = await axis.boundingBox();
+    box = await boxOf(axis);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 60, { steps: 6 });
@@ -40,13 +45,13 @@ export default async function ({ page, base, check, axeSource }) {
     check('along x only: 60 across, nothing down', now[0] - axisStart[0] === 60 && now[1] === axisStart[1], `${now} vs ${axisStart}`);
     const handled = page.locator('.dg-handle');
     const handledStart = await at(handled);
-    box = await handled.boundingBox();
+    box = await boxOf(handled);
     await page.mouse.move(box.x + box.width - 10, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 10, box.y + box.height / 2 + 60, { steps: 6 });
     await page.mouse.up();
     check('a press beside the grip does not drag it', (await at(handled)).join() === handledStart.join());
-    const grip = await handled.locator('.dg-grip').boundingBox();
+    const grip = await boxOf(handled.locator('.dg-grip'));
     await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
     await page.mouse.down();
     await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2 + 60, { steps: 6 });

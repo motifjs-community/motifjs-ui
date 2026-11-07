@@ -28,7 +28,7 @@ export default async function ({ page, base, check, axeSource }) {
   );
 
   // A part that fails offers Retry; scrolling does not ask for it again, Retry does.
-  await page.getByRole('checkbox', { name: 'The next part fails' }).click();
+  await page.getByRole('checkbox', { name: 'The next page fails' }).click();
   await toEnd();
   await page.waitForFunction((g) => document.querySelector(`${g} .mx-data-grid__load-more`)?.dataset.state === 'failed', inf);
   const failed = await mark();
@@ -36,7 +36,7 @@ export default async function ({ page, base, check, axeSource }) {
   await toEnd();
   await page.waitForTimeout(800);
   const still = await page.locator('.dg-infinite-state').textContent();
-  await page.getByRole('checkbox', { name: 'The next part fails' }).click();
+  await page.getByRole('checkbox', { name: 'The next page fails' }).click();
   await page.locator(`${inf} .mx-data-grid__load-more`).getByRole('button', { name: 'Retry' }).click();
   await page.waitForFunction((g) => document.querySelector(`${g} .mx-data-grid__count`)?.textContent === '150 records loaded', inf);
   check(

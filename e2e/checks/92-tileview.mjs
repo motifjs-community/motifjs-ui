@@ -26,7 +26,11 @@ export default async function ({ page, base, check, axeSource }) {
     check('a disabled tile is not chosen', (await options.nth(2).getAttribute('aria-disabled')) === 'true' && (await told.textContent()) === 'chosen: ["coffee","fruit"]');
     await options.nth(1).focus();
     await page.keyboard.press('ArrowRight');
-    check('Right moves focus along the row, over the disabled tile', await options.nth(4).evaluate(el => document.activeElement === el));
+    const nextOnRow = await options.evaluateAll(els => {
+        const from = els[1].getBoundingClientRect();
+        return els.filter(el => el.getAttribute('aria-disabled') !== 'true' && el.getBoundingClientRect().top === from.top && el.getBoundingClientRect().left > from.left).sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left)[0] === document.activeElement;
+    });
+    check('Right moves focus along the row, over the disabled tile', nextOnRow && (await options.nth(2).getAttribute('aria-disabled')) === 'true', await page.evaluate(() => document.activeElement.textContent));
     const fromBottom = await page.evaluate(() => document.activeElement.getBoundingClientRect().bottom);
     await page.keyboard.press('ArrowDown');
     const below = await page.evaluate(bottom => document.activeElement.getBoundingClientRect().top > bottom - 1, fromBottom);

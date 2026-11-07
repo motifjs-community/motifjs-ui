@@ -18,6 +18,7 @@ export default async function ({ page, base, check, axeSource }) {
     check('the second page is in sight after the step was pressed', (await hidden()).join() === 'true,,true' && Math.abs((await offset()) + width) <= 1 && (await page.locator('.mv-order-page').textContent()) === 'page: 1', `${await offset()} vs -${width}`);
 
     // A drag with the mouse on the page brings the next one; the stepper follows.
+    await order.scrollIntoViewIfNeeded();
     const box = await order.boundingBox();
     const y = box.y + box.height - 12;
     await page.mouse.move(box.x + box.width * 0.8, y);

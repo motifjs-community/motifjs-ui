@@ -63,7 +63,7 @@ import { Scheduler, parseICalendar, writeICalendar } from '@motifx-community/ui'
         </Example>
       </Section>
 
-      <Section anchor="Read-only" title="Importing a file">
+      <Section anchor="read" title="Importing a file">
         <p>
           <Rich text="`importICalendar(text)` reads the events and adds them in the same way as any new appointment: to the array, or through a data source's adapter." />
         </p>

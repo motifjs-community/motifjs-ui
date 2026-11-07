@@ -1,5 +1,8 @@
 /** Real-browser checks of the Scheduler's editing page: drag, Escape, a copy, the edges, the all-day panel, the keys, Delete, the tooltip and the form, saving to a server, a form of one's own, rules, scrolling, code, axe. */
 export default async function ({ page, base, check, axeSource, box }) {
+  // A fixed day: Wednesday 28 October 2026. The examples are built around today, and a work week leaves weekends out.
+  await page.clock.install({ time: new Date('2026-10-28T07:00:00Z') });
+  await page.clock.resume();
   await page.goto(base + 'scheduler/editing', { waitUntil: 'load' });
   await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const section = (id) => page.locator(`section[aria-labelledby="${id}"]`);

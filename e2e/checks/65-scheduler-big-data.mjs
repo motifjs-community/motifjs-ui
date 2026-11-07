@@ -47,10 +47,31 @@ export default async function ({ page, base, check, axeSource }) {
       [dx, dy, steps],
     );
   const dragging = async (scheduler) => {
-    const target = scheduler.locator('.mx-scheduler__scroll .mx-scheduler__appointment').nth(1);
-    await target.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }));
-    await page.waitForTimeout(200);
-    const r = await target.boundingBox();
+    // A box the mouse can press: only what is in view is drawn, so a box found before scrolling is gone after it.
+    // An appointment brought into the middle first: by now the scrolling above may have left the boxes out of view.
+    await scheduler.scrollIntoViewIfNeeded();
+    await scheduler.locator('.mx-scheduler__scroll .mx-scheduler__appointment').first().evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }));
+    await page.waitForTimeout(300);
+    const r = await scheduler.evaluate((el) => {
+      const area = (el.querySelector('.mx-scheduler__line-scroll') ?? el.querySelector('.mx-scheduler__scroll')).getBoundingClientRect();
+      const left = Math.max(area.left, 0) + 12;
+      const right = Math.min(area.right, innerWidth) - 12;
+      const top = Math.max(area.top, 0) + 12;
+      const bottom = Math.min(area.bottom, innerHeight) - 12;
+      const seen = [];
+      for (const item of el.querySelectorAll('.mx-scheduler__scroll .mx-scheduler__appointment')) {
+        const b = item.getBoundingClientRect();
+        const x = b.left + b.width / 2;
+        const y = b.top + b.height / 2;
+        const hit = document.elementFromPoint(x, y);
+        if (seen.length < 6) seen.push(`${Math.round(x)},${Math.round(y)} ${String(hit?.className).split(' ')[0]}`);
+        if (x < left || x > right || y < top || y > bottom) continue;
+        if (hit?.closest('.mx-scheduler__appointment') === item) return { x: b.left, y: b.top, width: b.width, height: b.height };
+      }
+      return { seen: `room ${Math.round(left)}-${Math.round(right)} × ${Math.round(top)}-${Math.round(bottom)}; ${seen.join(' | ')}` };
+    });
+    check('dragging: a box on screen to take hold of', r && !r.seen, r?.seen);
+    if (!r || r.seen) return { fps: 0, worst: 0 };
     await page.evaluate(() => {
       window.__frames = [];
       const run = (window.__run = (window.__run ?? 0) + 1);
@@ -70,6 +91,7 @@ export default async function ({ page, base, check, axeSource }) {
       const gaps = f.slice(1).map((t, i) => t - f[i]);
       return { fps: Math.round(((f.length - 1) / (f[f.length - 1] - f[0])) * 1000), worst: Math.round(Math.max(...gaps)) };
     });
+    check('dragging: the appointment is really held', (await scheduler.locator('.mx-scheduler__appointment[data-draft]').count()) > 0);
     await page.keyboard.press('Escape');
     await page.mouse.up();
     return result;

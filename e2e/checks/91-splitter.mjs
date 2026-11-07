@@ -11,6 +11,7 @@ export default async function ({ page, base, check, axeSource }) {
     check('the Tab order runs pane, handle, pane, handle, pane', (await basic.evaluate(el => Array.from(el.children).map(c => (c.classList.contains('mx-splitter__handle') ? 'h' : 'p')).join(''))) === 'phphp');
 
     // A drag moves the handle: the first pane grows, the second shrinks, the third keeps its room.
+    await basic.scrollIntoViewIfNeeded();
     const bar = await handles.nth(0).boundingBox();
     await page.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2);
     await page.mouse.down();
