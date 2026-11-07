@@ -6,17 +6,23 @@ export class TokenLengths {
     probes = new Map<string, HTMLSpanElement>();
     used = new Map<string, number>();
     observer: ResizeObserver | null = null;
+    box: HTMLSpanElement;
 
     constructor(host: HTMLElement, tokens: readonly string[], changed: () => void) {
         const doc = host.ownerDocument;
+        // The probes sit in a box of no size that clips them: a long length never widens the page.
+        this.box = doc.createElement('span');
+        this.box.className = 'mx-token-probes';
+        this.box.setAttribute('aria-hidden', 'true');
+        this.box.style.cssText = 'position:absolute;inset-block-start:0;inset-inline-start:0;inline-size:0;block-size:0;overflow:hidden;visibility:hidden;pointer-events:none;';
+        host.append(this.box);
         for (const token of tokens) {
             const probe = doc.createElement('span');
             probe.className = 'mx-token-probe';
-            probe.setAttribute('aria-hidden', 'true');
             // A token name, or a length worked out from tokens (`calc(var(--share) * 1000px)`).
             const length = token.includes('(') ? token : `var(${token})`;
             probe.style.cssText = `position:absolute;inset-block-start:0;inset-inline-start:0;block-size:0;inline-size:${length};visibility:hidden;pointer-events:none;`;
-            host.append(probe);
+            this.box.append(probe);
             this.probes.set(token, probe);
         }
         const Observer = doc.defaultView?.ResizeObserver;
@@ -47,6 +53,6 @@ export class TokenLengths {
 
     dispose(): void {
         this.observer?.disconnect();
-        for (const probe of this.probes.values()) probe.remove();
+        this.box.remove();
     }
 }

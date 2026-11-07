@@ -6,6 +6,9 @@
         "unit": "rem"
       }
     },
+    "table-min-height": {
+      "$value": "calc(3.25rem * 11)"
+    },
     "series-1": {
       "$value": "{color.chart.series-1}"
     },

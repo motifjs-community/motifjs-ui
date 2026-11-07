@@ -72,7 +72,7 @@ export default async function ({ page, base, check, axeSource }) {
         return { jan: place('Jan'), dec: place('Dec') };
     }));
     await basic.evaluate(el => el.removeAttribute('dir'));
-    check('right to left runs the other way', mirrored.jan === undefined || mirrored.dec === undefined || mirrored.jan > mirrored.dec, JSON.stringify(mirrored));
+    check('right to left runs the other way', mirrored.jan !== undefined && mirrored.dec !== undefined && mirrored.jan > mirrored.dec, JSON.stringify(mirrored));
 
     // Every language and theme.
     await page.addScriptTag({ content: axeSource });
@@ -244,6 +244,14 @@ export default async function ({ page, base, check, axeSource }) {
     const firstRow = lines.locator('.mx-data-grid [role="row"]').filter({ hasText: /\d/ }).first();
     check('in the order of the rows', (await firstRow.textContent()).includes('Jan'), await firstRow.textContent());
     check('with the plot gone', !(await lines.locator('.mx-chart__plot').isVisible()));
+    const readable = await lines.evaluate(el => {
+        const box = el.querySelector('.mx-data-grid__viewport').getBoundingClientRect();
+        return [...el.querySelectorAll('[role="row"]')].filter(row => {
+            const r = row.getBoundingClientRect();
+            return r.height > 0 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+        }).length;
+    });
+    check('tall enough to read several rows at once', readable >= 5, `${readable} rows`);
     await toTable.click();
     await page.waitForTimeout(150);
     check('and back to the chart, drawn', (await lines.locator('.mx-chart__line').first().getAttribute('d')).length > 20);
@@ -285,4 +293,21 @@ export default async function ({ page, base, check, axeSource }) {
     await page.evaluate(() => document.getElementById('late-sheet').remove());
     await page.waitForTimeout(500);
     check('a stylesheet that changes the sizes after drawing is followed, and left again', restyled !== unstyled && (await barPath()) === unstyled);
+
+    // A live chart's table: new values reach the same grid, which keeps its scroll; it is never built again for them.
+    await page.goto(base + 'chart/live', { waitUntil: 'load' });
+    const stream = page.locator('.ch-stream');
+    await stream.waitFor();
+    await stream.scrollIntoViewIfNeeded();
+    await stream.getByRole('button', { name: /table/i }).first().click();
+    await page.waitForTimeout(500);
+    const liveTable = await stream.evaluate(el => new Promise(done => {
+        const grid = el.querySelector('.mx-data-grid');
+        const viewport = grid.querySelector('.mx-data-grid__viewport');
+        viewport.scrollTop = 120;
+        const rows = () => grid.querySelector('[role="grid"]')?.getAttribute('aria-rowcount') ?? grid.getAttribute('aria-rowcount');
+        const first = rows();
+        setTimeout(() => done({ same: el.querySelector('.mx-data-grid') === grid, top: Math.round(viewport.scrollTop), grew: Number(rows()) > Number(first) }), 2600);
+    }));
+    check('a live table keeps its grid and its scroll while new values arrive', liveTable.same && liveTable.top === 120 && liveTable.grew, JSON.stringify(liveTable));
 }

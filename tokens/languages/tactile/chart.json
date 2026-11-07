@@ -6,6 +6,9 @@
         "unit": "rem"
       }
     },
+    "table-min-height": {
+      "$value": "calc({control.height.md} * 11)"
+    },
     "series-1": {
       "$value": "{color.chart.series-1}"
     },

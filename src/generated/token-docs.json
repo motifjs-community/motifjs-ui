@@ -4578,6 +4578,13 @@
     "value": "20rem"
   },
   {
+    "name": "chart.table-min-height",
+    "cssVar": "--mx-chart-table-min-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "calc(2rem * 11)"
+  },
+  {
     "name": "chart.series-1",
     "cssVar": "--mx-chart-series-1",
     "type": "color",

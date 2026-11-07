@@ -1694,6 +1694,7 @@
     --mx-card-subtitle-line-height: var(--mx-font-line-body);
     --mx-card-content-font-size: var(--mx-font-size-body);
     --mx-card-content-line-height: var(--mx-font-line-body);
+    --mx-chart-table-min-height: calc(var(--mx-control-height-md) * 11);
     --mx-chart-series-1: var(--mx-color-chart-series-1);
     --mx-chart-series-2: var(--mx-color-chart-series-2);
     --mx-chart-series-3: var(--mx-color-chart-series-3);
@@ -4554,6 +4555,7 @@
     --mx-card-card-hover-image: linear-gradient(color-mix(in srgb, currentcolor 3%, transparent), color-mix(in srgb, currentcolor 3%, transparent));
     --mx-card-card-pressed-image: linear-gradient(color-mix(in srgb, currentcolor 5%, transparent), color-mix(in srgb, currentcolor 5%, transparent));
     --mx-card-card-focus-image: linear-gradient(color-mix(in srgb, currentcolor 3%, transparent), color-mix(in srgb, currentcolor 3%, transparent));
+    --mx-chart-table-min-height: calc(2.5rem * 11);
     --mx-chart-bar-width: 20px;
     --mx-chart-bar-radius: 2px;
     --mx-chart-area-opacity: 0.12;
@@ -5836,6 +5838,7 @@
     --mx-card-card-pressed-image: linear-gradient(color-mix(in srgb, currentcolor 10%, transparent), color-mix(in srgb, currentcolor 10%, transparent));
     --mx-card-card-focus-image: linear-gradient(color-mix(in srgb, currentcolor 10%, transparent), color-mix(in srgb, currentcolor 10%, transparent));
     --mx-card-title-font-size: 1rem;
+    --mx-chart-table-min-height: calc(3.25rem * 11);
     --mx-chart-area-opacity: 0.12;
     --mx-chart-tooltip-border-width: initial;
     --mx-chart-tooltip-border-color: initial;

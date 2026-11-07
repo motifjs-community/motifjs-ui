@@ -663,6 +663,7 @@
 
   .mx-chart {
     --_chart-height: var(--mx-chart-height);
+    --_chart-table-min-height: var(--mx-chart-table-min-height);
     --_chart-series-1: var(--mx-chart-series-1);
     --_chart-series-2: var(--mx-chart-series-2);
     --_chart-series-3: var(--mx-chart-series-3);

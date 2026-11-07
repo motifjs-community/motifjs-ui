@@ -511,7 +511,9 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         this.model = model;
         this.usePlot(model.family);
         // The texts of the legend and the table read through the plot, before it has room to draw.
-        this.plot.input = { model, xAxis, yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look as ChartLook, locale: uiLocale.locale, window };
+        // The look is read even with no room yet (a chart in a hidden tab): the probes tell when it changes once shown.
+        this.look ??= readLook(el, this.cartesian.labelGroup, this.tokens);
+        this.plot.input = { model, xAxis, yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look, locale: uiLocale.locale, window };
         this.activeSlot = null;
         this.activePoint = null;
         this.tooltipPart.hide();

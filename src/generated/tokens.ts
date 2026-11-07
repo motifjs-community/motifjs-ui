@@ -656,6 +656,7 @@ export const componentTokens = {
   'card.content.line-height': { cssVar: '--mx-card-content-line-height', type: 'dimension', layer: 'component' },
   'card.content.color': { cssVar: '--mx-card-content-color', type: 'color', layer: 'component' },
   'chart.height': { cssVar: '--mx-chart-height', type: 'dimension', layer: 'component' },
+  'chart.table-min-height': { cssVar: '--mx-chart-table-min-height', type: 'dimension', layer: 'component' },
   'chart.series-1': { cssVar: '--mx-chart-series-1', type: 'color', layer: 'component' },
   'chart.series-2': { cssVar: '--mx-chart-series-2', type: 'color', layer: 'component' },
   'chart.series-3': { cssVar: '--mx-chart-series-3', type: 'color', layer: 'component' },

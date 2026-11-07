@@ -1,4 +1,4 @@
-import type { Component, ComponentBase } from '@motifx/core';
+import { reactive, type Component, type ComponentBase } from '@motifx/core';
 import { part } from '../../core/draw-parts';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from '../datagrid/DataGrid';
@@ -32,6 +32,10 @@ export class ChartTable {
     host: Component<HTMLDivElement>;
     grid: DataGrid<TableRow> | null = null;
     shape: TableShape | null = null;
+    /** What the columns are, to tell a new table from new values in the same one. */
+    columnsKey = '';
+    // The grid follows its rows through this: new values reach the same grid, which keeps its scroll and focus.
+    source = reactive({ rows: [] as TableRow[] });
 
     constructor(owner: ComponentBase) {
         this.host = part<HTMLDivElement>(owner, 'div', 'mx-chart__table');
@@ -46,8 +50,16 @@ export class ChartTable {
         this.element.setAttribute('aria-label', name);
         const shape = shapeOf(model, plot, position);
         this.shape = shape;
+        const key = shape.columns.map(c => `${c.field}:${c.title}`).join('|');
+        this.source.rows = shape.rows;
+        if (this.grid && key === this.columnsKey) {
+            this.grid.label = name;
+            return;
+        }
+        // Other columns (a series more or less, another kind of chart): a table of its own.
+        this.columnsKey = key;
         this.grid?.dispose();
-        this.grid = new DataGrid<TableRow>({ columns: shape.columns, rows: shape.rows, rowKey: 'id', label: name });
+        this.grid = new DataGrid<TableRow>({ columns: shape.columns, rows: () => this.source.rows, rowKey: 'id', label: name });
         this.host.controls.add(this.grid);
     }
 

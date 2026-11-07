@@ -366,6 +366,11 @@
         min-block-size: 0;
     }
 
+    /* Its table is read row by row: a chart with less room grows while it shows it, so several rows show at once. */
+    .mx-chart[data-mode='table'] {
+        block-size: max(var(--_height), var(--_chart-table-min-height));
+    }
+
     /* The table is the kit's grid: it fills the chart's room and scrolls only the rows in view. */
     .mx-chart__table > .mx-data-grid {
         block-size: 100%;

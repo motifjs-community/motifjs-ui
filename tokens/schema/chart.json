@@ -6,6 +6,10 @@
       "$type": "dimension",
       "$description": "The height with the title and the legend."
     },
+    "table-min-height": {
+      "$type": "dimension",
+      "$description": "The least height of the table view, so that several rows are read at once: a chart with less height grows to it while it shows its table."
+    },
     "series-1": {
       "$type": "color",
       "$description": "The first series."
