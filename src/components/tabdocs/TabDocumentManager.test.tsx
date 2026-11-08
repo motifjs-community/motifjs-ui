@@ -439,6 +439,24 @@ describe('TabDocumentManager: groups', () => {
     m.focusGroup(0);
     expect((document.activeElement as HTMLElement).className).toBe('two');
   });
+
+  it('a press on text in a panel that holds controls makes its document the active one', () => {
+    const m = manager();
+    const told: string[] = [];
+    m.open(doc('A', { content: () => {
+      const c = new Component<HTMLDivElement>('div');
+      c.element.innerHTML = '<p class="text">Some text</p><input>';
+      return c;
+    } }));
+    const second = m.split(m.groups[0], 'right')!;
+    m.open(doc('B'), { group: second });
+    expect(m.activeDocument?.title).toBe('B');
+    m.onDocumentActivated((e) => told.push(e.document?.title ?? ''));
+    m.groups[0].element.querySelector('.text')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    expect(m.activeGroup).toBe(m.groups[0]);
+    expect(m.activeDocument?.title).toBe('A');
+    expect(told).toEqual(['A']);
+  });
 });
 
 describe('TabDocumentManager: content lifetime', () => {

@@ -903,6 +903,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       const tab = this.tabOf(e.target) ?? manager.tabOfHeader(e.target);
       if (tab) this.reveal(tab);
     });
+    // A press on text or empty space in a panel moves no focus, yet the group is the one in use.
+    parts.panels.element.addEventListener('pointerdown', () => manager.groupFocused(this), { capture: true, passive: true });
     parts.panels.element.addEventListener('focusin', (e) => {
       const target = e.target as HTMLElement;
       const tab = parts.tabs.find((t) => t.panel.element.contains(target));
