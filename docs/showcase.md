@@ -6,4 +6,4 @@ An order entry screen built with the kit, structured the way a MotifJS applicati
 
 ## Feedback
 
-No open issues for this page.
+Loading issues…

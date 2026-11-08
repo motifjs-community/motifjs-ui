@@ -35,7 +35,6 @@
   "Occurs when an item is pressed, after its own `click`.": "Bir öğeye basıldığında, öğenin kendi `click` işlevinden sonra oluşur.",
   "Moves focus into the bar, to the selected item, and out of it.": "Odağı çubuğun içine, seçili öğeye taşır ve dışarı çıkarır.",
   "Moves between the items, wrapping around at the ends. The direction follows the page.": "Öğeler arasında gezer, uçlarda başa döner. Yön sayfanın yönünü izler.",
-  "Moves to the first or the last item.": "İlk veya son öğeye gider.",
   "The bar is a `<nav>` with an accessible name.": "Çubuk, erişilebilir adı olan bir `<nav>` öğesidir.",
   "`aria-current=\"page\"` marks it for screen readers.": "`aria-current=\"page\"` seçili öğeyi ekran okuyuculara bildirir.",
   "`aria-disabled=\"true\"`; the arrow keys pass over it.": "`aria-disabled=\"true\"`; ok tuşları bu öğeyi atlar.",

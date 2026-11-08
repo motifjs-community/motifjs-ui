@@ -74,6 +74,5 @@
   "When set, the item is a `menuitemcheckbox` and shows a check mark when `true`. Change it in `click`.": "Ayarlandığında öğe bir `menuitemcheckbox` olur ve `true` iken onay işareti gösterir. `click` içinde değiştirin.",
   "function": "fonksiyon",
   "Runs when the item is selected, after the menu closes.": "Öğe seçildiğinde, menü kapandıktan sonra çalışır.",
-  "A custom application value.": "Uygulamaya özel bir değer.",
   "The menu and the surface it opens on are shared parts, `MenuList` and `Popup`, exported for use in other components.": "Menü ve açıldığı yüzey, diğer bileşenlerde kullanılmak üzere dışa aktarılan `MenuList` ve `Popup` adlı ortak parçalardır."
 }

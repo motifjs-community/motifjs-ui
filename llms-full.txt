@@ -96,6 +96,7 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 - [Window and dialog](docs/window.md): A window or dialog built on the native `<dialog>` element. A single form can be shown as modeless or modal, depending on how you open it. It has a title…
 - [BottomSheet](docs/bottomsheet.md): A panel that slides up from the bottom of the page or a container and stops at set heights: peek, half, full, the height of its content, or custom values.…
 - [Drawer](docs/drawer.md): A panel that slides in from an edge of the page or a container, either over the content or pushing it aside. Users can swipe it in from the edge and back…
+- [AppMenu](docs/appmenu.md): The main menu of an application. It slides in from the start edge with a list of items, and each item shows its own page beside the list or runs a command.…
 - [ActionSheet](docs/actionsheet.md): A list of commands that slides up from the bottom of the screen, built from the kit's menu items and sized for touch. It supports a title, a message and a…
 - [Layout](docs/layout.md): Container controls for arranging other controls: `Stack` (a row or column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a…
 - [Splitter](docs/splitter.md): Divides space into any number of resizable panes, arranged side by side or stacked. A handle between each pair of panes can be dragged or moved with the…
@@ -146,6 +147,16 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 - [ListBox](docs/listbox.md): A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be…
 - [TagBox](docs/tagbox.md): Selects multiple items. Selected items appear as tags in the field, followed by a text input that searches the list. Items can come from memory or from a…
 - [FilterBuilder](docs/filterbuilder.md): Lets users build a filter visually, using groups joined by And, Or, Not And or Not Or, and conditions made of a field, an operation and a value. Its value…
+
+## RibbonMenu
+
+- [RibbonMenu](docs/ribbonmenu.md): The commands of an application in tabs, each tab in named groups of large, medium and small commands. It adapts to the room it has, can show only its tabs…
+- [RibbonMenu: Commands](docs/ribbonmenu-commands.md): A group holds commands of three sizes and eight types. Every field of a command is a value or a function the menu follows, so the commands change with the…
+- [RibbonMenu: Layouts and room](docs/ribbonmenu-layouts.md): The menu has two layouts, and gives way step by step when its room shrinks: commands become smaller, groups fold, and what is left scrolls. Narrow enough,…
+- [RibbonMenu: Showing and keys](docs/ribbonmenu-display.md): The menu can show only its tabs or hide itself to leave the page more room. A button before the tabs opens the app’s main menu, quick commands are at hand…
+- [RibbonMenu: Customization](docs/ribbonmenu-customization.md): Users arrange the menu from its context menu: they hide what they never use, move what they use most, and add commands to the quick commands. Everything…
+- [RibbonMenu: Programmatic changes](docs/ribbonmenu-programmatic.md): Tabs, groups and commands can be added, removed, moved and changed at any time, by their paths. The menu redraws only what changed: groups and commands that…
+- [RibbonMenu: API reference](docs/ribbonmenu-api.md): Everything `RibbonMenu` takes, offers and reports. Every prop is also a settable property, and a function is followed.
 
 ## TabDocumentManager
 
@@ -383,7 +394,7 @@ An order entry screen built with the kit, structured the way a MotifJS applicati
 
 ## Feedback
 
-No open issues for this page.
+Loading issues…
 
 
 ---
@@ -554,6 +565,72 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `app-bar.button.face.ghost.color` | `--mx-app-bar-button-face-ghost-color` | `color.accent.on-solid` | `#ffffff` |
 | `app-bar.button.face.ghost-hover.bg` | `--mx-app-bar-button-face-ghost-hover-bg` | `` | `rgb(255 255 255 / 0.14)` |
 | `app-bar.button.face.ghost-pressed.bg` | `--mx-app-bar-button-face-ghost-pressed-bg` | `` | `rgb(255 255 255 / 0.22)` |
+| `app-menu.font-family` | `--mx-app-menu-font-family` | `font.family.sans` | `Archivo, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif` |
+| `app-menu.share` | `--mx-app-menu-share` | `` | `0.5` |
+| `app-menu.min-size` | `--mx-app-menu-min-size` | `` | `22.5rem` |
+| `app-menu.split-size` | `--mx-app-menu-split-size` | `` | `34rem` |
+| `app-menu.nav-size` | `--mx-app-menu-nav-size` | `` | `15rem` |
+| `app-menu.close-button.variant` | `--mx-app-menu-close-button-variant` | `` | `ghost` |
+| `app-menu.close-button.tone` | `--mx-app-menu-close-button-tone` | `` | `standard` |
+| `app-menu.close-button.size` | `--mx-app-menu-close-button-size` | `` | `md` |
+| `app-menu.back-button.variant` | `--mx-app-menu-back-button-variant` | `` | `ghost` |
+| `app-menu.back-button.tone` | `--mx-app-menu-back-button-tone` | `` | `standard` |
+| `app-menu.back-button.size` | `--mx-app-menu-back-button-size` | `` | `md` |
+| `app-menu.scrim.bg` | `--mx-app-menu-scrim-bg` | `color.bg.smoke` | `rgb(0 0 0 / 0.3)` |
+| `app-menu.panel.bg` | `--mx-app-menu-panel-bg` | `color.bg.surface` | `#f8f7f3` |
+| `app-menu.panel.border-color` | `--mx-app-menu-panel-border-color` | `color.stroke.surface` | `rgb(117 117 117 / 0.4)` |
+| `app-menu.panel.shadow` | `--mx-app-menu-panel-shadow` | `elevation.dialog` | `0px 32px 64px 0px rgb(0 0 0 / 0.24), 0px 0px 8px 0px rgb(0 0 0 / 0.2)` |
+| `app-menu.panel.color` | `--mx-app-menu-panel-color` | `color.fg.primary` | `#1d1c1a` |
+| `app-menu.panel.font-size` | `--mx-app-menu-panel-font-size` | `font.size.body` | `0.875rem` |
+| `app-menu.panel.line-height` | `--mx-app-menu-panel-line-height` | `font.line.body` | `1.25rem` |
+| `app-menu.panel.border-end-width` | `--mx-app-menu-panel-border-end-width` | `border.width.1` | `1px` |
+| `app-menu.panel.radius-end` | `--mx-app-menu-panel-radius-end` | `radius.none` | `0px` |
+| `app-menu.panel.full.border-end-width` | `--mx-app-menu-panel-full-border-end-width` | `` | `0px` |
+| `app-menu.panel.full.radius-end` | `--mx-app-menu-panel-full-radius-end` | `` | `initial` |
+| `app-menu.nav.padding` | `--mx-app-menu-nav-padding` | `space.2` | `0.5rem` |
+| `app-menu.nav.gap` | `--mx-app-menu-nav-gap` | `space.1` | `0.25rem` |
+| `app-menu.nav.bg` | `--mx-app-menu-nav-bg` | `color.bg.layer` | `#ebeae5` |
+| `app-menu.list.bottom.padding-top` | `--mx-app-menu-list-bottom-padding-top` | `space.2` | `0.5rem` |
+| `app-menu.list.gap` | `--mx-app-menu-list-gap` | `space.1` | `0.25rem` |
+| `app-menu.separator.height` | `--mx-app-menu-separator-height` | `border.width.1` | `1px` |
+| `app-menu.separator.bg` | `--mx-app-menu-separator-bg` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `app-menu.separator.margin-block` | `--mx-app-menu-separator-margin-block` | `space.2` | `0.5rem` |
+| `app-menu.separator.margin-inline` | `--mx-app-menu-separator-margin-inline` | `space.3` | `0.75rem` |
+| `app-menu.item.height` | `--mx-app-menu-item-height` | `control.height.lg` | `2.5rem` |
+| `app-menu.item.padding-inline` | `--mx-app-menu-item-padding-inline` | `space.3` | `0.75rem` |
+| `app-menu.item.gap` | `--mx-app-menu-item-gap` | `space.3` | `0.75rem` |
+| `app-menu.item.radius` | `--mx-app-menu-item-radius` | `item.radius` | `0.25rem` |
+| `app-menu.item.color` | `--mx-app-menu-item-color` | `color.fg.primary` | `#1d1c1a` |
+| `app-menu.item.font-size` | `--mx-app-menu-item-font-size` | `font.size.body` | `0.875rem` |
+| `app-menu.item.line-height` | `--mx-app-menu-item-line-height` | `font.line.body` | `1.25rem` |
+| `app-menu.item.hover.bg` | `--mx-app-menu-item-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `app-menu.item.pressed.bg` | `--mx-app-menu-item-pressed-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `app-menu.item.selected.bg` | `--mx-app-menu-item-selected-bg` | `color.selection.bg` | `#f5f4f0` |
+| `app-menu.item.selected.color` | `--mx-app-menu-item-selected-color` | `color.selection.fg` | `#1d1c1a` |
+| `app-menu.item.selected.glow` | `--mx-app-menu-item-selected-glow` | `` | `inset 0px 0px 0px 1px rgb(0 0 0 / 0.12)` |
+| `app-menu.item.selected.shadow` | `--mx-app-menu-item-selected-shadow` | `effect.selection` | `inset 0px 1px 0px 0px rgb(255 255 255 / 0.7), 0px 1px 0px 0px rgb(0 0 0 / 0.3)` |
+| `app-menu.item.selected-hover.bg` | `--mx-app-menu-item-selected-hover-bg` | `color.selection.bg` | `#f5f4f0` |
+| `app-menu.item.focus.glow` | `--mx-app-menu-item-focus-glow` | `focus.ring.halo-inset` | `inset 0px 0px 0px 3px rgb(255 255 255 / 0.7)` |
+| `app-menu.item.focus.outline-width` | `--mx-app-menu-item-focus-outline-width` | `focus.ring.width` | `2px` |
+| `app-menu.item.focus.outline-color` | `--mx-app-menu-item-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `app-menu.item.focus.outline-offset` | `--mx-app-menu-item-focus-outline-offset` | `` | `calc(2px * -1)` |
+| `app-menu.item.disabled.color` | `--mx-app-menu-item-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `app-menu.icon.size` | `--mx-app-menu-icon-size` | `icon.size.md` | `1rem` |
+| `app-menu.icon.color` | `--mx-app-menu-icon-color` | `color.fg.secondary` | `#5e5c55` |
+| `app-menu.icon.selected.color` | `--mx-app-menu-icon-selected-color` | `color.selection.fg` | `#1d1c1a` |
+| `app-menu.label.font-weight` | `--mx-app-menu-label-font-weight` | `font.weight.regular` | `400` |
+| `app-menu.label.selected.font-weight` | `--mx-app-menu-label-selected-font-weight` | `font.weight.semibold` | `600` |
+| `app-menu.page-head.padding` | `--mx-app-menu-page-head-padding` | `space.2` | `0.5rem` |
+| `app-menu.page-head.gap` | `--mx-app-menu-page-head-gap` | `space.2` | `0.5rem` |
+| `app-menu.view.padding` | `--mx-app-menu-view-padding` | `space.6` | `1.5rem` |
+| `app-menu.view.focus.outline-width` | `--mx-app-menu-view-focus-outline-width` | `focus.ring.width` | `2px` |
+| `app-menu.view.focus.outline-color` | `--mx-app-menu-view-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `app-menu.view.focus.outline-offset` | `--mx-app-menu-view-focus-outline-offset` | `` | `calc(2px * -1)` |
+| `app-menu.indicator.width` | `--mx-app-menu-indicator-width` | `` | `initial` |
+| `app-menu.indicator.height` | `--mx-app-menu-indicator-height` | `` | `initial` |
+| `app-menu.indicator.bg` | `--mx-app-menu-indicator-bg` | `` | `initial` |
+| `app-menu.indicator.radius` | `--mx-app-menu-indicator-radius` | `` | `initial` |
+| `app-menu.page.bg` | `--mx-app-menu-page-bg` | `` | `initial` |
 | `avatar-group.layout` | `--mx-avatar-group-layout` | `` | `stack` |
 | `avatar-group.overlap.xs` | `--mx-avatar-group-overlap-xs` | `` | `0.25rem` |
 | `avatar-group.overlap.sm` | `--mx-avatar-group-overlap-sm` | `` | `0.25rem` |
@@ -3102,6 +3179,192 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `resizable.grip-glyph.size` | `--mx-resizable-grip-glyph-size` | `` | `0.75rem` |
 | `resizable.grip-glyph.bg` | `--mx-resizable-grip-glyph-bg` | `color.fg.tertiary` | `#8c8a82` |
 | `resizable.grip-glyph.icon` | `--mx-resizable-grip-glyph-icon` | `` | `var(--mx-icon-grip)` |
+| `ribbon-menu.font-family` | `--mx-ribbon-menu-font-family` | `font.family.sans` | `Archivo, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif` |
+| `ribbon-menu.rows` | `--mx-ribbon-menu-rows` | `` | `3` |
+| `ribbon-menu.row-height` | `--mx-ribbon-menu-row-height` | `control.height.sm` | `1.5rem` |
+| `ribbon-menu.indicator-inset` | `--mx-ribbon-menu-indicator-inset` | `control.padding.md` | `0.6875rem` |
+| `ribbon-menu.large.variant` | `--mx-ribbon-menu-large-variant` | `` | `ghost` |
+| `ribbon-menu.large.size` | `--mx-ribbon-menu-large-size` | `` | `md` |
+| `ribbon-menu.large.face.toggled.bg` | `--mx-ribbon-menu-large-face-toggled-bg` | `color.fill.control.tertiary` | `#e1e0da` |
+| `ribbon-menu.large.face.toggled.color` | `--mx-ribbon-menu-large-face-toggled-color` | `` | `initial` |
+| `ribbon-menu.large.face.toggled-hover.bg` | `--mx-ribbon-menu-large-face-toggled-hover-bg` | `color.fill.control.secondary` | `#ebeae5` |
+| `ribbon-menu.large.face.outline-toggled.bg` | `--mx-ribbon-menu-large-face-outline-toggled-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.large.face.outline-toggled.color` | `--mx-ribbon-menu-large-face-outline-toggled-color` | `` | `initial` |
+| `ribbon-menu.large.face.ghost-toggled.bg` | `--mx-ribbon-menu-large-face-ghost-toggled-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.large.face.ghost-toggled.color` | `--mx-ribbon-menu-large-face-ghost-toggled-color` | `` | `initial` |
+| `ribbon-menu.large.face.outline-toggled-hover.bg` | `--mx-ribbon-menu-large-face-outline-toggled-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.large.face.outline-toggled-hover.color` | `--mx-ribbon-menu-large-face-outline-toggled-hover-color` | `` | `initial` |
+| `ribbon-menu.large.face.ghost-toggled-hover.bg` | `--mx-ribbon-menu-large-face-ghost-toggled-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.large.face.ghost-toggled-hover.color` | `--mx-ribbon-menu-large-face-ghost-toggled-hover-color` | `` | `initial` |
+| `ribbon-menu.medium.variant` | `--mx-ribbon-menu-medium-variant` | `` | `ghost` |
+| `ribbon-menu.medium.size` | `--mx-ribbon-menu-medium-size` | `` | `sm` |
+| `ribbon-menu.medium.face.toggled.bg` | `--mx-ribbon-menu-medium-face-toggled-bg` | `color.fill.control.tertiary` | `#e1e0da` |
+| `ribbon-menu.medium.face.toggled.color` | `--mx-ribbon-menu-medium-face-toggled-color` | `` | `initial` |
+| `ribbon-menu.medium.face.toggled-hover.bg` | `--mx-ribbon-menu-medium-face-toggled-hover-bg` | `color.fill.control.secondary` | `#ebeae5` |
+| `ribbon-menu.medium.face.outline-toggled.bg` | `--mx-ribbon-menu-medium-face-outline-toggled-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.medium.face.outline-toggled.color` | `--mx-ribbon-menu-medium-face-outline-toggled-color` | `` | `initial` |
+| `ribbon-menu.medium.face.ghost-toggled.bg` | `--mx-ribbon-menu-medium-face-ghost-toggled-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.medium.face.ghost-toggled.color` | `--mx-ribbon-menu-medium-face-ghost-toggled-color` | `` | `initial` |
+| `ribbon-menu.medium.face.outline-toggled-hover.bg` | `--mx-ribbon-menu-medium-face-outline-toggled-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.medium.face.outline-toggled-hover.color` | `--mx-ribbon-menu-medium-face-outline-toggled-hover-color` | `` | `initial` |
+| `ribbon-menu.medium.face.ghost-toggled-hover.bg` | `--mx-ribbon-menu-medium-face-ghost-toggled-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.medium.face.ghost-toggled-hover.color` | `--mx-ribbon-menu-medium-face-ghost-toggled-hover-color` | `` | `initial` |
+| `ribbon-menu.small.variant` | `--mx-ribbon-menu-small-variant` | `` | `ghost` |
+| `ribbon-menu.small.size` | `--mx-ribbon-menu-small-size` | `` | `sm` |
+| `ribbon-menu.small.face.toggled.bg` | `--mx-ribbon-menu-small-face-toggled-bg` | `color.fill.control.tertiary` | `#e1e0da` |
+| `ribbon-menu.small.face.toggled.color` | `--mx-ribbon-menu-small-face-toggled-color` | `` | `initial` |
+| `ribbon-menu.small.face.toggled-hover.bg` | `--mx-ribbon-menu-small-face-toggled-hover-bg` | `color.fill.control.secondary` | `#ebeae5` |
+| `ribbon-menu.small.face.outline-toggled.bg` | `--mx-ribbon-menu-small-face-outline-toggled-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.small.face.outline-toggled.color` | `--mx-ribbon-menu-small-face-outline-toggled-color` | `` | `initial` |
+| `ribbon-menu.small.face.ghost-toggled.bg` | `--mx-ribbon-menu-small-face-ghost-toggled-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.small.face.ghost-toggled.color` | `--mx-ribbon-menu-small-face-ghost-toggled-color` | `` | `initial` |
+| `ribbon-menu.small.face.outline-toggled-hover.bg` | `--mx-ribbon-menu-small-face-outline-toggled-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.small.face.outline-toggled-hover.color` | `--mx-ribbon-menu-small-face-outline-toggled-hover-color` | `` | `initial` |
+| `ribbon-menu.small.face.ghost-toggled-hover.bg` | `--mx-ribbon-menu-small-face-ghost-toggled-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.small.face.ghost-toggled-hover.color` | `--mx-ribbon-menu-small-face-ghost-toggled-hover-color` | `` | `initial` |
+| `ribbon-menu.more.variant` | `--mx-ribbon-menu-more-variant` | `` | `ghost` |
+| `ribbon-menu.more.tone` | `--mx-ribbon-menu-more-tone` | `` | `standard` |
+| `ribbon-menu.more.size` | `--mx-ribbon-menu-more-size` | `` | `sm` |
+| `ribbon-menu.switch.variant` | `--mx-ribbon-menu-switch-variant` | `` | `ghost` |
+| `ribbon-menu.switch.tone` | `--mx-ribbon-menu-switch-tone` | `` | `standard` |
+| `ribbon-menu.switch.size` | `--mx-ribbon-menu-switch-size` | `` | `sm` |
+| `ribbon-menu.scroll.variant` | `--mx-ribbon-menu-scroll-variant` | `` | `solid` |
+| `ribbon-menu.scroll.tone` | `--mx-ribbon-menu-scroll-tone` | `` | `standard` |
+| `ribbon-menu.scroll.size` | `--mx-ribbon-menu-scroll-size` | `` | `sm` |
+| `ribbon-menu.bar-start.gap` | `--mx-ribbon-menu-bar-start-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.bar-start.padding-end` | `--mx-ribbon-menu-bar-start-padding-end` | `space.2` | `0.5rem` |
+| `ribbon-menu.bar-end.gap` | `--mx-ribbon-menu-bar-end-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.bar-end.padding-start` | `--mx-ribbon-menu-bar-end-padding-start` | `space.2` | `0.5rem` |
+| `ribbon-menu.drop.padding` | `--mx-ribbon-menu-drop-padding` | `space.1` | `0.25rem` |
+| `ribbon-menu.root.color` | `--mx-ribbon-menu-root-color` | `color.fg.primary` | `#1d1c1a` |
+| `ribbon-menu.bar.padding-inline` | `--mx-ribbon-menu-bar-padding-inline` | `space.2` | `0.5rem` |
+| `ribbon-menu.bar.gap` | `--mx-ribbon-menu-bar-gap` | `space.2` | `0.5rem` |
+| `ribbon-menu.tabs.gap` | `--mx-ribbon-menu-tabs-gap` | `` | `0px` |
+| `ribbon-menu.tab.gap` | `--mx-ribbon-menu-tab-gap` | `control.gap` | `0.5rem` |
+| `ribbon-menu.tab.color` | `--mx-ribbon-menu-tab-color` | `color.fg.secondary` | `#5e5c55` |
+| `ribbon-menu.tab.font-weight` | `--mx-ribbon-menu-tab-font-weight` | `font.weight.medium` | `500` |
+| `ribbon-menu.tab.height` | `--mx-ribbon-menu-tab-height` | `control.height.md` | `2rem` |
+| `ribbon-menu.tab.padding-inline` | `--mx-ribbon-menu-tab-padding-inline` | `control.padding.md` | `0.6875rem` |
+| `ribbon-menu.tab.font-size` | `--mx-ribbon-menu-tab-font-size` | `font.size.body` | `0.875rem` |
+| `ribbon-menu.tab.line-height` | `--mx-ribbon-menu-tab-line-height` | `font.line.body` | `1.25rem` |
+| `ribbon-menu.tab.hover.bg` | `--mx-ribbon-menu-tab-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.tab.hover.color` | `--mx-ribbon-menu-tab-hover-color` | `color.fg.primary` | `#1d1c1a` |
+| `ribbon-menu.tab.pressed.bg` | `--mx-ribbon-menu-tab-pressed-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.tab.pressed.color` | `--mx-ribbon-menu-tab-pressed-color` | `color.fg.primary` | `#1d1c1a` |
+| `ribbon-menu.tab.selected.color` | `--mx-ribbon-menu-tab-selected-color` | `color.fg.primary` | `#1d1c1a` |
+| `ribbon-menu.tab.disabled.color` | `--mx-ribbon-menu-tab-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `ribbon-menu.tab.focus.glow` | `--mx-ribbon-menu-tab-focus-glow` | `focus.ring.halo-inset` | `inset 0px 0px 0px 3px rgb(255 255 255 / 0.7)` |
+| `ribbon-menu.tab.focus.outline-width` | `--mx-ribbon-menu-tab-focus-outline-width` | `focus.ring.width` | `2px` |
+| `ribbon-menu.tab.focus.outline-color` | `--mx-ribbon-menu-tab-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `ribbon-menu.tab.focus.outline-offset` | `--mx-ribbon-menu-tab-focus-outline-offset` | `` | `calc(2px * -1)` |
+| `ribbon-menu.tab.context.color` | `--mx-ribbon-menu-tab-context-color` | `color.accent.fg` | `#983318` |
+| `ribbon-menu.tab.radius` | `--mx-ribbon-menu-tab-radius` | `` | `initial` |
+| `ribbon-menu.indicator.height` | `--mx-ribbon-menu-indicator-height` | `border.width.2` | `2px` |
+| `ribbon-menu.indicator.radius` | `--mx-ribbon-menu-indicator-radius` | `radius.full` | `9999px` |
+| `ribbon-menu.indicator.bg` | `--mx-ribbon-menu-indicator-bg` | `color.accent.solid` | `#c24523` |
+| `ribbon-menu.context-band.height` | `--mx-ribbon-menu-context-band-height` | `border.width.2` | `2px` |
+| `ribbon-menu.context-band.bg` | `--mx-ribbon-menu-context-band-bg` | `color.accent.solid` | `#c24523` |
+| `ribbon-menu.body.bg` | `--mx-ribbon-menu-body-bg` | `color.bg.card` | `#f5f4f0` |
+| `ribbon-menu.body.border-width` | `--mx-ribbon-menu-body-border-width` | `border.width.1` | `1px` |
+| `ribbon-menu.body.border-color` | `--mx-ribbon-menu-body-border-color` | `color.stroke.card` | `rgb(0 0 0 / 0.08)` |
+| `ribbon-menu.body.radius` | `--mx-ribbon-menu-body-radius` | `radius.lg` | `0.625rem` |
+| `ribbon-menu.body.shadow` | `--mx-ribbon-menu-body-shadow` | `elevation.card` | `0px 1px 2px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `ribbon-menu.body.margin-inline` | `--mx-ribbon-menu-body-margin-inline` | `space.2` | `0.5rem` |
+| `ribbon-menu.body.margin-bottom` | `--mx-ribbon-menu-body-margin-bottom` | `space.2` | `0.5rem` |
+| `ribbon-menu.body.floating.shadow` | `--mx-ribbon-menu-body-floating-shadow` | `elevation.popup` | `0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `ribbon-menu.panel.padding` | `--mx-ribbon-menu-panel-padding` | `space.1` | `0.25rem` |
+| `ribbon-menu.panel.gap` | `--mx-ribbon-menu-panel-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.panel.simple.padding-inline` | `--mx-ribbon-menu-panel-simple-padding-inline` | `space.2` | `0.5rem` |
+| `ribbon-menu.divider.width` | `--mx-ribbon-menu-divider-width` | `border.width.1` | `1px` |
+| `ribbon-menu.divider.bg` | `--mx-ribbon-menu-divider-bg` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `ribbon-menu.divider.margin-block` | `--mx-ribbon-menu-divider-margin-block` | `space.2` | `0.5rem` |
+| `ribbon-menu.group.padding-inline` | `--mx-ribbon-menu-group-padding-inline` | `space.1` | `0.25rem` |
+| `ribbon-menu.group.gap` | `--mx-ribbon-menu-group-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.commands.gap` | `--mx-ribbon-menu-commands-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.group-foot.min-height` | `--mx-ribbon-menu-group-foot-min-height` | `control.height.sm` | `1.5rem` |
+| `ribbon-menu.group-foot.gap` | `--mx-ribbon-menu-group-foot-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.group-label.color` | `--mx-ribbon-menu-group-label-color` | `color.fg.secondary` | `#5e5c55` |
+| `ribbon-menu.group-label.font-size` | `--mx-ribbon-menu-group-label-font-size` | `font.size.caption` | `0.75rem` |
+| `ribbon-menu.group-label.line-height` | `--mx-ribbon-menu-group-label-line-height` | `font.line.caption` | `1rem` |
+| `ribbon-menu.separator.width` | `--mx-ribbon-menu-separator-width` | `border.width.1` | `1px` |
+| `ribbon-menu.separator.bg` | `--mx-ribbon-menu-separator-bg` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `ribbon-menu.separator.margin-block` | `--mx-ribbon-menu-separator-margin-block` | `space.1` | `0.25rem` |
+| `ribbon-menu.row.gap` | `--mx-ribbon-menu-row-gap` | `` | `0px` |
+| `ribbon-menu.large-face.min-width` | `--mx-ribbon-menu-large-face-min-width` | `` | `3.5rem` |
+| `ribbon-menu.large-face.padding-block` | `--mx-ribbon-menu-large-face-padding-block` | `space.1` | `0.25rem` |
+| `ribbon-menu.large-face.padding-inline` | `--mx-ribbon-menu-large-face-padding-inline` | `space.2` | `0.5rem` |
+| `ribbon-menu.large-face.gap` | `--mx-ribbon-menu-large-face-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.large-icon.size` | `--mx-ribbon-menu-large-icon-size` | `` | `2rem` |
+| `ribbon-menu.large-arrow.min-height` | `--mx-ribbon-menu-large-arrow-min-height` | `` | `0px` |
+| `ribbon-menu.large-arrow.padding-top` | `--mx-ribbon-menu-large-arrow-padding-top` | `` | `0px` |
+| `ribbon-menu.large-arrow.padding-bottom` | `--mx-ribbon-menu-large-arrow-padding-bottom` | `space.1` | `0.25rem` |
+| `ribbon-menu.compact-size` | `--mx-ribbon-menu-compact-size` | `` | `30rem` |
+| `ribbon-menu.picker.variant` | `--mx-ribbon-menu-picker-variant` | `` | `ghost` |
+| `ribbon-menu.picker.tone` | `--mx-ribbon-menu-picker-tone` | `` | `standard` |
+| `ribbon-menu.picker.size` | `--mx-ribbon-menu-picker-size` | `` | `sm` |
+| `ribbon-menu.reveal.height` | `--mx-ribbon-menu-reveal-height` | `space.3` | `0.75rem` |
+| `ribbon-menu.reveal.bg` | `--mx-ribbon-menu-reveal-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.reveal.color` | `--mx-ribbon-menu-reveal-color` | `color.fg.secondary` | `#5e5c55` |
+| `ribbon-menu.reveal.radius` | `--mx-ribbon-menu-reveal-radius` | `radius.md` | `0.375rem` |
+| `ribbon-menu.reveal.hover.bg` | `--mx-ribbon-menu-reveal-hover-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.reveal.hover.color` | `--mx-ribbon-menu-reveal-hover-color` | `color.fg.primary` | `#1d1c1a` |
+| `ribbon-menu.reveal.focus.outline-width` | `--mx-ribbon-menu-reveal-focus-outline-width` | `focus.ring.width` | `2px` |
+| `ribbon-menu.reveal.focus.outline-color` | `--mx-ribbon-menu-reveal-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `ribbon-menu.reveal.focus.outline-offset` | `--mx-ribbon-menu-reveal-focus-outline-offset` | `` | `calc(2px * -1)` |
+| `ribbon-menu.frame.floating.bg` | `--mx-ribbon-menu-frame-floating-bg` | `color.bg.canvas` | `#e1e0da` |
+| `ribbon-menu.frame.floating.shadow` | `--mx-ribbon-menu-frame-floating-shadow` | `elevation.popup` | `0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `ribbon-menu.frame.floating.radius-bottom` | `--mx-ribbon-menu-frame-floating-radius-bottom` | `radius.lg` | `0.625rem` |
+| `ribbon-menu.app.height` | `--mx-ribbon-menu-app-height` | `control.height.sm` | `1.5rem` |
+| `ribbon-menu.app.padding-inline` | `--mx-ribbon-menu-app-padding-inline` | `space.3` | `0.75rem` |
+| `ribbon-menu.app.radius` | `--mx-ribbon-menu-app-radius` | `radius.md` | `0.375rem` |
+| `ribbon-menu.app.bg` | `--mx-ribbon-menu-app-bg` | `color.accent.solid` | `#c24523` |
+| `ribbon-menu.app.color` | `--mx-ribbon-menu-app-color` | `color.accent.on-solid` | `#ffffff` |
+| `ribbon-menu.app.font-weight` | `--mx-ribbon-menu-app-font-weight` | `font.weight.semibold` | `600` |
+| `ribbon-menu.app.hover.bg` | `--mx-ribbon-menu-app-hover-bg` | `color.accent.solid-hover` | `#b43f20` |
+| `ribbon-menu.app.pressed.bg` | `--mx-ribbon-menu-app-pressed-bg` | `color.accent.solid-pressed` | `#a1381c` |
+| `ribbon-menu.app.focus.outline-width` | `--mx-ribbon-menu-app-focus-outline-width` | `focus.ring.width` | `2px` |
+| `ribbon-menu.app.focus.outline-color` | `--mx-ribbon-menu-app-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `ribbon-menu.app.focus.outline-offset` | `--mx-ribbon-menu-app-focus-outline-offset` | `focus.ring.offset` | `1px` |
+| `ribbon-menu.quick.gap` | `--mx-ribbon-menu-quick-gap` | `` | `0px` |
+| `ribbon-menu.quick.below.padding-inline` | `--mx-ribbon-menu-quick-below-padding-inline` | `space.2` | `0.5rem` |
+| `ribbon-menu.quick.below.padding-bottom` | `--mx-ribbon-menu-quick-below-padding-bottom` | `space.1` | `0.25rem` |
+| `ribbon-menu.hint.bg` | `--mx-ribbon-menu-hint-bg` | `color.bg.surface` | `#f8f7f3` |
+| `ribbon-menu.hint.border-width` | `--mx-ribbon-menu-hint-border-width` | `border.width.1` | `1px` |
+| `ribbon-menu.hint.border-color` | `--mx-ribbon-menu-hint-border-color` | `color.stroke.surface` | `rgb(117 117 117 / 0.4)` |
+| `ribbon-menu.hint.radius` | `--mx-ribbon-menu-hint-radius` | `radius.md` | `0.375rem` |
+| `ribbon-menu.hint.shadow` | `--mx-ribbon-menu-hint-shadow` | `elevation.tooltip` | `0px 4px 8px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `ribbon-menu.hint.color` | `--mx-ribbon-menu-hint-color` | `color.fg.primary` | `#1d1c1a` |
+| `ribbon-menu.hint.font-size` | `--mx-ribbon-menu-hint-font-size` | `font.size.caption` | `0.75rem` |
+| `ribbon-menu.hint.line-height` | `--mx-ribbon-menu-hint-line-height` | `font.line.caption` | `1rem` |
+| `ribbon-menu.hint.padding-inline` | `--mx-ribbon-menu-hint-padding-inline` | `space.1` | `0.25rem` |
+| `ribbon-menu.hint.font-weight` | `--mx-ribbon-menu-hint-font-weight` | `font.weight.semibold` | `600` |
+| `ribbon-menu.gallery-open.variant` | `--mx-ribbon-menu-gallery-open-variant` | `` | `ghost` |
+| `ribbon-menu.gallery-open.tone` | `--mx-ribbon-menu-gallery-open-tone` | `` | `standard` |
+| `ribbon-menu.gallery-open.size` | `--mx-ribbon-menu-gallery-open-size` | `` | `sm` |
+| `ribbon-menu.gallery.gap` | `--mx-ribbon-menu-gallery-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.gallery.padding` | `--mx-ribbon-menu-gallery-padding` | `space.1` | `0.25rem` |
+| `ribbon-menu.gallery.border-width` | `--mx-ribbon-menu-gallery-border-width` | `border.width.1` | `1px` |
+| `ribbon-menu.gallery.border-color` | `--mx-ribbon-menu-gallery-border-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `ribbon-menu.gallery.radius` | `--mx-ribbon-menu-gallery-radius` | `item.radius` | `0.25rem` |
+| `ribbon-menu.gallery-grid.gap` | `--mx-ribbon-menu-gallery-grid-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.gallery-grid.padding` | `--mx-ribbon-menu-gallery-grid-padding` | `space.1` | `0.25rem` |
+| `ribbon-menu.tile.width` | `--mx-ribbon-menu-tile-width` | `` | `4.5rem` |
+| `ribbon-menu.tile.padding` | `--mx-ribbon-menu-tile-padding` | `space.1` | `0.25rem` |
+| `ribbon-menu.tile.gap` | `--mx-ribbon-menu-tile-gap` | `space.1` | `0.25rem` |
+| `ribbon-menu.tile.radius` | `--mx-ribbon-menu-tile-radius` | `radius.md` | `0.375rem` |
+| `ribbon-menu.tile.color` | `--mx-ribbon-menu-tile-color` | `color.fg.primary` | `#1d1c1a` |
+| `ribbon-menu.tile.font-size` | `--mx-ribbon-menu-tile-font-size` | `font.size.caption` | `0.75rem` |
+| `ribbon-menu.tile.line-height` | `--mx-ribbon-menu-tile-line-height` | `font.line.caption` | `1rem` |
+| `ribbon-menu.tile.hover.bg` | `--mx-ribbon-menu-tile-hover-bg` | `color.fill.subtle.secondary` | `rgb(0 0 0 / 0.0373)` |
+| `ribbon-menu.tile.pressed.bg` | `--mx-ribbon-menu-tile-pressed-bg` | `color.fill.subtle.tertiary` | `rgb(0 0 0 / 0.0241)` |
+| `ribbon-menu.tile.selected.bg` | `--mx-ribbon-menu-tile-selected-bg` | `color.selection.bg` | `#f5f4f0` |
+| `ribbon-menu.tile.selected.color` | `--mx-ribbon-menu-tile-selected-color` | `color.selection.fg` | `#1d1c1a` |
+| `ribbon-menu.tile.selected.glow` | `--mx-ribbon-menu-tile-selected-glow` | `` | `inset 0px 0px 0px 1px rgb(0 0 0 / 0.12)` |
+| `ribbon-menu.tile.focus.outline-width` | `--mx-ribbon-menu-tile-focus-outline-width` | `focus.ring.width` | `2px` |
+| `ribbon-menu.tile.focus.outline-color` | `--mx-ribbon-menu-tile-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `ribbon-menu.tile.focus.outline-offset` | `--mx-ribbon-menu-tile-focus-outline-offset` | `` | `calc(2px * -1)` |
+| `ribbon-menu.tile.disabled.color` | `--mx-ribbon-menu-tile-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `ribbon-menu.tile-icon.size` | `--mx-ribbon-menu-tile-icon-size` | `icon.size.lg` | `1.25rem` |
 | `scheduler.height` | `--mx-scheduler-height` | `` | `40rem` |
 | `scheduler.ruler-width` | `--mx-scheduler-ruler-width` | `` | `4rem` |
 | `scheduler.slot-height` | `--mx-scheduler-slot-height` | `control.height.md` | `2rem` |
@@ -20412,6 +20675,137 @@ Loading issues…
 
 ---
 
+# AppMenu
+
+> Navigation · @motifx-community/ui 0.1.0-beta.7
+
+The main menu of an application. It slides in from the start edge with a list of items, and each item shows its own page beside the list or runs a command. The menu holds nothing of its own: the items, the pages and the commands are given by the application.
+
+## Import
+
+```tsx
+import { AppMenu, type AppMenuItem } from '@motifx-community/ui';
+```
+
+## Pages and commands
+
+An item with `page` shows that page beside the list. The page is created the first time it is shown, and kept. Any other item is a command (`click`) and closes the menu. Items with the same `group` stand together, and items with `bottom` stand at the bottom of the list.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { AppMenu, Button, ListBox, Stack, Switch, type AppMenuItem } from '@motifx-community/ui';
+
+const RECENT = [
+    { id: 'q3', text: 'Quarterly report.docx' },
+    { id: 'budget', text: 'Budget 2027.xlsx' },
+    { id: 'notes', text: 'Meeting notes.docx' },
+    { id: 'plan', text: 'Launch plan.pptx' }
+];
+
+const TEMPLATES = ['Blank document', 'Letter', 'Report', 'Resume'];
+
+/** The main menu of a document editor: every page and command is given by the app. */
+export default function FileMenu() {
+    const s = reactive({ open: false, told: 'nothing yet', file: 'q3', autosave: true });
+    const run = (what: string) => () => (s.told = what);
+
+    const items: AppMenuItem[] = [
+        {
+            key: 'home',
+            text: '&Home',
+            glyph: 'star',
+            page: () => (
+                <Stack gap="md">
+                    <h2>Good morning</h2>
+                    <Stack orientation="horizontal" gap="sm" wrap>
+                        {TEMPLATES.map(t => <Button key={t} text={t} variant="outline" onclick={() => { s.told = `new: ${t}`; s.open = false; }} />)}
+                    </Stack>
+                    <h3>Recent</h3>
+                    <ListBox label="Recent files" items={RECENT} itemText="text" itemValue="id" x-model={() => s.file} />
+                </Stack>
+            )
+        },
+        {
+            key: 'new',
+            text: '&New',
+            glyph: 'plus',
+            page: () => (
+                <Stack gap="md">
+                    <h2>New</h2>
+                    <Stack orientation="horizontal" gap="sm" wrap>
+                        {TEMPLATES.map(t => <Button text={t} onclick={() => { s.told = `new: ${t}`; s.open = false; }} />)}
+                    </Stack>
+                </Stack>
+            )
+        },
+        {
+            key: 'open',
+            text: '&Open',
+            glyph: 'file',
+            page: () => (
+                <Stack gap="md">
+                    <h2>Open</h2>
+                    <ListBox label="Files" items={RECENT} itemText="text" itemValue="id" x-model={() => s.file} />
+                    <Button text="Open" onclick={() => { s.told = `open: ${s.file}`; s.open = false; }} />
+                </Stack>
+            )
+        },
+        { key: 'info', text: '&Info', glyph: 'info', page: () => <Stack gap="md"><h2>Info</h2><p>{() => `Selected file: ${RECENT.find(r => r.id === s.file)?.text}`}</p></Stack> },
+        { key: 'save', text: '&Save', glyph: 'save', group: 'file', click: run('save') },
+        { key: 'copy', text: 'Save a &copy', group: 'file', page: () => <Stack gap="md"><h2>Save a copy</h2><Button text="Save a copy" onclick={run('save a copy')} /></Stack> },
+        { key: 'export', text: '&Export', glyph: 'download', group: 'file', page: () => <Stack gap="md"><h2>Export</h2><Button text="Export as PDF" onclick={run('export as PDF')} /></Stack> },
+        { key: 'share', text: 'S&hare', glyph: 'upload', group: 'file', click: run('share') },
+        { key: 'account', text: '&Account', glyph: 'person', bottom: true, page: () => <Stack gap="md"><h2>Account</h2><p>Signed in as Ada Lovelace</p></Stack> },
+        {
+            key: 'options',
+            text: 'O&ptions',
+            glyph: 'more',
+            bottom: true,
+            page: () => (
+                <Stack gap="md">
+                    <h2>Options</h2>
+                    <Switch label="Save automatically" x-model={() => s.autosave} />
+                </Stack>
+            )
+        }
+    ];
+
+    return (
+        <>
+            <Button text="File" variant="outline" onclick={() => (s.open = true)} />
+            <output class="am-file-told">{() => `Last command: ${s.told}`}</output>
+            <AppMenu class="am-file" label="File" items={items} x-model={() => s.open} />
+        </>
+    );
+}
+```
+
+## Layout
+
+| Room | Layout |
+| --- | --- |
+| `Wide window` | The menu covers half of the window (`app-menu.share`), with the list beside the page. |
+| `Half the window is too narrow` | When half the window is narrower than `app-menu.min-size`, the menu covers the whole window. |
+| `The menu is too narrow for both` | When the menu is narrower than `app-menu.split-size`, the list and the page take turns. Choosing a page shows it, and Back or Escape returns to the list. |
+
+## Keyboard
+
+| Key | Action |
+| --- | --- |
+| `Arrow Down, Arrow Up` | Moves between the items of both lists, wrapping at the ends. |
+| `Home, End` | Moves to the first or the last item. |
+| `Enter, Space` | Shows the page of the item, or runs its command. |
+| `A letter` | Chooses the item with that access key. Without one, moves to the next item whose text starts with the letters typed. |
+| `Escape` | Returns to the list when the page is shown alone. Otherwise, closes the menu. |
+| `Tab, Shift+Tab` | Moves between the list and the page. Focus stays inside the menu. |
+
+## Feedback
+
+Loading issues…
+
+
+---
+
 # ActionSheet
 
 > Navigation · @motifx-community/ui 0.1.0-beta.7
@@ -28216,6 +28610,854 @@ export default function Localization() {
   );
 }
 ```
+
+
+---
+
+# RibbonMenu
+
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+
+The commands of an application in tabs, each tab in named groups of large, medium and small commands. It adapts to the room it has, can show only its tabs or hide itself, and lets users arrange it to their liking. The menu holds nothing of its own: the tabs, the groups and the commands are given by the application.
+
+## Import
+
+```tsx
+import { RibbonMenu, type RibbonTab, type RibbonGroup, type RibbonCommand } from '@motifx-community/ui';
+```
+
+## A document editor
+
+Each tab has groups, and each group has commands. A tab’s groups are created the first time the tab is shown, and kept. The button before the tabs opens the app’s main menu, the quick commands stand beside it, and the end of the row holds the app’s own search and share button. Choose a picture to see the tab of its context, right-click a command to arrange the menu, and tap Alt to see the key hints.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { AppMenu, Button, DropDown, NumberBox, RibbonMenu, Stack, Switch, TextBox, type RibbonCommand, type RibbonTab } from '@motifx-community/ui';
+
+const FONTS = ['Sans', 'Serif', 'Mono'];
+
+const STYLES = [
+    { key: 'normal', text: 'Normal', look: 'font-size: 0.875rem' },
+    { key: 'heading1', text: 'Heading 1', look: 'font-size: 1.125rem; font-weight: 700' },
+    { key: 'heading2', text: 'Heading 2', look: 'font-size: 1rem; font-weight: 600' },
+    { key: 'title', text: 'Title', look: 'font-size: 1.25rem' },
+    { key: 'quote', text: 'Quote', look: 'font-style: italic' },
+    { key: 'code', text: 'Code', look: 'font-family: monospace' }
+];
+
+const letter = (text: string, style: string) => () => <span class="rb-letter" style={style}>{text}</span>;
+
+/** The commands of a document editor: every tab, group and command is given by the app. */
+export default function Editor() {
+    const s = reactive({ style: 'normal', menu: false, tab: 'home', told: 'nothing yet', bold: false, italic: false, underline: false, ruler: true, grid: false, picture: false, font: 'Sans', size: 11 });
+    const run = (what: string) => () => (s.told = what);
+
+    const items: RibbonTab[] = [
+        {
+            key: 'home',
+            text: '&Home',
+            groups: [
+                {
+                    text: 'Clipboard',
+                    glyph: 'file',
+                    more: run('clipboard options'),
+                    commands: [
+                        { text: 'Paste', glyph: 'file', size: 'large', type: 'split', click: run('paste'), menu: [{ text: 'Keep source look', click: run('paste: keep look') }, { text: 'Keep text only', click: run('paste: text only') }] },
+                        { text: 'Cut', glyph: 'trash', click: run('cut') },
+                        { text: 'Copy', glyph: 'file', click: run('copy') },
+                        { text: 'Copy look', glyph: 'eyedropper', click: run('copy look') }
+                    ]
+                },
+                {
+                    text: 'Font',
+                    glyph: 'pencil',
+                    more: run('font options'),
+                    commands: [
+                        { type: 'content', content: () => <DropDown label="Font" labelMode="hidden" size="sm" style="inline-size: 9rem" items={FONTS} x-model={() => s.font} /> },
+                        { type: 'content', content: () => <NumberBox label="Size" labelMode="hidden" size="sm" style="inline-size: 6.5rem" min={6} max={96} x-model={() => s.size} /> },
+                        {
+                            type: 'row',
+                            commands: [
+                                { text: 'Bold', icon: letter('B', 'font-weight: 700'), type: 'toggle', pressed: () => s.bold, click: () => (s.bold = !s.bold) },
+                                { text: 'Italic', icon: letter('I', 'font-style: italic'), type: 'toggle', pressed: () => s.italic, click: () => (s.italic = !s.italic) },
+                                { text: 'Underline', icon: letter('U', 'text-decoration: underline'), type: 'toggle', pressed: () => s.underline, click: () => (s.underline = !s.underline) }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    text: 'Styles',
+                    glyph: 'star',
+                    priority: 2,
+                    commands: [
+                        {
+                            type: 'gallery',
+                            text: 'Styles',
+                            columns: 3,
+                            value: () => s.style,
+                            items: STYLES.map(st => ({ key: st.key, text: st.text, icon: () => <span class="rb-style" style={st.look}>Aa</span> })),
+                            click: e => {
+                                s.style = String(e.item?.key);
+                                s.told = `style: ${e.item?.text}`;
+                            }
+                        }
+                    ]
+                },
+                {
+                    text: 'Editing',
+                    glyph: 'search',
+                    priority: 1,
+                    commands: [
+                        { text: 'Find', glyph: 'search', click: run('find') },
+                        { text: 'Replace', glyph: 'pencil', click: run('replace') },
+                        { text: 'Select', glyph: 'check', type: 'menu', menu: [{ text: 'Select all', click: run('select all') }, { text: 'Select similar', click: run('select similar') }] }
+                    ]
+                }
+            ]
+        },
+        {
+            key: 'insert',
+            text: '&Insert',
+            groups: [
+                {
+                    text: 'Tables',
+                    commands: [{ text: 'Table', glyph: 'table', size: 'large', type: 'menu', menu: [{ text: 'Insert a table', click: run('insert table') }, { text: 'Draw a table', click: run('draw table') }] }]
+                },
+                {
+                    text: 'Illustrations',
+                    commands: [
+                        { text: 'Chart', glyph: 'chart', size: 'large', click: run('chart') },
+                        { type: 'separator' },
+                        { text: 'Picture', glyph: 'file', click: run('picture') },
+                        { text: 'Date', glyph: 'calendar', click: run('date') },
+                        { text: 'Time', glyph: 'clock', click: run('time') }
+                    ]
+                }
+            ]
+        },
+        {
+            key: 'view',
+            text: '&View',
+            groups: [
+                {
+                    text: 'Show',
+                    commands: [
+                        { text: 'Ruler', glyph: 'columns', type: 'toggle', pressed: () => s.ruler, click: () => (s.ruler = !s.ruler) },
+                        { text: 'Grid', glyph: 'table', type: 'toggle', pressed: () => s.grid, click: () => (s.grid = !s.grid) }
+                    ]
+                },
+                { text: 'Zoom', commands: [{ text: 'Zoom out', glyph: 'zoom-out', size: 'large', click: run('zoom out') }] }
+            ]
+        },
+        {
+            key: 'picture',
+            text: 'Picture &format',
+            context: 'Picture',
+            visible: () => s.picture,
+            groups: [
+                {
+                    text: 'Adjust',
+                    commands: [
+                        { text: 'Crop', glyph: 'split', size: 'large', click: run('crop') },
+                        { text: 'Rotate', glyph: 'repeat', click: run('rotate') },
+                        { text: 'Lock', glyph: 'lock', click: run('lock') }
+                    ]
+                }
+            ]
+        }
+    ];
+
+    const quick: RibbonCommand[] = [
+        { key: 'save', text: 'Save', glyph: 'save', click: run('save') },
+        { key: 'undo', text: 'Undo', glyph: 'undo', click: run('undo') }
+    ];
+
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <RibbonMenu
+                class="rb-editor"
+                items={items}
+                x-model={() => s.tab}
+                appButton="&File"
+                onAppButton={() => (s.menu = true)}
+                quickCommands={quick}
+                barEnd={
+                    <Stack orientation="horizontal" gap="sm" align="center">
+                        <TextBox label="Search" labelMode="hidden" placeholder="Search" size="sm" style="inline-size: 12rem" />
+                        <Button text="Share" size="sm" onclick={run('share')} />
+                    </Stack>
+                }
+            />
+            <Stack orientation="horizontal" gap="md" wrap align="center">
+                <Switch label="A picture is chosen" x-model={() => s.picture} />
+                <output class="rb-editor-told">{() => `Last command: ${s.told}`}</output>
+            </Stack>
+            <AppMenu
+                label="File"
+                x-model={() => s.menu}
+                items={[
+                    { key: 'info', text: '&Info', glyph: 'info', page: () => <p>Quarterly report.docx</p> },
+                    { key: 'save', text: '&Save', glyph: 'save', click: run('save') }
+                ]}
+            />
+        </Stack>
+    );
+}
+```
+
+## Topics
+
+| Page | What it covers |
+| --- | --- |
+| `[Commands](ribbonmenu-commands.md)` | The sizes and types of commands: buttons, toggles, split buttons, menus, rows, the app’s own content and galleries. |
+| `[Layouts and room](ribbonmenu-layouts.md)` | The classic and the simplified layout, how groups give way in less room, and scrolling. |
+| `[Showing and keys](ribbonmenu-display.md)` | Showing only the tabs or hiding the menu, the button before the tabs, the quick commands and the key hints. |
+| `[Customization](ribbonmenu-customization.md)` | What the user can hide, move and add, and how to save it. |
+| `[Programmatic changes](ribbonmenu-programmatic.md)` | Adding, removing, moving and changing tabs, groups and commands by path. |
+| `[API reference](ribbonmenu-api.md)` | Props, fields, members, events, styling hooks and tokens. |
+
+## Keyboard
+
+| Key | Action |
+| --- | --- |
+| `Arrow Left, Arrow Right` | On the tabs: the previous or the next tab, shown. In the commands: the previous or the next command. |
+| `Home, End` | The first or the last tab, or command of the tab. |
+| `Arrow Down` | From the tabs: into the commands of the tab shown, opening them over the page when only the tabs are shown. |
+| `Tab, Shift+Tab` | The tabs are one stop, each group is one stop. |
+| `Escape` | From the commands: back to the tab shown. Commands open over the page close. |
+| `Alt, F10` | Shows the key hints: a letter on each tab, then on each command. See [Showing and keys](ribbonmenu-display.md#keys). |
+| `Alt + the access key` | Shows the tab whose text marks that letter with `&`, or presses the button before the tabs. |
+| `Ctrl+F1, a double-click on a tab` | Shows only the tabs, or the commands always again. |
+| `Shift+F10, the Menu key` | Opens the context menu of the command or group with focus. |
+
+## Accessibility
+
+| Topic | Details |
+| --- | --- |
+| `Tabs` | The tabs are a `tablist` named by `label` or by the language pack, each tab a `tab` that controls its `tabpanel`. A tab of a context has the context’s name as its description. |
+| `Groups` | Each group is a `group` named by its name. The button beside the name names the group in its tooltip. |
+| `Commands` | A small command is named by its text, shown as its tooltip. A toggle reports `aria-pressed`, a menu its `aria-expanded`. |
+| `Focus` | The tabs are one Tab stop and each group is one Tab stop. Focus never moves without the user. |
+| `Motion` | The layouts and the menus open with the motion tokens, and without motion when the user prefers reduced motion. |
+
+## Localization
+
+The menu’s own texts come from `uiLocale.strings`: the name of the tabs (`ribbonMenuLabel`), the buttons it adds (`ribbonMenuMore`, `ribbonMenuSimple`, `ribbonMenuClassic`, `ribbonMenuTabs`, `ribbonMenuReveal`), the quick commands (`ribbonMenuQuick`) and its context menu. They change with the language at once.
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# RibbonMenu: Commands
+
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+
+A group holds commands of three sizes and eight types. Every field of a command is a value or a function the menu follows, so the commands change with the application’s state.
+
+## Every command
+
+This menu does not give way (`adaptive: false`), so every command keeps the size it is given; scroll the commands to see them all.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { DropDown, RibbonMenu, Stack, type RibbonTab } from '@motifx-community/ui';
+
+const COLORS = [
+    { key: 'ink', text: 'Ink', color: '#1f2937' },
+    { key: 'sea', text: 'Sea', color: '#0e7490' },
+    { key: 'leaf', text: 'Leaf', color: '#15803d' },
+    { key: 'sun', text: 'Sun', color: '#b45309' },
+    { key: 'rose', text: 'Rose', color: '#be123c' },
+    { key: 'dusk', text: 'Dusk', color: '#6d28d9' }
+];
+
+/** Every size and type of command, in one tab. It does not give way, so every command keeps its size; what does not fit scrolls. */
+export default function CommandTypes() {
+    const s = reactive({ told: 'nothing yet', bold: false, wrap: true, color: 'sea', zoom: '100%' });
+    const run = (what: string) => () => (s.told = what);
+
+    const items: RibbonTab[] = [
+        {
+            key: 'commands',
+            text: '&Commands',
+            groups: [
+                {
+                    text: 'Sizes',
+                    commands: [
+                        { text: 'Large', glyph: 'star', size: 'large', click: run('large') },
+                        { text: 'Medium', glyph: 'star', click: run('medium') },
+                        { text: 'Medium too', glyph: 'star', click: run('medium too') },
+                        { text: 'Small', glyph: 'star', size: 'small', click: run('small') }
+                    ]
+                },
+                {
+                    text: 'Types',
+                    commands: [
+                        { text: 'Split', glyph: 'save', size: 'large', type: 'split', click: run('split'), menu: [{ text: 'Save a copy', click: run('save a copy') }] },
+                        { text: 'Bold', glyph: 'pencil', type: 'toggle', pressed: () => s.bold, click: () => (s.bold = !s.bold) },
+                        { text: 'Wrap', glyph: 'columns', type: 'toggle', pressed: () => s.wrap, click: () => (s.wrap = !s.wrap) },
+                        { text: 'Export', glyph: 'download', type: 'menu', menu: [{ text: 'As a PDF', click: run('pdf') }, { text: 'As a picture', click: run('picture') }] },
+                        { type: 'separator' },
+                        { type: 'row', commands: [{ text: 'Undo', glyph: 'undo', click: run('undo') }, { text: 'Repeat', glyph: 'repeat', click: run('repeat') }, { text: 'Delete', glyph: 'trash', click: run('delete') }] },
+                        { type: 'content', content: () => <DropDown label="Zoom" labelMode="hidden" size="sm" style="inline-size: 7rem" items={['50%', '100%', '200%']} x-model={() => s.zoom} /> }
+                    ]
+                },
+                {
+                    text: 'Gallery',
+                    priority: 1,
+                    commands: [
+                        {
+                            type: 'gallery',
+                            text: 'Colors',
+                            columns: 3,
+                            value: () => s.color,
+                            items: COLORS.map(c => ({ key: c.key, text: c.text, icon: () => <span class="rb-swatch" style={`display: block; inline-size: 1.25rem; block-size: 1.25rem; border-radius: 50%; background: ${c.color}`} /> })),
+                            click: e => {
+                                s.color = String(e.item?.key);
+                                s.told = `color: ${e.item?.text}`;
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ];
+
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <RibbonMenu class="rb-types" items={items} layoutSwitch={false} adaptive={false} />
+            <output class="rb-types-told">{() => `Last command: ${s.told}`}</output>
+        </Stack>
+    );
+}
+```
+
+## Sizes
+
+| Size | Description |
+| --- | --- |
+| ``large`` | The icon above the text, as high as the group. A gallery is large by default. |
+| ``medium`` | The icon beside the text. Medium and small commands stand three to a column. The default. |
+| ``small`` | The icon alone. The text names it and appears as its tooltip. |
+
+Every row has the same height in every tab, whatever stands in it: a field or a button. The menu keeps its height when the user moves between tabs.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| ``button`` | Runs `click`. The default. |
+| ``toggle`` | Stays pressed while `pressed` is `true`. As a function, `pressed` is followed, and `click` changes the value it reads. |
+| ``split`` | Runs `click` from its own part, and opens `menu` from the arrow beside it. |
+| ``menu`` | Opens `menu`. |
+| ``row`` | A row of small commands (`commands`), such as the commands that style text. |
+| ``content`` | Any content of the application (`content`), such as a drop-down or a number box. Made once, and kept. Give it the small size of fields, so it fits the row. |
+| ``gallery`` | Its first choices (`items`) in a row and a button that opens all of them in a grid. `value` marks the chosen one, `columns` sets how many stand in a row, and `click` receives the choice as `e.item`. |
+| ``separator`` | A line between commands. |
+
+## Groups
+
+A group has a name under its commands. With `more`, a button beside the name opens more options of the group, such as a window; `onGroupMore` reports it too. Its `glyph` or `icon` is shown on the button the group folds into when there is no room.
+
+## Tabs of a context
+
+A tab with `context`, such as one for a picture being edited, is drawn in the context color with a band over it. Show it with `visible` while the context lasts. Its context’s name is told to assistive technology, not shown.
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# RibbonMenu: Layouts and room
+
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+
+The menu has two layouts, and gives way step by step when its room shrinks: commands become smaller, groups fold, and what is left scrolls. Narrow enough, it turns compact.
+
+## Less and less room
+
+Move the slider to narrow the menu. Every group takes a step before any group takes the next. Groups with a lower `priority` give way first, and of equals, the last one first; here Editing has a higher priority. A group with `collapsible: false` never takes the last step, and `adaptive: false` turns giving way off, leaving only the scroll.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, RibbonMenu, Slider, Stack, Switch, type RibbonMenuLayout } from '@motifx-community/ui';
+import { documentTabs } from './document-tabs';
+
+/** The same menu in less and less room: the groups give way, then the commands scroll. */
+export default function Room() {
+    const s = reactive({ width: 720, layout: 'classic' as RibbonMenuLayout, adaptive: true, told: 'nothing yet' });
+    const run = (what: string) => () => (s.told = what);
+
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <Stack orientation="horizontal" gap="lg" wrap align="center">
+                <Slider label="Width" min={220} max={900} step={10} x-model={() => s.width} style="inline-size: 16rem" />
+                <ButtonGroup
+                    label="Layout"
+                    x-model={() => s.layout}
+                    items={[
+                        { value: 'classic', text: 'Classic' },
+                        { value: 'simple', text: 'Simplified' }
+                    ]}
+                />
+                <Switch label="Give way" x-model={() => s.adaptive} />
+            </Stack>
+            <RibbonMenu class="rb-room" items={documentTabs(run)} style={() => `inline-size: ${s.width}px`} layout={() => s.layout} adaptive={() => s.adaptive} onLayoutChanged={e => (s.layout = e.layout)} />
+            <output class="rb-room-told">{() => `${s.width} pixels · last command: ${s.told}`}</output>
+        </Stack>
+    );
+}
+```
+
+| Step | What changes |
+| --- | --- |
+| `1` | Large commands become medium. |
+| `2` | All commands become small: the icon alone, the text as the tooltip. A gallery becomes its button alone. |
+| `3` | The group folds into one large button with its name and glyph, which opens the group in a popup. In the simplified layout, the group moves into the “more” menu at the end of the row instead. |
+| `Then` | What still does not fit scrolls: by the buttons over the ends of the commands, the mouse wheel and a finger. |
+
+## Classic and simplified
+
+The classic layout (`layout: 'classic'`) shows the commands in columns under the names of their groups. The simplified layout (`layout: 'simple'`) shows them in a single row, without the names; a command with `simple: false` waits in the “more” menu. The button at the end of the commands switches between them (`layoutSwitch`), and `onLayoutChanged` reports the user’s choice.
+
+## Compact
+
+Narrower than the `ribbon-menu.compact-size` token, the menu shows a tab picker in place of its tabs and its commands in the simplified layout, as on a phone. `isCompact` tells whether it is compact; `layout` keeps the layout the user chose for when there is room again.
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# RibbonMenu: Showing and keys
+
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+
+The menu can show only its tabs or hide itself to leave the page more room. A button before the tabs opens the app’s main menu, quick commands are at hand from every tab, and key hints let the keyboard reach any command in a few letters.
+
+## Showing, quick commands and keys
+
+Choose how the menu is shown and where the quick commands stand. Tap Alt (or press F10) with focus in the menu to see the key hints.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, RibbonMenu, Stack, Switch, type RibbonCommand, type RibbonMenuDisplay, type RibbonQuickBarPosition } from '@motifx-community/ui';
+import { documentTabs } from './document-tabs';
+
+/** How the menu is shown, the button before the tabs, the quick commands and the key hints. */
+export default function Display() {
+    const s = reactive({ display: 'always' as RibbonMenuDisplay, quick: 'start' as RibbonQuickBarPosition, hints: true, told: 'nothing yet' });
+    const run = (what: string) => () => (s.told = what);
+    const quick: RibbonCommand[] = [
+        { key: 'save', text: 'Save', glyph: 'save', click: run('save') },
+        { key: 'undo', text: 'Undo', glyph: 'undo', click: run('undo') }
+    ];
+
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <Stack orientation="horizontal" gap="lg" wrap align="center">
+                <ButtonGroup
+                    label="Show the commands"
+                    x-model={() => s.display}
+                    items={[
+                        { value: 'always', text: 'Always' },
+                        { value: 'tabs', text: 'Only the tabs' },
+                        { value: 'auto', text: 'Hide automatically' }
+                    ]}
+                />
+                <ButtonGroup
+                    label="Quick commands"
+                    x-model={() => s.quick}
+                    items={[
+                        { value: 'start', text: 'In the row of tabs' },
+                        { value: 'below', text: 'Under the commands' },
+                        { value: 'hidden', text: 'Hidden' }
+                    ]}
+                />
+                <Switch label="Key hints" x-model={() => s.hints} />
+            </Stack>
+            <RibbonMenu
+                class="rb-display"
+                items={documentTabs(run)}
+                display={() => s.display}
+                quickBar={() => s.quick}
+                keyHints={() => s.hints}
+                quickCommands={quick}
+                appButton="&File"
+                onAppButton={run('the File button')}
+                onDisplayChanged={e => (s.display = e.display)}
+            />
+            <output class="rb-display-told">{() => `Last command: ${s.told}`}</output>
+        </Stack>
+    );
+}
+```
+
+## Showing the commands
+
+| display | What is shown |
+| --- | --- |
+| ``always`` | The tabs and the commands. The default. |
+| ``tabs`` | Only the tabs. A tab opens its commands over the page; they close after a command, on Escape, on a click elsewhere and when focus leaves. |
+| ``auto`` | A thin strip. It opens the whole menu over the page, which closes the same way. |
+
+A double-click on a tab and Ctrl+F1 switch between `always` and `tabs`; the menu’s context menu offers all three. The user’s choice is reported by `onDisplayChanged` and kept in `customization`.
+
+## The button before the tabs and the ends of the row
+
+`appButton` is the text of a button before the tabs, drawn in the accent color, such as one that opens an `AppMenu`; `onAppButton` reports it. `barStart` and `barEnd` hold any content of the app at the ends of the row of tabs: a search field, a button, an editor.
+
+## Quick commands
+
+`quickCommands` are small commands pressed from any tab. The user adds others from a command’s context menu, and removes them the same way. `quickBar` places them in the row of tabs (`start`), under the commands (`below`) or nowhere (`hidden`).
+
+## Key hints
+
+| When | What happens |
+| --- | --- |
+| `On the tabs` | Each tab shows its access key (the letter after `&` in its text), else its first letter. The button before the tabs has a letter too, and the quick commands have digits. |
+| `On the commands` | A command shows its `keyHint`, else its access key, else its first letter. Several commands starting with the same letter have a letter and a digit. |
+| `Typing` | The letters press what they stand on. A tab goes on to the letters of its commands; a command ends the hints. Typing the first of two letters hides the others. |
+| `Escape` | Goes back one level: from the commands to the tabs, then ends the hints. Any other key, a click and leaving the page end them too. |
+
+Alt and F10 reach the menu that has focus, else the first menu of the page. `keyHints: false` turns them off, and `showKeyHints()` shows them programmatically.
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# RibbonMenu: Customization
+
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+
+Users arrange the menu from its context menu: they hide what they never use, move what they use most, and add commands to the quick commands. Everything they change is one plain object, to save and give back.
+
+## Arranging and saving
+
+Right-click a command or a group, or press Shift+F10 on it. Here each change is saved in the browser and given back when the page opens again. Paste is `fixed`: it cannot be hidden or moved.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Button, RibbonMenu, Stack, type RibbonMenuCustomization } from '@motifx-community/ui';
+import { documentTabs } from './document-tabs';
+
+const KEY = 'docs.ribbon.customization';
+
+function load(): RibbonMenuCustomization | null {
+    try {
+        return JSON.parse(localStorage.getItem(KEY) ?? 'null') as RibbonMenuCustomization | null;
+    } catch {
+        return null;
+    }
+}
+
+/** What the user changes with the context menu is saved, and given back when the page opens again. */
+export default function Customize() {
+    const s = reactive({ saved: load(), told: 'nothing yet' });
+    const run = (what: string) => () => (s.told = what);
+
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <RibbonMenu
+                class="rb-customize"
+                items={documentTabs(run)}
+                customization={() => s.saved}
+                onCustomized={e => {
+                    localStorage.setItem(KEY, JSON.stringify(e.customization));
+                    s.saved = e.customization;
+                }}
+            />
+            <Stack orientation="horizontal" gap="md" wrap align="center">
+                <Button
+                    text="Forget the changes"
+                    variant="outline"
+                    onclick={() => {
+                        localStorage.removeItem(KEY);
+                        s.saved = {};
+                    }}
+                />
+                <output class="rb-customize-told">{() => `Last command: ${s.told}`}</output>
+            </Stack>
+            <pre class="rb-customize-json" style="margin: 0; white-space: pre-wrap">{() => JSON.stringify(s.saved ?? {}, null, 2)}</pre>
+        </Stack>
+    );
+}
+```
+
+## The context menu
+
+| Where | What the user can do |
+| --- | --- |
+| `On a command` | Add it to the quick commands or remove it, hide it, move it earlier or later in its group. |
+| `On a group` | Hide the group, move it earlier or later in its tab. |
+| `Always` | Show the hidden commands again, choose the layout, how the commands are shown and where the quick commands stand, and undo all changes. |
+
+`customizable: false` leaves the browser’s own context menu. A group or a command with `fixed: true` cannot be hidden or moved.
+
+## Saving
+
+`onCustomized` reports everything the user changed so far as a `RibbonMenuCustomization`; give it back with `customization` and the menu starts from it. Groups and commands are named by their keys joined with `/`, so give them keys: a missing key is the position, which changes when the app adds items.
+
+```tsx
+{
+  "hidden": ["home/editing/filter"],
+  "order": { "home/clipboard": ["copy", "cut", "paste"] },
+  "quick": ["home/insert/table"],
+  "display": "tabs"
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `hidden` | `string[]` | The groups and commands the user hid. |
+| `order` | `Record<string, string[]>` | The order the user gave: a tab’s groups under its key, a group’s commands under its path. |
+| `quick` | `string[]` | The commands the user added to the quick commands. |
+| `layout, display, quickBar` |  | The layout, the way the commands are shown and the place of the quick commands, as the user chose them. |
+
+The menu never changes the tabs, groups and commands the app gives: hidden and moved items are drawn from its own copy of the user’s changes. `findCommand(path)` finds a command by its path.
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# RibbonMenu: Programmatic changes
+
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+
+Tabs, groups and commands can be added, removed, moved and changed at any time, by their paths. The menu redraws only what changed: groups and commands that stay keep their buttons, their state and their place.
+
+## Changes by path
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Button, RibbonMenu, Stack } from '@motifx-community/ui';
+import { documentTabs } from './document-tabs';
+
+/** Tabs, groups and commands added, removed, moved and changed by path. */
+export default function Programmatic() {
+    const s = reactive({ told: 'nothing yet', changes: 0, extra: 0, dateShown: true });
+    const run = (what: string) => () => (s.told = what);
+    let menu!: RibbonMenu;
+
+    const addTab = () =>
+        menu.addTab({
+            key: 'review',
+            text: '&Review',
+            groups: [{ key: 'proofing', text: 'Proofing', commands: [{ key: 'spelling', text: 'Spelling', glyph: 'check', size: 'large', click: run('spelling') }] }]
+        });
+    const addCommand = () => {
+        s.extra++;
+        menu.addCommand('home/clipboard', { key: `extra${s.extra}`, text: `Extra ${s.extra}`, glyph: 'star', click: run(`extra ${s.extra}`) });
+    };
+    const toggleDate = () => {
+        s.dateShown = !s.dateShown;
+        menu.update('home/insert/date', { visible: s.dateShown });
+    };
+    const reset = () => {
+        menu.items = documentTabs(run);
+        s.extra = 0;
+        s.dateShown = true;
+    };
+
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <Stack orientation="horizontal" gap="sm" wrap>
+                <Button text="Add a tab" variant="outline" onclick={addTab} />
+                <Button text="Add a command" variant="outline" onclick={addCommand} />
+                <Button text="Rename Cut" variant="outline" onclick={() => menu.update('home/clipboard/cut', { text: 'Cut out' })} />
+                <Button text="Hide or show Date" variant="outline" onclick={toggleDate} />
+                <Button text="Move Editing first" variant="outline" onclick={() => menu.move('home/editing', 0)} />
+                <Button text="Remove Insert" variant="outline" onclick={() => menu.remove('home/insert')} />
+                <Button text="Start again" variant="outline" onclick={reset} />
+            </Stack>
+            <RibbonMenu class="rb-programmatic" ref={(m: RibbonMenu) => (menu = m)} items={documentTabs(run)} onItemsChanged={() => s.changes++} />
+            <output class="rb-programmatic-told">{() => `${s.changes} changes · last command: ${s.told}`}</output>
+        </Stack>
+    );
+}
+```
+
+## Methods
+
+| Method | Description |
+| --- | --- |
+| `addTab(tab, index?)` | Adds a tab at `index`, the end by default. |
+| `addGroup(tabPath, group, index?)` | Adds a group to a tab. |
+| `addCommand(parentPath, command, index?)` | Adds a command to a group (`tab/group`) or to a row (`tab/group/row`). |
+| `remove(path)` | Removes a tab, a group or a command. |
+| `move(path, index, toParent?)` | Moves it to `index` in its list, or in the list at `toParent`: a group to another tab, a command to another group or row. |
+| `update(path, changes)` | Changes some of its fields, such as `text`, `visible`, `enabled` or `glyph`; the others stay as they are. |
+| `findTab(key), findGroup(path), findCommand(path)` | The tab, group or command as it is now. |
+| `beginUpdate(), endUpdate()` | Holds the changes until `endUpdate()`, which applies them at once. |
+
+Each method returns `false` when nothing changed, such as for a path that does not exist.
+
+```tsx
+menu.beginUpdate();
+menu.addGroup('home', { key: 'styles', text: 'Styles', commands: [] }, 1);
+menu.addCommand('home/styles', { key: 'normal', text: 'Normal', glyph: 'star' });
+menu.update('home/clipboard/paste', { enabled: false });
+menu.endUpdate();
+```
+
+## Paths
+
+A path names an item by its keys joined with `/`: `home` is a tab, `home/clipboard` a group, `home/clipboard/paste` a command, and a fourth part a command of a row. A missing key is the position, which changes when items are added or removed before it, so give the items you change keys.
+
+## Your data
+
+The methods never change the tabs, groups and commands you gave. Each change makes a new list, with new objects only along the changed path, and it becomes `items`. `onItemsChanged` reports the new list: keep it in your state when you save the menu or bind `items` to it. When you keep the tabs in reactive state, you can also change that state directly; the menu follows it, and with plain data `refresh()` reads it again.
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# RibbonMenu: API reference
+
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+
+Everything `RibbonMenu` takes, offers and reports. Every prop is also a settable property, and a function is followed.
+
+## Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `items` | `Bind<readonly RibbonTab[]>` | `[]` | The tabs. Nothing is there until they are given. |
+| `value` | `Bind<string \| number \| null>` | the first tab | The key of the tab shown. `x-model` provides two-way binding. |
+| `label` | `Bind<string>` | the language pack | Names the tabs for assistive technology. The same property as `text`. |
+| `layout` | `Bind<'classic' \| 'simple'>` | `'classic'` | The commands in columns under the names of their groups, or in a single row. |
+| `layoutSwitch` | `Bind<boolean>` | `true` | The button at the end of the commands that switches the layout. |
+| `adaptive` | `Bind<boolean>` | `true` | Groups give way step by step when the commands do not fit. Off, they only scroll. |
+| `display` | `Bind<'always' \| 'tabs' \| 'auto'>` | `'always'` | The commands always, only the tabs, or a strip that opens the menu over the page. |
+| `appButton` | `Bind<string>` | none | The text of the button before the tabs. `&` gives it an access key. |
+| `quickCommands` | `Bind<readonly RibbonCommand[]>` | `[]` | The quick commands, pressed from any tab. |
+| `quickBar` | `Bind<'start' \| 'below' \| 'hidden'>` | `'start'` | Where the quick commands stand. |
+| `barStart, barEnd` | `Bind<ComponentBase \| null>` | none | Any content of the app at the start or the end of the row of tabs. |
+| `keyHints` | `Bind<boolean>` | `true` | Alt and F10 show the key hints. |
+| `customizable` | `Bind<boolean>` | `true` | The context menu that lets the user hide, move and add commands. |
+| `customization` | `Bind<RibbonMenuCustomization \| null>` | none | What the user changed, to give back: the menu starts from it. |
+| `text, enabled, visible, tabStop, tabIndex` | see Control |  | Props shared by all controls. |
+
+## RibbonTab
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `key` | `string \| number` | Finds the tab, and is `value` while it is shown. The default is its position. |
+| `text` | `Bind<string>` | The text. `&` before a letter makes it the access key. |
+| `hint` | `Bind<string>` | A tooltip. |
+| `groups` | `Bind<readonly RibbonGroup[]>` | The groups, made the first time the tab is shown. |
+| `context` | `Bind<string>` | Makes it a tab of a context, drawn in the context color. |
+| `visible, enabled` | `Bind<boolean>` | `false` removes or dims the tab. |
+| `data` | `unknown` | A custom application value. |
+
+## RibbonGroup
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `key` | `string \| number` | Finds the group. The default is its position. |
+| `text` | `Bind<string>` | The name under the commands. |
+| `commands` | `Bind<readonly RibbonCommand[]>` | The commands. |
+| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | Shown on the button the group folds into. |
+| `priority` | `Bind<number>` | Lower gives way first. The default is `0`. |
+| `collapsible` | `Bind<boolean>` | `false` keeps it from folding or moving into the “more” menu. |
+| `fixed` | `Bind<boolean>` | `true` keeps the user from hiding or moving it. |
+| `more, moreHint` | `(e) => void`, `Bind<string>` | The button beside the name, and its tooltip. |
+| `visible` | `Bind<boolean>` | `false` removes the group. |
+| `data` | `unknown` | A custom application value. |
+
+## RibbonCommand
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `key` | `string \| number` | Finds the command. The default is its position. |
+| `type` | `Bind<RibbonCommandType>` | `button`, `toggle`, `split`, `menu`, `row`, `content`, `gallery`, `separator`. The default is `'button'`. |
+| `text, hint` | `Bind<string>` | The text (`&` marks the access key) and a tooltip. |
+| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | A glyph name, or an image, an element or a component. |
+| `size` | `Bind<'large' \| 'medium' \| 'small'>` | The default is `'medium'` (`'large'` for a gallery). |
+| `pressed` | `Bind<boolean>` | The state of a toggle. |
+| `menu` | `Bind<readonly MenuItem[]>` | The menu of a `menu` or `split` command. |
+| `commands` | `Bind<readonly RibbonCommand[]>` | The commands of a `row`. |
+| `content` | `() => ComponentBase` | The content of a `content` command, made once. |
+| `items, value, columns` | `Bind<…>` | The choices of a `gallery`, the one marked as chosen, and how many stand in a row. |
+| `simple` | `Bind<boolean>` | `false` leaves it out of the simplified row. |
+| `keyHint` | `Bind<string>` | The letters that press it while key hints are shown. |
+| `fixed` | `Bind<boolean>` | `true` keeps the user from hiding or moving it. |
+| `enabled, visible` | `Bind<boolean>` | `false` dims or removes the command. |
+| `click` | `(e: RibbonCommandClickEventArgs) => void` | Occurs when it is pressed; for a gallery, `e.item` is the choice. |
+| `data` | `unknown` | A custom application value. |
+
+A gallery’s `RibbonGalleryItem` has `key`, `text`, `glyph`, `icon`, `hint`, `enabled` and `data`.
+
+## Members
+
+| Member | Returns | Description |
+| --- | --- | --- |
+| `select(key)` | `boolean` | Shows a tab, as a click does. `false` when `onSelecting` refused. |
+| `findTab(key), findGroup(path), findCommand(path)` | the object | Finds a tab by its key, a group or a command by its path (`tab/group/command`), as it is now. |
+| `addTab, addGroup, addCommand, remove, move, update` | `boolean` | Changes by path; see [Programmatic changes](ribbonmenu-programmatic.md). `false` when nothing changed. |
+| `beginUpdate(), endUpdate()` | `void` | Holds the changes by path, then applies them at once. |
+| `controlOf(command)` | `ComponentBase \| null` | The control made for a command, once its tab has been shown. |
+| `openOver(open)` | `void` | Opens or closes the commands over the page when only the tabs are shown or the menu hides itself. |
+| `showKeyHints()` | `void` | Shows the key hints, as Alt does. |
+| `refresh()` | `void` | Reads the tabs, groups and commands again after they were changed in place. |
+| `shownKey, isOpenOver, isCompact` | read-only | The tab shown, whether the commands are open over the page, whether the menu is compact. |
+| `customization` | `RibbonMenuCustomization` | What the user changed so far. |
+
+## Events
+
+| Event | Arguments | Description |
+| --- | --- | --- |
+| `onSelecting` | `RibbonTabSelectingEventArgs` | Before another tab is shown. Setting `cancel` keeps the tab shown now. |
+| `onSelectionChanged` | `RibbonTabSelectionChangedEventArgs` | After another tab is shown. |
+| `onCommandClick` | `RibbonCommandClickEventArgs` | A command was pressed, after its own `click`. |
+| `onGroupMore` | `RibbonGroupMoreEventArgs` | The button beside a group’s name was pressed. |
+| `onLayoutChanged` | `RibbonMenuLayoutChangedEventArgs` | The user switched the layout. |
+| `onDisplayChanged` | `RibbonMenuDisplayChangedEventArgs` | The user chose another way to show the commands. |
+| `onCustomized` | `RibbonMenuCustomizedEventArgs` | The user hid, moved or added a command, or undid the changes. |
+| `onItemsChanged` | `RibbonMenuItemsChangedEventArgs` | A change by path made a new list of tabs, to keep. |
+| `onAppButton` | `RibbonAppButtonEventArgs` | The button before the tabs was pressed. |
+
+## Styling
+
+| Hook | Description |
+| --- | --- |
+| `.mx-ribbon-menu` | The menu. `data-layout`, `data-display`, `data-floating`, `data-compact`. |
+| `__reveal, __frame` | The strip of a menu hidden automatically, and the frame it opens. |
+| `__bar, __bar-start, __app, __quick, __picker, __tabs, __tab, __bar-end` | The row of tabs and its parts. A tab has `data-key` and, of a context, `data-context`. |
+| `__body, __stage, __panel, __scroll, __switch` | The surface of the commands, where they scroll, a tab’s groups, the scroll buttons and the layout button. |
+| `__group, __group-inner, __commands, __group-foot, __group-label, __more, __fold, __drop, __divider` | A group and its parts. `data-folded`, `data-out`. |
+| `__command, __row, __content, __separator, __gallery, __tile, __overflow` | Commands; `data-ribbon-size` is the size drawn. |
+| `__hints, __hint` | The key hints. |
+
+### Component tokens
+
+| Token | Description |
+| --- | --- |
+| `ribbon-menu.rows, row-height, compact-size, indicator-inset, font-family` | The rows of a group and their height, the width under which the menu is compact, the inset of the mark of the tab shown, the font. |
+| `ribbon-menu.large, medium, small, more, switch, scroll, picker, gallery-open` | Places: the variant, tone and size of the buttons the menu draws. |
+| `ribbon-menu.tab, indicator, context-band, app, quick, reveal, frame, body, stage` | Units of the row of tabs and the surfaces. |
+| `ribbon-menu.panel, group, commands, group-foot, group-label, divider, separator, row, large-face, large-icon` | Units of the groups and commands. |
+| `ribbon-menu.gallery, gallery-grid, tile, tile-icon, drop, hint` | Units of galleries, folded groups and key hints. |
+
+## Feedback
+
+Loading issues…
 
 
 ---
@@ -40519,6 +41761,42 @@ export interface Order {
 }
 ```
 
+## Custom filter editors
+
+A column's `filterEditor` replaces the filter row's editor of its type. A `Field` it returns, such as a `NumberBox` with a minimum, is bound to the column's filter both ways. Any other component receives a `FilterEditorContext`: it writes the value with `ctx.setValue` (`ctx.clear()` removes it) and hears the filter change elsewhere, such as the filters being cleared, through `ctx.onChanged`. `ctx.operator` is the condition chosen in the cell. The editor for a cell, the column's `editor`, is separate: see [Editing](datagrid-editing.md).
+
+```tsx
+/** An order, as stored by the sample server. */
+export interface Order {
+  id: number;
+  customer: string;
+  city: string;
+  date: string;
+  status: string;
+  paid: boolean;
+  amount: number;
+  note: string;
+}
+```
+
+## List choices from a server
+
+A list column's `options` can be a function, which can return a promise. In a cell's editor it is called with the row, so the choices can depend on it. Everywhere else (the cell text, the filter row, the search panel, the filter builder and pasted text) it is called once with `row` `null`, returns every choice, and its answer is kept until `refresh()`. Until it arrives, the cells show the values and the filter row's list says it is loading. Here the server is asked once, however many places use the choices.
+
+```tsx
+/** An order, as stored by the sample server. */
+export interface Order {
+  id: number;
+  customer: string;
+  city: string;
+  date: string;
+  status: string;
+  paid: boolean;
+  amount: number;
+  note: string;
+}
+```
+
 ## Filter panel and builder
 
 `settings.filterPanel` adds a panel below the rows that shows the filter value as text, such as `[City] Equals 'Ankara' And [Amount] Is greater than '900.00'`, using column titles, formats and lookup text. Clicking it opens the kit's [FilterBuilder](filterbuilder.md) in a modal window with every column (`filterBuilder` disables it for a column), and with “is any of” and “is none of” for each one. OK applies the value as the filter value, and Cancel and Escape discard it. The check box turns the filter value off and on, and Clear removes it.
@@ -40717,6 +41995,75 @@ export interface Order {
   paid: boolean;
   amount: number;
   note: string;
+}
+```
+
+`FilterEditors.tsx`
+
+```tsx
+import { Component } from '@motifx/core';
+import { ButtonGroup, DataGrid, NumberBox, type FilterEditorContext, type GridColumn } from '@motifx-community/ui';
+import type { Order } from './order';
+import { columns, makeOrders } from './orders';
+
+/** The status chosen from buttons, written to the filter through the context and redrawn when the filter changes. */
+function statusButtons(ctx: FilterEditorContext<Order>) {
+    const box = new Component<HTMLDivElement>('div');
+    const buttons = new ButtonGroup({
+        label: 'Status',
+        size: 'sm',
+        selection: 'single',
+        allowEmpty: true,
+        items: [
+            { value: 'Approved', text: 'Approved' },
+            { value: 'Shipped', text: 'Shipped' },
+            { value: 'Delivered', text: 'Delivered' }
+        ],
+        value: ctx.value as string,
+        onValueChanged: e => e.byUser && ctx.setValue(e.value)
+    });
+    ctx.onChanged(value => (buttons.value = (value as string) ?? null));
+    box.controls.add(buttons);
+    return box;
+}
+
+/** Each column's own filter editor: buttons for the status, a number box that takes no negative amount. */
+export default function FilterEditors() {
+    const own: GridColumn<Order>[] = columns.map(c =>
+        c.field === 'status'
+            ? { ...c, width: 260, filterEditor: statusButtons }
+            : c.field === 'amount'
+              ? { ...c, filterOperators: ['>=', '<='], filterEditor: () => new NumberBox({ labelMode: 'hidden', size: 'sm', min: 0, step: 100 }) }
+              : c
+    );
+    return <DataGrid class="dg-filter-editors" style="block-size: 24rem" rows={makeOrders(200)} rowKey="id" columns={own} label="Orders with their own filter editors" settings={{ filterRow: true }} />;
+}
+```
+
+`ServerChoices.tsx`
+
+```tsx
+import { reactive } from '@motifx/core';
+import { DataGrid, type GridColumn, type ListOption } from '@motifx-community/ui';
+import type { Order } from './order';
+import { columns, makeOrders } from './orders';
+
+const PLATES: Record<string, string> = { Ankara: '06', Antalya: '07', Bursa: '16', İstanbul: '34', İzmir: '35', Konya: '42', Trabzon: '61' };
+
+/** The city choices come from a pretend server: asked once with no row, they write the cells, the filter row and the search. */
+export default function ServerChoices() {
+    const s = reactive({ asked: 0 });
+    const cities = (): Promise<readonly ListOption[]> => {
+        s.asked++;
+        return new Promise(done => setTimeout(() => done(Object.entries(PLATES).map(([city, plate]) => ({ value: city, label: `${city} (${plate})` }))), 800));
+    };
+    const own: GridColumn<Order>[] = columns.map(c => (c.field === 'city' ? { ...c, width: 150, options: cities } : c));
+    return (
+        <>
+            <DataGrid class="dg-server-choices" style="block-size: 24rem" rows={makeOrders(200)} rowKey="id" columns={own} label="Orders with cities from a server" settings={{ filterRow: true, searchPanel: true }} />
+            <output class="dg-server-choices-asked">{() => `The server was asked ${s.asked} times`}</output>
+        </>
+    );
 }
 ```
 
@@ -41055,7 +42402,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `searchLimit` | The maximum number of items containing the search panel's text that the search converts to keys. The default is 100. |
 | `filterSearchLimit` | The same for the header filter's search box. The default is 1000. |
 | `pageSize` | The number of items the editor's list loads per request while scrolling (with a data source). The default is 50. |
-| `parallelRequests` | With `'byKey'`, the number of simultaneous requests. The default is 6. |
+| `parallelRequests` | The number of simultaneous requests: of keys with `'byKey'`, of batches with `'batch'`. The default is 6. |
 | `pasteSearchLimit` | The number of items searched for pasted text. The default is 50. |
 
 ## Feedback
@@ -44687,7 +46034,8 @@ export default function Events() {
 | `value, format, compare` | Customizes how the value is read, how it is displayed (`Intl` options for a number or date column, such as `{ style: 'currency', currency: 'EUR' }`, which an Excel export also converts to a number format, or a function that returns the text), and how it is sorted (in-memory rows). |
 | `cell` | `(ctx) => component`: custom content, created once per pooled cell. Read `ctx.row` and `ctx.value` in getters. |
 | `editor` | `(ctx) => Field \| component`: a custom editor. A `Field` is read through its value, and any other component calls `ctx.setValue`. |
-| `required, validate, options` | An empty value is not accepted, `(value, row, context) => message`, and the choices of a list (an array, or a function `(row, context)`, which can be async). `row` is the row itself, `context.values` holds the entered values, and `context.getValue(field)` returns the entered value, otherwise the row's. |
+| `filterEditor` | `(ctx: FilterEditorContext) => Field \| component`: a custom editor of the filter row’s value. A `Field` is bound to the filter both ways, and any other component calls `ctx.setValue` and hears `ctx.onChanged`. |
+| `required, validate, options` | An empty value is not accepted, `(value, row, context) => message`, and the choices of a list (an array, or a function `(row, context)`, which can be async; outside a row, for the cell text, the filter row, the search, the filter builder and pasted text, it is called once with `row` `null` and returns every choice, kept until `refresh()`). `row` is the row itself, `context.values` holds the entered values, and `context.getValue(field)` returns the entered value, otherwise the row's. |
 | `validationRules` | Validation rules (`required`, `numeric`, `range`, `stringLength`, `pattern`, `email`, `compare`, `custom`, `async`), checked after `required` and `validate`. See [Validation rules](datagrid-forms.md#rules). |
 | `formItem` | The column in the edit form: `visible`, `colSpan`, `label`, `helpText`, `editorOptions`, `order`. |
 | `filterOperators, filterOperator` | The conditions the filter row offers for the column, and the initial condition. |

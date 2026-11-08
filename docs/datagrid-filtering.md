@@ -20,6 +20,42 @@ export interface Order {
 }
 ```
 
+## Custom filter editors
+
+A column's `filterEditor` replaces the filter row's editor of its type. A `Field` it returns, such as a `NumberBox` with a minimum, is bound to the column's filter both ways. Any other component receives a `FilterEditorContext`: it writes the value with `ctx.setValue` (`ctx.clear()` removes it) and hears the filter change elsewhere, such as the filters being cleared, through `ctx.onChanged`. `ctx.operator` is the condition chosen in the cell. The editor for a cell, the column's `editor`, is separate: see [Editing](datagrid-editing.md).
+
+```tsx
+/** An order, as stored by the sample server. */
+export interface Order {
+  id: number;
+  customer: string;
+  city: string;
+  date: string;
+  status: string;
+  paid: boolean;
+  amount: number;
+  note: string;
+}
+```
+
+## List choices from a server
+
+A list column's `options` can be a function, which can return a promise. In a cell's editor it is called with the row, so the choices can depend on it. Everywhere else (the cell text, the filter row, the search panel, the filter builder and pasted text) it is called once with `row` `null`, returns every choice, and its answer is kept until `refresh()`. Until it arrives, the cells show the values and the filter row's list says it is loading. Here the server is asked once, however many places use the choices.
+
+```tsx
+/** An order, as stored by the sample server. */
+export interface Order {
+  id: number;
+  customer: string;
+  city: string;
+  date: string;
+  status: string;
+  paid: boolean;
+  amount: number;
+  note: string;
+}
+```
+
 ## Filter panel and builder
 
 `settings.filterPanel` adds a panel below the rows that shows the filter value as text, such as `[City] Equals 'Ankara' And [Amount] Is greater than '900.00'`, using column titles, formats and lookup text. Clicking it opens the kit's [FilterBuilder](filterbuilder.md) in a modal window with every column (`filterBuilder` disables it for a column), and with “is any of” and “is none of” for each one. OK applies the value as the filter value, and Cancel and Escape discard it. The check box turns the filter value off and on, and Clear removes it.
@@ -218,6 +254,75 @@ export interface Order {
   paid: boolean;
   amount: number;
   note: string;
+}
+```
+
+`FilterEditors.tsx`
+
+```tsx
+import { Component } from '@motifx/core';
+import { ButtonGroup, DataGrid, NumberBox, type FilterEditorContext, type GridColumn } from '@motifx-community/ui';
+import type { Order } from './order';
+import { columns, makeOrders } from './orders';
+
+/** The status chosen from buttons, written to the filter through the context and redrawn when the filter changes. */
+function statusButtons(ctx: FilterEditorContext<Order>) {
+    const box = new Component<HTMLDivElement>('div');
+    const buttons = new ButtonGroup({
+        label: 'Status',
+        size: 'sm',
+        selection: 'single',
+        allowEmpty: true,
+        items: [
+            { value: 'Approved', text: 'Approved' },
+            { value: 'Shipped', text: 'Shipped' },
+            { value: 'Delivered', text: 'Delivered' }
+        ],
+        value: ctx.value as string,
+        onValueChanged: e => e.byUser && ctx.setValue(e.value)
+    });
+    ctx.onChanged(value => (buttons.value = (value as string) ?? null));
+    box.controls.add(buttons);
+    return box;
+}
+
+/** Each column's own filter editor: buttons for the status, a number box that takes no negative amount. */
+export default function FilterEditors() {
+    const own: GridColumn<Order>[] = columns.map(c =>
+        c.field === 'status'
+            ? { ...c, width: 260, filterEditor: statusButtons }
+            : c.field === 'amount'
+              ? { ...c, filterOperators: ['>=', '<='], filterEditor: () => new NumberBox({ labelMode: 'hidden', size: 'sm', min: 0, step: 100 }) }
+              : c
+    );
+    return <DataGrid class="dg-filter-editors" style="block-size: 24rem" rows={makeOrders(200)} rowKey="id" columns={own} label="Orders with their own filter editors" settings={{ filterRow: true }} />;
+}
+```
+
+`ServerChoices.tsx`
+
+```tsx
+import { reactive } from '@motifx/core';
+import { DataGrid, type GridColumn, type ListOption } from '@motifx-community/ui';
+import type { Order } from './order';
+import { columns, makeOrders } from './orders';
+
+const PLATES: Record<string, string> = { Ankara: '06', Antalya: '07', Bursa: '16', İstanbul: '34', İzmir: '35', Konya: '42', Trabzon: '61' };
+
+/** The city choices come from a pretend server: asked once with no row, they write the cells, the filter row and the search. */
+export default function ServerChoices() {
+    const s = reactive({ asked: 0 });
+    const cities = (): Promise<readonly ListOption[]> => {
+        s.asked++;
+        return new Promise(done => setTimeout(() => done(Object.entries(PLATES).map(([city, plate]) => ({ value: city, label: `${city} (${plate})` }))), 800));
+    };
+    const own: GridColumn<Order>[] = columns.map(c => (c.field === 'city' ? { ...c, width: 150, options: cities } : c));
+    return (
+        <>
+            <DataGrid class="dg-server-choices" style="block-size: 24rem" rows={makeOrders(200)} rowKey="id" columns={own} label="Orders with cities from a server" settings={{ filterRow: true, searchPanel: true }} />
+            <output class="dg-server-choices-asked">{() => `The server was asked ${s.asked} times`}</output>
+        </>
+    );
 }
 ```
 
