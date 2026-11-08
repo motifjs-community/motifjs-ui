@@ -40,7 +40,8 @@ export class KeyedItems<T = unknown> {
    * The default is `'batch'` when the service filters, otherwise `'byKey'`.
    */
   resolve: 'batch' | 'byKey';
-  batchSize = 100;
+  /** The keys per request in `'batch'` mode: few enough that a request that carries them in its address stays within common URL limits. */
+  batchSize = 20;
   /** With `'byKey'`, the number of simultaneous requests. */
   parallelRequests = 6;
   /** The number of items requested when searching for an exact text, such as pasted text. */

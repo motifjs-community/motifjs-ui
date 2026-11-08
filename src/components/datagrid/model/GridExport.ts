@@ -298,8 +298,8 @@ export class GridExport<T> {
   /** Lookup cells and groups export their texts: every key of the rows is resolved first. */
   private async loadTexts(cols: readonly GridColumn<T>[], view: GroupView | null, rows: readonly T[]) {
     const { model } = this;
-    const grouped = view ? model.groups.fields().map((f) => model.columns.get(f)) : [];
-    const lookups = [...cols, ...grouped].filter((c, i, all) => c.lookup && !c.textFrom && all.indexOf(c) === i);
+    const grouped = view ? model.groups.fields().map((f) => model.columns.get(f)).filter((c) => model.groupsByOwnValue(c)) : [];
+    const lookups = [...cols.filter((c) => !c.textFrom), ...grouped].filter((c, i, all) => c.lookup && all.indexOf(c) === i);
     if (lookups.length) await model.lookups.load(lookups, rows, (row, col) => model.value(model.rowIdOf(row), row, col));
   }
 

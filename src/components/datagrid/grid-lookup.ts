@@ -34,7 +34,7 @@ export interface GridLookup<T = any> {
    * item by key.
    */
   resolve?: 'batch' | 'byKey';
-  /** The keys per request in `'batch'` mode. The default is 100. */
+  /** The keys per request in `'batch'` mode. The default is 20, which keeps a request that carries the keys in its URL within common server limits. */
   batchSize?: number;
   /**
    * Sorts in-memory rows by the key (the default, as the service sorts) or by the displayed text (every
@@ -45,11 +45,11 @@ export interface GridLookup<T = any> {
   editor?: 'dropdown' | 'combobox' | 'lookup';
   /** The props passed to the editor, such as the `Lookup`'s `columns`. */
   editorOptions?: Record<string, unknown>;
-  /** The maximum number of items containing the search panel's text that the search converts to keys. The default is 100. */
+  /** The maximum number of items containing the search panel's text that the search converts to keys (not used when `textFrom` is a field: the search reads that field). The default is 100. */
   searchLimit?: number;
   /** The items the editor's list loads per request while it scrolls (a data source). The default is 50. */
   pageSize?: number;
-  /** The maximum number of items containing the header filter's search text that it converts to keys. The default is 1000. */
+  /** The maximum number of items containing the header filter's search text that it converts to keys (not used when `textFrom` is a field: the search reads that field). The default is 1000. */
   filterSearchLimit?: number;
   /** With `'byKey'`, the requests at the same time. The default is 6. */
   parallelRequests?: number;

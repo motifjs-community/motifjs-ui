@@ -58,6 +58,14 @@ describe('KeyedItems', () => {
     expect(service.loads.map((l) => ((l.filter as data.FilterCondition).value as number[]).length)).toEqual([100, 100, 50]);
   });
 
+  it('sends 20 keys per request by default, so a request that carries them in its address stays short', async () => {
+    const service = new Service();
+    const items = KeyedItems.of<Customer>(source(service));
+    expect(items.batchSize).toBe(20);
+    await items.request(CUSTOMERS.slice(0, 45).map((c) => c.id));
+    expect(service.loads.map((l) => ((l.filter as data.FilterCondition).value as number[]).length)).toEqual([20, 20, 5]);
+  });
+
   it('asks one key at a time with byKey, and by default for a service that cannot filter', async () => {
     const service = new Service();
     service.filters = false;

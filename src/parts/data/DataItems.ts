@@ -76,6 +76,17 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
     if (this.source?.loadMode === 'blocks') this.source.ensure(first, end);
   }
 
+  failedAt(index?: number): boolean {
+    const source = this.source;
+    if (!source) return false;
+    if (index === undefined) return source.status === 'error';
+    return source.loadMode === 'blocks' && source.isFailed(index);
+  }
+
+  retryFailed(): void {
+    void this.source?.retry();
+  }
+
   /** Every item in memory, or the loaded rows. */
   get loaded(): readonly T[] {
     const source = this.source;

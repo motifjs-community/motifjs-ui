@@ -11,7 +11,7 @@ const LOOKUP_FIELDS = [
   ['searchFields', 'The fields searched by the editor and text searches. By default, `textField` when it is a field.'],
   ['filter', '`(row, context) => FilterExpression`. Narrows the items for a row (for cascading lists, `context.getValue(\'province\')` returns the entered value, otherwise the row\'s). `row` is `null` for filter lists.'],
   ['allowClearing', '`Bind<boolean>`. Adds a clear button to the editor. The default is `false`.'],
-  ['resolve, batchSize', '`\'batch\'` (the default: keys in one request, `batchSize` 100 each) or `\'byKey\'` (one request per key).'],
+  ['resolve, batchSize', '`\'batch\'` (the default: keys in one request, `batchSize` 20 each) or `\'byKey\'` (one request per key).'],
   ['sortBy', '`Bind<\'key\' | \'text\'>`. Sorts in-memory rows by key (the default) or by displayed text.'],
   ['editor, editorOptions', '`\'dropdown\'` (the default), `\'combobox\'` or `\'lookup\'`, and props for it (such as a `Lookup`\'s `columns`). A column\'s own `editor` still takes precedence and receives the lookup in its context.'],
   ['searchLimit', 'The maximum number of items containing the search panel\'s text that the search converts to keys. The default is 100.'],

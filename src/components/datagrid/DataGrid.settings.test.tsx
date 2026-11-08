@@ -360,6 +360,26 @@ describe('settings', () => {
     rows.dispose();
     customers.dispose();
   });
+
+  it('searches the field of textFrom on the server when a lookup header filter is searched, without turning texts into keys', async () => {
+    const customers = new data.DataSource<{ id: number; name: string }, number>({
+      adapter: new data.ArrayAdapter({ data: [{ id: 1, name: 'Ada' }], key: 'id' }),
+      loadMode: 'page',
+    });
+    const rows = new data.DataSource<Row, number>({ adapter: new data.ArrayAdapter({ data: makeRows(3), key: 'id' }), loadMode: 'page' });
+    const lookup = { dataSource: customers, textField: 'name', searchFields: ['name'] } as NonNullable<GridColumn<Row>['lookup']>;
+    const grid = make({ dataSource: rows, columns: [columns[0], { field: 'amount', title: 'Customer', textFrom: 'name', lookup }] });
+    await settle();
+    const search = vi.spyOn(KeyedItems.prototype, 'search');
+    const load = vi.spyOn(rows.adapter, 'load');
+    const values = (grid as any).model.values.lookups;
+    await values.inRows('amount', 'blank', 'Name 2', 0, 10, new AbortController().signal);
+    expect(search).not.toHaveBeenCalled();
+    expect(load.mock.lastCall![0]?.filter).toEqual({ field: 'name', op: 'contains', value: 'Name 2' });
+    await grid.dispose();
+    rows.dispose();
+    customers.dispose();
+  });
 });
 
 describe('state and rows programmatically', () => {

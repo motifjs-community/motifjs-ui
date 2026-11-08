@@ -46,6 +46,9 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   private size = 0;
   private itemAt: (index: number) => T | undefined = () => undefined;
   private ensure: ((first: number, end: number) => void) | null = null;
+  /** Whether a row (or, with no index, the whole list) failed to load; a press on it loads it again. */
+  private failedAt: (index?: number) => boolean = () => false;
+  private retryFailed: () => void = () => {};
   /** With groups: the headers between the items. Without: one row per item. */
   private rows: Row[] | null = null;
   private active = -1;
@@ -81,7 +84,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
       this.frame = requestAnimationFrame(() => this.drawWindow());
     });
     // Drawn again with the list; in the kit's language again when it changes.
-    const stopEmpty = onLanguage(this, () => (this.empty.textContent = this.emptyText?.() ?? uiLocale.strings.noItems));
+    const stopEmpty = onLanguage(this, () => this.writeEmpty());
     // Another design language, theme or density: the rows have another height.
     const stopLook = onLookChanged(() => {
       this.rowHeight = 0;
@@ -102,6 +105,8 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     this.size = items.length;
     this.itemAt = (index) => items[index];
     this.ensure = null;
+    this.failedAt = () => false;
+    this.retryFailed = () => {};
     this.rows = null;
     if (this.groupOf) {
       const rows: Row[] = [];
@@ -123,6 +128,8 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     this.size = source.count;
     this.itemAt = (index) => source.at(index);
     this.ensure = source.ensure ? (first, end) => source.ensure!(first, end) : null;
+    this.failedAt = (index) => source.failedAt?.(index) ?? false;
+    this.retryFailed = () => source.retryFailed?.();
     this.rows = null;
     if (this.active >= this.size) this.active = -1;
     this.drawAll();
@@ -130,7 +137,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
 
   /** Redraws the rows in view, such as after some have loaded. */
   redraw(): void {
-    if (this.windowed) {
+    if (this.windowed && this.size) {
       this.drawn = { first: 0, end: 0 };
       this.drawWindow();
     } else {
@@ -236,6 +243,10 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
         break;
       case 'Enter': {
         const item = this.activeItem;
+        if (item === undefined && this.failedAt(this.size ? this.active : undefined)) {
+          this.retryFailed();
+          break;
+        }
         if (item === undefined || !this.enabledOf(item)) return false;
         this.chosenEmitter.fire({ item, index: this.active, event: e });
         break;
@@ -284,7 +295,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     else this.element.removeAttribute('aria-multiselectable');
     this.element.toggleAttribute('data-empty', !this.size);
     if (!this.size) {
-      this.empty.textContent = this.emptyText?.() ?? uiLocale.strings.noItems;
+      this.writeEmpty();
       this.element.append(this.empty);
       return;
     }
@@ -394,12 +405,16 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     el.setAttribute('role', 'option');
     const item = this.itemAt(index);
     if (item === undefined) {
-      el.setAttribute('aria-busy', 'true');
+      const failed = this.failedAt(index);
       el.setAttribute('aria-selected', 'false');
-      el.setAttribute('data-loading', '');
+      if (failed) el.setAttribute('data-failed', '');
+      else {
+        el.setAttribute('aria-busy', 'true');
+        el.setAttribute('data-loading', '');
+      }
       const text = el.appendChild(document.createElement('span'));
       text.className = 'mx-list__text';
-      text.textContent = uiLocale.strings.loading;
+      text.textContent = failed ? this.failedText() : uiLocale.strings.loading;
       return el;
     }
     if (!this.enabledOf(item)) el.setAttribute('aria-disabled', 'true');
@@ -437,9 +452,25 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     return el && this.element.contains(el) ? Number(el.dataset.index) : -1;
   }
 
+  /** "Could not load. Retry": a row or a list that failed, which a press loads again. */
+  private failedText(): string {
+    return `${uiLocale.strings.loadFailed} ${uiLocale.strings.retry}`;
+  }
+
+  private writeEmpty(): void {
+    const failed = this.failedAt();
+    this.empty.toggleAttribute('data-failed', failed);
+    this.empty.textContent = failed ? this.failedText() : (this.emptyText?.() ?? uiLocale.strings.noItems);
+  }
+
   private clicked(e: MouseEvent): void {
     const index = this.indexOf(e.target);
     const item = index < 0 ? undefined : this.itemAt(index);
+    const onEmpty = !this.size && isElement(e.target) && this.empty.contains(e.target);
+    if ((onEmpty && this.failedAt()) || (index >= 0 && item === undefined && this.failedAt(index))) {
+      this.retryFailed();
+      return;
+    }
     if (index < 0 || item === undefined || !this.enabledOf(item)) return;
     this.setActive(index, false);
     this.chosenEmitter.fire({ item, index, event: e });

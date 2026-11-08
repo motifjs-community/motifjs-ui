@@ -96,7 +96,10 @@ export class LookupValues<T> {
       return { values: result.values.map((v) => ({ ...entry(v.value, v.count), ...(v.text !== undefined ? { text: v.text } : {}) })), total: result.total };
     }
     if (!source.adapter.capabilities.group || !items) return null;
-    if (search) {
+    if (search && typeof col.textFrom === 'string') {
+      // The rows carry the text: the server searches it there.
+      filter = data.and(filter, data.where(col.textFrom, 'contains', search));
+    } else if (search) {
       // The text is searched in the lookup source; its keys are then looked for among the rows.
       const { items: matches } = await items.search(search, lookups.search(col), 0, Math.max(1, col.lookup?.filterSearchLimit ?? 1000));
       if (!matches.length) return { values: [], total: 0 };

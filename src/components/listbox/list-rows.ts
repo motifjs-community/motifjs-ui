@@ -25,6 +25,17 @@ export class ListRows<T> implements ItemSource<T | SelectAllRow> {
     this.items.ensure?.(Math.max(0, first - offset), Math.max(0, end - offset));
   }
 
+  failedAt(index?: number): boolean {
+    if (index === undefined) return this.items.failedAt?.() ?? false;
+    const offset = this.offset;
+    if (offset && index === 0) return false;
+    return this.items.failedAt?.(index - offset) ?? false;
+  }
+
+  retryFailed(): void {
+    this.items.retryFailed?.();
+  }
+
   private get offset(): number {
     return this.withSelectAll && this.items.count > 0 ? 1 : 0;
   }

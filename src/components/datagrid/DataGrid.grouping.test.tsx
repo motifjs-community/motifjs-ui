@@ -268,6 +268,17 @@ describe('grouping rows in memory', () => {
     expect(lines(grid).filter((l) => l.startsWith('>'))).toEqual(['> Customer: Ankara Foods (6)', '> Customer: Bursa Textiles (6)']);
     await grid.dispose();
   });
+
+  it('shows the text of the key for a lookup column with textFrom grouped by its own field', async () => {
+    const customers = new data.DataSource<{ id: number; name: string }, number>({ adapter: new data.ArrayAdapter({ data: CUSTOMERS, key: 'id' }) });
+    const lookup = { dataSource: customers, valueField: 'id', textField: 'name' };
+    const grid = await make({
+      columns: [...columns(), { field: 'customerId', title: 'Customer', textFrom: (r) => `#${r.customerId}`, calculateGroupValue: 'customerId', lookup, groupIndex: 0 }],
+    });
+    await settle();
+    expect(lines(grid).filter((l) => l.startsWith('>'))).toEqual(['> Customer: Ankara Foods (6)', '> Customer: Bursa Textiles (6)']);
+    await grid.dispose();
+  });
 });
 
 describe('grouping on a server', () => {

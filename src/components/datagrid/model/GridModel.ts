@@ -1571,11 +1571,17 @@ export class GridModel<T> {
     const col = this.columns.get(node.field);
     const key = node.key;
     if (data.isEmpty(key)) return { text: this.text('gridEmptyOption'), state: 'none' };
-    if (col.calculateGroupValue !== undefined || col.textFrom !== undefined) {
+    if (!this.groupsByOwnValue(col)) {
       return { text: key instanceof Date ? key.toLocaleDateString(this.formatter.locale) : String(key), state: 'none' };
     }
     if (col.lookup) return this.lookups.keyText(col, key, ask);
     return { text: this.formatter.text(col, this.data.rowOfData(node.start) ?? ({} as T), key), state: 'none' };
+  }
+
+  /** Whether a column's groups hold its own value: no value of their own, or `calculateGroupValue` naming the column's field (a lookup's key, whose text the group row shows). */
+  groupsByOwnValue(col: GridColumn<T>): boolean {
+    if (col.calculateGroupValue !== undefined) return col.calculateGroupValue === col.field;
+    return col.textFrom === undefined;
   }
 
   /** "Title: value" of a group, as its row and an export show it. */
