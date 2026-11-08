@@ -6,6 +6,8 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const MEMBERS = [
     ['[AppBar](/appbar)', 'The bar at the top of an application.'],
+    ['[MenuBar and ContextMenu](/menus)', 'The menus of an application and the menu of an element, with shortcuts, check items and access keys.'],
+    ['[Toolbar](/toolbar)', 'A row of commands that moves what does not fit into a menu.'],
     ['[BottomNavigation](/bottomnavigation)', 'The main places of an application at the bottom of a phone screen.'],
     ['[Tabs](/tabs)', 'Views of the same thing, one at a time.'],
     ['[Breadcrumb](/breadcrumb)', 'Where the reader is in a hierarchy.'],
@@ -25,6 +27,9 @@ const CHOOSE = [
     ['Split a long list', '[Pagination](/pagination)'],
     ['Fold away sections', '[Accordion](/accordion)'],
     ['Give an application its menu', '[Drawer](/drawer), or [AppBar](/appbar) with its menu button'],
+    ['Offer the commands of a whole application', '[MenuBar](/menus), or [RibbonMenu](/ribbonmenu) for many commands in tabs'],
+    ['Keep many commands in one bar at any width', '[Toolbar](/toolbar)'],
+    ['Act on what is under the pointer', '[ContextMenu](/menus/context)'],
     ['Reach the main places on a phone', '[BottomNavigation](/bottomnavigation)'],
     ['Offer actions on a phone', '[ActionSheet](/actionsheet)'],
     ['Put content beside content, resizable', '[Splitter](/splitter)'],
@@ -40,7 +45,7 @@ export default function NavigationOverviewPage() {
     return (
         <>
             <p class="lead">
-                <Rich text="Navigation components move the reader around an application and lay out its screens: bars at the top and bottom, tabs, paths, steps and pages, panels that slide in, and the containers that arrange everything." />
+                <Rich text="Navigation components move the reader around an application and lay out its screens: bars at the top and bottom, menus and toolbars, tabs, paths, steps and pages, panels that slide in, and the containers that arrange everything." />
             </p>
 
             <Section anchor="demo" title="A project app">

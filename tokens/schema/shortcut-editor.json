@@ -1,0 +1,28 @@
+{
+  "shortcut-editor": {
+    "$description": "ShortcutEditor: the toolbar, the field that takes the keys pressed, and the list of shortcuts with their keys.",
+    "$selector": ".mx-shortcut-editor",
+    "$units": {
+      "editor": {
+        "$description": "The editor: `gap` between the toolbar, the keys row and the list.",
+        "selector": ".mx-shortcut-editor"
+      },
+      "keys": {
+        "$description": "The row of the field that takes the keys and the text that says who uses them.",
+        "selector": ".mx-shortcut-editor__keys"
+      },
+      "status": {
+        "$description": "The text that says who uses the keys pressed, or that they are free.",
+        "selector": ".mx-shortcut-editor__status"
+      },
+      "row-keys": {
+        "$description": "The keys at the end of a row, read as in a menu.",
+        "selector": ".mx-shortcut-editor__row-keys"
+      },
+      "changed": {
+        "$description": "The mark of a shortcut the user gave other keys.",
+        "selector": ".mx-shortcut-editor__changed"
+      }
+    }
+  }
+}

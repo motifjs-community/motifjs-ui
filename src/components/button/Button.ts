@@ -18,6 +18,7 @@ import type { ButtonSize } from './button-size';
 import type { ButtonTone } from './button-tone';
 import type { ButtonVariant } from './button-variant';
 import { onLanguage } from '../../core/on-language';
+import { runItem } from '../../core/command-fields';
 
 const OWN = [
   'variant',
@@ -630,7 +631,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
 
   private itemChosen(e: MenuItemClickEventArgs): void {
     this.close();
-    e.item.click?.(e);
+    runItem(e.item, e, e.source, e.event, this.element as Element);
     this.props?.onItemClick?.(e);
   }
 }

@@ -239,14 +239,14 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
 
   /**
    * Adds a keyboard shortcut that is active while focus is inside this control and
-   * is removed when the control is disposed. See `addShortcut` for the chord syntax
-   * and the rules. Returns a function that removes it.
+   * is removed when the control is disposed. See `addShortcut` for the chord syntax,
+   * several keys and the rules. Returns a function that removes it.
    *
    * @example
    * this.addShortcut('Ctrl+S', () => this.save());
    */
-  addShortcut(chord: string, handler: ShortcutHandler, options: Omit<ShortcutOptions, 'scope'> = {}): () => void {
-    const remove = addShortcut(chord, handler, { ...options, scope: this });
+  addShortcut(keys: string | readonly string[], handler: ShortcutHandler, options: Omit<ShortcutOptions, 'scope'> = {}): () => void {
+    const remove = addShortcut(keys, handler, { ...options, scope: this });
     this.motif.setDisposable(remove);
     return remove;
   }

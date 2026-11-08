@@ -6,7 +6,7 @@ import { fillTemplate } from '../../core/fill-template';
 import { fillText } from '../../core/fill-text';
 import { functionValue } from '../../core/function-value';
 import { givenValue } from '../../core/given-field';
-import { addShortcut } from '../../core/keyboard';
+import { addShortcut, isKeys } from '../../core/keyboard';
 import { nextId } from '../../core/next-id';
 import { isElement, isNode } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
@@ -5124,15 +5124,20 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const parts = this.parts;
     for (const stop of parts.keyStops.splice(0)) stop();
     const keys = untracked(() => this.keys);
-    const add = (chord: string, run: (e: KeyboardEvent) => boolean) => {
-      try {
-        parts.keyStops.push(addShortcut(chord, (e) => untracked(() => run(e)), { scope: this }));
-      } catch {
-        // A chord without a key is omitted.
-      }
+    // One shortcut per action, under its name, so the user can give it other keys (`shortcuts.keymap`).
+    const add = (chords: readonly string[], run: (e: KeyboardEvent) => boolean, name: string, text: () => string) => {
+      parts.keyStops.push(
+        addShortcut(chords.filter(isKeys), (e) => untracked(() => run(e)), {
+          scope: this,
+          name: `tabDocuments.${name}`,
+          text,
+          category: () => uiLocale.strings.shortcutsTabDocuments,
+        }),
+      );
     };
     const each = (name: keyof TabDocumentKeys, run: (e: KeyboardEvent) => boolean) => {
-      for (const chord of keys[name] ?? []) add(chord, run);
+      const key = `tabDocsKey${name[0].toUpperCase()}${name.slice(1)}` as keyof UiStrings;
+      add(keys[name] ?? [], run, name, () => uiLocale.strings[key]);
     };
     const withActive = (run: (doc: TabDocument, group: TabGroup) => void) => () => {
       const doc = this.activeDocument;
@@ -5147,8 +5152,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     );
     each('closeAllTabs', () => !!this.activeGroup && (void this.closeMany([...this.activeGroup.documents], undefined, true), true));
     each('closeSavedTabs', () => !!this.activeGroup && (void this.closeMany(this.activeGroup.documents.filter((d) => !d.dirty), undefined, true), true));
-    for (const chord of keys.focusGroup ?? []) {
-      for (let n = 1; n <= 9; n++) add(chord.replace('{n}', String(n)), () => this.focusGroup(n - 1));
+    // A shortcut of its own for each group: the user can give group 3 other keys than group 4.
+    for (let n = 1; n <= 9; n++) {
+      const chords = (keys.focusGroup ?? []).map((chord) => chord.replace('{n}', String(n)));
+      add(chords, () => this.focusGroup(n - 1), `focusGroup${n}`, () => fillTemplate(uiLocale.strings.tabDocsKeyFocusGroup, { n }));
     }
     each('splitRight', () => {
       const group = this.activeGroup;

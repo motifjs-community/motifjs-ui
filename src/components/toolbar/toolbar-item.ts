@@ -13,6 +13,11 @@ import type { ToolbarItemType } from './toolbar-item-type';
 export interface ToolbarItem {
   /** The default is `'button'`. */
   type?: Bind<ToolbarItemType>;
+  /**
+   * The command of the app the item runs (see `commands`): what the item is not given, its text, icon, hint, state and
+   * action, comes from the command; a toggle is pressed as the command is `checked`.
+   */
+  command?: string;
   /** The caption. `&Bold` makes Alt+B click it. */
   text?: Bind<string>;
   icon?: Bind<IconSource | null | undefined>;

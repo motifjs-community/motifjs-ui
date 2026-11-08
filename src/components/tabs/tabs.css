@@ -309,4 +309,17 @@
   :where(.mx-tabs > .mx-tabs__panels) > .mx-tabs__panel > :last-child {
     margin-block-end: 0;
   }
+
+  /* A toolbar or a menu bar first in a panel stands against the strip, across the panel; so does the toolbar of a
+     shortcut editor first in it. */
+  :where(.mx-tabs[data-placement='top'] > .mx-tabs__panels) > .mx-tabs__panel > :is(.mx-toolbar, .mx-menubar):first-child,
+  :where(.mx-tabs[data-placement='top'] > .mx-tabs__panels) > .mx-tabs__panel > .mx-shortcut-editor:first-child > .mx-toolbar:first-child {
+    margin-block-start: calc(-1 * var(--_tabs-panel-padding, 0px));
+    margin-inline: calc(-1 * var(--_tabs-panel-padding, 0px));
+  }
+
+  :where(.mx-tabs[data-variant='pill'][data-placement='top'] > .mx-tabs__panels) > .mx-tabs__panel > :is(.mx-toolbar, .mx-menubar):first-child,
+  :where(.mx-tabs[data-variant='pill'][data-placement='top'] > .mx-tabs__panels) > .mx-tabs__panel > .mx-shortcut-editor:first-child > .mx-toolbar:first-child {
+    margin-inline: calc(-1 * var(--_tabs-panel-pill-across-padding-inline, var(--_tabs-panel-padding, 0px)));
+  }
 }

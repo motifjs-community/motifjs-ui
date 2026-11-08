@@ -6,6 +6,7 @@ import type { RibbonCommandClickEventArgs } from "./ribbon-command-click-event-a
 import type { RibbonGroupMoreEventArgs } from "./ribbon-group-more-event-args";
 import type { RibbonMenuCustomization } from "./ribbon-menu-customization";
 import type { RibbonMenuCustomizedEventArgs } from "./ribbon-menu-customized-event-args";
+import type { RibbonMenuCustomMenuOpeningEventArgs } from "./ribbon-menu-custom-menu-opening-event-args";
 import type { RibbonMenuDisplay } from "./ribbon-menu-display";
 import type { RibbonMenuDisplayChangedEventArgs } from "./ribbon-menu-display-changed-event-args";
 import type { RibbonMenuItemsChangedEventArgs } from "./ribbon-menu-items-changed-event-args";
@@ -74,4 +75,6 @@ export interface RibbonMenuProps extends ControlProps {
     onAppButton?: (e: RibbonAppButtonEventArgs) => void;
     /** Occurs when the user switches the layout with the button at the end of the commands. */
     onLayoutChanged?: (e: RibbonMenuLayoutChangedEventArgs) => void;
+    /** Occurs before the menu of the right button opens, to add commands of your own or leave some out. */
+    onCustomMenuOpening?: (e: RibbonMenuCustomMenuOpeningEventArgs) => void;
 }

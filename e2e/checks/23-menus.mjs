@@ -1,4 +1,4 @@
-/** Real-browser checks of the MenuBar and ContextMenu page. */
+/** Real-browser checks of the MenuBar overview and the ContextMenu page. */
 export default async function ({ page, base, check, axeSource, box }) {
   await page.goto(base + 'menus', { waitUntil: 'load' });
   await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
@@ -67,11 +67,12 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.press('Escape');
   await page.evaluate(() => document.documentElement.removeAttribute('dir'));
 
+  await page.goto(base + 'menus/context', { waitUntil: 'load' });
   const context = page.locator('section[aria-labelledby="context"]');
   const rows = context.locator('li');
   const row = rows.nth(1);
-  await context.scrollIntoViewIfNeeded();
-  // The page may scroll smoothly: let it end before measuring the row.
+  // In the middle of the window, with room below for the menu; the page may scroll smoothly: let it end.
+  await row.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await page.waitForTimeout(600);
   const at = await box(row);
   await row.click({ button: 'right', position: { x: 30, y: 8 } });
@@ -86,7 +87,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const moved = (await box(row)).top - rowTop;
   const followed = (await box(menu)).top - place.top;
   check('scrolling takes the menu along with its row', (await openMenus()) === 1 && moved < -10 && Math.abs(followed - moved) < 2, `row ${moved}, menu ${followed}`);
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
   await page.waitForTimeout(300);
   check('…and closes it once the row is out of sight', (await openMenus()) === 0);
 
@@ -103,7 +104,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await context.locator('ul').click({ button: 'right', position: { x: 4, y: 4 } });
   check('outside a row the menu is canceled', (await openMenus()) === 0);
 
-  const zone = context.locator('.cm-zone');
+  const zone = page.locator('.cm-zone');
   await zone.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Say where' }).click();
   check('attachContextMenu builds its items from the opening', (await zone.textContent()).includes('with the pointer'));

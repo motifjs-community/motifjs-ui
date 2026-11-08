@@ -22,7 +22,6 @@
   "Every part is a setting that can change at runtime, and a document's own `allowFloat`, `allowDock`, `dockSides` and `allowAutoHide` take precedence over the manager's. In this example, package.json cannot float and README.md docks only at the bottom.": "Her parça çalışma anında değişebilen bir ayardır, belgenin kendi `allowFloat`, `allowDock`, `dockSides` ve `allowAutoHide` değerleri manager'ınkilere göre önceliklidir. Bu örnekte package.json yüzemez, README.md yalnızca alta yerleşir.",
   "Saving the whole layout": "Tüm yerleşimi kaydetme",
   "`saveLayout` also writes the dock areas and floating windows, and `loadLayout` restores them. Layouts saved in the earlier format (version 1) still load.": "`saveLayout` dock alanlarını ve yüzen pencereleri de yazar, `loadLayout` geri yükler. Önceki biçimde kaydedilen yerleşimler (sürüm 1) yine yüklenir.",
-  "Keys": "Tuşlar",
   "Floats the active document (`float`).": "Etkin belgeyi yüzdürür (`float`).",
   "Docks it back in its previous place (`dock`).": "Önceki yerine yerleştirir (`dock`).",
   "Docks it in the area on that side (`dockLeft`, `dockRight`, `dockTop`, `dockBottom`).": "O taraftaki alana yerleştirir (`dockLeft`, `dockRight`, `dockTop`, `dockBottom`).",

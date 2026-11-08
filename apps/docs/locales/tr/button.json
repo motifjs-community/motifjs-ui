@@ -66,7 +66,6 @@
   "Sets focus on the button, or on its main part if it has a menu.": "Odağı düğmeye veya menüsü varsa ana parçasına taşır.",
   "The DOM click event of the button, which runs its own action. With `split`, the arrow and the menu do not raise it. With a menu and no `split`, the click opens the menu.": "Düğmenin kendi işlevini çalıştıran DOM click event'i. `split` ile ok ve menü bu event'i tetiklemez. Menü varsa ve `split` yoksa tıklama menüyü açar.",
   "Occurs when a menu item is selected, after the item's own `click`. `e`: `{ item, source, event }`.": "Bir menü öğesi seçildiğinde, öğenin kendi `click` işlevinden sonra oluşur. `e`: `{ item, source, event }`.",
-  "MenuItem": "MenuItem",
   "The label. `&` marks the key that selects it while the menu is open.": "Label. `&`, menü açıkken öğeyi seçen tuşu işaretler.",
   "An icon. A function is called each time the item is drawn.": "İkon. Function, öğe her çizildiğinde çağrılır.",
   "`false` shows the item dimmed. It stays reachable but cannot be selected.": "`false` öğeyi soluk gösterir. Öğeye ulaşılabilir ancak öğe seçilemez.",

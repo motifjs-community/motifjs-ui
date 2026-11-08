@@ -16,7 +16,8 @@ export const GROUPS = [
     pages: [
       { id: 'foundations', label: 'Overview', title: 'Foundations', path: '/foundations', related: ['control', 'keyboard', 'language'] },
       { id: 'control', label: 'Control', title: 'Control', path: '/control', related: ['keyboard', 'button'] },
-      { id: 'keyboard', label: 'Keyboard and focus', title: 'Keyboard and focus', path: '/keyboard', related: ['control', 'button'] },
+      { id: 'keyboard', label: 'Keyboard and focus', title: 'Keyboard and focus', path: '/keyboard', related: ['control', 'button', 'commands'] },
+      { id: 'commands', label: 'Commands and shortcuts', title: 'Commands and shortcuts', path: '/commands', related: ['keyboard', 'shortcuteditor', 'menus'] },
       { id: 'language', label: 'Language', title: 'Language', path: '/language', related: ['keyboard', 'control', 'datebox'] },
     ],
   },
@@ -24,12 +25,10 @@ export const GROUPS = [
     title: 'Buttons',
     section: 'Components',
     pages: [
-      { id: 'buttons', label: 'Overview', title: 'Buttons', path: '/buttons', related: ['button', 'toolbar', 'menus'] },
+      { id: 'buttons', label: 'Overview', title: 'Buttons', path: '/buttons', related: ['button', 'buttongroup', 'speeddial'] },
       { id: 'button', label: 'Button', title: 'Button', path: '/button', related: ['control', 'keyboard', 'tokens'] },
       { id: 'buttongroup', label: 'ButtonGroup', title: 'ButtonGroup', path: '/buttongroup', related: ['button', 'toolbar', 'radiogroup'] },
-      { id: 'toolbar', label: 'Toolbar', title: 'Toolbar', path: '/toolbar', related: ['button', 'menus'] },
       { id: 'speeddial', label: 'SpeedDial', title: 'SpeedDial', path: '/speeddial', related: ['button', 'toolbar', 'menus'] },
-      { id: 'menus', label: 'MenuBar and ContextMenu', title: 'MenuBar and ContextMenu', path: '/menus', related: ['button', 'toolbar'] },
     ],
   },
   {
@@ -50,6 +49,7 @@ export const GROUPS = [
       { id: 'rating', label: 'Rating', title: 'Rating', path: '/rating', related: ['slider', 'buttongroup'] },
       { id: 'validationsummary', label: 'ValidationSummary', title: 'ValidationSummary', path: '/validationsummary', related: ['textbox', 'formlayout', 'wizard'] },
       { id: 'fileuploader', label: 'FileUploader', title: 'FileUploader', path: '/fileuploader', related: ['progress', 'textbox', 'loadpanel'] },
+      { id: 'shortcuteditor', label: 'ShortcutEditor', title: 'ShortcutEditor', path: '/shortcuteditor', related: ['commands', 'keyboard', 'menus'] },
     ],
   },
   {
@@ -98,8 +98,10 @@ export const GROUPS = [
     title: 'Navigation',
     section: 'Components',
     pages: [
-      { id: 'navigation', label: 'Overview', title: 'Navigation', path: '/navigation', related: ['appbar', 'tabs', 'drawer'] },
+      { id: 'navigation', label: 'Overview', title: 'Navigation', path: '/navigation', related: ['appbar', 'menus', 'tabs'] },
       { id: 'appbar', label: 'AppBar', title: 'AppBar', path: '/appbar', related: ['toolbar', 'bottomnavigation', 'drawer'] },
+
+      { id: 'toolbar', label: 'Toolbar', title: 'Toolbar', path: '/toolbar', related: ['menus', 'appbar', 'button'] },
       { id: 'bottomnavigation', label: 'BottomNavigation', title: 'BottomNavigation', path: '/bottomnavigation', related: ['appbar', 'tabs', 'badge'] },
       { id: 'tabs', label: 'Tabs', title: 'Tabs', path: '/tabs', related: ['accordion', 'keyboard'] },
       { id: 'breadcrumb', label: 'Breadcrumb', title: 'Breadcrumb', path: '/breadcrumb', related: ['tabs', 'menus'] },
@@ -183,6 +185,18 @@ export const GROUPS = [
       { id: 'ribbonmenu-customization', label: 'Customization', title: 'RibbonMenu: Customization', path: '/ribbonmenu/customization', related: ['ribbonmenu', 'ribbonmenu-display', 'menus'] },
       { id: 'ribbonmenu-programmatic', label: 'Programmatic changes', title: 'RibbonMenu: Programmatic changes', path: '/ribbonmenu/programmatic', related: ['ribbonmenu', 'ribbonmenu-customization', 'ribbonmenu-api'] },
       { id: 'ribbonmenu-api', label: 'API reference', title: 'RibbonMenu: API reference', path: '/ribbonmenu/api', related: ['ribbonmenu', 'ribbonmenu-commands', 'ribbonmenu-customization'] },
+    ],
+  },
+  {
+    title: 'MenuBar',
+    section: 'Components',
+    pages: [
+      { id: 'menus', label: 'Overview', title: 'MenuBar and ContextMenu', path: '/menus', related: ['menus-customization', 'menus-merging', 'toolbar', 'ribbonmenu'] },
+      { id: 'menus-context', label: 'ContextMenu', title: 'MenuBar: ContextMenu', path: '/menus/context', related: ['menus', 'menus-api', 'actionsheet'] },
+      { id: 'menus-customization', label: 'Customization', title: 'MenuBar: Customization', path: '/menus/customization', related: ['menus', 'shortcuteditor', 'ribbonmenu-customization'] },
+      { id: 'menus-programmatic', label: 'Programmatic changes', title: 'MenuBar: Programmatic changes', path: '/menus/programmatic', related: ['menus', 'commands', 'menus-api'] },
+      { id: 'menus-merging', label: 'Merging menus', title: 'MenuBar: Merging menus', path: '/menus/merging', related: ['menus', 'tabdocs', 'window'] },
+      { id: 'menus-api', label: 'API reference', title: 'MenuBar: API reference', path: '/menus/api', related: ['menus', 'menus-customization', 'menus-merging'] },
     ],
   },
   {

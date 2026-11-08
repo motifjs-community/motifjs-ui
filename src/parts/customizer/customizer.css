@@ -1,0 +1,46 @@
+/* The customizer of a menu bar. The gaps are units of the schema (customizer). */
+@layer mx.components {
+  /* The pages fill the window; the tree and the list scroll inside them. */
+  .mx-customizer__pages {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  .mx-customizer__pages > .mx-tabs__panels {
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  /* A page's toolbar is the panel's first child, so that it stands against the strip (tabs.css). */
+  .mx-customizer__pages > .mx-tabs__panels > .mx-tabs__panel:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  .mx-customizer__tools {
+    flex: none;
+  }
+
+  .mx-customizer__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .mx-customizer__tree,
+  .mx-customizer__commands {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow: auto;
+  }
+
+  .mx-customizer__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+}

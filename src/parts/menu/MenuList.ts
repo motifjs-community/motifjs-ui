@@ -1,6 +1,8 @@
 import { Component, Emitter, read, type Bind, type ComponentBase, type Event as MotifEvent } from '@motifx/core';
 import { follow } from '../../core/follow';
 import { givenField, givenList, givenValue } from '../../core/given-field';
+import { commands } from '../../core/command-registry';
+import { fieldOf, namesCommands, shortcutOf } from '../../core/command-fields';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { checkMark, chevronEnd, radioMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
@@ -85,6 +87,8 @@ export class MenuList extends Component<HTMLDivElement> {
   private hoverEntry: Entry | null = null;
   private pointerFocus = false;
   private readonly chosenEmitter = new Emitter<MenuItemClickEventArgs>();
+  /** Some item names a command: the list is drawn again when the commands change. */
+  private namesCommands = false;
 
   /** Occurs when an item is selected, here or in a submenu. The owner closes the menu, then runs the item's `click`. */
   readonly onChosen: MotifEvent<MenuItemClickEventArgs> = this.chosenEmitter.event;
@@ -97,7 +101,9 @@ export class MenuList extends Component<HTMLDivElement> {
     this.element.addEventListener('focusin', (e) => this.onFocusIn(e));
     // The pointer and the keyboard share one highlight: the focused item.
     this.element.addEventListener('pointermove', (e) => this.onPointerMove(e));
+    const listening = commands.onChanged(() => this.namesCommands && this.refresh());
     this.motif.setDisposable(() => {
+      listening.dispose();
       this.cancelHover();
       this.stopDrawing?.();
       this.clear();
@@ -117,19 +123,22 @@ export class MenuList extends Component<HTMLDivElement> {
     this.given = items;
     // The getter and the items' own functions are tracked; the list and the fields are not, nor is drawing.
     this.stopDrawing = follow(this, 'items', () => {
-      const looks = givenList(read(items)).map((item): ItemLook => {
+      const list = givenList(read(items));
+      this.namesCommands = namesCommands(list);
+      const from = this.element;
+      const looks = list.map((item): ItemLook => {
         const group = givenField<string | undefined>(item, 'group');
         const children = givenList(givenField<readonly MenuItem[] | undefined>(item, 'items'));
         return {
           item,
-          visible: givenField(item, 'visible') !== false,
+          visible: fieldOf(item, 'visible', from) !== false,
           beginGroup: !!givenField(item, 'beginGroup'),
-          text: givenField<string | undefined>(item, 'text') ?? '',
-          hint: givenField<string | undefined>(item, 'hint'),
-          checked: givenField<boolean | undefined>(item, 'checked'),
+          text: fieldOf<string | undefined>(item, 'text', from) ?? '',
+          hint: fieldOf<string | undefined>(item, 'hint', from),
+          checked: fieldOf<boolean | undefined>(item, 'checked', from),
           radio: !!group,
-          enabled: givenField(item, 'enabled') !== false,
-          shortcut: givenField<string | undefined>(item, 'shortcut') ?? '',
+          enabled: fieldOf(item, 'enabled', from) !== false,
+          shortcut: shortcutOf(item, from),
           description: givenField<string | undefined>(item, 'description') ?? '',
           tone: givenField<string | undefined>(item, 'tone') ?? 'standard',
           submenu: children.some((child) => givenField(child, 'visible') !== false),
@@ -155,6 +164,18 @@ export class MenuList extends Component<HTMLDivElement> {
   /** The list of the open submenu, or `null` if none is open. */
   get submenu(): MenuList | null {
     return this.sub?.entry ? this.sub.list : null;
+  }
+
+  /** The item drawn at `target`, an element of this list; `null` when there is none. */
+  itemOf(target: EventTarget | null): MenuItem | null {
+    return this.entryOf(target)?.item ?? null;
+  }
+
+  /** Sets focus on the first item that `test` accepts. Returns `false` if there is none. */
+  focusWhere(test: (item: MenuItem) => boolean): boolean {
+    const entry = this.entries.find((e) => test(e.item));
+    entry?.element.focus();
+    return !!entry;
   }
 
   /** Sets focus on the first or last item. Returns `false` if there is none. */
@@ -255,7 +276,7 @@ export class MenuList extends Component<HTMLDivElement> {
     if (look.checked) check.append(look.radio && this.radioMark === 'dot' ? radioMark() : checkMark());
     const icon = element.appendChild(this.element.ownerDocument.createElement('span'));
     icon.className = 'mx-menu__icon';
-    const source = givenField<IconSource | null | undefined>(look.item, 'icon');
+    const source = fieldOf<IconSource | null | undefined>(look.item, 'icon', this.element);
     if (source) {
       const shown = iconNode(source);
       icon.append(shown.node);

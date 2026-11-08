@@ -48,8 +48,8 @@ const ACCESS = [
 ];
 
 const API = [
-  ['addShortcut(chord, handler, options?)', '`() => void`', 'Registers a shortcut and returns a function that removes it. `options.scope` limits it to a component, and `options.inEditable` also enables it in text fields.'],
-  ['control.addShortcut(chord, handler, options?)', '`() => void`', 'Registers a shortcut scoped to the control and removes it when the control is disposed.'],
+  ['addShortcut(keys, handler, options?)', '`() => void`', 'Registers a shortcut and returns a function that removes it. `keys` is one set of keys or a list of them. `options.scope` limits it to a component, `options.inEditable` also enables it in text fields, and `options.name` lets the user assign other keys ([ShortcutEditor](/shortcuteditor)).'],
+  ['control.addShortcut(keys, handler, options?)', '`() => void`', 'Registers a shortcut scoped to the control and removes it when the control is disposed.'],
   ['parseAccessKey(text)', '`{ text, key, index }`', 'Parses `&Text` for your own controls. Render the result with the `mx-access-key` class and call `setAccessKey(key)`.'],
   ['tabIndex', 'prop / property', 'The order inside the container. The default is 0.'],
   ['activeControl / restoreFocus()', 'FocusContainer', 'See the Control page.'],
@@ -120,6 +120,9 @@ addShortcut('F2', () => rename(), { scope: tree });
         <Example files={code('Shortcut.tsx')}>
           <Shortcut />
         </Example>
+        <p>
+          <Rich text="Commands defined once, with their keys, for menus, toolbars and ribbons, the list of every shortcut with its conflicts, and the keys the user gives are on [Commands and shortcuts](/commands). [ShortcutEditor](/shortcuteditor) lets the user assign other keys to any shortcut with a name." />
+        </p>
       </Section>
 
       <Section anchor="guard" title={'Focus never lands on &lt;body&gt;'}>

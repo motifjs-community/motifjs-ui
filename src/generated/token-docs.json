@@ -7612,6 +7612,27 @@
     "value": "#5e5c55"
   },
   {
+    "name": "customizer.page.gap",
+    "cssVar": "--mx-customizer-page-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "customizer.buttons.gap",
+    "cssVar": "--mx-customizer-buttons-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "customizer.footer.gap",
+    "cssVar": "--mx-customizer-footer-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
     "name": "datagrid.record-height",
     "cssVar": "--mx-datagrid-record-height",
     "type": "dimension",
@@ -23895,6 +23916,69 @@
     "type": "color",
     "ref": "color.stroke.divider",
     "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "shortcut-editor.editor.gap",
+    "cssVar": "--mx-shortcut-editor-editor-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "shortcut-editor.keys.gap",
+    "cssVar": "--mx-shortcut-editor-keys-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "shortcut-editor.status.color",
+    "cssVar": "--mx-shortcut-editor-status-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "shortcut-editor.row-keys.padding-start",
+    "cssVar": "--mx-shortcut-editor-row-keys-padding-start",
+    "type": "dimension",
+    "ref": "space.6",
+    "value": "1.5rem"
+  },
+  {
+    "name": "shortcut-editor.row-keys.color",
+    "cssVar": "--mx-shortcut-editor-row-keys-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "shortcut-editor.row-keys.font-size",
+    "cssVar": "--mx-shortcut-editor-row-keys-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "shortcut-editor.changed.padding-start",
+    "cssVar": "--mx-shortcut-editor-changed-padding-start",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "shortcut-editor.changed.color",
+    "cssVar": "--mx-shortcut-editor-changed-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "shortcut-editor.changed.font-size",
+    "cssVar": "--mx-shortcut-editor-changed-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
   },
   {
     "name": "signature.width",

@@ -16,6 +16,7 @@ import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-a
 import type { ContextMenuPresentation } from './context-menu-presentation';
 import type { ContextMenuProps } from './context-menu-props';
 import type { ContextMenuTarget } from './context-menu-target';
+import { runItem } from '../../core/command-fields';
 
 const OWN = ['items', 'keyboard', 'closeOnScroll', 'openOnHover', 'presentation'] as const;
 
@@ -400,8 +401,9 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   private chosen(e: MenuItemClickEventArgs): void {
+    const at = this.targetElement;
     this.close();
-    e.item.click?.(e);
+    runItem(e.item, e, e.source, e.event, at);
     this.parts.itemClick.fire(e);
   }
 

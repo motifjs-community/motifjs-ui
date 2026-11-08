@@ -16,6 +16,7 @@
 @import './base.css';
 @import '../parts/popup/popup.css';
 @import '../parts/menu/menu.css';
+@import '../parts/customizer/customizer.css';
 @import '../parts/field/field.css';
 @import '../parts/list/list.css';
 @import '../components/button/button.css';
@@ -88,6 +89,7 @@
 @import '../components/actionsheet/actionsheet.css';
 @import '../components/layout/layout.css';
 @import '../components/listbox/listbox.css';
+@import '../components/shortcuteditor/shortcuteditor.css';
 @import '../components/tagbox/tagbox.css';
 @import '../components/filterbuilder/filterbuilder.css';
 @import '../components/datagrid/datagrid.css';

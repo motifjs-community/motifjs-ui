@@ -24,7 +24,11 @@ import { ContextMenu } from "../contextmenu/ContextMenu";
 import type { ContextMenuOpeningEventArgs } from "../contextmenu/context-menu-opening-event-args";
 import { RibbonGallery } from "./RibbonGallery";
 import { RibbonKeyHints, type InnerHints, type KeyHint } from "./RibbonKeyHints";
-import { changedTabs, indexOfKey, inserted, itemsAlong, partsOf } from "./ribbon-paths";
+import { ItemTree } from "../../parts/item-tree/ItemTree";
+import { partsOf } from "../../parts/item-tree/item-paths";
+import { fieldOf, runItem, valueOf } from "../../core/command-fields";
+import { commands } from "../../core/command-registry";
+import { ordered } from "../../parts/item-tree/ordered";
 import type { RibbonAppButtonEventArgs } from "./ribbon-app-button-event-args";
 import type { RibbonCommand } from "./ribbon-command";
 import type { RibbonCommandClickEventArgs } from "./ribbon-command-click-event-args";
@@ -35,6 +39,7 @@ import type { RibbonGroup } from "./ribbon-group";
 import type { RibbonGroupMoreEventArgs } from "./ribbon-group-more-event-args";
 import type { RibbonMenuCustomization } from "./ribbon-menu-customization";
 import type { RibbonMenuCustomizedEventArgs } from "./ribbon-menu-customized-event-args";
+import type { RibbonMenuCustomMenuOpeningEventArgs } from "./ribbon-menu-custom-menu-opening-event-args";
 import type { RibbonMenuDisplay } from "./ribbon-menu-display";
 import type { RibbonMenuDisplayChangedEventArgs } from "./ribbon-menu-display-changed-event-args";
 import type { RibbonMenuItemsChangedEventArgs } from "./ribbon-menu-items-changed-event-args";
@@ -179,9 +184,9 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     customized = new Emitter<RibbonMenuCustomizedEventArgs>();
     appButtonClick = new Emitter<RibbonAppButtonEventArgs>();
     itemsChanged = new Emitter<RibbonMenuItemsChangedEventArgs>();
-    // Changes made between beginUpdate() and endUpdate(), applied at once.
-    batch = 0;
-    pending: RibbonTab[] | null = null;
+    customMenuOpened = new Emitter<RibbonMenuCustomMenuOpeningEventArgs>();
+    // Changes by path; the children of a tab are its groups, of a group and of a row their commands.
+    tree = new ItemTree<RibbonTab>(depth => ['groups', 'commands', 'commands'][depth] ?? null, () => givenList(this.peekProperty<readonly RibbonTab[]>('items')), next => this.applyItems(next));
     reveal: Component<HTMLButtonElement>;
     frame: Component<HTMLDivElement>;
     bar: Component<HTMLDivElement>;
@@ -275,6 +280,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (own.onCommandClick) this.onCommandClick(own.onCommandClick);
         if (own.onGroupMore) this.onGroupMore(own.onGroupMore);
         if (own.onLayoutChanged) this.onLayoutChanged(own.onLayoutChanged);
+        if (own.onCustomMenuOpening) this.onCustomMenuOpening(own.onCustomMenuOpening);
         if (own.onDisplayChanged) this.onDisplayChanged(own.onDisplayChanged);
         if (own.onCustomized) this.onCustomized(own.onCustomized);
         if (own.onAppButton) this.onAppButton(own.onAppButton);
@@ -316,6 +322,9 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         });
         room.observe(this.element);
         this.motif.setDisposable(onLookChanged(() => this.queueLayout()));
+        // Commands that name commands of the app take their fields from them: read again when those change.
+        const listening = commands.onChanged(() => this.namesCommands() && this.refresh());
+        this.motif.setDisposable(() => listening.dispose());
         this.drawNames();
         this.drawLayout();
         this.drawDisplay();
@@ -448,6 +457,11 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     get onLayoutChanged(): MotifEvent<RibbonMenuLayoutChangedEventArgs> {
         return this.layoutChanged.event;
     }
+
+    /** Occurs before the menu of the right button opens: add commands of your own or leave some out. */
+    get onCustomMenuOpening(): MotifEvent<RibbonMenuCustomMenuOpeningEventArgs> {
+        return this.customMenuOpened.event;
+    }
     get onSelecting(): MotifEvent<RibbonTabSelectingEventArgs> {
         return this.selecting.event;
     }
@@ -500,15 +514,12 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
 
     /** The group at `path` (`tab/group`, each a key or a position), as it is now. */
     findGroup(path: string): RibbonGroup | null {
-        const parts = partsOf(path);
-        return parts.length === 2 ? ((itemsAlong(this.currentTabs(), parts)?.[1] as RibbonGroup | undefined) ?? null) : null;
+        return partsOf(path).length === 2 ? (this.tree.find(path) as RibbonGroup | null) : null;
     }
 
     /** The command at `path` (`tab/group/command`, a row's command a fourth part), as it is now. */
     findCommand(path: string): RibbonCommand | null {
-        const parts = partsOf(path);
-        if (parts.length < 3) return null;
-        return (itemsAlong(this.currentTabs(), parts)?.[parts.length - 1] as RibbonCommand | undefined) ?? null;
+        return partsOf(path).length >= 3 ? (this.tree.find(path) as RibbonCommand | null) : null;
     }
 
     // Changes by path. The tabs, groups and commands given are never changed: a new list is made, the items along the
@@ -516,30 +527,23 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
 
     /** Adds a tab at `index`, the end by default. Returns `false` when nothing changed. */
     addTab(tab: RibbonTab, index?: number): boolean {
-        return this.changeItems([], list => inserted(list, tab, index));
+        return this.tree.add('', tab, index);
     }
 
     /** Adds a group to the tab at `tabPath`. */
     addGroup(tabPath: string, group: RibbonGroup, index?: number): boolean {
-        const parent = partsOf(tabPath);
-        return parent.length === 1 && this.changeItems(parent, list => inserted(list, group, index));
+        return partsOf(tabPath).length === 1 && this.tree.add(tabPath, group, index);
     }
 
     /** Adds a command to the group at `parentPath` (`tab/group`), or to a row (`tab/group/row`). */
     addCommand(parentPath: string, command: RibbonCommand, index?: number): boolean {
-        const parent = partsOf(parentPath);
-        return (parent.length === 2 || parent.length === 3) && this.changeItems(parent, list => inserted(list, command, index));
+        const depth = partsOf(parentPath).length;
+        return (depth === 2 || depth === 3) && this.tree.add(parentPath, command, index);
     }
 
     /** Removes the tab, group or command at `path`. */
     remove(path: string): boolean {
-        const parts = partsOf(path);
-        if (!parts.length) return false;
-        const key = parts[parts.length - 1];
-        return this.changeItems(parts.slice(0, -1), list => {
-            const at = indexOfKey(list, key);
-            return at < 0 ? null : list.filter((_, i) => i !== at);
-        });
+        return this.tree.remove(path);
     }
 
     /**
@@ -547,53 +551,33 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
      * group, another group (or row) for a command.
      */
     move(path: string, index: number, toParent?: string): boolean {
-        const parts = partsOf(path);
-        const from = parts.slice(0, -1);
-        const to = toParent === undefined ? from : partsOf(toParent);
-        const item = itemsAlong(this.currentTabs(), parts)?.[parts.length - 1];
-        if (!item || to.length !== from.length || (to.length > 0 && !itemsAlong(this.currentTabs(), to))) return false;
-        this.beginUpdate();
-        const removed = this.remove(path);
-        const added = removed && this.changeItems(to, list => inserted(list, item, index));
-        this.endUpdate();
-        return added;
+        const from = partsOf(path).length - 1;
+        return (toParent === undefined || partsOf(toParent).length === from) && this.tree.move(path, index, toParent);
     }
 
     /** Changes fields of the tab, group or command at `path`; the others stay as they are. */
     update(path: string, changes: Partial<RibbonTab> | Partial<RibbonGroup> | Partial<RibbonCommand>): boolean {
-        const parts = partsOf(path);
-        if (!parts.length) return false;
-        const key = parts[parts.length - 1];
-        return this.changeItems(parts.slice(0, -1), list => {
-            const at = indexOfKey(list, key);
-            return at < 0 ? null : list.map((x, i) => (i === at ? { ...(x as object), ...changes } : x));
-        });
+        return this.tree.update(path, changes);
     }
 
     /** Holds the changes by path until `endUpdate()`, which applies them at once. */
     beginUpdate(): void {
-        this.batch++;
+        this.tree.beginUpdate();
     }
 
     endUpdate(): void {
-        if (this.batch > 0) this.batch--;
-        if (this.batch === 0 && this.pending) this.applyItems(this.pending);
+        this.tree.endUpdate();
     }
 
     currentTabs(): readonly RibbonTab[] {
-        return this.pending ?? givenList(this.peekProperty<readonly RibbonTab[]>('items'));
+        return this.tree.current;
     }
 
     changeItems(parent: string[], change: (list: readonly unknown[]) => unknown[] | null): boolean {
-        const next = changedTabs(this.currentTabs(), parent, change) as RibbonTab[] | null;
-        if (!next) return false;
-        if (this.batch > 0) this.pending = next;
-        else this.applyItems(next);
-        return true;
+        return this.tree.change(parent, change);
     }
 
     applyItems(next: RibbonTab[]): void {
-        this.pending = null;
         this.changeProperty('items', next);
         this.itemsChanged.fire({ items: next, source: this });
     }
@@ -604,6 +588,12 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
      */
     refresh(): void {
         this.reState();
+    }
+
+    /** Whether a command of the tabs names a command of the app. */
+    namesCommands(): boolean {
+        const walk = (list: readonly unknown[]): boolean => list.some(c => givenValue(c, 'command') !== undefined || walk(givenList(givenField<readonly unknown[] | undefined>(c, 'commands'))));
+        return untracked(() => this.currentTabs().some(tab => givenList(givenField<readonly RibbonGroup[] | undefined>(tab, 'groups')).some(group => walk(givenList(givenField<readonly unknown[] | undefined>(group, 'commands'))))));
     }
 
     /** Opens the commands over the page when the menu shows only its tabs or hides itself; `false` closes them. */
@@ -984,7 +974,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             const key = String(givenValue<Key | undefined>(command, 'key') ?? index);
             const fixed = givenField(command, 'fixed') === true;
             const size = inRow ? 'small' : (givenField<RibbonCommandSize | undefined>(command, 'size') ?? (type === 'gallery' ? 'large' : 'medium'));
-            return { command, key, fixed, type, size, visible: givenField(command, 'visible') !== false, simple: givenField(command, 'simple') !== false };
+            return { command, key, fixed, type, size, visible: fieldOf(command, 'visible', this.element) !== false, simple: givenField(command, 'simple') !== false };
         });
     }
 
@@ -1066,14 +1056,14 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         // Its text and hint are given by its size (drawSize).
         const props: ButtonProps = {
             icon: () => {
-                const name = String(givenField(command, 'glyph') ?? '');
-                return name ? glyph(name) : (givenField<IconSource | null | undefined>(command, 'icon') ?? null);
+                const name = String(fieldOf(command, 'glyph', this.element) ?? '');
+                return name ? glyph(name) : (fieldOf<IconSource | null | undefined>(command, 'icon', this.element) ?? null);
             },
-            enabled: () => givenField(command, 'enabled') !== false
+            enabled: () => fieldOf(command, 'enabled', this.element) !== false
         };
         if (type === 'toggle') {
             props.toggle = true;
-            props.pressed = givenValue<Bind<boolean> | undefined>(command, 'pressed');
+            props.pressed = valueOf<Bind<boolean> | undefined>(command, 'pressed', this.element, 'checked');
         }
         if (type === 'split' || type === 'menu') props.menu = () => givenField<readonly MenuItem[] | undefined>(command, 'menu') ?? [];
         if (type === 'split') props.split = true;
@@ -1096,9 +1086,9 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         // The arrow of a split command opens its menu; only its own part runs it.
         if ((e.target as Element | null)?.closest?.('.mx-button__arrow')) return;
         const args: RibbonCommandClickEventArgs = { command, group: where.group, tab: where.tab, originalEvent: e, source: this };
-        givenValue<((e: RibbonCommandClickEventArgs) => void) | undefined>(command, 'click')?.(args);
+        runItem(command, args, this, e, this.element);
         // A click set the toggle's own state; one bound to the app follows the app again.
-        const pressed = givenValue<Bind<boolean> | undefined>(command, 'pressed');
+        const pressed = valueOf<Bind<boolean> | undefined>(command, 'pressed', this.element, 'checked');
         if (typeof pressed === 'function') button.pressed = pressed;
         this.commandClick.fire(args);
         if (this.floating) this.setFloating(false);
@@ -1273,10 +1263,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         const button = m.control;
         if (size === 'small') {
             button.text = '';
-            button.hint = () => String(givenField(command, 'hint') ?? '') || parseAccessKey(String(givenField(command, 'text') ?? '')).text;
+            button.hint = () => String(fieldOf(command, 'hint', this.element) ?? '') || parseAccessKey(String(fieldOf(command, 'text', this.element) ?? '')).text;
         } else {
-            button.text = () => String(givenField(command, 'text') ?? '');
-            button.hint = () => String(givenField(command, 'hint') ?? '');
+            button.text = () => String(fieldOf(command, 'text', this.element) ?? '');
+            button.hint = () => String(fieldOf(command, 'hint', this.element) ?? '');
         }
         button.readLook();
     }
@@ -1400,7 +1390,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                 const gallery = m.control;
                 const where = this.whereOfMade(m);
                 items.push({
-                    text: parseAccessKey(String(givenField(m.want.command, 'text') ?? '')).text,
+                    text: parseAccessKey(String(fieldOf(m.want.command, 'text', this.element) ?? '')).text,
                     beginGroup: line,
                     items: gallery.looks.map(look => ({ text: look.text, enabled: look.enabled, group: 'gallery', checked: look.key === gallery.chosen, click: (e: MenuItemClickEventArgs) => this.galleryPicked(m.want.command, look.item, where, e.event) }))
                 });
@@ -1408,7 +1398,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                 continue;
             }
             if (!(m.control instanceof Button)) continue;
-            items.push({ ...menuItemOf(m.control), text: () => parseAccessKey(String(givenField(m.want.command, 'text') ?? '')).text, beginGroup: line });
+            items.push({ ...menuItemOf(m.control), text: () => parseAccessKey(String(fieldOf(m.want.command, 'text', this.element) ?? '')).text, beginGroup: line });
             line = false;
         }
         return items;
@@ -1568,7 +1558,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         const add = (m: Made) => {
             if (!m.want.visible) return;
             const command = m.want.command;
-            const text = parseAccessKey(String(givenField(command, 'text') ?? ''));
+            const text = parseAccessKey(String(fieldOf(command, 'text', this.element) ?? ''));
             const keys = String(givenField(command, 'keyHint') ?? '') || text.key || '';
             if (m.control instanceof Button || m.control instanceof RibbonGallery) {
                 const face = faceOf(m.control instanceof Button ? m.control : m.control.opener);
@@ -1731,15 +1721,46 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         this.redrawCustom();
     }
 
-    // The context menu: what can be done with the command or the group under the pointer, and how the menu is shown.
+    // The menu of the right button: the menu's own commands when customizable, and the app's, from onCustomMenuOpening.
     customMenuOpening(e: ContextMenuOpeningEventArgs): void {
-        if (this.peekProperty('customizable') === false || e.target.closest('.mx-ribbon-menu__content')) {
+        // The app's own content keeps its own menu.
+        if (e.target.closest('.mx-ribbon-menu__content')) {
             e.cancel = true;
             return;
         }
+        const { item, path } = this.customTarget(e.target);
+        const args: RibbonMenuCustomMenuOpeningEventArgs = {
+            item,
+            path,
+            items: this.peekProperty('customizable') === false ? [] : this.menuCommands(e.target),
+            cancel: false,
+            byKeyboard: e.byKeyboard,
+            event: e.event,
+            source: this
+        };
+        this.customMenuOpened.fire(args);
+        e.items = args.items;
+        e.cancel = args.cancel;
+    }
+
+    // What the pointer or the focus is on: a tab, a group or a command, with its path.
+    customTarget(target: Element): { item: RibbonTab | RibbonGroup | RibbonCommand | null; path: string | null } {
+        const hit = this.hitOf(target);
+        if (hit?.quick) return { item: hit.path ? this.findCommand(hit.path) : null, path: hit.path };
+        if (hit) {
+            const groupPath = `${this.tabKeyOf(hit.panel.tab)}/${hit.group.look?.key ?? ''}`;
+            if (hit.made) return { item: hit.made.want.command, path: `${groupPath}/${hit.made.want.key}` };
+            return { item: this.findGroup(groupPath), path: groupPath };
+        }
+        const tab = this.entries[this.indexOfTab(target)];
+        return tab ? { item: tab.tab, path: tab.key } : { item: null, path: null };
+    }
+
+    // The menu's own commands: what can be done with the command or the group under the pointer, and how it is shown.
+    menuCommands(target: Element): MenuItem[] {
         const s = uiLocale.strings;
         const items: MenuItem[] = [];
-        const hit = this.hitOf(e.target);
+        const hit = this.hitOf(target);
         if (hit?.quick) {
             if (hit.path) items.push({ text: s.ribbonMenuUnpin, click: () => this.pinByUser(hit.path!, false) });
         } else if (hit) {
@@ -1806,7 +1827,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         const changed = Object.keys(this.custom).some(k => k !== 'layout' && k !== 'display');
         if (changed) general.push({ text: s.ribbonMenuReset, click: () => this.resetCustom() });
         general[0].beginGroup = items.length > 0;
-        e.items = [...items, ...general];
+        return [...items, ...general];
     }
 
     placeQuick(position: RibbonQuickBarPosition): void {
@@ -1930,14 +1951,6 @@ function faceOf(button: Button): HTMLElement {
 }
 
 // The items in the order the user gave, the ones not in it after them, as given.
-function ordered<T>(items: T[], order: readonly string[] | undefined, keyOf: (item: T) => string): T[] {
-    if (!order?.length) return items;
-    const rank = new Map(order.map((key, i) => [key, i]));
-    return items
-        .map((item, i) => ({ item, i, r: rank.get(keyOf(item)) }))
-        .sort((a, b) => (a.r ?? Infinity) - (b.r ?? Infinity) || a.i - b.i)
-        .map(x => x.item);
-}
 
 function copyOf(c: RibbonMenuCustomization): RibbonMenuCustomization {
     const out: RibbonMenuCustomization = { ...c };

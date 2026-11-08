@@ -1,0 +1,41 @@
+{
+  "shortcut-editor": {
+    "editor": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "keys": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "status": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "row-keys": {
+      "padding-start": {
+        "$value": "{menu.shortcut.padding-start}"
+      },
+      "color": {
+        "$value": "{menu.shortcut.color}"
+      },
+      "font-size": {
+        "$value": "{menu.shortcut.font-size}"
+      }
+    },
+    "changed": {
+      "padding-start": {
+        "$value": "{space.2}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{menu.shortcut.font-size}"
+      }
+    }
+  }
+}

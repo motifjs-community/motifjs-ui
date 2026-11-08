@@ -1,6 +1,5 @@
 {
   "Tabs, groups and commands can be added, removed, moved and changed at any time, by their paths. The menu redraws only what changed: groups and commands that stay keep their buttons, their state and their place.": "Sekmeler, gruplar ve komutlar istenen her an yollarıyla eklenebilir, çıkarılabilir, taşınabilir ve değiştirilebilir. Menü yalnızca değişeni yeniden çizer: yerinde kalan gruplar ve komutlar düğmelerini, durumlarını ve yerlerini korur.",
-  "Changes by path": "Yolla değişiklikler",
   "Adds a tab at `index`, the end by default.": "`index` konumuna bir sekme ekler; varsayılan olarak sona.",
   "Adds a group to a tab.": "Bir sekmeye grup ekler.",
   "Adds a command to a group (`tab/group`) or to a row (`tab/group/row`).": "Bir gruba (`tab/group`) veya bir satıra (`tab/group/row`) komut ekler.",

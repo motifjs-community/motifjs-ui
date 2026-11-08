@@ -1,0 +1,38 @@
+/* ShortcutEditor: the toolbar, the keys row and the list one under the other; the list takes the height left and
+   scrolls inside it. The gaps, the texts and the keys at the end of a row are units of the schema. */
+@layer mx.components {
+  .mx-shortcut-editor {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  .mx-shortcut-editor__tools,
+  .mx-shortcut-editor__keys {
+    flex: none;
+  }
+
+  .mx-shortcut-editor__keys {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .mx-shortcut-editor__list {
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  /* A shortcut, its mark, and its keys at the end of the row. */
+  .mx-shortcut-editor__list :has(> .mx-shortcut-editor__row-keys) {
+    display: flex;
+    align-items: baseline;
+  }
+
+  .mx-shortcut-editor__row-keys {
+    margin-inline-start: auto;
+    white-space: nowrap;
+  }
+}

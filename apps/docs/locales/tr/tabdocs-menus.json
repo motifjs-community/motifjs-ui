@@ -2,7 +2,6 @@
   "The commands around tabs: context menus on tabs and on the empty strip, a searchable list of a group's documents, application toolbar buttons, the recently used list, back and forward, reopening closed documents, locked groups, and keyboard shortcuts for all of them.": "Sekmelerin çevresindeki komutlar: sekmelerde ve boş şeritte bağlam menüleri, grubun belgelerinin aranabilir listesi, uygulama araç çubuğu düğmeleri, son kullanılanlar listesi, geri ve ileri, kapatılan belgeleri yeniden açma, kilitli gruplar ve bunların tümü için klavye kısayolları.",
   "Context menus": "Bağlam menüleri",
   "Each tab offers the commands for its document, and the empty strip offers the commands for its group. `menuItems` hides built-in items, and `onContextMenuOpening` changes the list for each document or cancels it. `newDocument` creates a document when the empty strip is double-clicked.": "Her sekme belgesinin komutlarını, boş şerit ise grubunun komutlarını sunar. `menuItems` yerleşik öğeleri gizler, `onContextMenuOpening` listeyi her belge için değiştirir veya iptal eder. `newDocument`, boş şeride çift tıklandığında belge oluşturur.",
-  "Command": "Komut",
   "Note": "Not",
   "Closes the tab. Its key is shown next to it.": "Sekmeyi kapatır. Tuşu yanında gösterilir.",
   "Close others / to the right / to the left / saved / all": "Diğerlerini / sağdakileri / soldakileri / kaydedilenleri / tümünü kapat",

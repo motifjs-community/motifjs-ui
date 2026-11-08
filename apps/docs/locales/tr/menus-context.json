@@ -1,0 +1,13 @@
+{
+  "The menu of an element: it opens on a right-click at the pointer, and with the Menu key or Shift+F10 at the focused element. Its items are the same as those of a menu bar.": "Bir öğenin menüsü: sağ tıklamada işaretçinin olduğu yerde, Menü tuşu ya da Shift+F10 ile odaktaki öğede açılır. Öğeleri menü çubuğununkilerle aynıdır.",
+  "A menu for each row": "Her satır için bir menü",
+  "A `ContextMenu` placed in an element belongs to it (`target` can name another). `onOpening` builds the items for the element under the pointer, in this case a row in a list: a locked file cannot be renamed. Setting `e.cancel = true` outside a row leaves the browser’s own menu.": "Bir öğenin içine konan `ContextMenu` o öğeye aittir (`target` başka bir öğeyi gösterebilir). `onOpening`, işaretçinin altındaki öğe için öğeleri oluşturur; burada bir listedeki satır: kilitli bir dosya yeniden adlandırılamaz. Satırın dışında `e.cancel = true` atamak tarayıcının kendi menüsünü bırakır.",
+  "attachContextMenu": "attachContextMenu",
+  "`attachContextMenu(target, items)` attaches a menu to an element or a component without placing a component. `items` can be a function of the opening event. It returns a function that removes the menu.": "`attachContextMenu(target, items)`, bir bileşen yerleştirmeden bir öğeye ya da bileşene menü bağlar. `items` açılış olayını alan bir fonksiyon olabilir. Menüyü kaldıran bir fonksiyon döndürür.",
+  "A right-click opens the menu at the pointer; the Menu key and Shift+F10 open it at the focused element, on its first item.": "Sağ tıklama menüyü işaretçinin olduğu yerde açar; Menü tuşu ve Shift+F10 onu odaktaki öğede, ilk öğesinde açar.",
+  "`onOpening` receives the element (`e.target`) and sets `e.items` for it, or `e.cancel = true` to leave the browser’s own menu.": "`onOpening` öğeyi alır (`e.target`) ve onun için `e.items` atar ya da tarayıcının kendi menüsünü bırakmak için `e.cancel = true` atar.",
+  "Escape, a click outside or choosing an item closes the menu; focus returns to the element it opened on.": "Escape, dışarıya tıklama ya da bir öğe seçmek menüyü kapatır; odak menünün açıldığı öğeye döner.",
+  "The menu follows the element it opened on while the page scrolls, and closes once the element is out of view (`closeOnScroll`).": "Sayfa kaydırılırken menü açıldığı öğeyi izler, öğe görünümden çıkınca kapanır (`closeOnScroll`).",
+  "A menu taller than the window scrolls inside and keeps its scroll position.": "Pencereden uzun bir menü kendi içinde kaydırılır ve kaydırma konumunu korur.",
+  "The props, properties and events of `ContextMenu` are in the [API reference](/menus/api).": "`ContextMenu` bileşeninin prop'ları, özellikleri ve olayları [API başvurusunda](/menus/api) yer alır."
+}

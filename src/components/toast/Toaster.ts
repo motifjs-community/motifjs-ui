@@ -379,7 +379,12 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
       return;
     }
     this.element.setAttribute('aria-keyshortcuts', hotkey);
-    parts.removeHotkey = addShortcut(hotkey, () => this.hotkeyPressed(), { inEditable: true });
+    parts.removeHotkey = addShortcut(hotkey, () => this.hotkeyPressed(), {
+      inEditable: true,
+      name: 'toaster.focus',
+      text: () => uiLocale.strings.toasterFocusKey,
+      category: () => uiLocale.strings.shortcutsNotifications,
+    });
   }
 
   private hotkeyPressed(): boolean {

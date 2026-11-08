@@ -1,0 +1,20 @@
+{
+  "customizer": {
+    "$description": "The customizer window of a menu bar: its pages, the buttons of its forms and its footer.",
+    "$selector": ".mx-customizer__pages",
+    "$units": {
+      "page": {
+        "$description": "A page: `gap` between its toolbar and the tree or the list.",
+        "selector": ".mx-customizer__pages > .mx-tabs__panels > .mx-tabs__panel:not([hidden])"
+      },
+      "buttons": {
+        "$description": "The buttons of a form of the customizer, such as renaming.",
+        "selector": ".mx-customizer__buttons"
+      },
+      "footer": {
+        "$description": "The footer of the window: reset all and close.",
+        "selector": ".mx-customizer__footer"
+      }
+    }
+  }
+}

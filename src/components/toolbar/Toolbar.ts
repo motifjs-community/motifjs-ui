@@ -8,6 +8,8 @@ import type { ControlSize } from '../../core/control-size';
 import type { IconSource } from '../../core/icon-source';
 import { deepActiveElement, focusableIn, isShown } from '../../core/focus';
 import { givenField, givenList, givenValue } from '../../core/given-field';
+import { commands } from '../../core/command-registry';
+import { namesCommands, runItem, valueOf } from '../../core/command-fields';
 import { moreMark } from '../../core/glyphs';
 import { ResizeWatch } from '../../core/resize-watch';
 import { uiLocale } from '../../core/ui-locale';
@@ -101,7 +103,12 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     if (own.label !== undefined) this.bindProperty('text', own.label);
     if (own.onItemClick) this.onItemClick(own.onItemClick);
     this.listen();
+    // Items that name commands take their fields from them: read again when the commands change.
+    const listening = commands.onChanged(() => {
+      if (namesCommands(givenList(this.peekProperty<readonly ToolbarItem[]>('items')))) this.refresh();
+    });
     this.motif.setDisposable(() => {
+      listening.dispose();
       parts.stopItems?.();
       parts.stopMoreLabel?.();
       parts.itemClick.dispose();
@@ -256,7 +263,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   }
 
   private make(item: ToolbarItem, type: ToolbarItemType): Control {
-    const field = <K extends keyof ToolbarItem>(name: K) => givenValue<ToolbarItem[K]>(item, name);
+    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this.element, name === 'pressed' ? 'checked' : name);
     if (type === 'separator') return new ToolbarSeparator({ visible: field('visible') });
     const props: ButtonProps = { text: field('text'), icon: field('icon'), hint: field('hint'), tone: field('tone'), enabled: field('enabled'), visible: field('visible') };
     if (type === 'toggle') {
@@ -272,7 +279,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   /** Gives a made control the item's fields again, as they are now. */
   private fill(item: ToolbarItem, made: Made): void {
-    const field = <K extends keyof ToolbarItem>(name: K) => givenValue<ToolbarItem[K]>(item, name);
+    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this.element, name === 'pressed' ? 'checked' : name);
     made.control.visible = field('visible') ?? true;
     if (!(made.control instanceof Button)) return;
     const button = made.control;
@@ -291,9 +298,9 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   private itemPressed(item: ToolbarItem, button: Button, event: Event): void {
     const args: ToolbarItemClickEventArgs = { item, source: this, event };
-    givenValue<ToolbarItem['click']>(item, 'click')?.(args);
+    runItem(item, args, this, event, this.element);
     // A click set the toggle's own state; one bound to the app follows the app again.
-    const pressed = givenValue<ToolbarItem['pressed']>(item, 'pressed');
+    const pressed = valueOf<ToolbarItem['pressed']>(item, 'pressed', this.element, 'checked');
     if (typeof pressed === 'function') button.pressed = pressed;
     this.parts.itemClick.fire(args);
   }

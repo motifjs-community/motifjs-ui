@@ -1939,6 +1939,9 @@
     --mx-combo-box-field-frame-focus-border-color: var(--mx-color-stroke-control-default);
     --mx-combo-box-field-frame-focus-border-width: var(--mx-border-width-1);
     --mx-combo-box-field-frame-border-bottom-color: var(--mx-color-stroke-control-default);
+    --mx-customizer-page-gap: var(--mx-space-3);
+    --mx-customizer-buttons-gap: var(--mx-space-2);
+    --mx-customizer-footer-gap: var(--mx-space-2);
     --mx-datagrid-record-height: var(--mx-control-height-md);
     --mx-datagrid-row-space: var(--mx-space-1);
     --mx-datagrid-cell-inset: var(--mx-control-padding-sm);
@@ -2942,6 +2945,12 @@
     --mx-sheet-footer-gap: var(--mx-space-2);
     --mx-sheet-footer-border-top-width: var(--mx-border-width-1);
     --mx-sheet-footer-border-top-color: var(--mx-color-stroke-divider);
+    --mx-shortcut-editor-editor-gap: var(--mx-space-3);
+    --mx-shortcut-editor-keys-gap: var(--mx-space-3);
+    --mx-shortcut-editor-row-keys-padding-start: var(--mx-space-6);
+    --mx-shortcut-editor-row-keys-font-size: var(--mx-font-size-caption);
+    --mx-shortcut-editor-changed-padding-start: var(--mx-space-2);
+    --mx-shortcut-editor-changed-font-size: var(--mx-font-size-caption);
     --mx-signature-guide-inset: var(--mx-space-6);
     --mx-signature-actions-inset: var(--mx-space-1);
     --mx-signature-pad-radius: var(--mx-radius-lg);
@@ -4372,6 +4381,9 @@
     --mx-sheet-body-focus-outline-width: var(--mx-focus-ring-width);
     --mx-sheet-body-focus-outline-color: var(--mx-focus-ring-color);
     --mx-sheet-body-focus-outline-offset: calc(var(--mx-focus-ring-width) * -1);
+    --mx-shortcut-editor-status-color: var(--mx-color-fg-secondary);
+    --mx-shortcut-editor-row-keys-color: var(--mx-color-fg-secondary);
+    --mx-shortcut-editor-changed-color: var(--mx-color-fg-secondary);
     --mx-signature-pad-bg: var(--mx-color-bg-card);
     --mx-signature-pad-color: var(--mx-color-fg-primary);
     --mx-signature-pad-focus-outline-width: var(--mx-focus-ring-width);

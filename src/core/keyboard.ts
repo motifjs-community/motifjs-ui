@@ -1,4 +1,4 @@
-import type { ComponentBase } from '@motifx/core';
+import { Emitter, type ComponentBase } from '@motifx/core';
 import { accessKeyModifiers } from './access-key';
 import { closestControl, controlOf } from './control-map';
 import { deepActiveElement, isShown } from './focus';
@@ -33,12 +33,24 @@ export interface ShortcutOptions {
    * and chords with those modifiers always work.
    */
   inEditable?: boolean;
+  /**
+   * What it does: the key of a command, or a component's own name for it (`tabDocuments.closeTab`). A shortcut with a
+   * name takes the keys the user gave to that name (`shortcuts.keymap`) in place of its own, and shortcuts with the same
+   * name share them.
+   */
+  name?: string;
+  /** How it reads in a list of shortcuts. The default is `name`. */
+  text?: string | (() => string);
+  /** The heading a list of shortcuts groups it under, such as `File`. */
+  category?: string | (() => string);
+  /** Whether the user's keys take the place of its own. The default is `true`; without a name it never is. */
+  customizable?: boolean;
 }
 
 /** Return `false` from a handler to pass the key on, to a less specific shortcut and then the page. */
 export type ShortcutHandler = (e: KeyboardEvent) => void | boolean;
 
-interface Chord {
+export interface Chord {
   ctrl: boolean;
   alt: boolean;
   shift: boolean;
@@ -47,18 +59,69 @@ interface Chord {
   key: string;
 }
 
-interface Registration {
-  /** One chord, or the chords pressed one after the other. */
-  chords: Chord[];
+export interface Registration {
+  /** The keys it was given. */
+  defaults: readonly string[];
+  /** The keys that run it now: the user's for its name, else `defaults`. */
+  keys: readonly string[];
+  /** Each of `keys` read, in the same order: one chord, or the chords pressed one after the other. */
+  sequences: Chord[][];
   handler: ShortcutHandler;
   scope: ComponentBase | null;
   inEditable: boolean;
+  name: string | null;
+  text: string | (() => string) | null;
+  category: string | (() => string) | null;
+  customizable: boolean;
+}
+
+/** A shortcut and one of its key sequences, as a key press finds it. */
+interface Hit {
+  reg: Registration;
+  chords: Chord[];
 }
 
 const registrations = new Set<Registration>();
+/** The keys the user gave, by the name of the shortcut. */
+let userKeys: Readonly<Record<string, readonly string[]>> = {};
+/** @internal Tells `shortcuts` that one was added (the registration) or taken away (`null`). */
+export const shortcutChanges = new Emitter<Registration | null>();
+
+/** @internal The shortcuts registered now, in the order they came. */
+export function registered(): readonly Registration[] {
+  return [...registrations];
+}
+/** @internal The keys the user gave, by name (`shortcuts.keymap`). */
+export function givenKeys(): Readonly<Record<string, readonly string[]>> {
+  return userKeys;
+}
+
+/** @internal Sets the keys the user gave: every shortcut with one of those names takes them at once. */
+export function setGivenKeys(map: Readonly<Record<string, readonly string[]>>): void {
+  userKeys = map;
+  for (const reg of registrations) readKeys(reg);
+  shortcutChanges.fire(null);
+}
+
+/** The keys of a shortcut now: the user's for its name, else its own. Keys of the user's that read as none are left out. */
+function readKeys(reg: Registration): void {
+  const given = reg.name !== null && reg.customizable ? userKeys[reg.name] : undefined;
+  const keys: string[] = [];
+  reg.sequences = [];
+  for (const text of given ?? reg.defaults) {
+    try {
+      reg.sequences.push(parseShortcut(text));
+      keys.push(text);
+    } catch {
+      // Keys without a key run nothing.
+    }
+  }
+  reg.keys = keys;
+}
+
 let installed = false;
 /** The shortcuts whose first chords were pressed, waiting for the next one. */
-let pending: { regs: Registration[]; step: number } | null = null;
+let pending: { hits: Hit[]; step: number } | null = null;
 
 const KEY_ALIASES: Record<string, string> = {
   esc: 'escape',
@@ -107,6 +170,16 @@ export function parseShortcut(text: string): Chord[] {
     .map(parseChord);
 }
 
+/** Whether a text reads as keys `addShortcut` takes: one without a key does not. */
+export function isKeys(text: string): boolean {
+  try {
+    parseShortcut(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function keyMatches(chord: Chord, e: KeyboardEvent): boolean {
   return e.key.toLowerCase() === chord.key || physicalKeyMatches(chord.key, e);
 }
@@ -148,18 +221,38 @@ function typesWithAltGr(chord: Chord, e: KeyboardEvent): boolean {
  * modal form is open and for plain keys while focus is in a window. With `scope`, it
  * is active only while focus is inside that component. Returns a function that
  * removes it. `Control.addShortcut` does the same and removes it when the control
- * is disposed. Two chords separated by a space are pressed in sequence (`'Ctrl+K W'`).
+ * is disposed. Two chords separated by a space are pressed in sequence (`'Ctrl+K W'`);
+ * a list gives several keys that do the same. With a `name`, the keys the user gave
+ * to that name (`shortcuts.keymap`) take the place of these.
  *
  * @example
- * const remove = addShortcut('Ctrl+S', () => model.save());
+ * const remove = addShortcut('Ctrl+S', () => model.save(), { name: 'save', text: 'Save' });
  * addShortcut('Delete', () => grid.deleteSelected(), { scope: grid });
- * addShortcut('Ctrl+K Ctrl+W', () => docs.closeAll());
+ * addShortcut(['Ctrl+K Ctrl+W', 'Ctrl+Shift+W'], () => docs.closeAll());
  */
-export function addShortcut(chord: string, handler: ShortcutHandler, options: ShortcutOptions = {}): () => void {
+export function addShortcut(keys: string | readonly string[], handler: ShortcutHandler, options: ShortcutOptions = {}): () => void {
   installKeyboard();
-  const reg: Registration = { chords: parseShortcut(chord), handler, scope: options.scope ?? null, inEditable: !!options.inEditable };
+  const defaults = typeof keys === 'string' ? [keys] : [...keys];
+  // Keys without a key are a slip of the code: said at once.
+  for (const text of defaults) parseShortcut(text);
+  const reg: Registration = {
+    defaults,
+    keys: defaults,
+    sequences: [],
+    handler,
+    scope: options.scope ?? null,
+    inEditable: !!options.inEditable,
+    name: options.name ?? null,
+    text: options.text ?? null,
+    category: options.category ?? null,
+    customizable: options.customizable !== false,
+  };
+  readKeys(reg);
   registrations.add(reg);
-  return () => void registrations.delete(reg);
+  shortcutChanges.fire(reg);
+  return () => {
+    if (registrations.delete(reg)) shortcutChanges.fire(null);
+  };
 }
 
 /**
@@ -301,36 +394,51 @@ function pageHasAccessKeys(doc: Document): boolean {
 const MODIFIERS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph']);
 
 function runShortcuts(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): boolean {
-  const candidates = findShortcuts(registrations, 0, e, focus, win);
-  const waiting = candidates.filter((reg) => reg.chords.length > 1);
+  const hits: Hit[] = [];
+  for (const reg of registrations) for (const chords of reg.sequences) hits.push({ reg, chords });
+  const candidates = findShortcuts(hits, 0, e, focus, win);
+  const waiting = candidates.filter((hit) => hit.chords.length > 1);
   if (waiting.length) {
-    pending = { regs: waiting, step: 1 };
+    pending = { hits: waiting, step: 1 };
     return true;
   }
-  for (const reg of candidates) if (reg.handler(e) !== false) return true;
-  return false;
+  return runFirst(candidates, e);
 }
 
 /** The key after the first chords of some shortcuts: the one it ends runs, a longer one waits again. */
 function continueShortcut(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): void {
-  const { regs, step } = pending!;
+  const { hits, step } = pending!;
   pending = null;
-  const candidates = findShortcuts(regs, step, e, focus, win);
-  const waiting = candidates.filter((reg) => reg.chords.length > step + 1);
+  const candidates = findShortcuts(hits, step, e, focus, win);
+  const waiting = candidates.filter((hit) => hit.chords.length > step + 1);
   if (waiting.length) {
-    pending = { regs: waiting, step: step + 1 };
+    pending = { hits: waiting, step: step + 1 };
     return;
   }
-  for (const reg of candidates) if (reg.handler(e) !== false) return;
+  runFirst(candidates, e);
+}
+
+/** Runs the shortcuts found, each once, until one takes the key. */
+function runFirst(candidates: Hit[], e: KeyboardEvent): boolean {
+  const asked = new Set<Registration>();
+  for (const { reg } of candidates) {
+    if (asked.has(reg)) continue;
+    asked.add(reg);
+    if (reg.handler(e) !== false) return true;
+  }
+  return false;
 }
 
 /** The shortcuts whose chord at `step` the key is and that may run here, the most specific scope first. */
-function findShortcuts(regs: Iterable<Registration>, step: number, e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): Registration[] {
+function findShortcuts(hits: Iterable<Hit>, step: number, e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): Hit[] {
   const plain = !e.ctrlKey && !e.altKey && !e.metaKey;
   const fKey = /^F\d{1,2}$/.test(e.key);
-  const candidates: { reg: Registration; depth: number }[] = [];
-  for (const reg of regs) {
-    const chord = reg.chords[step];
+  const candidates: { hit: Hit; depth: number }[] = [];
+  for (const hit of hits) {
+    const { reg } = hit;
+    // Taken away while its first keys waited.
+    if (!registrations.has(reg)) continue;
+    const chord = hit.chords[step];
     if (!chord || !matches(chord, e)) continue;
     // A plain key ends a shortcut in a text field too; it does not start one there.
     if (step === 0 && plain && !fKey && !reg.inEditable && isEditable(focus)) continue;
@@ -340,16 +448,16 @@ function findShortcuts(regs: Iterable<Registration>, step: number, e: KeyboardEv
       if (win && !win.contains(el)) continue;
       const control = controlOf(el);
       if (control && !control.isEnabled) continue;
-      candidates.push({ reg, depth: depthOf(el) });
+      candidates.push({ hit, depth: depthOf(el) });
     } else {
       // App-wide: never across a modal form; plain keys belong to a focused window.
       if (win && topModal(win.ownerDocument) === win) continue;
       if (step === 0 && win && plain && !fKey) continue;
-      candidates.push({ reg, depth: -1 });
+      candidates.push({ hit, depth: -1 });
     }
   }
   candidates.sort((a, b) => b.depth - a.depth);
-  return candidates.map((c) => c.reg);
+  return candidates.map((c) => c.hit);
 }
 
 /**

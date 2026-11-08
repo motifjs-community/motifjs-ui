@@ -1071,6 +1071,12 @@
     --_combo-box-arrow-glyph-open-rotate: var(--mx-combo-box-arrow-glyph-open-rotate);
   }
 
+  .mx-customizer__pages {
+    --_customizer-page-gap: var(--mx-customizer-page-gap);
+    --_customizer-buttons-gap: var(--mx-customizer-buttons-gap);
+    --_customizer-footer-gap: var(--mx-customizer-footer-gap);
+  }
+
   .mx-data-grid, .mx-data-grid__values, .mx-data-grid__menu, .mx-data-grid__tip {
     --_datagrid-record-height: var(--mx-datagrid-record-height);
     --_datagrid-row-space: var(--mx-datagrid-row-space);
@@ -3128,6 +3134,18 @@
     --_sheet-footer-gap: var(--mx-sheet-footer-gap);
     --_sheet-footer-border-top-width: var(--mx-sheet-footer-border-top-width);
     --_sheet-footer-border-top-color: var(--mx-sheet-footer-border-top-color);
+  }
+
+  .mx-shortcut-editor {
+    --_shortcut-editor-editor-gap: var(--mx-shortcut-editor-editor-gap);
+    --_shortcut-editor-keys-gap: var(--mx-shortcut-editor-keys-gap);
+    --_shortcut-editor-status-color: var(--mx-shortcut-editor-status-color);
+    --_shortcut-editor-row-keys-padding-start: var(--mx-shortcut-editor-row-keys-padding-start);
+    --_shortcut-editor-row-keys-color: var(--mx-shortcut-editor-row-keys-color);
+    --_shortcut-editor-row-keys-font-size: var(--mx-shortcut-editor-row-keys-font-size);
+    --_shortcut-editor-changed-padding-start: var(--mx-shortcut-editor-changed-padding-start);
+    --_shortcut-editor-changed-color: var(--mx-shortcut-editor-changed-color);
+    --_shortcut-editor-changed-font-size: var(--mx-shortcut-editor-changed-font-size);
   }
 
   .mx-signature {

@@ -18,6 +18,7 @@ const MEMBERS = [
     ['[Rating](/rating)', 'A score in stars or other marks.'],
     ['[ValidationSummary](/validationsummary)', 'The invalid fields of a group, with links to them.'],
     ['[FileUploader](/fileuploader)', 'Files dropped or chosen, with limits, progress and uploading in chunks.'],
+    ['[ShortcutEditor](/shortcuteditor)', 'The app’s keyboard shortcuts, for the user to assign other keys.'],
 ];
 
 const CHOOSE = [
@@ -30,6 +31,7 @@ const CHOOSE = [
     ['Show a month all the time', '[Calendar](/calendar)'],
     ['Take a code sent by message', '[OtpInput](/otpinput)'],
     ['Take files', '[FileUploader](/fileuploader)'],
+    ['Let the user change keyboard shortcuts', '[ShortcutEditor](/shortcuteditor)'],
 ];
 
 const A11Y = [

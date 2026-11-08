@@ -3,7 +3,6 @@
   "Arranging and saving": "Düzenleme ve kaydetme",
   "Right-click a command or a group, or press Shift+F10 on it. Here each change is saved in the browser and given back when the page opens again. Paste is `fixed`: it cannot be hidden or moved.": "Bir komuta veya gruba sağ tıklayın ya da üzerindeyken Shift+F10'a basın. Burada her değişiklik tarayıcıya kaydedilir ve sayfa yeniden açıldığında geri verilir. Paste `fixed` olduğu için gizlenemez ve taşınamaz.",
   "The context menu": "Bağlam menüsü",
-  "Where": "Nerede",
   "What the user can do": "Kullanıcının yapabilecekleri",
   "Add it to the quick commands or remove it, hide it, move it earlier or later in its group.": "Hızlı komutlara eklemek veya çıkarmak, gizlemek, grubunda öne veya arkaya almak.",
   "Hide the group, move it earlier or later in its tab.": "Grubu gizlemek, sekmesinde öne veya arkaya almak.",

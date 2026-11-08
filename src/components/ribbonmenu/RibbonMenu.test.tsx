@@ -312,6 +312,32 @@ describe('RibbonMenu', () => {
         expect(told).toEqual(['app', 'quick:home/clipboard/cut']);
     });
 
+    it('lets the app add its own commands to the menu of the right button, or keep it closed, even when not customizable', async () => {
+        const seen: (string | null)[] = [];
+        const menu = await make({
+            items: tabs(),
+            onCustomMenuOpening: (e: { path: string | null; items: { text: string }[]; cancel: boolean }) => {
+                seen.push(e.path);
+                if (e.path === 'insert') e.cancel = true;
+                else e.items.unshift({ text: 'Add to the toolbar' });
+            }
+        });
+        rightClick(menu.element.querySelector('[data-ribbon-size="medium"]')!);
+        await settle();
+        expect(menuNames(menu)[0]).toBe('Add to the toolbar');
+        expect(menuNames(menu)[1]).toBe('Add to the quick commands');
+        press(menuItems(menu)[0], 'Escape');
+        await settle();
+        const closed = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX: 40, clientY: 40 });
+        tab(menu, 'insert').dispatchEvent(closed);
+        expect(closed.defaultPrevented).toBe(false);
+        menu.customizable = false;
+        rightClick(tab(menu, 'home'));
+        await settle();
+        expect(menuNames(menu)).toEqual(['Add to the toolbar']);
+        expect(seen).toEqual(['home/clipboard/cut', 'insert', 'home']);
+    });
+
     it('takes back what the user changed: hidden and moved groups and commands, quick commands, layout', async () => {
         const menu = await make({ items: tabs(), customization: { hidden: ['home/clipboard/copy'], order: { home: ['font', 'clipboard'], 'home/clipboard': ['cut', 'paste'] }, quick: ['home/clipboard/cut'], layout: 'simple' } });
         const panel = shownPanel(menu)[0];

@@ -12,6 +12,7 @@ import type { BottomSheetDetent } from '../sheet/bottom-sheet-detent';
 import { BottomSheet } from '../sheet/BottomSheet';
 import type { ActionSheetProps } from './action-sheet-props';
 import { onLanguage } from '../../core/on-language';
+import { runItem } from '../../core/command-fields';
 
 const OWN = ['items', 'message', 'showCancel', 'cancelText'] as const;
 
@@ -240,7 +241,7 @@ export class ActionSheet extends BottomSheet {
     }
     parts.chosen = item;
     this.close('code');
-    item.click?.({ ...e, source: this });
+    runItem(item, { ...e, source: this }, this, e.event, this.element as Element);
     parts.itemClick.fire({ ...e, source: this });
   }
 }

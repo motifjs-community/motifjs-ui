@@ -52,7 +52,7 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
                 <Rich text="Buttons and commands" />
               </td>
               <td>
-                <Rich text="[`Button`](/button) (menu, split, toggle, busy), [`ButtonGroup`](/buttongroup), [`Toolbar`](/toolbar), [`SpeedDial`](/speeddial), [`MenuBar`](/menus) and [`ContextMenu`](/menus)" />
+                <Rich text="[`Button`](/button) (menu, split, toggle, busy), [`ButtonGroup`](/buttongroup), [`Toolbar`](/toolbar), [`SpeedDial`](/speeddial), [`MenuBar`](/menus) and [`ContextMenu`](/menus/context)" />
               </td>
             </tr>
             <tr>

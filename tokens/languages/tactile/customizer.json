@@ -1,0 +1,19 @@
+{
+  "customizer": {
+    "page": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "buttons": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "footer": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    }
+  }
+}

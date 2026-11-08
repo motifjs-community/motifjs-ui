@@ -2425,6 +2425,18 @@
     color: var(--_combo-box-loading-color, inherit);
   }
 
+  .mx-customizer__pages > .mx-tabs__panels > .mx-tabs__panel:not([hidden]) {
+    gap: var(--_customizer-page-gap, normal);
+  }
+
+  .mx-customizer__buttons {
+    gap: var(--_customizer-buttons-gap, normal);
+  }
+
+  .mx-customizer__footer {
+    gap: var(--_customizer-footer-gap, normal);
+  }
+
   .mx-data-grid {
     background-color: var(--_datagrid-grid-bg, transparent);
     border-style: solid;
@@ -7667,6 +7679,30 @@
     border-block-end-width: 0px;
     border-inline-start-width: 0px;
     border-block-start-color: var(--_sheet-footer-border-top-color, currentcolor);
+  }
+
+  .mx-shortcut-editor {
+    gap: var(--_shortcut-editor-editor-gap, normal);
+  }
+
+  .mx-shortcut-editor__keys {
+    gap: var(--_shortcut-editor-keys-gap, normal);
+  }
+
+  .mx-shortcut-editor__status {
+    color: var(--_shortcut-editor-status-color, inherit);
+  }
+
+  .mx-shortcut-editor__row-keys {
+    padding-inline-start: var(--_shortcut-editor-row-keys-padding-start, 0px);
+    color: var(--_shortcut-editor-row-keys-color, inherit);
+    font-size: var(--_shortcut-editor-row-keys-font-size, inherit);
+  }
+
+  .mx-shortcut-editor__changed {
+    padding-inline-start: var(--_shortcut-editor-changed-padding-start, 0px);
+    color: var(--_shortcut-editor-changed-color, inherit);
+    font-size: var(--_shortcut-editor-changed-font-size, inherit);
   }
 
   .mx-signature__pad {

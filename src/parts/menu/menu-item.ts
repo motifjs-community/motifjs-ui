@@ -1,14 +1,23 @@
 import type { Bind } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
 import type { MenuItemClickEventArgs } from './menu-item-click-event-args';
+import type { MenuItemMerge } from './menu-item-merge';
+import type { MenuItemMergeAt } from './menu-item-merge-at';
 
 /**
  * One command of a menu. Every field except `click` and `data` is a value or a function. A function
  * is tracked, so the item changes in the open menu when what it reads changes.
  */
 export interface MenuItem {
+  /** Finds the item in paths such as `file/recent` (a `MenuBar`'s changes by path). The default is its position. */
+  key?: string | number;
+  /**
+   * The command of the app the item runs (see `commands`): what the item is not given, its text, icon, hint, keys,
+   * state and action, comes from the command.
+   */
+  command?: string;
   /** The label. `&` marks the key that selects it while the menu is open (`&Copy`), and `&&` is a literal `&`. */
-  text: Bind<string>;
+  text?: Bind<string>;
   /** An image address, an element or a component. A function is called each time the item is drawn. */
   icon?: Bind<IconSource | null | undefined>;
   /** The text shown as a tooltip. */
@@ -33,6 +42,12 @@ export interface MenuItem {
   beginGroup?: Bind<boolean>;
   /** Runs when the item is selected, after the menu closes. */
   click?: (e: MenuItemClickEventArgs) => void;
+  /** In a `MenuBar` the user can change: `false` keeps the item where it is and shown. The default is `true`. */
+  customizable?: Bind<boolean>;
+  /** In a `MenuBar` merged into another: what the item does there. The default is `'auto'`. */
+  merge?: Bind<MenuItemMerge>;
+  /** In a `MenuBar` merged into another: where the item stands there. The default is the end. */
+  mergeAt?: Bind<MenuItemMergeAt>;
   /** Custom data for the item. */
   data?: unknown;
 }

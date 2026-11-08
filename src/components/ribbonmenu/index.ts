@@ -9,6 +9,7 @@ export type * from './ribbon-group';
 export type * from './ribbon-group-more-event-args';
 export type * from './ribbon-menu-customization';
 export type * from './ribbon-menu-customized-event-args';
+export type * from './ribbon-menu-custom-menu-opening-event-args';
 export type * from './ribbon-menu-display';
 export type * from './ribbon-menu-display-changed-event-args';
 export type * from './ribbon-menu-items-changed-event-args';

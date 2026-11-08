@@ -7,9 +7,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 const MEMBERS = [
     ['[Button](/button)', 'One command, with an icon, a menu or a split part; a toggle; a busy state while the command runs.'],
     ['[ButtonGroup](/buttongroup)', 'A few related buttons side by side: one or several pressed, or plain actions.'],
-    ['[Toolbar](/toolbar)', 'A row of commands that moves what does not fit into a menu.'],
     ['[SpeedDial](/speeddial)', 'A floating button for the main action, opening related actions in a line or a circle.'],
-    ['[MenuBar and ContextMenu](/menus)', 'The menus of an application and the menu of an element, with shortcuts, check items and access keys.'],
 ];
 
 const CHOOSE = [
@@ -17,7 +15,7 @@ const CHOOSE = [
     ['Show a choice of a few options at once', '[ButtonGroup](/buttongroup), or [RadioGroup](/radiogroup) in a form'],
     ['Keep many commands in one bar at any width', '[Toolbar](/toolbar)'],
     ['Offer the commands of a whole application', '[MenuBar](/menus)'],
-    ['Act on what is under the pointer', '[ContextMenu](/menus)'],
+    ['Act on what is under the pointer', '[ContextMenu](/menus/context)'],
     ['Give a screen one main action, on a phone too', '[SpeedDial](/speeddial)'],
 ];
 
@@ -31,7 +29,7 @@ export default function ButtonsOverviewPage() {
     return (
         <>
             <p class="lead">
-                <Rich text="Buttons start commands. The group covers single buttons, groups of them, toolbars that keep commands in reach at any width, application and context menus, and a floating button for the main action of a screen." />
+                <Rich text="Buttons start commands. The group covers single buttons, groups of them and a floating button for the main action of a screen. Toolbars and menus, which hold the many commands of an application, are in [Navigation](/navigation)." />
             </p>
 
             <Section anchor="demo" title="Commands of an editor">

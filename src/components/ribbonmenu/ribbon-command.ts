@@ -15,6 +15,11 @@ export interface RibbonCommand {
     key?: string | number;
     /** The default is `'button'`. */
     type?: Bind<RibbonCommandType>;
+    /**
+     * The command of the app it runs (see `commands`): what it is not given, its text, glyph or icon, hint, state and
+     * action, comes from the command; a toggle is pressed as the command is `checked`.
+     */
+    command?: string;
     /** The text. An `&` before a letter makes that letter its access key. A small command shows it as its tooltip. */
     text?: Bind<string>;
     /** The name of a glyph. */
