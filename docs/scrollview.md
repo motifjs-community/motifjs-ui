@@ -1,6 +1,6 @@
 # ScrollView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.6
+> Navigation · @motifx-community/ui 0.1.0-beta.7
 
 A scrollable container with configurable scrollbars, pull-to-refresh, and load-on-scroll near the end of the content. You can scroll it programmatically to a position or an element.
 

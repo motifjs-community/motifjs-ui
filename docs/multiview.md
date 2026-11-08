@@ -1,6 +1,6 @@
 # MultiView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.6
+> Navigation · @motifx-community/ui 0.1.0-beta.7
 
 Displays one page at a time from a horizontal set. Users move between pages with a swipe or drag, and you can navigate with `next()`, `previous()` and `goTo()`, or with [Tabs](tabs.md), a [Stepper](stepper.md) or buttons bound to the same value. It works like the panels of a tab control without the tab strip.
 

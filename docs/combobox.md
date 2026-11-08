@@ -1,6 +1,6 @@
 # ComboBox and Autocomplete
 
-> Choice · @motifx-community/ui 0.1.0-beta.6
+> Choice · @motifx-community/ui 0.1.0-beta.7
 
 A text input with a list that filters as the user types. Items can come from memory or from a data layer source that is searched on the server. `Autocomplete` is the free-text variant, where the value is the text itself.
 

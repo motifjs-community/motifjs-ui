@@ -1,6 +1,6 @@
 # DateBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.6
+> Editors · @motifx-community/ui 0.1.0-beta.7
 
 An input for a date, a time or both. Users can type through a mask in the locale's order, or pick from a calendar and a list of times. `min`, `max` and `disabledDates` apply to both methods.
 

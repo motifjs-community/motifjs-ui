@@ -1,6 +1,6 @@
 # Scheduler: The appointment form
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.6
+> Scheduler · @motifx-community/ui 0.1.0-beta.7
 
 Configure the appointment form without handling events. You can choose its fields and their order, arrange them in groups and tabs, use custom editors, add validation per field, and show or lock fields for specific appointments. You can also replace the form with your own.
 

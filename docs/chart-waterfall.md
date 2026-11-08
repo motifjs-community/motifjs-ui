@@ -1,6 +1,6 @@
 # Chart: Waterfall
 
-> Charts · @motifx-community/ui 0.1.0-beta.6
+> Charts · @motifx-community/ui 0.1.0-beta.7
 
 A waterfall shows how a starting value becomes an end value through changes up and down.
 

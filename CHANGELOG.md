@@ -6,6 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.7] - 2026-11-08
+
+### Fixed
+
+- Lookup texts are asked 20 keys at a time instead of 100 (`lookup.batchSize`), so a request that carries the keys in
+  its URL stays within common server limits.
+- A row of a list that failed to load, and a whole list that failed, say that they could not load and load again when
+  pressed or with Enter, instead of staying on Loading or showing an empty list. This covers `DropDown`, `ComboBox`,
+  `ListBox`, `TagBox` and the header filter of `DataGrid`.
+- `DataGrid`: searching the header filter of a lookup column whose `textFrom` is a field searches that field on the
+  server, instead of turning the matching texts into a long list of keys.
+- `DataGrid`: a lookup column grouped by its own field (`calculateGroupValue` naming it, with `textFrom`) shows the text
+  of the key in its group rows and in an export, not the key.
+
 ## [0.1.0-beta.6] - 2026-11-07
 
 ### New components

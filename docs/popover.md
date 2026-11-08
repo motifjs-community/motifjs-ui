@@ -1,6 +1,6 @@
 # Popover
 
-> Feedback · @motifx-community/ui 0.1.0-beta.6
+> Feedback · @motifx-community/ui 0.1.0-beta.7
 
 Displays content next to a related element, such as a title, a close button, a form or a card. It opens on click or on hover, follows its target, and points to it with an arrow where the design language includes one.
 

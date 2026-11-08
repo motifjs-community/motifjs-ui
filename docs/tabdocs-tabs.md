@@ -1,6 +1,6 @@
 # TabDocumentManager: Tabs
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.6
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.7
 
 Tabs that behave as they do in code editors: preview tabs replaced by the next preview, pinned tabs that stay at the start, tabs that shrink, wrap or scroll, counts and colors, and the same document open in two groups.
 

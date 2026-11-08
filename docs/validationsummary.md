@@ -1,6 +1,6 @@
 # ValidationSummary
 
-> Editors · @motifx-community/ui 0.1.0-beta.6
+> Editors · @motifx-community/ui 0.1.0-beta.7
 
 Lists the invalid fields of a `ValidationGroup` under a header, with each field's label and message on its own line. Clicking a line moves focus to the field. The summary updates whenever a field in the group is validated or reset, and it is hidden when there are no errors.
 

@@ -1,6 +1,6 @@
 # Chart: Live data
 
-> Charts · @motifx-community/ui 0.1.0-beta.6
+> Charts · @motifx-community/ui 0.1.0-beta.7
 
 A chart follows its data: reactive values redraw it, and live data moves along with the latest values.
 

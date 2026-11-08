@@ -1,6 +1,6 @@
 # Scheduler: Resources and groups
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.6
+> Scheduler · @motifx-community/ui 0.1.0-beta.7
 
 Resources such as rooms, people and equipment can color appointments, divide columns into groups (nested or under each date), and define when each resource is available and when time is blocked.
 

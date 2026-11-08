@@ -1,6 +1,6 @@
 # Sortable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.6
+> Navigation · @motifx-community/ui 0.1.0-beta.7
 
 Lets users reorder items by dragging them with the pointer or a finger, or with the keyboard. Lists in the same group can exchange items. A drop moves the element and reports the indexes, while your data stays under your control.
 

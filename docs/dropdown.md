@@ -1,6 +1,6 @@
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.6
+> Choice · @motifx-community/ui 0.1.0-beta.7
 
 Selects one item from a list. The field shows the selected item, and the list opens below it on click or from the keyboard. The list can be searched, grouped and customized, and it stays fast with thousands of items.
 

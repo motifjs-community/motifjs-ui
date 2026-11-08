@@ -1,6 +1,6 @@
 # Gauge: Ranges
 
-> Gauges · @motifx-community/ui 0.1.0-beta.6
+> Gauges · @motifx-community/ui 0.1.0-beta.7
 
 Ranges give stretches of the scale a meaning, such as normal, high and critical. They show as a band beside the track, and the fill takes the color of the range its value is in.
 

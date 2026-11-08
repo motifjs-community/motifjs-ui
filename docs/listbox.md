@@ -1,6 +1,6 @@
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.6
+> Data · @motifx-community/ui 0.1.0-beta.7
 
 A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be searched and grouped, and long lists render only the visible rows.
 

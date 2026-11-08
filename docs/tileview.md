@@ -1,6 +1,6 @@
 # TileView
 
-> Display · @motifx-community/ui 0.1.0-beta.6
+> Display · @motifx-community/ui 0.1.0-beta.7
 
 Arranges tiles of different sizes on a grid of base cells, where each tile spans a set number of cells. Tiles fill the height in columns and scroll horizontally, or fill the width in rows. They can be selected and reordered by dragging.
 

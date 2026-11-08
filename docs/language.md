@@ -1,6 +1,6 @@
 # Language
 
-> Foundations · @motifx-community/ui 0.1.0-beta.6
+> Foundations · @motifx-community/ui 0.1.0-beta.7
 
 `uiLocale` controls the strings that controls display, the locale used for dates and numbers, and the text direction. The kit has one `uiLocale`, and each language pack is loaded on demand.
 

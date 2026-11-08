@@ -1,6 +1,6 @@
 # Gallery
 
-> Display · @motifx-community/ui 0.1.0-beta.6
+> Display · @motifx-community/ui 0.1.0-beta.7
 
 Displays a horizontal set of slides, one or several at a time. Users navigate with the side buttons, the indicator dots, swipe gestures or the arrow keys, and it can run as an automatic slideshow. A slide can be an image with a caption or any other content.
 

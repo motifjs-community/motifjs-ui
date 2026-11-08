@@ -1,6 +1,6 @@
 # Wizard
 
-> Navigation · @motifx-community/ui 0.1.0-beta.6
+> Navigation · @motifx-community/ui 0.1.0-beta.7
 
 Guides the user through a multi-step task. It combines a [Stepper](stepper.md) above or next to one page per step with Back and Next buttons below. Next validates the page first, and on the last step it finishes the wizard.
 

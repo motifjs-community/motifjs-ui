@@ -1,6 +1,6 @@
 # FilterBuilder
 
-> Data · @motifx-community/ui 0.1.0-beta.6
+> Data · @motifx-community/ui 0.1.0-beta.7
 
 Lets users build a filter visually, using groups joined by And, Or, Not And or Not Or, and conditions made of a field, an operation and a value. Its value is a data layer filter expression, so it works directly with in-memory rows and every adapter. DataGrid opens it from the filter panel, and you can also use it on its own for reports or saved searches.
 

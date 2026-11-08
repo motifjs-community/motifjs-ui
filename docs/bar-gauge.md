@@ -1,6 +1,6 @@
 # BarGauge
 
-> Gauges · @motifx-community/ui 0.1.0-beta.6
+> Gauges · @motifx-community/ui 0.1.0-beta.7
 
 Shows several values side by side as bars bent round one middle, each against the same scale. It compares a few values at a glance, in little room.
 
