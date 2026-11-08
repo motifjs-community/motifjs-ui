@@ -2,23 +2,45 @@
   "app-menu": {
     "$description": "AppMenu: the main menu of an application, a list of items beside the page of the item chosen, in a panel over a share of the window or over the whole of it.",
     "$selector": ".mx-app-menu",
-    "font-family": { "$type": "fontFamily" },
-    "share": { "$type": "number", "$description": "The share of the window the panel takes on a wide screen (0.5: half)." },
-    "min-size": { "$type": "dimension", "$description": "The least width of the panel: where its share would be narrower, it takes the whole window." },
-    "split-size": { "$type": "dimension", "$description": "The least width of the panel that holds the list and the page side by side; a narrower panel shows them in turns." },
-    "nav-size": { "$type": "dimension", "$description": "The width of the list beside the page." },
+    "font-family": {
+      "$type": "fontFamily"
+    },
+    "share": {
+      "$type": "number",
+      "$description": "The share of the window the panel takes on a wide screen (0.5: half)."
+    },
+    "min-size": {
+      "$type": "dimension",
+      "$description": "The least width of the panel: where its share would be narrower, it takes the whole window."
+    },
+    "split-size": {
+      "$type": "dimension",
+      "$description": "The least width of the panel that holds the list and the page side by side; a narrower panel shows them in turns."
+    },
+    "nav-size": {
+      "$type": "dimension",
+      "$description": "The width of the list beside the page."
+    },
     "$places": {
       "close-button": {
         "$description": "The button at the top of the list that closes the menu.",
         "selector": ".mx-app-menu__nav > .mx-app-menu__close",
         "part": "button",
-        "tokens": ["variant", "tone", "size"]
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
       },
       "back-button": {
         "$description": "The button above a page that took the list's place, back to the list.",
         "selector": ".mx-app-menu__page-head > .mx-app-menu__back",
         "part": "button",
-        "tokens": ["variant", "tone", "size"]
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
       }
     },
     "$units": {
@@ -43,6 +65,14 @@
           "stacked": ".mx-app-menu[data-stacked] .mx-app-menu__nav"
         }
       },
+      "header-slot": {
+        "$description": "The app's own content at the top of the list.",
+        "selector": ".mx-app-menu__header-slot"
+      },
+      "search": {
+        "$description": "The search field above the items.",
+        "selector": ".mx-app-menu__search"
+      },
       "list": {
         "$description": "A list of items: the one at the top, and the one at the bottom (`bottom`).",
         "selector": ".mx-app-menu__list",
@@ -53,6 +83,14 @@
       "separator": {
         "$description": "The line between two groups of items.",
         "selector": ".mx-app-menu__separator"
+      },
+      "no-match": {
+        "$description": "What the search says when no item matches.",
+        "selector": ".mx-app-menu__no-match"
+      },
+      "footer-slot": {
+        "$description": "The app's own content at the bottom of the list.",
+        "selector": ".mx-app-menu__footer-slot"
       },
       "item": {
         "$description": "An item: under the pointer, pressed, its page shown, its page shown under the pointer, focused by the keys, disabled.",

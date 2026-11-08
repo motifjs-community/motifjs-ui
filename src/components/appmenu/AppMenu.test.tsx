@@ -237,4 +237,77 @@ describe('AppMenu', () => {
         await settle();
         expect(document.activeElement).toBe(opener);
     });
+
+    it('holds the app’s content above and under the items', async () => {
+        const top = new Sheet('Signed in as Ada');
+        const bottom = new Sheet('Version 2.4');
+        const menu = await make({ items: items(), listHeader: top, listFooter: bottom });
+        menu.open();
+        await settle();
+        const nav = menu.element.querySelector('.mx-app-menu__nav')!;
+        const order = Array.from(nav.children).filter(c => !(c as HTMLElement).hidden).map(c => c.className.split(' ')[0]);
+        expect(order).toEqual(['mx-button', 'mx-app-menu__header-slot', 'mx-app-menu__list', 'mx-app-menu__list', 'mx-app-menu__footer-slot']);
+        expect(nav.querySelector('.mx-app-menu__header-slot')!.textContent).toBe('Signed in as Ada');
+        expect(nav.querySelector('.mx-app-menu__footer-slot')!.textContent).toBe('Version 2.4');
+    });
+
+    it('searches the items by their text and hint, says when nothing matches, and Enter presses the first', async () => {
+        const told: string[] = [];
+        const menu = await make({ items: items({ save: { hint: 'Keep the changes', click: () => told.push('save') } }), searchEnabled: true });
+        menu.open();
+        await settle();
+        const input = menu.element.querySelector<HTMLInputElement>('.mx-app-menu__search input')!;
+        const type = (text: string) => {
+            input.value = text;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        type('xp');
+        await settle();
+        expect(texts(menu)).toEqual(['Export']);
+        type('changes');
+        await settle();
+        expect(texts(menu)).toEqual(['Save']);
+        press(input, 'Enter');
+        await settle();
+        expect(told).toEqual(['save']);
+        menu.open();
+        await settle();
+        type('zzz');
+        await settle();
+        expect(texts(menu)).toEqual([]);
+        expect(menu.element.querySelector('.mx-app-menu__no-match')!.textContent).toBe('Nothing matches “zzz”');
+        press(input, 'Escape');
+        await settle();
+        expect(menu.searchText).toBe('');
+        expect(menu.isOpen).toBe(true);
+        expect(texts(menu)).toHaveLength(6);
+    });
+
+    it('adds, removes, moves and changes items by key, never changing what it was given, a page kept', async () => {
+        const given = items();
+        const snapshot = JSON.stringify(given.map(i => i.key));
+        const told: number[] = [];
+        const menu = await make({ items: given, onItemsChanged: (e: { items: AppMenuItem[] }) => told.push(e.items.length) });
+        menu.open();
+        await settle();
+        const home = menu.pageOf('home');
+        expect(menu.addItem({ key: 'print', text: '&Print', group: 'file' }, 4)).toBe(true);
+        await settle();
+        expect(texts(menu)).toEqual(['Home', 'Open', 'Save', 'Export', 'Print', 'Account', 'Options']);
+        expect(menu.updateItem('home', { text: 'Start' })).toBe(true);
+        await settle();
+        expect(texts(menu)[0]).toBe('Start');
+        expect(menu.pageOf('home')).toBe(home);
+        menu.beginUpdate();
+        menu.moveItem('save', 0);
+        menu.removeItem('export');
+        menu.endUpdate();
+        await settle();
+        expect(texts(menu)).toEqual(['Save', 'Start', 'Open', 'Print', 'Account', 'Options']);
+        expect(menu.removeItem('nothing')).toBe(false);
+        expect(menu.findItem('print')!.text).toBe('&Print');
+        expect(JSON.stringify(given.map(i => i.key))).toBe(snapshot);
+        expect(given[0].text).toBe('&Home');
+        expect(told).toEqual([7, 7, 6]);
+    });
 });

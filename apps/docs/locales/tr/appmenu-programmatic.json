@@ -1,0 +1,11 @@
+{
+  "Items can be added, removed, moved and changed at any time, by their keys. Items that stay keep their place, and pages that were opened keep their state.": "Öğeler anahtarlarıyla istenildiği an eklenebilir, kaldırılabilir, taşınabilir ve değiştirilebilir. Yerinde kalan öğeler konumunu, daha önce açılmış sayfalar durumunu korur.",
+  "Changes by key": "Anahtarla değişiklikler",
+  "Adds an item at `index`, the end by default.": "`index` konumuna bir öğe ekler; varsayılan konum listenin sonudur.",
+  "Removes the item with `key`; its page goes with it.": "`key` anahtarlı öğeyi kaldırır; sayfası da onunla birlikte kaldırılır.",
+  "Moves the item to `index`.": "Öğeyi `index` konumuna taşır.",
+  "Changes some of its fields, such as `text`, `badge`, `enabled` or `visible`; the others stay as they are, and its page is kept.": "`text`, `badge`, `enabled` veya `visible` gibi alanlarından bazılarını değiştirir; diğerleri olduğu gibi kalır, sayfası korunur.",
+  "Shows a page, opens the menu on it, and returns its page once it has been shown.": "Bir sayfayı gösterir, menüyü o sayfada açar ve gösterilmiş bir öğenin sayfasını döndürür.",
+  "Each change method returns `false` when nothing changed, such as for a key that does not exist.": "Her değişiklik yöntemi, var olmayan bir anahtarda olduğu gibi hiçbir şey değişmediğinde `false` döndürür.",
+  "The methods never change the items you gave. Each change makes a new list, the item changed a new object and the others the ones given, and it becomes `items`. `onItemsChanged` reports the new list to keep. When the items are in reactive state, you can also change that state directly; the menu follows it, and each item’s fields can be functions it follows.": "Yöntemler verdiğiniz öğeleri hiçbir zaman değiştirmez. Her değişiklik yeni bir liste oluşturur: değişen öğe yeni bir nesne olur, diğerleri verilen nesneler olarak kalır ve bu liste `items` olur. `onItemsChanged`, saklamanız için yeni listeyi bildirir. Öğeler reaktif durumda tutuluyorsa bu durumu doğrudan da değiştirebilirsiniz; menü değişikliği izler ve her öğenin alanları menünün izlediği function'lar olabilir."
+}

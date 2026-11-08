@@ -221,6 +221,50 @@
           "$value": "calc({focus.ring.width} * -1)"
         }
       }
+    },
+    "header-slot": {
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "padding-bottom": {
+        "$value": "{space.2}"
+      }
+    },
+    "search": {
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "padding-bottom": {
+        "$value": "{space.2}"
+      }
+    },
+    "no-match": {
+      "padding": {
+        "$value": "{space.3}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.body}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      }
+    },
+    "footer-slot": {
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "padding-top": {
+        "$value": "{space.2}"
+      },
+      "border-top-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.divider}"
+      }
     }
   }
 }

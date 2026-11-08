@@ -115,6 +115,25 @@
     flex-direction: column;
   }
 
+  /* The app's own content above and under the items, the search and what it says when nothing matches. */
+  .mx-app-menu__header-slot,
+  .mx-app-menu__footer-slot,
+  .mx-app-menu__search,
+  .mx-app-menu__no-match {
+    flex: none;
+  }
+
+  .mx-app-menu__header-slot[hidden],
+  .mx-app-menu__footer-slot[hidden],
+  .mx-app-menu__search[hidden],
+  .mx-app-menu__no-match[hidden] {
+    display: none;
+  }
+
+  .mx-app-menu__list--bottom[hidden] + .mx-app-menu__footer-slot {
+    margin-block-start: auto;
+  }
+
   .mx-app-menu__list--bottom {
     margin-block-start: auto;
   }
@@ -274,5 +293,10 @@
     to {
       translate: calc(var(--_turn) * 100%) 0;
     }
+  }
+
+  /* The close and back arrows point to the start edge the panel came from. */
+  :is(.mx-app-menu__close, .mx-app-menu__back):dir(rtl) .mx-glyph {
+    scale: -1 1;
   }
 }

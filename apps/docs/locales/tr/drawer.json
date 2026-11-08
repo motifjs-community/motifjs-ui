@@ -27,7 +27,6 @@
   "A flick faster than this, in pixels per millisecond, opens or closes it regardless of distance.": "Bundan hızlı fırlatma, milisaniye başına piksel olarak, mesafeden bağımsız olarak açar veya kapatır.",
   "`true` for over, `false` for push": "Over için `true`, push için `false`",
   "Blocks everything around it, and Tab stays inside.": "Çevresindeki her şeyi engeller, Tab içeride kalır.",
-  "Props shared by all overlay panels, as listed on the [BottomSheet page](/bottomsheet#api).": "Tüm overlay panellerde ortak olan prop'lar, [BottomSheet sayfasında](/bottomsheet#api) listelenmiştir.",
   "Same as on a bottom sheet.": "Bottom sheet'tekiyle aynı.",
   "Same as on a bottom sheet. A swipe back closes it with `reason: 'swipe'`, and an edge swipe canceled by `onOpening` does not move it.": "Bottom sheet'tekiyle aynı. Geri kaydırma `reason: 'swipe'` ile kapatır, `onOpening` tarafından iptal edilen kenar kaydırması paneli hareket ettirmez."
 }

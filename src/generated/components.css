@@ -1603,6 +1603,17 @@
     --mx-app-menu-page-head-padding: var(--mx-space-2);
     --mx-app-menu-page-head-gap: var(--mx-space-2);
     --mx-app-menu-view-padding: var(--mx-space-6);
+    --mx-app-menu-header-slot-padding-inline: var(--mx-space-1);
+    --mx-app-menu-header-slot-padding-bottom: var(--mx-space-2);
+    --mx-app-menu-search-padding-inline: var(--mx-space-1);
+    --mx-app-menu-search-padding-bottom: var(--mx-space-2);
+    --mx-app-menu-no-match-padding: var(--mx-space-3);
+    --mx-app-menu-no-match-font-size: var(--mx-font-size-body);
+    --mx-app-menu-no-match-line-height: var(--mx-font-line-body);
+    --mx-app-menu-footer-slot-padding-inline: var(--mx-space-1);
+    --mx-app-menu-footer-slot-padding-top: var(--mx-space-2);
+    --mx-app-menu-footer-slot-border-top-width: var(--mx-border-width-1);
+    --mx-app-menu-footer-slot-border-color: var(--mx-color-stroke-divider);
     --mx-avatar-group-gap-xs: var(--mx-space-1);
     --mx-avatar-group-gap-sm: var(--mx-space-1);
     --mx-avatar-group-gap-md: var(--mx-space-2);
@@ -3566,6 +3577,7 @@
     --mx-app-menu-view-focus-outline-width: var(--mx-focus-ring-width);
     --mx-app-menu-view-focus-outline-color: var(--mx-focus-ring-color);
     --mx-app-menu-view-focus-outline-offset: calc(var(--mx-focus-ring-width) * -1);
+    --mx-app-menu-no-match-color: var(--mx-color-fg-secondary);
     --mx-avatar-group-stacked-outline-color: var(--mx-color-bg-surface);
     --mx-avatar-avatar-color: var(--mx-color-fg-secondary);
     --mx-avatar-avatar-accent-bg: var(--mx-color-accent-subtle);

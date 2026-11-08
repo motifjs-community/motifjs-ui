@@ -481,10 +481,11 @@ export interface UiStrings {
   sheetFit: string;
   sheetHeight: string;
   drawerLabel: string;
-  /** AppMenu: its name when it has none, its close button, and the button that goes back from a page to the list. */
+  /** AppMenu: its name when it has none, its close button, the button that goes back from a page to the list, and the search that finds nothing (`{text}` is filled in). */
   appMenuLabel: string;
   appMenuClose: string;
   appMenuBack: string;
+  appMenuNoMatch: string;
   /** RibbonMenu: the name of its tabs when it has none, and the button beside a group's name (`{group}` is filled in). */
   ribbonMenuLabel: string;
   ribbonMenuMore: string;

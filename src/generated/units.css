@@ -303,6 +303,18 @@
     background-color: var(--_app-menu-nav-bg, transparent);
   }
 
+  .mx-app-menu__header-slot {
+    padding-inline-end: var(--_app-menu-header-slot-padding-inline, 0px);
+    padding-block-end: var(--_app-menu-header-slot-padding-bottom, 0px);
+    padding-inline-start: var(--_app-menu-header-slot-padding-inline, 0px);
+  }
+
+  .mx-app-menu__search {
+    padding-inline-end: var(--_app-menu-search-padding-inline, 0px);
+    padding-block-end: var(--_app-menu-search-padding-bottom, 0px);
+    padding-inline-start: var(--_app-menu-search-padding-inline, 0px);
+  }
+
   .mx-app-menu__list {
     gap: var(--_app-menu-list-gap, normal);
   }
@@ -318,6 +330,31 @@
     margin-block-end: var(--_app-menu-separator-margin-block, 0px);
     margin-inline-start: var(--_app-menu-separator-margin-inline, 0px);
     background-color: var(--_app-menu-separator-bg, transparent);
+  }
+
+  .mx-app-menu__no-match {
+    padding-block-start: var(--_app-menu-no-match-padding, 0px);
+    padding-inline-end: var(--_app-menu-no-match-padding, 0px);
+    padding-block-end: var(--_app-menu-no-match-padding, 0px);
+    padding-inline-start: var(--_app-menu-no-match-padding, 0px);
+    color: var(--_app-menu-no-match-color, inherit);
+    font-size: var(--_app-menu-no-match-font-size, inherit);
+    line-height: var(--_app-menu-no-match-line-height, inherit);
+  }
+
+  .mx-app-menu__footer-slot {
+    padding-block-start: var(--_app-menu-footer-slot-padding-top, 0px);
+    padding-inline-end: var(--_app-menu-footer-slot-padding-inline, 0px);
+    padding-inline-start: var(--_app-menu-footer-slot-padding-inline, 0px);
+    border-style: solid;
+    border-block-start-width: var(--_app-menu-footer-slot-border-top-width, 0px);
+    border-inline-end-width: 0px;
+    border-block-end-width: 0px;
+    border-inline-start-width: 0px;
+    border-block-start-color: var(--_app-menu-footer-slot-border-color, currentcolor);
+    border-inline-end-color: var(--_app-menu-footer-slot-border-color, currentcolor);
+    border-block-end-color: var(--_app-menu-footer-slot-border-color, currentcolor);
+    border-inline-start-color: var(--_app-menu-footer-slot-border-color, currentcolor);
   }
 
   .mx-app-menu__item {

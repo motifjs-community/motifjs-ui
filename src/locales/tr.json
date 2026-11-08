@@ -441,6 +441,7 @@
   "appMenuLabel": "Menü",
   "appMenuClose": "Menüyü kapat",
   "appMenuBack": "Menüye dön",
+  "appMenuNoMatch": "“{text}” ile eşleşen öğe yok",
   "ribbonMenuLabel": "Komutlar",
   "ribbonMenuMore": "Diğer seçenekler: {group}",
   "ribbonMenuSimple": "Sade görünümü göster",

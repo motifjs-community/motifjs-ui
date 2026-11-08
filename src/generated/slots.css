@@ -166,6 +166,18 @@
     --_app-menu-indicator-height: var(--mx-app-menu-indicator-height);
     --_app-menu-indicator-bg: var(--mx-app-menu-indicator-bg);
     --_app-menu-indicator-radius: var(--mx-app-menu-indicator-radius);
+    --_app-menu-header-slot-padding-inline: var(--mx-app-menu-header-slot-padding-inline);
+    --_app-menu-header-slot-padding-bottom: var(--mx-app-menu-header-slot-padding-bottom);
+    --_app-menu-search-padding-inline: var(--mx-app-menu-search-padding-inline);
+    --_app-menu-search-padding-bottom: var(--mx-app-menu-search-padding-bottom);
+    --_app-menu-no-match-padding: var(--mx-app-menu-no-match-padding);
+    --_app-menu-no-match-color: var(--mx-app-menu-no-match-color);
+    --_app-menu-no-match-font-size: var(--mx-app-menu-no-match-font-size);
+    --_app-menu-no-match-line-height: var(--mx-app-menu-no-match-line-height);
+    --_app-menu-footer-slot-padding-inline: var(--mx-app-menu-footer-slot-padding-inline);
+    --_app-menu-footer-slot-padding-top: var(--mx-app-menu-footer-slot-padding-top);
+    --_app-menu-footer-slot-border-top-width: var(--mx-app-menu-footer-slot-border-top-width);
+    --_app-menu-footer-slot-border-color: var(--mx-app-menu-footer-slot-border-color);
     --_app-menu-item-selected-glow: var(--mx-app-menu-item-selected-glow);
     --_app-menu-page-bg: var(--mx-app-menu-page-bg);
     --_app-menu-item-selected-shadow: var(--mx-app-menu-item-selected-shadow);

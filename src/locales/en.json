@@ -441,6 +441,7 @@
   "appMenuLabel": "Menu",
   "appMenuClose": "Close the menu",
   "appMenuBack": "Back to the menu",
+  "appMenuNoMatch": "Nothing matches “{text}”",
   "ribbonMenuLabel": "Commands",
   "ribbonMenuMore": "More options: {group}",
   "ribbonMenuSimple": "Show the simplified layout",

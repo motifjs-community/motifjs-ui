@@ -1260,6 +1260,90 @@
     "value": "calc(2px * -1)"
   },
   {
+    "name": "app-menu.header-slot.padding-inline",
+    "cssVar": "--mx-app-menu-header-slot-padding-inline",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "app-menu.header-slot.padding-bottom",
+    "cssVar": "--mx-app-menu-header-slot-padding-bottom",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "app-menu.search.padding-inline",
+    "cssVar": "--mx-app-menu-search-padding-inline",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "app-menu.search.padding-bottom",
+    "cssVar": "--mx-app-menu-search-padding-bottom",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "app-menu.no-match.padding",
+    "cssVar": "--mx-app-menu-no-match-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "app-menu.no-match.color",
+    "cssVar": "--mx-app-menu-no-match-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "app-menu.no-match.font-size",
+    "cssVar": "--mx-app-menu-no-match-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "app-menu.no-match.line-height",
+    "cssVar": "--mx-app-menu-no-match-line-height",
+    "type": "dimension",
+    "ref": "font.line.body",
+    "value": "1.25rem"
+  },
+  {
+    "name": "app-menu.footer-slot.padding-inline",
+    "cssVar": "--mx-app-menu-footer-slot-padding-inline",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "app-menu.footer-slot.padding-top",
+    "cssVar": "--mx-app-menu-footer-slot-padding-top",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "app-menu.footer-slot.border-top-width",
+    "cssVar": "--mx-app-menu-footer-slot-border-top-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "app-menu.footer-slot.border-color",
+    "cssVar": "--mx-app-menu-footer-slot-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
     "name": "app-menu.indicator.width",
     "cssVar": "--mx-app-menu-indicator-width",
     "type": "dimension",

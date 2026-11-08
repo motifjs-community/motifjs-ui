@@ -111,7 +111,6 @@ export const GROUPS = [
       { id: 'window', label: 'Window', title: 'Window and dialog', path: '/window', related: ['button', 'keyboard'] },
       { id: 'bottomsheet', label: 'BottomSheet', title: 'BottomSheet', path: '/bottomsheet', related: ['drawer', 'actionsheet', 'window'] },
       { id: 'drawer', label: 'Drawer', title: 'Drawer', path: '/drawer', related: ['bottomsheet', 'actionsheet', 'layout'] },
-      { id: 'appmenu', label: 'AppMenu', title: 'AppMenu', path: '/appmenu', related: ['drawer', 'appbar', 'menus'] },
       { id: 'actionsheet', label: 'ActionSheet', title: 'ActionSheet', path: '/actionsheet', related: ['bottomsheet', 'menus', 'drawer'] },
       { id: 'layout', label: 'Layout', title: 'Layout', path: '/layout', related: ['tabs', 'accordion'] },
       { id: 'splitter', label: 'Splitter', title: 'Splitter', path: '/splitter', related: ['layout', 'tabdocs', 'drawer'] },
@@ -184,6 +183,16 @@ export const GROUPS = [
       { id: 'ribbonmenu-customization', label: 'Customization', title: 'RibbonMenu: Customization', path: '/ribbonmenu/customization', related: ['ribbonmenu', 'ribbonmenu-display', 'menus'] },
       { id: 'ribbonmenu-programmatic', label: 'Programmatic changes', title: 'RibbonMenu: Programmatic changes', path: '/ribbonmenu/programmatic', related: ['ribbonmenu', 'ribbonmenu-customization', 'ribbonmenu-api'] },
       { id: 'ribbonmenu-api', label: 'API reference', title: 'RibbonMenu: API reference', path: '/ribbonmenu/api', related: ['ribbonmenu', 'ribbonmenu-commands', 'ribbonmenu-customization'] },
+    ],
+  },
+  {
+    title: 'AppMenu',
+    section: 'Components',
+    pages: [
+      { id: 'appmenu', label: 'Overview', title: 'AppMenu', path: '/appmenu', related: ['appmenu-search', 'appmenu-programmatic', 'drawer', 'ribbonmenu'] },
+      { id: 'appmenu-search', label: 'Slots and search', title: 'AppMenu: Slots and search', path: '/appmenu/search', related: ['appmenu', 'appmenu-api', 'textbox'] },
+      { id: 'appmenu-programmatic', label: 'Programmatic changes', title: 'AppMenu: Programmatic changes', path: '/appmenu/programmatic', related: ['appmenu', 'appmenu-api', 'ribbonmenu-programmatic'] },
+      { id: 'appmenu-api', label: 'API reference', title: 'AppMenu: API reference', path: '/appmenu/api', related: ['appmenu', 'appmenu-search', 'appmenu-programmatic'] },
     ],
   },
   {

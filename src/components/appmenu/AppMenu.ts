@@ -1,9 +1,11 @@
 import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute } from "../../core/access-key";
 import { css, glyphPart, iconPart, mark, part, put, shown } from "../../core/draw-parts";
+import { fillTemplate } from "../../core/fill-template";
+import { foldText } from "../../core/fold-text";
 import { follow } from "../../core/follow";
 import { givenField, givenList, givenValue } from "../../core/given-field";
-import { glyph } from "../../core/glyphs";
+import { glyph, searchMark } from "../../core/glyphs";
 import type { IconSource } from "../../core/icon-source";
 import { onLanguage } from "../../core/on-language";
 import { TokenLengths } from "../../core/token-lengths";
@@ -11,13 +13,16 @@ import { uiLocale } from "../../core/ui-locale";
 import { OverlayPanel } from "../../parts/overlay/OverlayPanel";
 import { Badge } from "../badge/Badge";
 import { Button } from "../button/Button";
+import { TextBox } from "../textbox/TextBox";
+import type { AppMenuItemsChangedEventArgs } from "./app-menu-items-changed-event-args";
+import type { AppMenuSearchTextChangedEventArgs } from "./app-menu-search-text-changed-event-args";
 import type { AppMenuItem } from "./app-menu-item";
 import type { AppMenuItemClickEventArgs } from "./app-menu-item-click-event-args";
 import type { AppMenuProps } from "./app-menu-props";
 import type { AppMenuSelectingEventArgs } from "./app-menu-selecting-event-args";
 import type { AppMenuSelectionChangedEventArgs } from "./app-menu-selection-changed-event-args";
 
-const OWN = ['items', 'selected', 'closeOnCommand'] as const;
+const OWN = ['items', 'selected', 'closeOnCommand', 'listHeader', 'listFooter', 'searchEnabled', 'searchText'] as const;
 
 // The layout's lengths: the share of the room the panel takes, the least width of the panel, the least width that holds
 // the list and the page side by side.
@@ -49,6 +54,7 @@ interface Look {
 
 interface ItemPart {
     item: AppMenuItem;
+    key: Key;
     bottom: boolean;
     separator: Component<HTMLDivElement>;
     host: Component<HTMLElement>;
@@ -91,6 +97,19 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     selecting = new Emitter<AppMenuSelectingEventArgs>();
     selectionChanged = new Emitter<AppMenuSelectionChangedEventArgs>();
     itemClick = new Emitter<AppMenuItemClickEventArgs>();
+    itemsChanged = new Emitter<AppMenuItemsChangedEventArgs>();
+    searchTextChanged = new Emitter<AppMenuSearchTextChangedEventArgs>();
+    headerHost: Component<HTMLDivElement>;
+    footerHost: Component<HTMLDivElement>;
+    searchHost: Component<HTMLDivElement>;
+    search: TextBox | null = null;
+    noMatch: Component<HTMLDivElement>;
+    // What the app put at the top and the bottom of the list.
+    headerControl: ComponentBase | null = null;
+    footerControl: ComponentBase | null = null;
+    // Changes made between beginUpdate() and endUpdate(), applied at once.
+    batch = 0;
+    pending: AppMenuItem[] | null = null;
     nav: Component<HTMLElement>;
     closer: Button;
     topList: Component<HTMLDivElement>;
@@ -122,8 +141,14 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         this.closer.element.classList.add('mx-app-menu__close');
         this.closer.element.addEventListener('click', () => this.close('button'));
         this.nav.controls.add(this.closer);
+        this.headerHost = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__header-slot');
+        this.searchHost = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__search');
         this.topList = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__list');
+        this.noMatch = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__no-match');
+        this.noMatch.element.setAttribute('role', 'status');
         this.bottomList = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__list mx-app-menu__list--bottom');
+        this.footerHost = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__footer-slot');
+        for (const el of [this.headerHost, this.footerHost, this.searchHost, this.noMatch]) shown(el.element, false);
 
         this.pageArea = new Component<HTMLDivElement>('div');
         this.pageArea.element.className = 'mx-app-menu__page';
@@ -139,10 +164,16 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         if (own.onSelecting) this.onSelecting(own.onSelecting);
         if (own.onSelectionChanged) this.onSelectionChanged(own.onSelectionChanged);
         if (own.onItemClick) this.onItemClick(own.onItemClick);
+        if (own.onItemsChanged) this.onItemsChanged(own.onItemsChanged);
+        if (own.onSearchTextChanged) this.onSearchTextChanged(own.onSearchTextChanged);
 
         this.observeProperty('items', () => this.renderItems());
         this.observeProperty('selected', () => this.drawSelection());
         this.observeProperty('text', () => this.drawNames());
+        this.observeProperty('listHeader', () => this.placeSlot('header'));
+        this.observeProperty('listFooter', () => this.placeSlot('footer'));
+        this.observeProperty('searchEnabled', () => this.drawSearch());
+        this.observeProperty('searchText', () => this.drawSearch());
         this.observeProperty('label', () => this.drawNames());
         onLanguage(this, () => this.drawNames());
         this.nav.element.addEventListener('click', e => this.navClick(e));
@@ -167,7 +198,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
             this.stopItems?.();
             this.roomObserver?.disconnect();
             this.lengths.dispose();
-            for (const emitter of [this.selecting, this.selectionChanged, this.itemClick]) emitter.dispose();
+            for (const emitter of [this.selecting, this.selectionChanged, this.itemClick, this.itemsChanged, this.searchTextChanged]) emitter.dispose();
         });
     }
 
@@ -190,6 +221,36 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     }
     set closeOnCommand(value: Bind<boolean>) {
         this.assignProperty('closeOnCommand', value, Boolean);
+    }
+    get listHeader(): ComponentBase | null {
+        return this.getProperty<ComponentBase | null | undefined>('listHeader') ?? null;
+    }
+    set listHeader(value: Bind<ComponentBase | null>) {
+        this.assignProperty('listHeader', value);
+    }
+    get listFooter(): ComponentBase | null {
+        return this.getProperty<ComponentBase | null | undefined>('listFooter') ?? null;
+    }
+    set listFooter(value: Bind<ComponentBase | null>) {
+        this.assignProperty('listFooter', value);
+    }
+    get searchEnabled(): boolean {
+        return this.getProperty<boolean | undefined>('searchEnabled') === true;
+    }
+    set searchEnabled(value: Bind<boolean>) {
+        this.assignProperty('searchEnabled', value, Boolean);
+    }
+    get searchText(): string {
+        return this.getProperty<string | undefined>('searchText') ?? '';
+    }
+    set searchText(value: Bind<string>) {
+        this.assignProperty('searchText', value);
+    }
+    get onSearchTextChanged(): MotifEvent<AppMenuSearchTextChangedEventArgs> {
+        return this.searchTextChanged.event;
+    }
+    get onItemsChanged(): MotifEvent<AppMenuItemsChangedEventArgs> {
+        return this.itemsChanged.event;
     }
     get onSelecting(): MotifEvent<AppMenuSelectingEventArgs> {
         return this.selecting.event;
@@ -217,6 +278,77 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     select(key: Key): boolean {
         const look = this.looks.find(l => l.key === key && l.page);
         return look ? this.choose(look, null) : false;
+    }
+
+    /** The item with `key`, as it is now. */
+    findItem(key: Key): AppMenuItem | null {
+        return this.looks.find(look => look.key === key)?.item ?? null;
+    }
+
+    // Changes by key. The items given are never changed: a new list is made, the item changed a new object and the
+    // others the ones given, and it becomes `items`; `onItemsChanged` reports it.
+
+    /** Adds an item at `index`, the end by default. */
+    addItem(item: AppMenuItem, index?: number): boolean {
+        return this.changeItems(list => {
+            const at = index === undefined ? list.length : Math.max(0, Math.min(index, list.length));
+            return [...list.slice(0, at), item, ...list.slice(at)];
+        });
+    }
+
+    /** Removes the item with `key`. Returns `false` when there is none. */
+    removeItem(key: Key): boolean {
+        return this.changeItems(list => {
+            const at = this.indexOfKey(list, key);
+            return at < 0 ? null : list.filter((_, i) => i !== at);
+        });
+    }
+
+    /** Moves the item with `key` to `index`. */
+    moveItem(key: Key, index: number): boolean {
+        return this.changeItems(list => {
+            const at = this.indexOfKey(list, key);
+            if (at < 0) return null;
+            const rest = list.filter((_, i) => i !== at);
+            const to = Math.max(0, Math.min(index, rest.length));
+            return [...rest.slice(0, to), list[at], ...rest.slice(to)];
+        });
+    }
+
+    /** Changes fields of the item with `key`; the others stay as they are. */
+    updateItem(key: Key, changes: Partial<AppMenuItem>): boolean {
+        return this.changeItems(list => {
+            const at = this.indexOfKey(list, key);
+            return at < 0 ? null : list.map((item, i) => (i === at ? { ...item, ...changes } : item));
+        });
+    }
+
+    /** Holds the changes by key until `endUpdate()`, which applies them at once. */
+    beginUpdate(): void {
+        this.batch++;
+    }
+
+    endUpdate(): void {
+        if (this.batch > 0) this.batch--;
+        if (this.batch === 0 && this.pending) this.applyItems(this.pending);
+    }
+
+    changeItems(change: (list: readonly AppMenuItem[]) => AppMenuItem[] | null): boolean {
+        const next = change(this.pending ?? givenList(this.peekProperty<readonly AppMenuItem[]>('items')));
+        if (!next) return false;
+        if (this.batch > 0) this.pending = next;
+        else this.applyItems(next);
+        return true;
+    }
+
+    applyItems(next: AppMenuItem[]): void {
+        this.pending = null;
+        this.changeProperty('items', next);
+        this.itemsChanged.fire({ items: next, source: this });
+    }
+
+    indexOfKey(list: readonly AppMenuItem[], key: Key): number {
+        return list.findIndex((item, i) => (givenValue<Key | undefined>(item, 'key') ?? i) === key);
     }
 
     /** Opens the menu on the page of the item with `key`. */
@@ -280,7 +412,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     // otherwise they are written in place.
     drawItems(): void {
         const tagOf = (look: Look) => (look.href ? 'A' : 'BUTTON');
-        const stale = this.entries.length !== this.looks.length || this.entries.some((p, i) => p.item !== this.looks[i].item || p.bottom !== this.looks[i].bottom || p.host.element.tagName !== tagOf(this.looks[i]));
+        const stale = this.entries.length !== this.looks.length || this.entries.some((p, i) => p.key !== this.looks[i].key || p.bottom !== this.looks[i].bottom || p.host.element.tagName !== tagOf(this.looks[i]));
         if (stale) {
             for (const p of this.entries) {
                 void p.separator.dispose();
@@ -288,18 +420,20 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
             }
             this.entries = this.looks.map(look => this.makeItem(look));
         }
+        this.looks.forEach((look, i) => (this.entries[i].item = look.item));
         const lastGroup = new Map<boolean, string | null>();
         // When any item has an icon, an item without one keeps the room, so the labels line up.
         const icons = this.looks.some(look => look.visible && (!!look.icon || look.glyph !== ''));
         this.looks.forEach((look, i) => {
             const p = this.entries[i];
+            const seen = this.shows(look);
             const host = p.host.element;
             const parsed = parseAccessKey(look.text);
             renderAccessKey(p.label.element, parsed);
             const key = parsed.key ? accessKeyToken(parsed.key) : null;
             setAccessKeyAttribute(host, p.accessKey, key);
             p.accessKey = key;
-            shown(host, look.visible);
+            shown(host, seen);
             put(host, 'title', look.hint || null);
             put(host, 'aria-disabled', look.enabled ? null : 'true');
             put(host, 'data-key', String(look.key));
@@ -310,12 +444,15 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
             }
             // A line before the first visible item of another group in the same list.
             const before = lastGroup.get(look.bottom);
-            shown(p.separator.element, look.visible && before !== undefined && before !== null && before !== look.group);
-            if (look.visible) lastGroup.set(look.bottom, look.group);
+            shown(p.separator.element, seen && before !== undefined && before !== null && before !== look.group);
+            if (seen) lastGroup.set(look.bottom, look.group);
             this.drawIcon(p, look, icons);
             this.drawBadge(p, look);
         });
-        shown(this.bottomList.element, this.looks.some(look => look.bottom && look.visible));
+        shown(this.bottomList.element, this.looks.some(look => look.bottom && this.shows(look)));
+        const query = this.query();
+        shown(this.noMatch.element, query !== '' && !this.looks.some(look => this.shows(look)));
+        this.noMatch.element.textContent = query ? fillTemplate(uiLocale.strings.appMenuNoMatch, { text: query }) : '';
         this.dropViews();
         this.drawSelection();
     }
@@ -329,7 +466,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         const iconHost = part<HTMLSpanElement>(host, 'span', 'mx-app-menu__icon');
         const itemGlyph = glyphPart(iconHost, '', 'mx-app-menu__glyph');
         const label = part<HTMLSpanElement>(host, 'span', 'mx-app-menu__label');
-        return { item: look.item, bottom: look.bottom, separator, host, iconHost, glyph: itemGlyph, icon: null, iconSource: null, label, badge: null, accessKey: null };
+        return { item: look.item, key: look.key, bottom: look.bottom, separator, host, iconHost, glyph: itemGlyph, icon: null, iconSource: null, label, badge: null, accessKey: null };
     }
 
     drawIcon(p: ItemPart, look: Look, room: boolean): void {
@@ -361,7 +498,11 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     // Pages of items that are gone go with them.
     dropViews(): void {
         for (const [key, view] of this.views) {
-            if (this.looks.some(look => look.key === key && look.item === view.item && look.page)) continue;
+            const look = this.looks.find(l => l.key === key && l.page);
+            if (look) {
+                view.item = look.item;
+                continue;
+            }
             void view.host.dispose();
             this.views.delete(key);
         }
@@ -403,9 +544,70 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
 
     /** The items Tab and the arrows reach, in the order they stand: the list at the top, then the one at the bottom. */
     stops(): number[] {
-        const can = (i: number) => this.looks[i].visible && this.looks[i].enabled;
+        const can = (i: number) => this.shows(this.looks[i]) && this.looks[i].enabled;
         const all = this.looks.map((_, i) => i);
         return [...all.filter(i => !this.looks[i].bottom && can(i)), ...all.filter(i => this.looks[i].bottom && can(i))];
+    }
+
+    // Search: the items whose text or hint holds what was typed, without case and marks, in the locale.
+
+    query(): string {
+        return this.peekProperty('searchEnabled') === true ? foldText((this.peekProperty<string>('searchText') ?? '').trim(), uiLocale.locale) : '';
+    }
+
+    shows(look: Look): boolean {
+        if (!look.visible) return false;
+        const query = this.query();
+        return !query || foldText(`${parseAccessKey(look.text).text} ${look.hint}`, uiLocale.locale).includes(query);
+    }
+
+    drawSearch(): void {
+        const on = this.peekProperty('searchEnabled') === true;
+        shown(this.searchHost.element, on);
+        if (on && !this.search) {
+            const search = new TextBox({ labelMode: 'hidden', size: 'md', type: 'search', icon: searchMark(), clearButton: true, autocomplete: 'off', spellcheck: false, label: () => uiLocale.strings.search, placeholder: () => uiLocale.strings.search });
+            search.onValueChanged(e => e.byUser && this.searchBy(String(e.value ?? '')));
+            search.element.addEventListener('keydown', e => this.searchKeyDown(e));
+            this.searchHost.controls.add(search);
+            this.search = search;
+        }
+        if (this.search && this.search.value !== this.searchText) this.search.value = this.searchText;
+        if (this.looks.length) this.drawItems();
+    }
+
+    searchKeyDown(e: KeyboardEvent): void {
+        const stops = this.stops();
+        if (e.key === 'ArrowDown' && stops.length) {
+            e.preventDefault();
+            this.moveTo(stops[0]);
+        } else if (e.key === 'Enter' && stops.length) {
+            e.preventDefault();
+            this.moveTo(stops[0]);
+            this.press(this.looks[stops[0]], e);
+        } else if (e.key === 'Escape' && this.searchText) {
+            // Escape clears the search before it closes the menu.
+            e.preventDefault();
+            e.stopPropagation();
+            this.searchBy('');
+        }
+    }
+
+    searchBy(text: string): void {
+        this.changeProperty('searchText', text);
+        this.searchTextChanged.fire({ text, source: this });
+    }
+
+    // The app's own content at the top and the bottom of the list.
+    placeSlot(side: 'header' | 'footer'): void {
+        const host = side === 'header' ? this.headerHost : this.footerHost;
+        const old = side === 'header' ? this.headerControl : this.footerControl;
+        const control = this.peekProperty<ComponentBase | null>(side === 'header' ? 'listHeader' : 'listFooter') ?? null;
+        if (control === old) return;
+        if (old && host.controls.items.includes(old)) host.controls.remove(old);
+        if (control) host.controls.add(control);
+        if (side === 'header') this.headerControl = control;
+        else this.footerControl = control;
+        shown(host.element, !!control);
     }
 
     drawNames(): void {
