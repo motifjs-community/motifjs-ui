@@ -11,7 +11,7 @@ import { onFontsLoaded } from "../../core/fonts-loaded";
 import { ResizeWatch } from "../../core/resize-watch";
 import { uiLocale } from "../../core/ui-locale";
 import { surfaceBehind } from "../../parts/chart/chart-text";
-import { TokenLengths } from "../../parts/chart/token-lengths";
+import { TokenLengths } from "../../core/token-lengths";
 import { Button } from "../button/Button";
 import type { ChartAxis } from "./chart-axis";
 import type { ChartDataErrorEventArgs } from "./chart-data-error-event-args";

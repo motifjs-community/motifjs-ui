@@ -12,7 +12,7 @@ import { uiLocale } from "../../core/ui-locale";
 import { arcPath, polar, type Place } from "../../parts/chart/chart-paths";
 import { formatNumber, textWidth, type ChartFormat } from "../../parts/chart/chart-text";
 import { svgPart, svgPut, TextPool } from "../../parts/chart/svg-parts";
-import { TokenLengths } from "../../parts/chart/token-lengths";
+import { TokenLengths } from "../../core/token-lengths";
 import { ValueMotion } from "../../parts/chart/value-motion";
 import type { ChartField } from "../chart/chart-field";
 import type { BarGaugeProps } from "./bar-gauge-props";

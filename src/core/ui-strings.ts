@@ -481,6 +481,10 @@ export interface UiStrings {
   sheetFit: string;
   sheetHeight: string;
   drawerLabel: string;
+  /** AppMenu: its name when it has none, its close button, and the button that goes back from a page to the list. */
+  appMenuLabel: string;
+  appMenuClose: string;
+  appMenuBack: string;
   actionSheetLabel: string;
   /** TabDocumentManager on a tablet and a phone. `{kind}`, `{title}` and `{n}` are filled in. */
   tabDocsPresentation: string;

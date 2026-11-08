@@ -43,6 +43,20 @@
     --_button-face-ghost-pressed-bg: var(--mx-app-bar-button-face-ghost-pressed-bg);
   }
 
+  /* app-menu: close-button — The button at the top of the list that closes the menu. */
+  .mx-app-menu__nav > .mx-app-menu__close {
+    --_button-variant: var(--mx-app-menu-close-button-variant);
+    --_button-tone: var(--mx-app-menu-close-button-tone);
+    --_button-size: var(--mx-app-menu-close-button-size);
+  }
+
+  /* app-menu: back-button — The button above a page that took the list's place, back to the list. */
+  .mx-app-menu__page-head > .mx-app-menu__back {
+    --_button-variant: var(--mx-app-menu-back-button-variant);
+    --_button-tone: var(--mx-app-menu-back-button-tone);
+    --_button-size: var(--mx-app-menu-back-button-size);
+  }
+
   /* breadcrumb: more — The button of the steps that do not fit: an icon without the menu arrow. */
   .mx-breadcrumb__more > .mx-button {
     --_button-chevron-display: var(--mx-breadcrumb-more-chevron-display);

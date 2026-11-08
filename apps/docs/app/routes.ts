@@ -101,6 +101,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   window: () => import('../pages/window/WindowPage'),
   bottomsheet: () => import('../pages/bottomsheet/BottomSheetPage'),
   drawer: () => import('../pages/drawer/DrawerPage'),
+  appmenu: () => import('../pages/appmenu/AppMenuPage'),
   actionsheet: () => import('../pages/actionsheet/ActionSheetPage'),
   layout: () => import('../pages/layout/LayoutPage'),
   scrollview: () => import('../pages/scrollview/ScrollViewPage'),

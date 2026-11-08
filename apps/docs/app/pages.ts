@@ -111,6 +111,7 @@ export const GROUPS = [
       { id: 'window', label: 'Window', title: 'Window and dialog', path: '/window', related: ['button', 'keyboard'] },
       { id: 'bottomsheet', label: 'BottomSheet', title: 'BottomSheet', path: '/bottomsheet', related: ['drawer', 'actionsheet', 'window'] },
       { id: 'drawer', label: 'Drawer', title: 'Drawer', path: '/drawer', related: ['bottomsheet', 'actionsheet', 'layout'] },
+      { id: 'appmenu', label: 'AppMenu', title: 'AppMenu', path: '/appmenu', related: ['drawer', 'appbar', 'menus'] },
       { id: 'actionsheet', label: 'ActionSheet', title: 'ActionSheet', path: '/actionsheet', related: ['bottomsheet', 'menus', 'drawer'] },
       { id: 'layout', label: 'Layout', title: 'Layout', path: '/layout', related: ['tabs', 'accordion'] },
       { id: 'splitter', label: 'Splitter', title: 'Splitter', path: '/splitter', related: ['layout', 'tabdocs', 'drawer'] },

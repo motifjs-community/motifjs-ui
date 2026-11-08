@@ -1,0 +1,119 @@
+{
+  "app-menu": {
+    "$description": "AppMenu: the main menu of an application, a list of items beside the page of the item chosen, in a panel over a share of the window or over the whole of it.",
+    "$selector": ".mx-app-menu",
+    "font-family": { "$type": "fontFamily" },
+    "share": { "$type": "number", "$description": "The share of the window the panel takes on a wide screen (0.5: half)." },
+    "min-size": { "$type": "dimension", "$description": "The least width of the panel: where its share would be narrower, it takes the whole window." },
+    "split-size": { "$type": "dimension", "$description": "The least width of the panel that holds the list and the page side by side; a narrower panel shows them in turns." },
+    "nav-size": { "$type": "dimension", "$description": "The width of the list beside the page." },
+    "$places": {
+      "close-button": {
+        "$description": "The button at the top of the list that closes the menu.",
+        "selector": ".mx-app-menu__nav > .mx-app-menu__close",
+        "part": "button",
+        "tokens": ["variant", "tone", "size"]
+      },
+      "back-button": {
+        "$description": "The button above a page that took the list's place, back to the list.",
+        "selector": ".mx-app-menu__page-head > .mx-app-menu__back",
+        "part": "button",
+        "tokens": ["variant", "tone", "size"]
+      }
+    },
+    "$units": {
+      "scrim": {
+        "$description": "The scrim behind the panel.",
+        "selector": ".mx-app-menu__scrim"
+      },
+      "panel": {
+        "$description": "The panel at the start edge (`full`: it takes the whole window).",
+        "selector": ".mx-app-menu__panel",
+        "defaults": {
+          "outline-style": "none"
+        },
+        "states": {
+          "full": ".mx-app-menu[data-full] > .mx-app-menu__panel"
+        }
+      },
+      "nav": {
+        "$description": "The list's column: the close button and the items (`stacked`: it fills the panel, the page out of sight).",
+        "selector": ".mx-app-menu__nav",
+        "states": {
+          "stacked": ".mx-app-menu[data-stacked] .mx-app-menu__nav"
+        }
+      },
+      "list": {
+        "$description": "A list of items: the one at the top, and the one at the bottom (`bottom`).",
+        "selector": ".mx-app-menu__list",
+        "states": {
+          "bottom": ".mx-app-menu__list--bottom"
+        }
+      },
+      "separator": {
+        "$description": "The line between two groups of items.",
+        "selector": ".mx-app-menu__separator"
+      },
+      "item": {
+        "$description": "An item: under the pointer, pressed, its page shown, its page shown under the pointer, focused by the keys, disabled.",
+        "selector": ".mx-app-menu__item",
+        "defaults": {
+          "cursor": "pointer",
+          "text-decoration": "none"
+        },
+        "states": {
+          "hover": ".mx-app-menu__item:not([aria-disabled], [data-selected]):hover",
+          "pressed": {
+            "selector": ".mx-app-menu__item:not([aria-disabled], [data-selected]):active",
+            "from": "hover"
+          },
+          "selected": ".mx-app-menu__item[data-selected]",
+          "selected-hover": {
+            "selector": ".mx-app-menu__item[data-selected]:not([aria-disabled]):hover",
+            "from": "selected"
+          },
+          "focus": ".mx-app-menu__item:focus-visible",
+          "disabled": {
+            "selector": ".mx-app-menu__item[aria-disabled]",
+            "defaults": {
+              "cursor": "default"
+            }
+          }
+        }
+      },
+      "indicator": {
+        "$description": "The mark on the item whose page is shown, at its start edge, centred along it.",
+        "selector": ".mx-app-menu__item[data-selected]::before"
+      },
+      "icon": {
+        "$description": "The item's glyph or icon (`selected`: its page is shown).",
+        "selector": ".mx-app-menu__icon",
+        "states": {
+          "selected": ".mx-app-menu__item[data-selected] > .mx-app-menu__icon"
+        }
+      },
+      "label": {
+        "$description": "The item's text (`selected`: its page is shown).",
+        "selector": ".mx-app-menu__label",
+        "states": {
+          "selected": ".mx-app-menu__item[data-selected] > .mx-app-menu__label"
+        }
+      },
+      "page": {
+        "$description": "The page area beside the list: the back button above the page shown.",
+        "selector": ".mx-app-menu__page"
+      },
+      "page-head": {
+        "$description": "The row above a page that took the list's place: the back button.",
+        "selector": ".mx-app-menu__page-head"
+      },
+      "view": {
+        "$description": "One item's page, scrolling on its own (`focus`: it took focus when it replaced the list).",
+        "selector": ".mx-app-menu__view",
+        "states": {
+          "focus": ".mx-app-menu__view:focus-visible"
+        }
+      }
+    }
+  }
+}

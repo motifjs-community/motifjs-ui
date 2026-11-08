@@ -22,6 +22,7 @@
   "An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server.": "Bellekteki bir dizi (arama istemcide yapılır) veya bir `@motifx-community/data` veri kaynağı (arama sunucuda yapılır).",
   "Any content": "Herhangi bir içerik",
   "AppBar": "AppBar",
+  "AppMenu": "AppMenu",
   "Appearance": "Görünüm",
   "Appointment form": "Randevu formu",
   "Arguments": "Argümanlar",

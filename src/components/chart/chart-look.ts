@@ -1,4 +1,4 @@
-import type { TokenLengths } from "../../parts/chart/token-lengths";
+import type { TokenLengths } from "../../core/token-lengths";
 
 /** Sizes a chart takes from its design language, in pixels, and the font of its axes. */
 export interface ChartLook {

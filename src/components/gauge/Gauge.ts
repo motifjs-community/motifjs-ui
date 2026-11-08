@@ -13,7 +13,7 @@ import type { Place } from "../../parts/chart/chart-paths";
 import { formatNumber, textWidth, type ChartFormat } from "../../parts/chart/chart-text";
 import { niceTicks } from "../../parts/chart/nice-ticks";
 import { svgPart, svgPut, TextPool } from "../../parts/chart/svg-parts";
-import { TokenLengths } from "../../parts/chart/token-lengths";
+import { TokenLengths } from "../../core/token-lengths";
 import { ValueMotion } from "../../parts/chart/value-motion";
 import type { GaugeMark } from "./gauge-mark";
 import type { GaugeMarker } from "./gauge-marker";

@@ -1,0 +1,278 @@
+/* AppMenu: a layer over the page holding the scrim and the panel at the start edge. The panel takes a share of the
+   window (app-menu.share), or the whole of it where that would be narrower than app-menu.min-size (data-full). In the
+   panel the list (nav) and the page stand side by side; a panel narrower than app-menu.split-size shows them in turns
+   (data-stacked, data-view: list or page), the one coming in pushing the other out (data-turn). Motion comes from the motion tokens (none with reduced motion); the panel
+   keeps clear of the screen's safe areas. Its look is its units' (units.css); this file only places them. */
+@layer mx.components {
+  .mx-app-menu {
+    position: fixed;
+    inset: 0;
+    z-index: var(--mx-z-overlay);
+    box-sizing: border-box;
+    inline-size: auto;
+    block-size: auto;
+    max-inline-size: none;
+    max-block-size: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: none;
+    border: 0;
+    pointer-events: none;
+  }
+
+  .mx-app-menu[data-contained] {
+    position: absolute;
+  }
+
+  .mx-app-menu:is([hidden], [popover]:not(:popover-open)) {
+    display: none;
+  }
+
+  .mx-app-menu__scrim {
+    position: absolute;
+    inset: 0;
+    display: none;
+    opacity: 0;
+    transition: opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  .mx-app-menu[data-scrim] > .mx-app-menu__scrim {
+    display: block;
+    pointer-events: auto;
+  }
+
+  .mx-app-menu[data-open] > .mx-app-menu__scrim {
+    opacity: 1;
+  }
+
+  .mx-app-menu__panel {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    inline-size: calc(var(--_app-menu-share) * 100%);
+    padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+    padding-inline-start: env(safe-area-inset-left);
+    font-family: var(--_app-menu-font-family);
+    pointer-events: auto;
+    translate: -100% 0;
+    transition: translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out);
+  }
+
+  .mx-app-menu__panel:dir(rtl) {
+    padding-inline-start: env(safe-area-inset-right);
+    translate: 100% 0;
+  }
+
+  .mx-app-menu[data-full] > .mx-app-menu__panel {
+    inline-size: 100%;
+    padding-inline-end: env(safe-area-inset-right);
+  }
+
+  .mx-app-menu[data-full] > .mx-app-menu__panel:dir(rtl) {
+    padding-inline-end: env(safe-area-inset-left);
+  }
+
+  .mx-app-menu[data-open] > .mx-app-menu__panel {
+    translate: 0 0;
+  }
+
+  /* The panel's own header and footer are not used: the menu has its own parts. */
+  .mx-app-menu__header,
+  .mx-app-menu__footer {
+    display: none;
+  }
+
+  .mx-app-menu__body {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  .mx-app-menu__nav {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    box-sizing: border-box;
+    inline-size: var(--_app-menu-nav-size);
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mx-app-menu__close {
+    flex: none;
+    align-self: flex-start;
+  }
+
+  .mx-app-menu__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mx-app-menu__list--bottom {
+    margin-block-start: auto;
+  }
+
+  .mx-app-menu__list[hidden],
+  .mx-app-menu__separator[hidden],
+  .mx-app-menu__item[hidden],
+  .mx-app-menu__icon[hidden],
+  .mx-app-menu__view[hidden] {
+    display: none;
+  }
+
+  .mx-app-menu__separator {
+    flex: none;
+  }
+
+  .mx-app-menu__item {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    font: inherit;
+    text-align: start;
+    background: none;
+    border: 0;
+    user-select: none;
+  }
+
+  .mx-app-menu__item[data-selected]::before {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    margin-block: auto;
+    content: '';
+  }
+
+  .mx-app-menu__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mx-app-menu__icon > :is(img, svg, .mx-glyph) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-app-menu__label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-app-menu__badge {
+    flex: none;
+  }
+
+  .mx-app-menu__page {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-app-menu__page-head {
+    display: none;
+    flex: none;
+    align-items: center;
+  }
+
+  /* The page scrolls under the back button, which stays where the close button is. */
+  .mx-app-menu__view {
+    flex: 1 1 auto;
+    box-sizing: border-box;
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* In turns: the list fills the panel, or the page does with the back button above it. */
+  .mx-app-menu[data-stacked] .mx-app-menu__nav {
+    flex: 1 1 auto;
+    inline-size: auto;
+  }
+
+  .mx-app-menu[data-stacked]:not([data-view='page']) .mx-app-menu__page,
+  .mx-app-menu[data-stacked][data-view='page'] .mx-app-menu__nav {
+    display: none;
+  }
+
+  .mx-app-menu[data-stacked] .mx-app-menu__page-head {
+    display: flex;
+  }
+
+  /* A turn: both stand over the body, and the one coming in pushes the other out towards the start or the end. */
+  .mx-app-menu {
+    --_turn: 1;
+  }
+
+  .mx-app-menu:dir(rtl) {
+    --_turn: -1;
+  }
+
+  .mx-app-menu[data-stacked][data-turn] .mx-app-menu__nav,
+  .mx-app-menu[data-stacked][data-turn] .mx-app-menu__page {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    inline-size: auto;
+    animation-duration: var(--mx-motion-duration-normal);
+    animation-timing-function: var(--mx-motion-easing-standard);
+    animation-fill-mode: both;
+  }
+
+  .mx-app-menu[data-turn='forward'] .mx-app-menu__nav {
+    animation-name: mx-app-menu-out-start;
+  }
+
+  .mx-app-menu[data-turn='forward'] .mx-app-menu__page {
+    animation-name: mx-app-menu-in-end;
+  }
+
+  .mx-app-menu[data-turn='back'] .mx-app-menu__nav {
+    animation-name: mx-app-menu-in-start;
+  }
+
+  .mx-app-menu[data-turn='back'] .mx-app-menu__page {
+    animation-name: mx-app-menu-out-end;
+  }
+
+  @keyframes mx-app-menu-out-start {
+    to {
+      translate: calc(var(--_turn) * -100%) 0;
+    }
+  }
+
+  @keyframes mx-app-menu-in-end {
+    from {
+      translate: calc(var(--_turn) * 100%) 0;
+    }
+  }
+
+  @keyframes mx-app-menu-in-start {
+    from {
+      translate: calc(var(--_turn) * -100%) 0;
+    }
+  }
+
+  @keyframes mx-app-menu-out-end {
+    to {
+      translate: calc(var(--_turn) * 100%) 0;
+    }
+  }
+}

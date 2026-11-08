@@ -13,7 +13,7 @@ import { linearScale } from "../../parts/chart/chart-scale";
 import { formatNumber, surfaceBehind, type ChartFormat } from "../../parts/chart/chart-text";
 import { svgPart, svgPut } from "../../parts/chart/svg-parts";
 import { thinOut } from "../../parts/chart/thin-out";
-import { TokenLengths } from "../../parts/chart/token-lengths";
+import { TokenLengths } from "../../core/token-lengths";
 import type { ChartField } from "../chart/chart-field";
 import type { SparklineHighlight } from "./sparkline-highlight";
 import type { SparklineProps } from "./sparkline-props";

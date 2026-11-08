@@ -1,0 +1,14 @@
+{
+  "The main menu of an application. It slides in from the start edge with a list of items, and each item shows its own page beside the list or runs a command. The menu holds nothing of its own: the items, the pages and the commands are given by the application.": "Bir uygulamanın ana menüsü. Başlangıç kenarından bir öğe listesiyle kayarak açılır; her öğe listenin yanında kendi sayfasını gösterir ya da bir komut çalıştırır. Menünün kendine ait hiçbir içeriği yoktur: öğeleri, sayfaları ve komutları uygulama verir.",
+  "Pages and commands": "Sayfalar ve komutlar",
+  "An item with `page` shows that page beside the list. The page is created the first time it is shown, and kept. Any other item is a command (`click`) and closes the menu. Items with the same `group` stand together, and items with `bottom` stand at the bottom of the list.": "`page` verilen öğe, o sayfayı listenin yanında gösterir. Sayfa ilk gösterildiğinde oluşturulur ve saklanır. Diğer öğeler komuttur (`click`) ve menüyü kapatır. Aynı `group` değerine sahip öğeler bir arada, `bottom` verilen öğeler listenin altında durur.",
+  "Room": "Yer",
+  "The menu covers half of the window (`app-menu.share`), with the list beside the page.": "Menü pencerenin yarısını kaplar (`app-menu.share`); liste sayfanın yanında durur.",
+  "When half the window is narrower than `app-menu.min-size`, the menu covers the whole window.": "Pencerenin yarısı `app-menu.min-size` değerinden darsa menü pencerenin tamamını kaplar.",
+  "When the menu is narrower than `app-menu.split-size`, the list and the page take turns. Choosing a page shows it, and Back or Escape returns to the list.": "Menü `app-menu.split-size` değerinden darsa liste ile sayfa sırayla görünür. Bir sayfa seçildiğinde sayfa gösterilir; geri düğmesi veya Escape listeye döner.",
+  "Moves between the items of both lists, wrapping at the ends.": "İki listenin öğeleri arasında gezinir, uçlarda başa döner.",
+  "Shows the page of the item, or runs its command.": "Öğenin sayfasını gösterir ya da komutunu çalıştırır.",
+  "Chooses the item with that access key. Without one, moves to the next item whose text starts with the letters typed.": "O erişim tuşuna sahip öğeyi seçer. Erişim tuşu yoksa metni yazılan harflerle başlayan sonraki öğeye gider.",
+  "Returns to the list when the page is shown alone. Otherwise, closes the menu.": "Sayfa tek başına gösteriliyorsa listeye döner; aksi hâlde menüyü kapatır.",
+  "Moves between the list and the page. Focus stays inside the menu.": "Liste ile sayfa arasında gezinir. Odak menünün içinde kalır."
+}

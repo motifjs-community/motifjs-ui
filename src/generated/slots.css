@@ -108,6 +108,69 @@
     --_app-bar-titles-alone-padding-start: var(--mx-app-bar-titles-alone-padding-start);
   }
 
+  .mx-app-menu {
+    --_app-menu-font-family: var(--mx-app-menu-font-family);
+    --_app-menu-share: var(--mx-app-menu-share);
+    --_app-menu-min-size: var(--mx-app-menu-min-size);
+    --_app-menu-split-size: var(--mx-app-menu-split-size);
+    --_app-menu-nav-size: var(--mx-app-menu-nav-size);
+    --_app-menu-scrim-bg: var(--mx-app-menu-scrim-bg);
+    --_app-menu-panel-bg: var(--mx-app-menu-panel-bg);
+    --_app-menu-panel-border-color: var(--mx-app-menu-panel-border-color);
+    --_app-menu-panel-shadow: var(--mx-app-menu-panel-shadow);
+    --_app-menu-panel-color: var(--mx-app-menu-panel-color);
+    --_app-menu-panel-font-size: var(--mx-app-menu-panel-font-size);
+    --_app-menu-panel-line-height: var(--mx-app-menu-panel-line-height);
+    --_app-menu-panel-border-end-width: var(--mx-app-menu-panel-border-end-width);
+    --_app-menu-panel-radius-end: var(--mx-app-menu-panel-radius-end);
+    --_app-menu-panel-full-radius-end: var(--mx-app-menu-panel-full-radius-end);
+    --_app-menu-panel-full-border-end-width: var(--mx-app-menu-panel-full-border-end-width);
+    --_app-menu-nav-padding: var(--mx-app-menu-nav-padding);
+    --_app-menu-nav-gap: var(--mx-app-menu-nav-gap);
+    --_app-menu-nav-bg: var(--mx-app-menu-nav-bg);
+    --_app-menu-list-bottom-padding-top: var(--mx-app-menu-list-bottom-padding-top);
+    --_app-menu-list-gap: var(--mx-app-menu-list-gap);
+    --_app-menu-separator-height: var(--mx-app-menu-separator-height);
+    --_app-menu-separator-bg: var(--mx-app-menu-separator-bg);
+    --_app-menu-separator-margin-block: var(--mx-app-menu-separator-margin-block);
+    --_app-menu-separator-margin-inline: var(--mx-app-menu-separator-margin-inline);
+    --_app-menu-item-height: var(--mx-app-menu-item-height);
+    --_app-menu-item-padding-inline: var(--mx-app-menu-item-padding-inline);
+    --_app-menu-item-gap: var(--mx-app-menu-item-gap);
+    --_app-menu-item-radius: var(--mx-app-menu-item-radius);
+    --_app-menu-item-color: var(--mx-app-menu-item-color);
+    --_app-menu-item-font-size: var(--mx-app-menu-item-font-size);
+    --_app-menu-item-line-height: var(--mx-app-menu-item-line-height);
+    --_app-menu-item-hover-bg: var(--mx-app-menu-item-hover-bg);
+    --_app-menu-item-pressed-bg: var(--mx-app-menu-item-pressed-bg);
+    --_app-menu-item-selected-bg: var(--mx-app-menu-item-selected-bg);
+    --_app-menu-item-selected-color: var(--mx-app-menu-item-selected-color);
+    --_app-menu-item-selected-hover-bg: var(--mx-app-menu-item-selected-hover-bg);
+    --_app-menu-item-focus-glow: var(--mx-app-menu-item-focus-glow);
+    --_app-menu-item-focus-outline-width: var(--mx-app-menu-item-focus-outline-width);
+    --_app-menu-item-focus-outline-color: var(--mx-app-menu-item-focus-outline-color);
+    --_app-menu-item-focus-outline-offset: var(--mx-app-menu-item-focus-outline-offset);
+    --_app-menu-item-disabled-color: var(--mx-app-menu-item-disabled-color);
+    --_app-menu-icon-size: var(--mx-app-menu-icon-size);
+    --_app-menu-icon-color: var(--mx-app-menu-icon-color);
+    --_app-menu-icon-selected-color: var(--mx-app-menu-icon-selected-color);
+    --_app-menu-label-font-weight: var(--mx-app-menu-label-font-weight);
+    --_app-menu-label-selected-font-weight: var(--mx-app-menu-label-selected-font-weight);
+    --_app-menu-page-head-padding: var(--mx-app-menu-page-head-padding);
+    --_app-menu-page-head-gap: var(--mx-app-menu-page-head-gap);
+    --_app-menu-view-padding: var(--mx-app-menu-view-padding);
+    --_app-menu-view-focus-outline-width: var(--mx-app-menu-view-focus-outline-width);
+    --_app-menu-view-focus-outline-color: var(--mx-app-menu-view-focus-outline-color);
+    --_app-menu-view-focus-outline-offset: var(--mx-app-menu-view-focus-outline-offset);
+    --_app-menu-indicator-width: var(--mx-app-menu-indicator-width);
+    --_app-menu-indicator-height: var(--mx-app-menu-indicator-height);
+    --_app-menu-indicator-bg: var(--mx-app-menu-indicator-bg);
+    --_app-menu-indicator-radius: var(--mx-app-menu-indicator-radius);
+    --_app-menu-item-selected-glow: var(--mx-app-menu-item-selected-glow);
+    --_app-menu-page-bg: var(--mx-app-menu-page-bg);
+    --_app-menu-item-selected-shadow: var(--mx-app-menu-item-selected-shadow);
+  }
+
   .mx-avatar-group {
     --_avatar-group-layout: var(--mx-avatar-group-layout);
     --_avatar-group-overlap-xs: var(--mx-avatar-group-overlap-xs);
