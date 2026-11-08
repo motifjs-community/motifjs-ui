@@ -485,6 +485,36 @@ export interface UiStrings {
   appMenuLabel: string;
   appMenuClose: string;
   appMenuBack: string;
+  /** RibbonMenu: the name of its tabs when it has none, and the button beside a group's name (`{group}` is filled in). */
+  ribbonMenuLabel: string;
+  ribbonMenuMore: string;
+  /** RibbonMenu's layout button: what it switches to. */
+  ribbonMenuSimple: string;
+  ribbonMenuClassic: string;
+  /** RibbonMenu: the tab picker, the strip that shows the hidden menu, the quick commands and the context menu (`{name}` is filled in). */
+  ribbonMenuTabs: string;
+  ribbonMenuReveal: string;
+  ribbonMenuQuick: string;
+  ribbonMenuPin: string;
+  ribbonMenuUnpin: string;
+  ribbonMenuHide: string;
+  ribbonMenuHideGroup: string;
+  ribbonMenuMoveEarlier: string;
+  ribbonMenuMoveLater: string;
+  ribbonMenuMoveGroupEarlier: string;
+  ribbonMenuMoveGroupLater: string;
+  ribbonMenuShowHidden: string;
+  ribbonMenuLayout: string;
+  ribbonMenuLayoutClassic: string;
+  ribbonMenuLayoutSimple: string;
+  ribbonMenuDisplay: string;
+  ribbonMenuDisplayAlways: string;
+  ribbonMenuDisplayTabs: string;
+  ribbonMenuDisplayAuto: string;
+  ribbonMenuQuickStart: string;
+  ribbonMenuQuickBelow: string;
+  ribbonMenuQuickHidden: string;
+  ribbonMenuReset: string;
   actionSheetLabel: string;
   /** TabDocumentManager on a tablet and a phone. `{kind}`, `{title}` and `{n}` are filled in. */
   tabDocsPresentation: string;

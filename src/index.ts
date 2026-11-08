@@ -70,6 +70,7 @@ export * from './components/contextmenu';
 export * from './components/sheet';
 export * from './components/drawer';
 export * from './components/appmenu';
+export * from './components/ribbonmenu';
 export * from './components/actionsheet';
 export * from './components/calendar';
 export * from './components/datebox';

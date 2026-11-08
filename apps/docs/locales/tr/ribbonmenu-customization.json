@@ -1,0 +1,19 @@
+{
+  "Users arrange the menu from its context menu: they hide what they never use, move what they use most, and add commands to the quick commands. Everything they change is one plain object, to save and give back.": "Kullanıcılar menüyü bağlam menüsünden düzenler: hiç kullanmadıklarını gizler, en çok kullandıklarını taşır ve hızlı komutlara komut ekler. Yaptıkları her değişiklik, kaydedilip geri verilebilen tek bir düz nesnedir.",
+  "Arranging and saving": "Düzenleme ve kaydetme",
+  "Right-click a command or a group, or press Shift+F10 on it. Here each change is saved in the browser and given back when the page opens again. Paste is `fixed`: it cannot be hidden or moved.": "Bir komuta veya gruba sağ tıklayın ya da üzerindeyken Shift+F10'a basın. Burada her değişiklik tarayıcıya kaydedilir ve sayfa yeniden açıldığında geri verilir. Paste `fixed` olduğu için gizlenemez ve taşınamaz.",
+  "The context menu": "Bağlam menüsü",
+  "Where": "Nerede",
+  "What the user can do": "Kullanıcının yapabilecekleri",
+  "Add it to the quick commands or remove it, hide it, move it earlier or later in its group.": "Hızlı komutlara eklemek veya çıkarmak, gizlemek, grubunda öne veya arkaya almak.",
+  "Hide the group, move it earlier or later in its tab.": "Grubu gizlemek, sekmesinde öne veya arkaya almak.",
+  "Show the hidden commands again, choose the layout, how the commands are shown and where the quick commands stand, and undo all changes.": "Gizlenen komutları yeniden göstermek; yerleşimi, komutların nasıl gösterileceğini ve hızlı komutların yerini seçmek; bütün değişiklikleri geri almak.",
+  "`customizable: false` leaves the browser’s own context menu. A group or a command with `fixed: true` cannot be hidden or moved.": "`customizable: false` tarayıcının kendi bağlam menüsünü bırakır. `fixed: true` verilen grup veya komut gizlenemez ve taşınamaz.",
+  "Saving": "Kaydetme",
+  "`onCustomized` reports everything the user changed so far as a `RibbonMenuCustomization`; give it back with `customization` and the menu starts from it. Groups and commands are named by their keys joined with `/`, so give them keys: a missing key is the position, which changes when the app adds items.": "`onCustomized`, kullanıcının şimdiye kadar yaptığı her değişikliği bir `RibbonMenuCustomization` olarak bildirir; bunu `customization` ile geri verdiğinizde menü onunla başlar. Gruplar ve komutlar `/` ile birleştirilmiş anahtarlarıyla adlandırılır; bu yüzden onlara anahtar verin. Anahtar yoksa konum kullanılır ve uygulama öğe eklediğinde konum değişir.",
+  "The groups and commands the user hid.": "Kullanıcının gizlediği gruplar ve komutlar.",
+  "The order the user gave: a tab’s groups under its key, a group’s commands under its path.": "Kullanıcının verdiği sıra: bir sekmenin grupları sekmenin anahtarı altında, bir grubun komutları grubun yolu altında.",
+  "The commands the user added to the quick commands.": "Kullanıcının hızlı komutlara eklediği komutlar.",
+  "The layout, the way the commands are shown and the place of the quick commands, as the user chose them.": "Kullanıcının seçtiği yerleşim, komutların gösterilme biçimi ve hızlı komutların yeri.",
+  "The menu never changes the tabs, groups and commands the app gives: hidden and moved items are drawn from its own copy of the user’s changes. `findCommand(path)` finds a command by its path.": "Menü, uygulamanın verdiği sekmeleri, grupları ve komutları hiçbir zaman değiştirmez; gizlenen ve taşınan öğeler, kullanıcının değişikliklerinin menüdeki kendi kopyasından çizilir. `findCommand(path)` bir komutu yoluyla bulur."
+}

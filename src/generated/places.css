@@ -601,6 +601,92 @@
     --_button-face-outline-toggled-hover-bg: var(--mx-recurrence-editor-day-button-face-outline-toggled-hover-bg);
   }
 
+  /* ribbon-menu: large — A large command, and the button a group folds into when there is no room: the icon above the text, as high as the group. Its variant and size, and the look of a toggle that is on. */
+  .mx-ribbon-menu__command[data-ribbon-size='large'] {
+    --_button-variant: var(--mx-ribbon-menu-large-variant);
+    --_button-size: var(--mx-ribbon-menu-large-size);
+    --_button-face-toggled-bg: var(--mx-ribbon-menu-large-face-toggled-bg);
+    --_button-face-toggled-hover-bg: var(--mx-ribbon-menu-large-face-toggled-hover-bg);
+    --_button-face-toggled-color: var(--mx-ribbon-menu-large-face-toggled-color);
+    --_button-face-outline-toggled-bg: var(--mx-ribbon-menu-large-face-outline-toggled-bg);
+    --_button-face-ghost-toggled-bg: var(--mx-ribbon-menu-large-face-ghost-toggled-bg);
+    --_button-face-outline-toggled-hover-bg: var(--mx-ribbon-menu-large-face-outline-toggled-hover-bg);
+    --_button-face-ghost-toggled-hover-bg: var(--mx-ribbon-menu-large-face-ghost-toggled-hover-bg);
+    --_button-face-outline-toggled-color: var(--mx-ribbon-menu-large-face-outline-toggled-color);
+    --_button-face-ghost-toggled-color: var(--mx-ribbon-menu-large-face-ghost-toggled-color);
+    --_button-face-outline-toggled-hover-color: var(--mx-ribbon-menu-large-face-outline-toggled-hover-color);
+    --_button-face-ghost-toggled-hover-color: var(--mx-ribbon-menu-large-face-ghost-toggled-hover-color);
+  }
+
+  /* ribbon-menu: medium — A medium command: the icon beside the text. Its variant and size, and the look of a toggle that is on. */
+  .mx-ribbon-menu__command[data-ribbon-size='medium'] {
+    --_button-variant: var(--mx-ribbon-menu-medium-variant);
+    --_button-size: var(--mx-ribbon-menu-medium-size);
+    --_button-face-toggled-bg: var(--mx-ribbon-menu-medium-face-toggled-bg);
+    --_button-face-toggled-hover-bg: var(--mx-ribbon-menu-medium-face-toggled-hover-bg);
+    --_button-face-toggled-color: var(--mx-ribbon-menu-medium-face-toggled-color);
+    --_button-face-outline-toggled-bg: var(--mx-ribbon-menu-medium-face-outline-toggled-bg);
+    --_button-face-ghost-toggled-bg: var(--mx-ribbon-menu-medium-face-ghost-toggled-bg);
+    --_button-face-outline-toggled-hover-bg: var(--mx-ribbon-menu-medium-face-outline-toggled-hover-bg);
+    --_button-face-ghost-toggled-hover-bg: var(--mx-ribbon-menu-medium-face-ghost-toggled-hover-bg);
+    --_button-face-outline-toggled-color: var(--mx-ribbon-menu-medium-face-outline-toggled-color);
+    --_button-face-ghost-toggled-color: var(--mx-ribbon-menu-medium-face-ghost-toggled-color);
+    --_button-face-outline-toggled-hover-color: var(--mx-ribbon-menu-medium-face-outline-toggled-hover-color);
+    --_button-face-ghost-toggled-hover-color: var(--mx-ribbon-menu-medium-face-ghost-toggled-hover-color);
+  }
+
+  /* ribbon-menu: small — A small command, alone or in a row, and the "more" button of the simplified layout: the icon alone. Its variant and size, and the look of a toggle that is on. */
+  .mx-ribbon-menu__command[data-ribbon-size='small'] {
+    --_button-variant: var(--mx-ribbon-menu-small-variant);
+    --_button-size: var(--mx-ribbon-menu-small-size);
+    --_button-face-toggled-bg: var(--mx-ribbon-menu-small-face-toggled-bg);
+    --_button-face-toggled-hover-bg: var(--mx-ribbon-menu-small-face-toggled-hover-bg);
+    --_button-face-toggled-color: var(--mx-ribbon-menu-small-face-toggled-color);
+    --_button-face-outline-toggled-bg: var(--mx-ribbon-menu-small-face-outline-toggled-bg);
+    --_button-face-ghost-toggled-bg: var(--mx-ribbon-menu-small-face-ghost-toggled-bg);
+    --_button-face-outline-toggled-hover-bg: var(--mx-ribbon-menu-small-face-outline-toggled-hover-bg);
+    --_button-face-ghost-toggled-hover-bg: var(--mx-ribbon-menu-small-face-ghost-toggled-hover-bg);
+    --_button-face-outline-toggled-color: var(--mx-ribbon-menu-small-face-outline-toggled-color);
+    --_button-face-ghost-toggled-color: var(--mx-ribbon-menu-small-face-ghost-toggled-color);
+    --_button-face-outline-toggled-hover-color: var(--mx-ribbon-menu-small-face-outline-toggled-hover-color);
+    --_button-face-ghost-toggled-hover-color: var(--mx-ribbon-menu-small-face-ghost-toggled-hover-color);
+  }
+
+  /* ribbon-menu: more — The button beside a group's name that opens more options of the group. */
+  .mx-ribbon-menu__group-foot > .mx-ribbon-menu__more {
+    --_button-variant: var(--mx-ribbon-menu-more-variant);
+    --_button-tone: var(--mx-ribbon-menu-more-tone);
+    --_button-size: var(--mx-ribbon-menu-more-size);
+  }
+
+  /* ribbon-menu: switch — The button at the end of the commands that switches between the classic and the simplified layout. */
+  .mx-ribbon-menu__body > .mx-ribbon-menu__switch {
+    --_button-variant: var(--mx-ribbon-menu-switch-variant);
+    --_button-tone: var(--mx-ribbon-menu-switch-tone);
+    --_button-size: var(--mx-ribbon-menu-switch-size);
+  }
+
+  /* ribbon-menu: scroll — The buttons over the ends of the commands that scroll them, while there is more to scroll to. */
+  .mx-ribbon-menu__stage > .mx-ribbon-menu__scroll {
+    --_button-variant: var(--mx-ribbon-menu-scroll-variant);
+    --_button-tone: var(--mx-ribbon-menu-scroll-tone);
+    --_button-size: var(--mx-ribbon-menu-scroll-size);
+  }
+
+  /* ribbon-menu: picker — The button that stands for the tabs in a compact menu: the tab shown, and a menu of the others. */
+  .mx-ribbon-menu__bar > .mx-ribbon-menu__picker {
+    --_button-variant: var(--mx-ribbon-menu-picker-variant);
+    --_button-tone: var(--mx-ribbon-menu-picker-tone);
+    --_button-size: var(--mx-ribbon-menu-picker-size);
+  }
+
+  /* ribbon-menu: gallery-open — The button of a gallery that opens all of its choices: beside its row, or alone with the command's text when the gallery is small. */
+  .mx-ribbon-menu__gallery > .mx-ribbon-menu__gallery-open {
+    --_button-variant: var(--mx-ribbon-menu-gallery-open-variant);
+    --_button-tone: var(--mx-ribbon-menu-gallery-open-tone);
+    --_button-size: var(--mx-ribbon-menu-gallery-open-size);
+  }
+
   /* scheduler: today-button — Today, in the bar (its size is the bar's). */
   .mx-scheduler__bar > .mx-scheduler__today {
     --_button-variant: var(--mx-scheduler-today-button-variant);

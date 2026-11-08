@@ -174,6 +174,19 @@ export const GROUPS = [
     ],
   },
   {
+    title: 'RibbonMenu',
+    section: 'Components',
+    pages: [
+      { id: 'ribbonmenu', label: 'Overview', title: 'RibbonMenu', path: '/ribbonmenu', related: ['ribbonmenu-commands', 'ribbonmenu-layouts', 'appmenu', 'toolbar'] },
+      { id: 'ribbonmenu-commands', label: 'Commands', title: 'RibbonMenu: Commands', path: '/ribbonmenu/commands', related: ['ribbonmenu', 'ribbonmenu-layouts', 'button', 'menus'] },
+      { id: 'ribbonmenu-layouts', label: 'Layouts and room', title: 'RibbonMenu: Layouts and room', path: '/ribbonmenu/layouts', related: ['ribbonmenu', 'ribbonmenu-commands', 'ribbonmenu-display'] },
+      { id: 'ribbonmenu-display', label: 'Showing and keys', title: 'RibbonMenu: Showing and keys', path: '/ribbonmenu/display', related: ['ribbonmenu', 'ribbonmenu-customization', 'appmenu', 'keyboard'] },
+      { id: 'ribbonmenu-customization', label: 'Customization', title: 'RibbonMenu: Customization', path: '/ribbonmenu/customization', related: ['ribbonmenu', 'ribbonmenu-display', 'menus'] },
+      { id: 'ribbonmenu-programmatic', label: 'Programmatic changes', title: 'RibbonMenu: Programmatic changes', path: '/ribbonmenu/programmatic', related: ['ribbonmenu', 'ribbonmenu-customization', 'ribbonmenu-api'] },
+      { id: 'ribbonmenu-api', label: 'API reference', title: 'RibbonMenu: API reference', path: '/ribbonmenu/api', related: ['ribbonmenu', 'ribbonmenu-commands', 'ribbonmenu-customization'] },
+    ],
+  },
+  {
     title: 'TabDocumentManager',
     section: 'Components',
     pages: [

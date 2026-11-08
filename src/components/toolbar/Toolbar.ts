@@ -9,12 +9,11 @@ import type { IconSource } from '../../core/icon-source';
 import { deepActiveElement, focusableIn, isShown } from '../../core/focus';
 import { givenField, givenList, givenValue } from '../../core/given-field';
 import { moreMark } from '../../core/glyphs';
-import { isNode } from '../../core/node-kind';
 import { ResizeWatch } from '../../core/resize-watch';
 import { uiLocale } from '../../core/ui-locale';
-import { lineAfter } from '../../parts/menu/line-after';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
+import { menuItemOf } from '../button/menu-item-of';
 import type { ButtonProps } from '../button/button-props';
 import type { ButtonVariant } from '../button/button-variant';
 import { ToolbarSeparator } from './ToolbarSeparator';
@@ -584,33 +583,4 @@ function keepsArrows(el: HTMLElement): boolean {
   if (el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
   if (el.getAttribute('role') === 'slider') return true;
   return el.tagName === 'INPUT' && !['button', 'submit', 'reset', 'checkbox', 'radio', 'color', 'file', 'image'].includes((el as HTMLInputElement).type);
-}
-
-/** The menu shows a copy: the node of an icon stays in its button. */
-function iconCopy(icon: IconSource | null): IconSource | null {
-  if (!icon || typeof icon === 'string') return icon;
-  const node = isNode(icon) ? icon : (icon.element as Node | undefined);
-  return node ? node.cloneNode(true) : null;
-}
-
-/** A button as an item of the "more" menu: its name, icon, state and menu. */
-function menuItemOf(button: Button): MenuItem {
-  const face = button.element.querySelector<HTMLElement>('.mx-button__main') ?? button.element;
-  const name = () => button.text || face.getAttribute('aria-label') || button.hint || face.textContent?.trim() || '';
-  const press = () => face.click();
-  if (button.hasMenu && button.split) {
-    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, tone: () => button.tone, enabled: () => button.isEnabled, items: () => [lineAfter<MenuItem>({ text: name, click: press }), ...givenList(button.menu)] };
-  }
-  if (button.hasMenu) {
-    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, tone: () => button.tone, enabled: () => button.isEnabled, items: () => button.menu };
-  }
-  return {
-    text: name,
-    icon: () => iconCopy(button.icon),
-    hint: () => button.hint,
-    tone: () => button.tone,
-    enabled: () => button.isEnabled,
-    checked: () => (button.toggle ? button.pressed : undefined),
-    click: press,
-  };
 }

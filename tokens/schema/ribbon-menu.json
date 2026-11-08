@@ -1,0 +1,334 @@
+{
+  "ribbon-menu": {
+    "$description": "RibbonMenu: the commands of an application in tabs, each tab in named groups of large, medium and small commands.",
+    "$selector": ".mx-ribbon-menu",
+    "font-family": {
+      "$type": "fontFamily"
+    },
+    "rows": {
+      "$type": "number",
+      "$description": "How many medium or small commands stand one above the other in a group."
+    },
+    "row-height": {
+      "$type": "dimension",
+      "$description": "The height of a row of commands, in both layouts, whatever stands in it: at least a small field, so the menu keeps its height from tab to tab."
+    },
+    "compact-size": {
+      "$type": "dimension",
+      "$description": "Narrower than this, the menu shows a tab picker in place of its tabs and its commands in a single row."
+    },
+    "indicator-inset": {
+      "$type": "dimension",
+      "$description": "How far the mark of the tab shown keeps from the tab's sides."
+    },
+    "$places": {
+      "large": {
+        "$description": "A large command, and the button a group folds into when there is no room: the icon above the text, as high as the group. Its variant and size, and the look of a toggle that is on.",
+        "selector": ".mx-ribbon-menu__command[data-ribbon-size='large']",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.toggled.bg",
+          "face.toggled-hover.bg",
+          "face.toggled.color",
+          "face.outline-toggled.bg",
+          "face.ghost-toggled.bg",
+          "face.outline-toggled-hover.bg",
+          "face.ghost-toggled-hover.bg",
+          "face.outline-toggled.color",
+          "face.ghost-toggled.color",
+          "face.outline-toggled-hover.color",
+          "face.ghost-toggled-hover.color"
+        ]
+      },
+      "medium": {
+        "$description": "A medium command: the icon beside the text. Its variant and size, and the look of a toggle that is on.",
+        "selector": ".mx-ribbon-menu__command[data-ribbon-size='medium']",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.toggled.bg",
+          "face.toggled-hover.bg",
+          "face.toggled.color",
+          "face.outline-toggled.bg",
+          "face.ghost-toggled.bg",
+          "face.outline-toggled-hover.bg",
+          "face.ghost-toggled-hover.bg",
+          "face.outline-toggled.color",
+          "face.ghost-toggled.color",
+          "face.outline-toggled-hover.color",
+          "face.ghost-toggled-hover.color"
+        ]
+      },
+      "small": {
+        "$description": "A small command, alone or in a row, and the \"more\" button of the simplified layout: the icon alone. Its variant and size, and the look of a toggle that is on.",
+        "selector": ".mx-ribbon-menu__command[data-ribbon-size='small']",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.toggled.bg",
+          "face.toggled-hover.bg",
+          "face.toggled.color",
+          "face.outline-toggled.bg",
+          "face.ghost-toggled.bg",
+          "face.outline-toggled-hover.bg",
+          "face.ghost-toggled-hover.bg",
+          "face.outline-toggled.color",
+          "face.ghost-toggled.color",
+          "face.outline-toggled-hover.color",
+          "face.ghost-toggled-hover.color"
+        ]
+      },
+      "more": {
+        "$description": "The button beside a group's name that opens more options of the group.",
+        "selector": ".mx-ribbon-menu__group-foot > .mx-ribbon-menu__more",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "switch": {
+        "$description": "The button at the end of the commands that switches between the classic and the simplified layout.",
+        "selector": ".mx-ribbon-menu__body > .mx-ribbon-menu__switch",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "scroll": {
+        "$description": "The buttons over the ends of the commands that scroll them, while there is more to scroll to.",
+        "selector": ".mx-ribbon-menu__stage > .mx-ribbon-menu__scroll",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "picker": {
+        "$description": "The button that stands for the tabs in a compact menu: the tab shown, and a menu of the others.",
+        "selector": ".mx-ribbon-menu__bar > .mx-ribbon-menu__picker",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "gallery-open": {
+        "$description": "The button of a gallery that opens all of its choices: beside its row, or alone with the command's text when the gallery is small.",
+        "selector": ".mx-ribbon-menu__gallery > .mx-ribbon-menu__gallery-open",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      }
+    },
+    "$units": {
+      "root": {
+        "$description": "The whole menu: the row of tabs above the commands.",
+        "selector": ".mx-ribbon-menu"
+      },
+      "reveal": {
+        "$description": "The strip a menu hidden automatically is, until it is opened (`hover`, `focus`).",
+        "selector": ".mx-ribbon-menu__reveal",
+        "defaults": {
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-ribbon-menu__reveal:hover",
+          "focus": ".mx-ribbon-menu__reveal:focus-visible"
+        }
+      },
+      "frame": {
+        "$description": "The row of tabs and the commands (`floating`: opened over the page from the strip).",
+        "selector": ".mx-ribbon-menu__frame",
+        "states": {
+          "floating": ".mx-ribbon-menu[data-display='auto'][data-floating] > .mx-ribbon-menu__frame"
+        }
+      },
+      "bar": {
+        "$description": "The row of tabs.",
+        "selector": ".mx-ribbon-menu__bar"
+      },
+      "tabs": {
+        "$description": "The tabs, in a row.",
+        "selector": ".mx-ribbon-menu__tabs"
+      },
+      "bar-start": {
+        "$description": "The app's own content at the start of the row of tabs.",
+        "selector": ".mx-ribbon-menu__bar-start"
+      },
+      "bar-end": {
+        "$description": "The app's own content at the end of the row of tabs.",
+        "selector": ".mx-ribbon-menu__bar-end"
+      },
+      "app": {
+        "$description": "The button before the tabs: under the pointer, pressed, focused by the keys.",
+        "selector": ".mx-ribbon-menu__app",
+        "defaults": {
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-ribbon-menu__app:hover",
+          "pressed": {
+            "selector": ".mx-ribbon-menu__app:active",
+            "from": "hover"
+          },
+          "focus": ".mx-ribbon-menu__app:focus-visible"
+        }
+      },
+      "quick": {
+        "$description": "The quick commands, in the row of tabs (`below`: under the commands).",
+        "selector": ".mx-ribbon-menu__quick",
+        "states": {
+          "below": ".mx-ribbon-menu__quick--below"
+        }
+      },
+      "tab": {
+        "$description": "A tab: under the pointer, pressed, shown, focused by the keys, of a context, disabled.",
+        "selector": ".mx-ribbon-menu__tab",
+        "defaults": {
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-ribbon-menu__tab:not([aria-disabled], [aria-selected='true']):hover",
+          "pressed": {
+            "selector": ".mx-ribbon-menu__tab:not([aria-disabled], [aria-selected='true']):active",
+            "from": "hover"
+          },
+          "selected": ".mx-ribbon-menu__tab[aria-selected='true']",
+          "context": ".mx-ribbon-menu__tab[data-context]",
+          "focus": ".mx-ribbon-menu__tab:focus-visible",
+          "disabled": {
+            "selector": ".mx-ribbon-menu__tab[aria-disabled]",
+            "defaults": {
+              "cursor": "default"
+            }
+          }
+        }
+      },
+      "indicator": {
+        "$description": "The mark under the tab shown.",
+        "selector": ".mx-ribbon-menu__tab[aria-selected='true']::after"
+      },
+      "context-band": {
+        "$description": "The band over a tab of a context.",
+        "selector": ".mx-ribbon-menu__tab[data-context]::before"
+      },
+      "body": {
+        "$description": "The surface the commands of the tab shown stand on (`floating`: opened over the page from a tab).",
+        "selector": ".mx-ribbon-menu__body",
+        "states": {
+          "floating": ".mx-ribbon-menu[data-display='tabs'][data-floating] .mx-ribbon-menu__body"
+        }
+      },
+      "stage": {
+        "$description": "Where the groups of the tab shown stand, and scroll when they do not fit.",
+        "selector": ".mx-ribbon-menu__stage"
+      },
+      "panel": {
+        "$description": "The groups of one tab, in a row (`simple`: in the simplified layout).",
+        "selector": ".mx-ribbon-menu__panel",
+        "states": {
+          "simple": ".mx-ribbon-menu[data-layout='simple'] .mx-ribbon-menu__panel"
+        }
+      },
+      "divider": {
+        "$description": "The line between two groups.",
+        "selector": ".mx-ribbon-menu__divider"
+      },
+      "group": {
+        "$description": "A group: its commands above its name.",
+        "selector": ".mx-ribbon-menu__group"
+      },
+      "commands": {
+        "$description": "The commands of a group: large ones as high as the group, medium and small ones in columns.",
+        "selector": ".mx-ribbon-menu__commands"
+      },
+      "group-foot": {
+        "$description": "The row under the commands: the group's name, and the button beside it.",
+        "selector": ".mx-ribbon-menu__group-foot"
+      },
+      "group-label": {
+        "$description": "The group's name.",
+        "selector": ".mx-ribbon-menu__group-label"
+      },
+      "separator": {
+        "$description": "A line between commands of a group.",
+        "selector": ".mx-ribbon-menu__separator"
+      },
+      "row": {
+        "$description": "A row of small commands.",
+        "selector": ".mx-ribbon-menu__row"
+      },
+      "large-face": {
+        "$description": "What is pressed of a large command: the icon above the text.",
+        "selector": ":is(.mx-ribbon-menu__command[data-ribbon-size='large'].mx-button__face, .mx-ribbon-menu__command[data-ribbon-size='large'] > .mx-button__main)"
+      },
+      "large-arrow": {
+        "$description": "The arrow part of a large split command: only as high as its arrow, under the icon and the text.",
+        "selector": ".mx-ribbon-menu__command[data-ribbon-size='large'] > .mx-button__arrow"
+      },
+      "large-icon": {
+        "$description": "The icon of a large command.",
+        "selector": ":is(.mx-ribbon-menu__command[data-ribbon-size='large'], .mx-ribbon-menu__command[data-ribbon-size='large'] > .mx-button__main) > .mx-button__icon"
+      },
+      "hint": {
+        "$description": "A key hint: the letters that press what it stands on.",
+        "selector": ".mx-ribbon-menu__hint"
+      },
+      "drop": {
+        "$description": "The popup the button of a folded group opens: the group as it is.",
+        "selector": ".mx-popup.mx-ribbon-menu__drop"
+      },
+      "gallery": {
+        "$description": "A gallery's row of choices and its button.",
+        "selector": ".mx-ribbon-menu__gallery-row"
+      },
+      "gallery-grid": {
+        "$description": "All the choices of a gallery, in the popup its button opens.",
+        "selector": ".mx-ribbon-menu__gallery-grid"
+      },
+      "tile": {
+        "$description": "A choice of a gallery: under the pointer, pressed, chosen, focused by the keys, disabled.",
+        "selector": ".mx-ribbon-menu__tile",
+        "defaults": {
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-ribbon-menu__tile:not(:disabled, [aria-pressed='true']):hover",
+          "pressed": {
+            "selector": ".mx-ribbon-menu__tile:not(:disabled, [aria-pressed='true']):active",
+            "from": "hover"
+          },
+          "selected": ".mx-ribbon-menu__tile[aria-pressed='true']",
+          "focus": ".mx-ribbon-menu__tile:focus-visible",
+          "disabled": {
+            "selector": ".mx-ribbon-menu__tile:disabled",
+            "defaults": {
+              "cursor": "default"
+            }
+          }
+        }
+      },
+      "tile-icon": {
+        "$description": "The glyph or the image of a choice.",
+        "selector": ".mx-ribbon-menu__tile > :is(img, svg, .mx-glyph)"
+      },
+      "tile-text": {
+        "$description": "The text of a choice.",
+        "selector": ".mx-ribbon-menu__tile-text"
+      }
+    }
+  }
+}
