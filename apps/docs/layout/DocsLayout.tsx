@@ -296,6 +296,12 @@ export class DocsLayout extends Component<HTMLDivElement> {
             <h1>{() => tx(this.page?.title ?? 'Page not found')}</h1>
             <span class="docs-pagehead__tag">{() => tx(this.page?.group ?? '')}</span>
             <span class="docs-pagehead__version">@motifx-community/ui {VERSION}</span>
+            <p class="docs-pagehead__status">
+              <span class="docs-pagehead__badge">
+                <span>{() => tx('In active development')}</span>
+              </span>
+              <Rich text="New versions are released often, and parts of the API may change before the stable release. [See what changed](https://github.com/motifjs-community/motifjs-ui/blob/main/CHANGELOG.md)" />
+            </p>
           </header>
           <aside class="docs-notice" role="note" x-wait={() => settings.noticeClosed}>
             <span class="mx-glyph docs-notice__icon" data-icon="caution" aria-hidden="true" />

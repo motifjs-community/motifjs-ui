@@ -365,6 +365,51 @@
   color: var(--mx-color-fg-secondary);
 }
 
+/* The state of the library, on every page: a line of its own under the title. */
+.docs-pagehead__status {
+  display: flex;
+  flex-wrap: wrap;
+  flex-basis: 100%;
+  align-items: center;
+  gap: var(--mx-space-2);
+  margin: 0;
+  font-size: var(--mx-font-size-body);
+  line-height: var(--mx-font-line-body);
+  color: var(--mx-color-fg-secondary);
+}
+
+.docs-pagehead__status a {
+  color: var(--mx-color-accent-fg);
+}
+
+.docs-pagehead__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mx-space-1);
+  block-size: var(--mx-space-6);
+  padding-inline: var(--mx-space-2);
+  border-radius: var(--mx-radius-full);
+  background: var(--mx-color-accent-subtle);
+  color: var(--mx-color-accent-fg);
+  font-size: var(--mx-font-size-caption);
+  font-weight: var(--mx-font-weight-semibold);
+  white-space: nowrap;
+}
+
+/* The line is cut to the capitals, so the letters sit in the middle; the tails of p and ş still show below it. */
+.docs-pagehead__badge > span {
+  text-box: trim-both cap alphabetic;
+}
+
+/* The dot before the words. */
+.docs-pagehead__badge::before {
+  content: '';
+  inline-size: var(--mx-space-2);
+  block-size: var(--mx-space-2);
+  border-radius: var(--mx-radius-full);
+  background: currentcolor;
+}
+
 .docs-body {
   display: contents;
 }
