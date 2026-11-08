@@ -1,10 +1,8 @@
 import { reactive, untracked, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import type { GridColumn } from '../grid-column';
-import type { ListOption } from '../list-option';
 import { dayCondition } from './day-condition';
 import type { GridModel } from './GridModel';
-import { optionOf } from './option-of';
 import { parseDateText } from './parse-date-text';
 import { textRanges } from './text-ranges';
 
@@ -210,9 +208,10 @@ export class GridSearch<T> {
         return data.where(field, '=', value);
       }
       case 'list': {
-        if (!Array.isArray(col.options)) return null;
+        const choices = this.model.choices.of(col);
+        if (!choices) return null;
         const lower = text.toLocaleLowerCase(locale);
-        const values = (col.options as readonly ListOption[]).map(optionOf).filter((o) => o.label.toLocaleLowerCase(locale).includes(lower)).map((o) => o.value);
+        const values = choices.filter((o) => o.label.toLocaleLowerCase(locale).includes(lower)).map((o) => o.value);
         if (!values.length) return null;
         marks.set(field, 'part');
         return data.where(field, 'in', values);

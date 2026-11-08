@@ -1,7 +1,9 @@
+import { Component } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
+import { NumberBox } from '../numberbox/NumberBox';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -290,6 +292,53 @@ describe('DataGrid filters', () => {
     grid.filters = { name: { value: 'yok' } };
     await settle();
     expect(grid.element.querySelector('.mx-data-grid__overlay')!.textContent).toContain('Filtreye uyan kayıt yok');
+    await grid.dispose();
+  });
+
+  it('takes a column’s own filter editor: a field bound both ways, or any component through its context', async () => {
+    let told: unknown[] = [];
+    let custom!: { set: (v: unknown) => void };
+    const own: GridColumn<Row>[] = columns.map((c) =>
+      c.field === 'qty'
+        ? { ...c, filterEditor: () => new NumberBox({ labelMode: 'hidden', size: 'sm', min: 0 }) }
+        : c.field === 'name'
+          ? {
+              ...c,
+              filterEditor: (ctx) => {
+                const box = new Component<HTMLDivElement>('div');
+                box.element.className = 'own-filter';
+                custom = { set: (v) => ctx.setValue(v) };
+                ctx.onChanged((v) => told.push(v));
+                return box;
+              },
+            }
+          : c,
+    );
+    const grid = await make({ columns: own, settings: { filterRow: true, filterDelay: 0 } });
+    expect(filterCell(grid, 'name').querySelector('.own-filter')).not.toBeNull();
+    expect(filterCell(grid, 'qty').querySelector('.mx-number-box')).not.toBeNull();
+    custom.set('Name 1');
+    await settle();
+    expect(grid.filters).toEqual({ name: { value: 'Name 1' } });
+    expect(told).toEqual(['Name 1']);
+    type(input(grid, 'qty'), '30');
+    input(grid, 'qty').dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
+    expect(grid.filters.qty?.value).toBe(30);
+    told = [];
+    grid.filters = {};
+    await settle();
+    expect(told).toEqual([undefined]);
+    expect(input(grid, 'qty').value).toBe('');
+    await grid.dispose();
+  });
+
+  it('draws its columns from the first frame, out of sight until its own sheet is in the page', async () => {
+    const grid = mount(new DataGrid<Row>({ rowKey: 'id', columns, rows: makeRows(3) } as DataGridProps<Row>));
+    await settle();
+    const vp = grid.element.querySelector<HTMLElement>('.mx-data-grid__viewport')!;
+    expect(vp.style.getPropertyValue('--_columns')).not.toBe('');
+    expect(grid.element.hasAttribute('data-settling')).toBe(false);
     await grid.dispose();
   });
 });

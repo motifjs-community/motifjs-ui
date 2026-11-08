@@ -17,7 +17,7 @@ const LOOKUP_FIELDS = [
   ['searchLimit', 'The maximum number of items containing the search panel\'s text that the search converts to keys. The default is 100.'],
   ['filterSearchLimit', 'The same for the header filter\'s search box. The default is 1000.'],
   ['pageSize', 'The number of items the editor\'s list loads per request while scrolling (with a data source). The default is 50.'],
-  ['parallelRequests', 'With `\'byKey\'`, the number of simultaneous requests. The default is 6.'],
+  ['parallelRequests', 'The number of simultaneous requests: of keys with `\'byKey\'`, of batches with `\'batch\'`. The default is 6.'],
   ['pasteSearchLimit', 'The number of items searched for pasted text. The default is 50.'],
 ];
 

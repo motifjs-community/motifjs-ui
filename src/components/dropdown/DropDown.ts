@@ -585,6 +585,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     list.textOf = (item) => this.itemText(item);
     list.enabledOf = (item) => readItemField(item, this.peekProperty<ItemField<T>>('enabledField'), 'enabled') !== false;
     list.isSelected = (item) => this.sameValue(this.itemValue(item) as V | null, this.peekValue());
+    // A list from a data source says it is loading until its rows arrive, not that there are none.
+    list.emptyText = () => (parts.source.loading ? uiLocale.strings.loading : uiLocale.strings.noItems);
     list.onChosen((e) => this.choose(e.item, e.event));
     popup.controls.add(list);
     parts.list = list;

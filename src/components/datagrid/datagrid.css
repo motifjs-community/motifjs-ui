@@ -33,6 +33,11 @@
     overflow: hidden;
   }
 
+  /* Until the grid's own sheet is in the page, its rows are not shown half laid out. */
+  .mx-data-grid[data-settling] .mx-data-grid__viewport {
+    visibility: hidden;
+  }
+
   .mx-data-grid__main {
     position: relative;
     display: flex;

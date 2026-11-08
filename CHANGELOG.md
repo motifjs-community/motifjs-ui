@@ -6,6 +6,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- `DataGrid`: a column's `filterEditor` replaces the filter row's editor of its type: a `Field` is bound to the filter
+  both ways, any other component writes it through `FilterEditorContext` (`setValue`, `clear`, `onChanged`,
+  `operator`).
+- `DataGrid`: a list column whose `options` is a function is read everywhere outside a row too: the cell text, the
+  filter row, the search panel, the filter builder and pasted text. The function is called once with `row` `null`,
+  its answer is kept until `refresh()`, and the filter row's list says it is loading until it arrives.
+
+### Changed
+
+- `GridColumn.options` as a function takes `row: T | null`. TypeScript code that reads a field of the row directly
+  must handle `null`, when the function is called outside a row and returns every choice.
+- Lookup texts asked in batches (`lookup.resolve: 'batch'`) go `parallelRequests` batches at a time (6 by default)
+  instead of one after another: a list of a few hundred keys is ready in about a second instead of several.
+
+### Fixed
+
+- `DataGrid`: the first frame lays out the columns; the cells of a row no longer pile up in the top-left corner and
+  then jump into place.
+- `DropDown`: a list from a data source says it is loading while its rows arrive, instead of saying there are no
+  items. This covers the filter row of `DataGrid` and lookup editors.
+
 ## [0.1.0-beta.7] - 2026-11-08
 
 ### Fixed

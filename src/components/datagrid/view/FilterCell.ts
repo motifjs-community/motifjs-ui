@@ -1,4 +1,4 @@
-import { Component, untracked, type ComponentBase } from '@motifx/core';
+import { Component, ComponentBase, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { handOver } from '../../../core/draw-parts';
 import { DateBox } from '../../datebox/DateBox';
@@ -6,11 +6,14 @@ import { DropDown } from '../../dropdown/DropDown';
 import type { DropDownItem } from '../../dropdown/drop-down-item';
 import { NumberBox } from '../../numberbox/NumberBox';
 import { TextBox } from '../../textbox/TextBox';
-import type { Field } from '../../../parts/field/Field';
+import { Field } from '../../../parts/field/Field';
+import { focusableIn } from '../../../core/focus';
+import type { FilterEditorContext } from '../filter-editor-context';
 import type { ColumnFilter } from '../column-filter';
 import type { GridFilterValue } from '../grid-filter-value';
 import type { GridModel } from '../model/GridModel';
 import { optionOf } from '../model/option-of';
+import { ChoiceListAdapter, type ChoiceRow } from '../model/ChoiceListAdapter';
 import { createActionButton } from './action-button';
 import { OPERATOR_MARKS, OPERATOR_TEXTS } from './operator-texts';
 import { readField } from '../model/read-field';
@@ -30,6 +33,8 @@ export class FilterCell<T> {
   /** The condition button; `null` for a check box column. */
   readonly condition: HTMLButtonElement | null;
   readonly editors: Field<any>[] = [];
+  /** A custom filter editor's content when it is not a `Field`. */
+  private custom: ComponentBase | null = null;
   /** What `draw` does, part by part. */
   private readonly drawers: (() => void)[] = [];
   private readonly stops: (() => void)[] = [];
@@ -63,7 +68,8 @@ export class FilterCell<T> {
     const common = { labelMode: 'hidden' as const, size: 'sm' as const, tabStop: false };
     const firstLabel = () => model.text(between() ? 'gridFilterFrom' : 'gridFilterFor', { title: title() });
     const secondLabel = () => model.text('gridFilterTo', { title: title() });
-    if (col.lookup) this.editors.push(this.lookupList(firstLabel, get, set));
+    if (col.filterEditor) this.customEditor(col.filterEditor, get, set, firstLabel);
+    else if (col.lookup) this.editors.push(this.lookupList(firstLabel, get, set));
     else switch (col.type) {
       case 'number':
         for (const key of ['value', 'value2'] as const) {
@@ -97,8 +103,13 @@ export class FilterCell<T> {
           this.editors.push(editor);
         }
         break;
-      case 'boolean':
-      case 'list': {
+      case 'list':
+        if (typeof col.options === 'function') {
+          this.editors.push(this.askedList(firstLabel, get, set));
+          break;
+        }
+      // falls through
+      case 'boolean': {
         const editor = new DropDown<DropDownItem, unknown>({
           ...common,
           onValueChanged: (e) => e.byUser && set({ value: e.value ?? undefined }, false),
@@ -138,6 +149,10 @@ export class FilterCell<T> {
       editor.element.setAttribute('data-in-filter', '');
       holder.controls.add(editor);
     }
+    if (this.custom) {
+      this.custom.element.setAttribute('data-in-filter', '');
+      holder.controls.add(this.custom);
+    }
     this.drawers.push(() => {
       const hidden = !model.columns.can(field, 'filterRow');
       if (box.hidden !== hidden) box.hidden = hidden;
@@ -165,6 +180,11 @@ export class FilterCell<T> {
 
   /** Focuses the first editor; a character typed on the cell starts its text. Returns whether there was one. */
   focus(typed?: string): boolean {
+    if (this.custom && !this.cell.querySelector('.mx-data-grid__filter')?.hasAttribute('hidden')) {
+      const target = focusableIn(this.custom.element as HTMLElement)[0];
+      target?.focus();
+      return !!target;
+    }
     const editor = this.shownEditors()[0];
     if (!editor || this.cell.querySelector('.mx-data-grid__filter')?.hasAttribute('hidden')) return false;
     editor.focus();
@@ -181,6 +201,106 @@ export class FilterCell<T> {
     this.disposed = true;
     for (const stop of this.stops) stop();
     if (!this.holder.isDisposed) void this.holder.dispose({ skipLeaveTransition: true });
+  }
+
+  /**
+   * A list column whose choices come from a function: it is asked with no row when the list first opens (or for the
+   * text of a chosen value), and the list says it is loading until the answer is there.
+   */
+  private askedList(label: () => string, get: () => ColumnFilter, set: (change: Partial<ColumnFilter>, typed: boolean) => void): DropDown<ChoiceRow, unknown> {
+    const model = this.model;
+    const col = model.columns.get(this.field);
+    let source: data.DataSource<ChoiceRow, unknown> | null = null;
+    let shown: unknown[] = [];
+    const arrived = model.choices.onChanged((field) => {
+      if (field !== this.field) return;
+      shown = [];
+      this.draw();
+    });
+    this.stops.push(() => {
+      arrived.dispose();
+      source?.dispose();
+    });
+    const list = new DropDown<ChoiceRow, unknown>({
+      labelMode: 'hidden',
+      size: 'sm',
+      tabStop: false,
+      textField: 'text',
+      valueField: 'value',
+      onValueChanged: (e) => e.byUser && set({ value: e.value ?? undefined }, false),
+      onOpened: () => {
+        // A failed answer is asked for again; any other is the one kept.
+        if (source && !model.choices.failed(col)) return;
+        source?.dispose();
+        source = new data.DataSource({ adapter: new ChoiceListAdapter(model.choices, col, { value: null, text: model.text('gridAll') }) });
+        list.dataSource = source;
+      },
+    });
+    this.drawers.push(() => {
+      list.label = label();
+      list.placeholder = model.text('gridAll');
+      // Until it opens, the field shows the chosen value's text alone.
+      const value = get().value;
+      if (!source) {
+        const label = data.isEmpty(value) ? '' : model.choices.of(col)?.find((o) => Object.is(o.value, value) || String(o.value) === String(value))?.label;
+        const items = data.isEmpty(value) || label === undefined ? [] : [{ value, text: label }];
+        const now = items.flatMap((i) => [i.value, i.text]);
+        if (!same(now, shown)) {
+          shown = now;
+          list.items = items;
+        }
+      }
+      handOver(list, value === undefined ? null : value);
+    });
+    return list;
+  }
+
+  /**
+   * The column's own filter editor: a `Field` is bound to the filter both ways, any other component sets the value
+   * through the context and hears changes through it.
+   */
+  private customEditor(make: (ctx: FilterEditorContext<T>) => unknown, get: () => ColumnFilter, set: (change: Partial<ColumnFilter>, typed: boolean) => void, label: () => string) {
+    const model = this.model;
+    const listeners = new Set<(value: unknown, value2: unknown) => void>();
+    const empty = (v: unknown) => (data.isEmpty(v) ? undefined : v);
+    const ctx: FilterEditorContext<T> = {
+      column: model.columns.get(this.field),
+      get operator() {
+        return model.filters.operator(ctx.column.field);
+      },
+      get value() {
+        return get().value;
+      },
+      get value2() {
+        return get().value2;
+      },
+      setValue: (value, value2) => set(value2 === undefined ? { value: empty(value) } : { value: empty(value), value2: empty(value2) }, false),
+      clear: () => set({ value: undefined, value2: undefined }, false),
+      onChanged: (listener) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+    const content = make(ctx);
+    if (content instanceof Field) {
+      content.onValueChanged((e) => e.byUser && set({ value: empty(e.value) }, content instanceof TextBox));
+      this.editors.push(content);
+    } else if (content instanceof ComponentBase) {
+      this.custom = content;
+    }
+    // Told only when the filter changes after the editor was made with it.
+    let last: unknown[] = [get().value, get().value2];
+    this.drawers.push(() => {
+      const now = [get().value, get().value2];
+      if (content instanceof Field) {
+        if (!content.label) content.label = label();
+        handOver(content, now[0] === undefined ? null : now[0]);
+      }
+      if (same(now, last)) return;
+      last = now;
+      for (const listener of listeners) listener(now[0], now[1]);
+    });
+    this.stops.push(() => listeners.clear());
   }
 
   /**

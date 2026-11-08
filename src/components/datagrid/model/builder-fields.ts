@@ -4,6 +4,8 @@ import type { FilterBuilderDataType } from '../../filterbuilder/filter-builder-d
 import type { FilterBuilderField } from '../../filterbuilder/filter-builder-field';
 import type { FilterBuilderLookup } from '../../filterbuilder/filter-builder-lookup';
 import type { GridColumn } from '../grid-column';
+import { data } from '@motifx-community/data';
+import { ChoiceListAdapter } from './ChoiceListAdapter';
 import type { GridModel } from './GridModel';
 import { optionOf } from './option-of';
 
@@ -20,11 +22,15 @@ export function builderFields<T>(model: GridModel<T>, customOperations: readonly
     if (!model.columns.can(field, 'filterBuilder')) continue;
     const dataType: FilterBuilderDataType = col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : col.type === 'boolean' ? 'boolean' : 'string';
     const options = col.type === 'list' && Array.isArray(col.options) ? col.options.map(optionOf) : null;
+    // A function's choices come from it with no row: the list says it is loading until they are there.
+    const asked = col.type === 'list' && typeof col.options === 'function';
     const lookup: FilterBuilderLookup | undefined = col.lookup
       ? { dataSource: col.lookup.dataSource, valueField: col.lookup.valueField, textField: col.lookup.textField }
       : options
         ? { dataSource: options, valueField: 'value', textField: 'label' }
-        : undefined;
+        : asked
+          ? { dataSource: new data.DataSource({ adapter: new ChoiceListAdapter(model.choices, col) }), valueField: 'value', textField: 'text' }
+          : undefined;
     const own = col.filterOperators?.length ? [...col.filterOperators] : null;
     const byType = customOperations.filter((op) => op.dataTypes?.includes(dataType)).map((op) => op.name);
     out.push({

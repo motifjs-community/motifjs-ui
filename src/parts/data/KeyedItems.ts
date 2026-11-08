@@ -42,7 +42,7 @@ export class KeyedItems<T = unknown> {
   resolve: 'batch' | 'byKey';
   /** The keys per request in `'batch'` mode: few enough that a request that carries them in its address stays within common URL limits. */
   batchSize = 20;
-  /** With `'byKey'`, the number of simultaneous requests. */
+  /** The number of simultaneous requests: of keys with `'byKey'`, of batches with `'batch'`. */
   parallelRequests = 6;
   /** The number of items requested when searching for an exact text, such as pasted text. */
   pasteSearchLimit = 50;
@@ -277,7 +277,8 @@ export class KeyedItems<T = unknown> {
     const worker = async () => {
       while (next < jobs.length) await jobs[next++]();
     };
-    await Promise.all(Array.from({ length: Math.min(byKey ? Math.max(1, this.parallelRequests) : 1, jobs.length) }, worker));
+    // Batches go side by side too: one after another, a few hundred keys would keep a list waiting for seconds.
+    await Promise.all(Array.from({ length: Math.min(Math.max(1, this.parallelRequests), jobs.length) }, worker));
   }
 
   private async loadMany(field: string, part: [string, unknown][], generation: number) {

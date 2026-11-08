@@ -31,6 +31,7 @@ export type { ColumnFeatures } from './column-features';
 export type { ColumnType } from './column-type';
 export type { CellContext } from './cell-context';
 export type { EditorContext } from './editor-context';
+export type { FilterEditorContext } from './filter-editor-context';
 export type { ListOption } from './list-option';
 export type { GridLayout } from './grid-layout';
 export type { ColumnLayout } from './column-layout';

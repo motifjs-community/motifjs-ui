@@ -192,4 +192,22 @@ describe('KeyedItems', () => {
     await items.findByText('Customer 8', { textOf, searchFields: ['name'] });
     expect(service.loads.at(-1)?.take).toBe(5);
   });
+
+  it('sends batches side by side too, parallelRequests at a time, so many keys do not wait for each other', async () => {
+    const service = new Service();
+    let running = 0;
+    let most = 0;
+    const real = service.load.bind(service);
+    service.load = async (options) => {
+      running++;
+      most = Math.max(most, running);
+      await new Promise((r) => setTimeout(r, 1));
+      running--;
+      return real(options);
+    };
+    const items = KeyedItems.of<Customer>(source(service));
+    items.batchSize = 10;
+    await items.request(CUSTOMERS.slice(0, 100).map((c) => c.id));
+    expect(most).toBe(6);
+  });
 });

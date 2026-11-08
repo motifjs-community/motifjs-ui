@@ -1,10 +1,12 @@
 import { ApiTable, Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { code, withOrders } from './code';
+import FilterEditors from './examples/FilterEditors';
 import FilterPanel from './examples/FilterPanel';
 import Filters from './examples/Filters';
 import HeaderFilterIntervals from './examples/HeaderFilterIntervals';
 import Search from './examples/Search';
+import ServerChoices from './examples/ServerChoices';
 
 const PANEL = [
   ['settings.filterPanel', '`boolean`', '`false`', 'The panel below the rows: the check box, the filter as text (clicking it opens the builder), “Create Filter” when there is no filter, and “Clear”.'],
@@ -28,6 +30,24 @@ export default function DataGridFilteringPage() {
         </p>
         <Example files={withOrders('Filters.tsx')} stack>
           <Filters />
+        </Example>
+      </Section>
+
+      <Section anchor="filter-editors" title="Custom filter editors">
+        <p>
+          <Rich text="A column's `filterEditor` replaces the filter row's editor of its type. A `Field` it returns, such as a `NumberBox` with a minimum, is bound to the column's filter both ways. Any other component receives a `FilterEditorContext`: it writes the value with `ctx.setValue` (`ctx.clear()` removes it) and hears the filter change elsewhere, such as the filters being cleared, through `ctx.onChanged`. `ctx.operator` is the condition chosen in the cell. The editor for a cell, the column's `editor`, is separate: see [Editing](/datagrid/editing)." />
+        </p>
+        <Example files={withOrders('FilterEditors.tsx')} stack>
+          <FilterEditors />
+        </Example>
+      </Section>
+
+      <Section anchor="server-choices" title="List choices from a server">
+        <p>
+          <Rich text="A list column's `options` can be a function, which can return a promise. In a cell's editor it is called with the row, so the choices can depend on it. Everywhere else (the cell text, the filter row, the search panel, the filter builder and pasted text) it is called once with `row` `null`, returns every choice, and its answer is kept until `refresh()`. Until it arrives, the cells show the values and the filter row's list says it is loading. Here the server is asked once, however many places use the choices." />
+        </p>
+        <Example files={withOrders('ServerChoices.tsx')} stack>
+          <ServerChoices />
         </Example>
       </Section>
 

@@ -51,7 +51,7 @@ export interface GridLookup<T = any> {
   pageSize?: number;
   /** The maximum number of items containing the header filter's search text that it converts to keys (not used when `textFrom` is a field: the search reads that field). The default is 1000. */
   filterSearchLimit?: number;
-  /** With `'byKey'`, the requests at the same time. The default is 6. */
+  /** The requests at the same time: of keys with `'byKey'`, of batches with `'batch'`. The default is 6. */
   parallelRequests?: number;
   /** The items searched for a pasted text. The default is 50. */
   pasteSearchLimit?: number;

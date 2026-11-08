@@ -558,6 +558,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     const lookupTexts = model.lookups.onChanged(() => this.lookupTexts.n++);
     this.motif.setDisposable(() => lookupTexts.dispose());
+    // A list column's choices arrived: the texts written with them are drawn again.
+    const choices = model.choices.onChanged(() => {
+      this.lookupTexts.n++;
+      model.notices.tell('texts');
+      model.notices.flush();
+    });
+    this.motif.setDisposable(() => choices.dispose());
     // The grid's `reState()`: what it was given is read again, as every control reads its props again.
     onReState(this, () => this.readGivenAgain());
     // The kit's texts in another language: what the grid writes of them is drawn again.
@@ -3112,6 +3119,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     vp.style.setProperty('--_columns', this.model.columns.template(this.model.columns.visible()));
     this.body.relayout(true);
     this.syncTabStop();
+    this.element.removeAttribute('data-settling');
   }
 
   override onDisposing() {
@@ -3147,6 +3155,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const viewport = div('mx-data-grid__viewport', main);
     const vp = viewport.element;
     this.viewportEl = vp;
+    // The columns from the first frame: rows drawn before the template would stack in one column.
+    vp.style.setProperty('--_columns', this.model.columns.template(this.model.columns.visible()));
+    // Out of sight until the grid's own sheet (hidden and sticky columns, alignment) is in the page.
+    this.element.setAttribute('data-settling', '');
     this.motif.setDisposable(this.dragSelect.holdTouch(vp));
     vp.addEventListener('scroll', () => {
       this.columnsScrolled();

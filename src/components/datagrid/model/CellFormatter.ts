@@ -2,7 +2,6 @@ import { untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { parseNumber } from '../../numberbox/number-text';
 import type { GridColumn } from '../grid-column';
-import type { ListOption } from '../list-option';
 import type { EditorValue } from '../view/editor-value';
 import { dateLike } from './date-like';
 import { optionOf } from './option-of';
@@ -25,6 +24,8 @@ export class CellFormatter {
     private readonly messages: () => { number: string; date: string; other: string } = () => ({ number: '', date: '', other: '' }),
     /** Texts read as yes and as no, besides the yes / no words. */
     private readonly boolTexts: () => [readonly string[], readonly string[]] = () => [['true', '1', 'x', '✓', '✔'], ['false', '0', '']],
+    /** The choices of a list column outside a row; `null` while they are on their way. */
+    private readonly choicesOf: (col: GridColumn<any>) => { value: unknown; label: string }[] | null = (col) => (Array.isArray(col.options) ? col.options.map(optionOf) : []),
   ) {
     this.number = new Intl.NumberFormat(locale);
     this.date = new Intl.DateTimeFormat(locale, { dateStyle: 'short' });
@@ -110,9 +111,9 @@ export class CellFormatter {
         return { ok: false, message: this.messages().other };
       }
       case 'list': {
-        if (!Array.isArray(col.options)) return { ok: true, value: plain };
-        for (const o of col.options as readonly ListOption[]) {
-          const opt = optionOf(o);
+        const choices = this.choicesOf(col);
+        if (!choices) return { ok: true, value: plain };
+        for (const opt of choices) {
           if (this.collator.compare(opt.label, plain) === 0 || String(opt.value) === plain) return { ok: true, value: opt.value };
         }
         return { ok: false, message: this.messages().other };
@@ -139,11 +140,7 @@ export class CellFormatter {
   }
 
   private optionLabel<T>(col: GridColumn<T>, v: unknown): string | undefined {
-    if (!Array.isArray(col.options)) return undefined;
-    for (const o of col.options as readonly ListOption[]) {
-      const opt = optionOf(o);
-      if (sameValue(opt.value, v)) return opt.label;
-    }
+    for (const opt of this.choicesOf(col) ?? []) if (sameValue(opt.value, v)) return opt.label;
     return undefined;
   }
 }

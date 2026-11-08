@@ -1,3 +1,4 @@
+import { ListChoices } from './ListChoices';
 import { effect, reactive, read, untracked, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { fillText } from '../../../core/fill-text';
@@ -154,6 +155,8 @@ export class GridModel<T> {
   readonly values: FilterValues<T>;
   /** The texts of the lookup columns. */
   readonly lookups: LookupTexts<T>;
+  /** The choices of list columns outside a row (cell text, filter row, search, builder, pasted text). */
+  readonly choices = new ListChoices<T>();
   /** What the rows are grouped by, and which groups are open. */
   readonly groups: GridGroups<T>;
   /** The summary items, their values and texts. */
@@ -479,6 +482,7 @@ export class GridModel<T> {
         () => [this.text('yes'), this.text('no')],
         () => ({ number: this.text('gridInvalidNumber'), date: this.text('invalidDate'), other: this.text('invalid') }),
         () => [this.settings.get('trueTexts'), this.settings.get('falseTexts')],
+        (col) => this.choices.of(col as GridColumn<T>),
       );
     return this.formatterCache;
   }
@@ -1009,6 +1013,7 @@ export class GridModel<T> {
   /** Forgets the texts of the lookup columns and asks for them again. */
   refreshLookups() {
     this.lookups.refresh([...this.columns.defs.values()].filter((c) => c.lookup));
+    this.choices.clear();
   }
 
   setError(row: T, field: string, message: string) {
@@ -1672,6 +1677,7 @@ export class GridModel<T> {
     this.search.dispose();
     this.summaries.dispose();
     this.lookups.dispose();
+    this.choices.dispose();
     this.selection.dispose();
     this.cellRanges.dispose();
     this.data.dispose();

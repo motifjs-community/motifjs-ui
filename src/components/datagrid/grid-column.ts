@@ -4,6 +4,7 @@ import type { CellContext } from './cell-context';
 import type { ColumnResizeMode } from './column-resize-mode';
 import type { ColumnType } from './column-type';
 import type { EditorContext } from './editor-context';
+import type { FilterEditorContext } from './filter-editor-context';
 import type { GroupCellContext } from './group-cell-context';
 import type { HeaderCellContext } from './header-cell-context';
 import type { GridFilterOperator } from './grid-filter-operator';
@@ -146,14 +147,21 @@ export interface GridColumn<T = any> {
   formItem?: GridColumnFormItem;
   /**
    * The choices of a `list` column: an array, or a function of the row and its entered values
-   * (`context.getValue(field)`), which can return a promise.
+   * (`context.getValue(field)`), which can return a promise. Outside a row (the cell text, the filter
+   * row, the search, the filter builder and pasted text) it is called once with `row` `null`, and it
+   * returns every choice then; the answer is kept until `refresh()`.
    */
-  options?: readonly ListOption[] | ((row: T, context: data.RowCheckContext<T>) => readonly ListOption[] | Promise<readonly ListOption[]>);
+  options?: readonly ListOption[] | ((row: T | null, context: data.RowCheckContext<T>) => readonly ListOption[] | Promise<readonly ListOption[]>);
   /**
    * A custom editor, created when the cell is edited: a `Field` (read through its `value`), or any
    * component that calls `ctx.setValue`.
    */
   editor?: (ctx: EditorContext<T>) => unknown;
+  /**
+   * A custom editor of the filter row's value, in place of the one of the column type: a `Field`, bound to the
+   * column's filter both ways, or any component that calls `ctx.setValue` and hears `ctx.onChanged`.
+   */
+  filterEditor?: (ctx: FilterEditorContext<T>) => unknown;
   /**
    * The cell holds a key and displays the text of its item from another source (a service, an array).
    * The column is displayed, edited, filtered, sorted, copied and exported as a lookup, and `type` still

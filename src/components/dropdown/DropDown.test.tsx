@@ -1,5 +1,6 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { data } from '@motifx-community/data';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
@@ -329,5 +330,26 @@ describe('DropDown', () => {
     expect(options(d).find((o) => o.textContent === 'Item 1500')!.getAttribute('aria-posinset')).toBe('1501');
     press(display(d), 'End');
     expect(active(d)).toBe('Item 1999');
+  });
+
+  it('says the list is loading while its data source loads, and that there are no items only once it has none', async () => {
+    let finish!: () => void;
+    class Late extends data.ArrayAdapter<{ id: number; text: string }, number> {
+      protected override async loadRows(options: data.LoadOptions) {
+        await new Promise<void>((r) => (finish = r));
+        return super.loadRows(options);
+      }
+    }
+    let dd!: DropDown<{ id: number; text: string }, number>;
+    page(<DropDown ref={(d: DropDown<{ id: number; text: string }, number>) => (dd = d)} label="Customer" textField="text" valueField="id" />);
+    await settle();
+    dd.dataSource = new data.DataSource({ adapter: new Late({ data: [], key: 'id' }) });
+    dd.open();
+    await settle();
+    const empty = () => dd.element.querySelector('.mx-list__empty')?.textContent;
+    expect(empty()).toBe('Loading…');
+    finish();
+    await settle();
+    expect(empty()).toBe('No items');
   });
 });
