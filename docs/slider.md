@@ -1,6 +1,6 @@
 # Slider
 
-> Editors · @motifx-community/ui 0.1.0-beta.7
+> Editors · @motifx-community/ui 0.1.0-beta.8
 
 Selects a value on a track by dragging a thumb or using the keyboard. It supports a single number or a range with two thumbs, steps, labeled tick marks, a value tooltip, a vertical orientation and number formatting, along with the label, help text and validation common to all fields.
 

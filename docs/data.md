@@ -1,6 +1,6 @@
 # Data
 
-> Data · @motifx-community/ui 0.1.0-beta.7
+> Data · @motifx-community/ui 0.1.0-beta.8
 
 Data components show and pick from structured data: hierarchies, lists, sets of tags, and filters that the reader builds. Tables have their own group: see [DataGrid](datagrid.md).
 

@@ -1,6 +1,6 @@
 # Chart: Radar
 
-> Charts · @motifx-community/ui 0.1.0-beta.7
+> Charts · @motifx-community/ui 0.1.0-beta.8
 
 A radar compares several measures at once, for one or more items.
 

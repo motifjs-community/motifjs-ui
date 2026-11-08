@@ -1,6 +1,6 @@
 # Chart: Funnel
 
-> Charts · @motifx-community/ui 0.1.0-beta.7
+> Charts · @motifx-community/ui 0.1.0-beta.8
 
 A funnel follows a quantity through stages in order, and shows how much of it is left at each one.
 

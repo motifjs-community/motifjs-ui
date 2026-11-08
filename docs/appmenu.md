@@ -1,6 +1,6 @@
 # AppMenu
 
-> Navigation · @motifx-community/ui 0.1.0-beta.7
+> AppMenu · @motifx-community/ui 0.1.0-beta.8
 
 The main menu of an application. It slides in from the start edge with a list of items, and each item shows its own page beside the list or runs a command. The menu holds nothing of its own: the items, the pages and the commands are given by the application.
 
@@ -103,13 +103,21 @@ export default function FileMenu() {
 }
 ```
 
+## Topics
+
+| Page | What it covers |
+| --- | --- |
+| `[Slots and search](appmenu-search.md)` | The app’s own content above and under the items, and a search over them. |
+| `[Programmatic changes](appmenu-programmatic.md)` | Adding, removing, moving and changing items by key. |
+| `[API reference](appmenu-api.md)` | Props, item fields, members, events, styling hooks and tokens. |
+
 ## Layout
 
 | Room | Layout |
 | --- | --- |
 | `Wide window` | The menu covers half of the window (`app-menu.share`), with the list beside the page. |
 | `Half the window is too narrow` | When half the window is narrower than `app-menu.min-size`, the menu covers the whole window. |
-| `The menu is too narrow for both` | When the menu is narrower than `app-menu.split-size`, the list and the page take turns. Choosing a page shows it, and Back or Escape returns to the list. |
+| `The menu is too narrow for both` | When the menu is narrower than `app-menu.split-size`, the list and the page take turns, the one coming in pushing the other out. Choosing a page shows it, and Back or Escape returns to the list. |
 
 ## Keyboard
 
@@ -119,8 +127,23 @@ export default function FileMenu() {
 | `Home, End` | Moves to the first or the last item. |
 | `Enter, Space` | Shows the page of the item, or runs its command. |
 | `A letter` | Chooses the item with that access key. Without one, moves to the next item whose text starts with the letters typed. |
-| `Escape` | Returns to the list when the page is shown alone. Otherwise, closes the menu. |
+| `Escape` | Clears the search, returns to the list when the page is shown alone, and otherwise closes the menu. |
 | `Tab, Shift+Tab` | Moves between the list and the page. Focus stays inside the menu. |
+
+## Accessibility
+
+| Topic | Details |
+| --- | --- |
+| `Dialog` | The panel is a modal `dialog` named by `label` or by the language pack; the page around it is `inert`. |
+| `List` | The list is a `nav` named like the menu. The item whose page is shown has `aria-current="page"`, a disabled one `aria-disabled`. |
+| `Pages` | Each page is a `region` named by its item. Shown in place of the list, it takes focus. |
+| `Focus` | It goes to the item shown when the menu opens, and back where it was when the menu closes. |
+| `Reading direction` | The panel comes from the start edge and the arrows point to it, on the right in right-to-left pages. |
+| `Motion` | The panel and the turns between list and page move with the motion tokens, and without motion when the user prefers reduced motion. |
+
+## Localization
+
+Its own texts come from `uiLocale.strings`: its name when it has none (`appMenuLabel`), the close and back buttons (`appMenuClose`, `appMenuBack`), the search (`search`) and what it says when nothing matches (`appMenuNoMatch`). They change with the language at once.
 
 ## Feedback
 

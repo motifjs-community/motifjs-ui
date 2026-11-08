@@ -1,6 +1,6 @@
 # Gauge: Dashboards
 
-> Gauges · @motifx-community/ui 0.1.0-beta.7
+> Gauges · @motifx-community/ui 0.1.0-beta.8
 
 Gauges of different kinds put together, all following the same values. Each gauge keeps its own scale, so readers compare values by their meaning, not by size alone.
 

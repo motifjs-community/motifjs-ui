@@ -1,6 +1,6 @@
 # TabDocumentManager
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.7
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.8
 
 A document manager that arranges content the way code editors arrange files: documents in tabs, tabs in groups, and groups split side by side or one above the other. A document's content can be any component, such as a form, a grid or plain text, and it is moved rather than recreated when its tab goes to another group. Every user action is also a method, with a cancelable event before it and a notification after it, and the whole layout can be saved to JSON and restored. Preview and pinned tabs, sizes and copies are covered in [Tabs](tabdocs-tabs.md), and context menus, lists and keyboard shortcuts in [Menus and keys](tabdocs-menus.md).
 

@@ -1,6 +1,6 @@
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.7
+> Get started · @motifx-community/ui 0.1.0-beta.8
 
 The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 
@@ -190,6 +190,18 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `app-menu.view.focus.outline-width` | `--mx-app-menu-view-focus-outline-width` | `focus.ring.width` | `2px` |
 | `app-menu.view.focus.outline-color` | `--mx-app-menu-view-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
 | `app-menu.view.focus.outline-offset` | `--mx-app-menu-view-focus-outline-offset` | `` | `calc(2px * -1)` |
+| `app-menu.header-slot.padding-inline` | `--mx-app-menu-header-slot-padding-inline` | `space.1` | `0.25rem` |
+| `app-menu.header-slot.padding-bottom` | `--mx-app-menu-header-slot-padding-bottom` | `space.2` | `0.5rem` |
+| `app-menu.search.padding-inline` | `--mx-app-menu-search-padding-inline` | `space.1` | `0.25rem` |
+| `app-menu.search.padding-bottom` | `--mx-app-menu-search-padding-bottom` | `space.2` | `0.5rem` |
+| `app-menu.no-match.padding` | `--mx-app-menu-no-match-padding` | `space.3` | `0.75rem` |
+| `app-menu.no-match.color` | `--mx-app-menu-no-match-color` | `color.fg.secondary` | `#5e5c55` |
+| `app-menu.no-match.font-size` | `--mx-app-menu-no-match-font-size` | `font.size.body` | `0.875rem` |
+| `app-menu.no-match.line-height` | `--mx-app-menu-no-match-line-height` | `font.line.body` | `1.25rem` |
+| `app-menu.footer-slot.padding-inline` | `--mx-app-menu-footer-slot-padding-inline` | `space.1` | `0.25rem` |
+| `app-menu.footer-slot.padding-top` | `--mx-app-menu-footer-slot-padding-top` | `space.2` | `0.5rem` |
+| `app-menu.footer-slot.border-top-width` | `--mx-app-menu-footer-slot-border-top-width` | `border.width.1` | `1px` |
+| `app-menu.footer-slot.border-color` | `--mx-app-menu-footer-slot-border-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
 | `app-menu.indicator.width` | `--mx-app-menu-indicator-width` | `` | `initial` |
 | `app-menu.indicator.height` | `--mx-app-menu-indicator-height` | `` | `initial` |
 | `app-menu.indicator.bg` | `--mx-app-menu-indicator-bg` | `` | `initial` |

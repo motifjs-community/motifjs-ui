@@ -1,6 +1,6 @@
 # OtpInput
 
-> Editors · @motifx-community/ui 0.1.0-beta.7
+> Editors · @motifx-community/ui 0.1.0-beta.8
 
 A one-time code in a row of boxes. Typing, pasting a whole code, the code a phone offers from a message and screen readers work as in any text box, because the boxes are drawn over one real input.
 

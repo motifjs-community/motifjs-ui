@@ -1,6 +1,6 @@
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.7
+> Editors · @motifx-community/ui 0.1.0-beta.8
 
 A numeric input with arrow key support, PageUp and PageDown, spin buttons that repeat while held, min and max limits, exact decimal stepping, display formats such as currency and percent, and locale-aware input.
 

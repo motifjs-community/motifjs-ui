@@ -1,6 +1,6 @@
 # DataGrid: API reference
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.7
+> DataGrid · @motifx-community/ui 0.1.0-beta.8
 
 ## Columns
 

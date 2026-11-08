@@ -1,6 +1,6 @@
 # TextArea
 
-> Editors · @motifx-community/ui 0.1.0-beta.7
+> Editors · @motifx-community/ui 0.1.0-beta.8
 
 A multi-line text input. The box can grow with its content or be resized by the user, and it supports a character counter, a clear button and Ctrl+Enter to submit, along with the label, help text and validation common to all fields.
 

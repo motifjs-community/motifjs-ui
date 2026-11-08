@@ -6,6 +6,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.8] - 2026-11-08
+
+### New components
+
+- `AppMenu`: the main menu of an application. A list of items slides in from the start edge, and each item shows its
+  own page beside the list (`page`, made the first time it is shown and kept), runs a command (`click`) or opens a
+  link (`href`). Half the window on a wide screen (`app-menu.share`), the whole window on a narrow one, and when the
+  panel is too narrow for both, the list and the page take turns, with the back button where the close button stands.
+  Items with `group`, `bottom`, `badge`, `dot`, `enabled`, `visible` and access keys; `selected`, `onSelecting` may
+  refuse, `onSelectionChanged`, `onItemClick`; `select()`, `openAt()`, `pageOf()`. The app's own content above and
+  under the items (`listHeader`, `listFooter`) and a search over them (`searchEnabled`, `searchText`,
+  `onSearchTextChanged`). Items change by key (`addItem`, `removeItem`, `moveItem`, `updateItem`, `findItem`,
+  `beginUpdate`, `endUpdate`) without changing the list given; `onItemsChanged` reports the new list. Every item,
+  page and command comes from the app.
+- `RibbonMenu`: the commands of an application in tabs of named groups. Large, medium and small commands of every
+  kind: buttons, toggles, split buttons, menus, rows of small commands, galleries and the app's own content. When
+  room runs short, groups give way step by step and fold into a button that opens them, then the commands scroll
+  (`adaptive`). A classic and a simplified layout (`layout`, `layoutSwitch`), and a compact one with a tab picker on a
+  narrow screen. `display` shows the commands always, only the tabs, or hides the menu behind a strip. Key hints
+  (`keyHints`) reach every tab and command, also inside a folded group. Quick commands (`quickCommands`, `quickBar`),
+  an app button (`appButton`, `onAppButton`) and the app's own content at both ends of the row of tabs (`barStart`,
+  `barEnd`). Users hide, move and add commands from the context menu (`customizable`), kept as one object
+  (`customization`, `onCustomized`). Tabs, groups and commands change by path (`addTab`, `addGroup`, `addCommand`,
+  `remove`, `move`, `update`, `find*`, `beginUpdate`, `endUpdate`), and `onItemsChanged` reports the new tabs.
+
 ### Added
 
 - `DataGrid`: a column's `filterEditor` replaces the filter row's editor of its type: a `Field` is bound to the filter
@@ -28,6 +53,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   then jump into place.
 - `DropDown`: a list from a data source says it is loading while its rows arrive, instead of saying there are no
   items. This covers the filter row of `DataGrid` and lookup editors.
+- `TabDocumentManager`: a press on text or empty space in a panel makes its group the active one, as a press on its
+  tab does.
 
 ## [0.1.0-beta.7] - 2026-11-08
 

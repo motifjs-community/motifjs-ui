@@ -1,6 +1,6 @@
 # Gauge: Marks
 
-> Gauges · @motifx-community/ui 0.1.0-beta.7
+> Gauges · @motifx-community/ui 0.1.0-beta.8
 
 Marks show other values on the scale besides the gauge's own, such as a target, a limit, or the lowest and highest expected.
 

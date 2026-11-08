@@ -1,6 +1,6 @@
 # RibbonMenu: Showing and keys
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.8
 
 The menu can show only its tabs or hide itself to leave the page more room. A button before the tabs opens the app’s main menu, quick commands are at hand from every tab, and key hints let the keyboard reach any command in a few letters.
 

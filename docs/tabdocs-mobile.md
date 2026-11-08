@@ -1,6 +1,6 @@
 # TabDocumentManager: Tablet and phone
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.7
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.8
 
 On tablets and phones, a layout of groups, splits and dock areas does not fit as designed. The manager keeps the layout and changes how it is presented: the documents, groups, areas and saved JSON stay the same, and content is moved rather than recreated. The presentation depends on the manager's own width rather than the device, and on touch screens its tabs and buttons are larger.
 

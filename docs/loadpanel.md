@@ -1,6 +1,6 @@
 # LoadPanel
 
-> Feedback · @motifx-community/ui 0.1.0-beta.7
+> Feedback · @motifx-community/ui 0.1.0-beta.8
 
 A loading overlay for a container or the whole page. It includes a shade, a panel with the kit spinner and a message, and a Cancel button when the operation can be stopped. The content underneath is unavailable while it is shown, and focus returns afterward.
 

@@ -1,6 +1,6 @@
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.7
+> Feedback · @motifx-community/ui 0.1.0-beta.8
 
 ProgressBar shows how far an operation has progressed, as a line or a circle, or indicates activity when the progress is unknown. Spinner shows that the system is busy. It is a rotating ring that can stand alone or cover a panel while it loads, and it can wait for a delay so that quick operations do not cause a flash.
 

@@ -1,6 +1,6 @@
 # RibbonMenu: Layouts and room
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.7
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.8
 
 The menu has two layouts, and gives way step by step when its room shrinks: commands become smaller, groups fold, and what is left scrolls. Narrow enough, it turns compact.
 

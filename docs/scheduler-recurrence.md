@@ -1,6 +1,6 @@
 # Scheduler: Recurrence and time zones
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.7
+> Scheduler · @motifx-community/ui 0.1.0-beta.8
 
 Recurring appointments based on RFC 5545 rules, with exceptions and individually edited occurrences, a prompt that asks what a change should apply to, a recurrence editor, and time zone support that handles daylight saving time.
 

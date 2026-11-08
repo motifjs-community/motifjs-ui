@@ -1,6 +1,6 @@
 # DataGrid: Lookup columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.7
+> DataGrid · @motifx-community/ui 0.1.0-beta.8
 
 ## Lookup columns
 

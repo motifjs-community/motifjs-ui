@@ -1,6 +1,6 @@
 # Switch
 
-> Choice · @motifx-community/ui 0.1.0-beta.7
+> Choice · @motifx-community/ui 0.1.0-beta.8
 
 An on/off switch with a label. It has a track with a sliding thumb, optional on/off text inside or next to the track, and read-only and required states. It is a native check box with the switch role.
 

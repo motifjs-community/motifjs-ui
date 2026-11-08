@@ -1,6 +1,6 @@
 # Gauge: Circular
 
-> Gauges · @motifx-community/ui 0.1.0-beta.7
+> Gauges · @motifx-community/ui 0.1.0-beta.8
 
 A circular gauge shows its value on an arc or a whole circle, with the value written in the middle. It reads best for one value whose scale the reader knows, such as a speed or a share.
 

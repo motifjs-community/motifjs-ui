@@ -1,6 +1,6 @@
 # AppBar
 
-> Navigation · @motifx-community/ui 0.1.0-beta.7
+> Navigation · @motifx-community/ui 0.1.0-beta.8
 
 The top bar of an application, with a navigation button, a logo, a title, a control and commands. The commands are a `Toolbar`, so those that do not fit move into a menu.
 
