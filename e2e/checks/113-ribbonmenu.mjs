@@ -100,6 +100,26 @@ export default async function ({ page, base, check }) {
     await page.waitForTimeout(150);
     check('Escape puts the group back', (await fold.getAttribute('aria-expanded')) === 'false' && (await page.locator('.mx-popup:popover-open .mx-ribbon-menu__group-label').count()) === 0);
 
+    // Key hints reach into a folded group: its letter opens it, and its commands show letters in the popup.
+    await rb.locator('.mx-ribbon-menu__tab[data-key="home"]').focus();
+    await page.keyboard.down('Alt');
+    await page.keyboard.up('Alt');
+    await page.keyboard.press('h');
+    await page.waitForTimeout(250);
+    const foldKey = await page.evaluate(() => {
+        const f = document.querySelector('.rb-editor .mx-ribbon-menu__group[data-folded] > .mx-ribbon-menu__fold').getBoundingClientRect();
+        return [...document.querySelectorAll('.rb-editor .mx-ribbon-menu__hint')].find(h => { const b = h.getBoundingClientRect(); return Math.abs(b.left + b.width / 2 - (f.left + f.width / 2)) < 3; })?.textContent ?? '';
+    });
+    for (const ch of foldKey) await page.keyboard.press(ch.toLowerCase());
+    await page.waitForTimeout(300);
+    const inner = await page.locator('.mx-popup:popover-open .mx-ribbon-menu__hint').allTextContents();
+    check('a folded group’s letter opens it, its commands lettered in the popup', foldKey !== '' && inner.length > 2, `${foldKey}: ${inner.join(' ')}`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+    check('Escape closes it and goes back to the letters of the commands', (await page.locator('.mx-popup:popover-open').count()) === 0 && (await rb.locator('.mx-ribbon-menu__hint:not([hidden])').count()) > 2);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+
     // Compact: a tab picker and one row; what still does not fit scrolls with the buttons at its ends.
     await page.goto(base + 'ribbonmenu/layouts', { waitUntil: 'load' });
     const room = page.locator('.rb-room');

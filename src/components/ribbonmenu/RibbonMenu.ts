@@ -23,7 +23,7 @@ import { menuItemOf } from "../button/menu-item-of";
 import { ContextMenu } from "../contextmenu/ContextMenu";
 import type { ContextMenuOpeningEventArgs } from "../contextmenu/context-menu-opening-event-args";
 import { RibbonGallery } from "./RibbonGallery";
-import { RibbonKeyHints, type KeyHint } from "./RibbonKeyHints";
+import { RibbonKeyHints, type InnerHints, type KeyHint } from "./RibbonKeyHints";
 import { changedTabs, indexOfKey, inserted, itemsAlong, partsOf } from "./ribbon-paths";
 import type { RibbonAppButtonEventArgs } from "./ribbon-app-button-event-args";
 import type { RibbonCommand } from "./ribbon-command";
@@ -1541,6 +1541,30 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         const panel = this.shownPanel();
         if (!panel) return [];
         const hints: KeyHint[] = [];
+        for (const group of panel.groups.values()) {
+            if (group.look?.visible === false || group.host.element.hasAttribute('data-out')) continue;
+            if (group.host.element.hasAttribute('data-folded') && group.fold) {
+                const fold = group.fold.element;
+                hints.push({ element: fold, keys: '', text: group.look?.text ?? '', press: () => !group.popup?.isOpen && this.toggleFold(group), opens: () => this.foldedHints(group) });
+                continue;
+            }
+            hints.push(...this.groupHints(group));
+        }
+        if (panel.overflow && !panel.overflow.element.hidden) {
+            const more = faceOf(panel.overflow);
+            hints.push({ element: more, keys: '', text: uiLocale.strings.moreOptions, press: () => more.click() });
+        }
+        return hints;
+    }
+
+    // The hints of a folded group, in the popup its button opened.
+    foldedHints(group: GroupPart): InnerHints {
+        return { hints: this.groupHints(group), host: group.popup!, close: () => group.popup?.close('code') };
+    }
+
+    // The letters of a group's commands and of the button beside its name.
+    groupHints(group: GroupPart): KeyHint[] {
+        const hints: KeyHint[] = [];
         const add = (m: Made) => {
             if (!m.want.visible) return;
             const command = m.want.command;
@@ -1556,22 +1580,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                 for (const inner of m.made.values()) add(inner);
             }
         };
-        for (const group of panel.groups.values()) {
-            if (group.look?.visible === false || group.host.element.hasAttribute('data-out')) continue;
-            if (group.host.element.hasAttribute('data-folded') && group.fold) {
-                const fold = group.fold.element;
-                hints.push({ element: fold, keys: '', text: group.look?.text ?? '', press: () => fold.click() });
-                continue;
-            }
-            for (const m of group.made.values()) add(m);
-            if (group.more) {
-                const more = group.more.element;
-                hints.push({ element: more, keys: '', text: group.look?.text ?? '', press: () => more.click() });
-            }
-        }
-        if (panel.overflow && !panel.overflow.element.hidden) {
-            const more = faceOf(panel.overflow);
-            hints.push({ element: more, keys: '', text: uiLocale.strings.moreOptions, press: () => more.click() });
+        for (const m of group.made.values()) add(m);
+        if (group.more) {
+            const more = group.more.element;
+            hints.push({ element: more, keys: '', text: group.look?.text ?? '', press: () => more.click() });
         }
         return hints;
     }

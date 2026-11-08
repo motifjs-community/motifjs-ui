@@ -9,6 +9,15 @@ export interface KeyHint {
     keys: string;
     text: string;
     press: () => void;
+    // What it opens has hints of its own (a folded group's popup): drawn in `host`, closed by `close`.
+    opens?: () => InnerHints;
+}
+
+/** The hints of what a hint opened, drawn in its own surface. */
+export interface InnerHints {
+    hints: KeyHint[];
+    host: Component<HTMLElement>;
+    close: () => void;
 }
 
 interface Drawn {
@@ -26,7 +35,8 @@ export class RibbonKeyHints {
     layer: Component<HTMLDivElement>;
     drawn: Drawn[] = [];
     typed = '';
-    level: 'tabs' | 'commands' | null = null;
+    level: 'tabs' | 'commands' | 'inner' | null = null;
+    inner: InnerHints | null = null;
 
     constructor(owner: Component<HTMLElement>, readonly tabs: () => KeyHint[], readonly commands: () => KeyHint[], readonly ended: () => void) {
         this.layer = part<HTMLDivElement>(owner, 'div', 'mx-ribbon-menu__hints');
@@ -48,6 +58,7 @@ export class RibbonKeyHints {
         if (!this.level) return;
         this.level = null;
         this.clear();
+        this.closeInner();
         this.layer.element.hidden = true;
         this.ended();
     }
@@ -57,7 +68,10 @@ export class RibbonKeyHints {
         if (!this.level) return false;
         if (e.key === 'Escape') {
             if (this.typed) this.filter('');
-            else if (this.level === 'commands') this.start('tabs');
+            else if (this.level === 'inner') {
+                this.closeInner();
+                this.start('commands');
+            } else if (this.level === 'commands') this.start('tabs');
             else this.stop();
             return true;
         }
@@ -76,6 +90,18 @@ export class RibbonKeyHints {
             const level = this.level;
             this.clear();
             exact.hint.press();
+            const opens = exact.hint.opens;
+            if (opens) {
+                // What it opened shows its own letters once it is open.
+                queueMicrotask(() => {
+                    if (!this.level) return;
+                    this.inner = opens();
+                    this.level = 'inner';
+                    this.typed = '';
+                    this.draw(this.inner.hints, this.inner.host);
+                });
+                return true;
+            }
             // Pressing a tab goes on to the hints of its commands; pressing a command ends them.
             if (level === 'tabs' && this.level === 'tabs') queueMicrotask(() => this.level && this.start('commands'));
             else if (this.level === level) this.stop();
@@ -85,23 +111,30 @@ export class RibbonKeyHints {
         return true;
     }
 
-    draw(hints: KeyHint[]): void {
+    draw(hints: KeyHint[], host: Component<HTMLElement> = this.layer): void {
         this.clear();
         const layer = this.layer.element;
-        layer.hidden = false;
-        const root = layer.offsetParent?.getBoundingClientRect() ?? layer.getBoundingClientRect();
+        layer.hidden = host !== this.layer;
+        // Over the menu, the letters are placed in its layer; in a popup (the page's top layer), in the popup itself.
+        const root = host === this.layer ? (layer.offsetParent?.getBoundingClientRect() ?? layer.getBoundingClientRect()) : host.element.getBoundingClientRect();
         const keys = lettersFor(hints);
         hints.forEach((hint, i) => {
             const box = hint.element.getBoundingClientRect();
             if (!box.width && !box.height) return;
-            const badge = part<HTMLSpanElement>(this.layer, 'span', 'mx-ribbon-menu__hint');
+            const badge = part<HTMLSpanElement>(host, 'span', 'mx-ribbon-menu__hint');
             badge.element.textContent = keys[i];
             // A wide command (an icon and its text) has its letters under the icon; anything else under its middle.
-            const x = this.level === 'commands' && box.width > box.height * 2 ? box.left + box.height / 2 : box.left + box.width / 2;
+            const x = this.level !== 'tabs' && box.width > box.height * 2 ? box.left + box.height / 2 : box.left + box.width / 2;
             badge.element.style.left = `${x - root.left}px`;
             badge.element.style.top = `${box.bottom - root.top}px`;
             this.drawn.push({ hint, keys: keys[i], badge });
         });
+    }
+
+    closeInner(): void {
+        const inner = this.inner;
+        this.inner = null;
+        inner?.close();
     }
 
     filter(typed: string): void {
