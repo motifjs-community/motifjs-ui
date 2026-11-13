@@ -111,7 +111,8 @@ describe('BottomSheet', () => {
     });
     page(sheet);
     await settle();
-    expect(sheet.element.hidden).toBe(true);
+    // Closed, it is out of the page.
+    expect(sheet.element.isConnected).toBe(false);
     expect(sheet.open()).toBe(true);
     expect(sheet.isOpen).toBe(true);
     expect(box.element.contains(sheet.element)).toBe(true);
@@ -129,7 +130,7 @@ describe('BottomSheet', () => {
     expect(sheet.isOpen).toBe(false);
     expect(before.hasAttribute('inert')).toBe(false);
     expect(document.activeElement).toBe(before);
-    expect(sheet.element.hidden).toBe(true);
+    expect(sheet.element.isConnected).toBe(false);
     expect(log).toEqual(['opening', 'opened', 'closing escape', 'closed escape']);
   });
 

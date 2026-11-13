@@ -68,7 +68,7 @@ interface Parts {
   syncing: boolean;
   /** `show` added it to its host. */
   attached: boolean;
-  /** Asked to open before it reached the page: it opens once it is there. */
+  /** Open, and shown where its place is not in the page yet: core's onMounted brings it over the page. */
   pending: boolean;
   closing: boolean;
   /** Where focus was when it opened. */
@@ -322,11 +322,12 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     return super.restoreFocus() || this.focusFirst();
   }
 
+  /** Core put it in the page: an open asked for while its place was not there yet is shown now. */
   override onMounted(): void {
     const parts = this.parts;
     if (!parts.pending) return;
     parts.pending = false;
-    if (this.peekProperty('value') !== false) this.openBy();
+    if (parts.open) this.present();
   }
 
   protected override get cyclesTab(): boolean {
@@ -377,11 +378,6 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       return true;
     }
     if (this.isDisposed) return false;
-    // Placed in a component that is not on the page yet: it opens when it gets there (core puts it in place first).
-    if (this.parent && !isInPage(this)) {
-      parts.pending = true;
-      return true;
-    }
     const e: OverlayOpeningEventArgs = { cancel: false, source: this };
     parts.opening.fire(e);
     if (e.cancel) {
@@ -393,13 +389,27 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     }
     parts.slide?.stop();
     parts.slide = null;
+    parts.open = true;
+    this.setProperty('open', true);
+    if (!this.peekProperty('value')) this.bindings.writeModel(true);
+    this.syncProperty('value', true);
+    // Shown, core puts it in its place: in the page now (or with no place, where host() puts it), it opens there at
+    // once; else core's onMounted brings it.
+    kept(this, true);
+    if (!this.parent || isInPage(this)) this.present();
+    else parts.pending = true;
+    return true;
+  }
+
+  /** Open and in the page: over its container or the page, on top, placed, with focus. */
+  private present(): void {
+    const parts = this.parts;
+    if (!parts.open || this.isDisposed) return;
     this.host();
     const focus = rememberFocus();
     parts.opener = focus && !focus.isIn(this) ? focus : null;
-    parts.open = true;
     parts.modal = this.modal;
     this.renderMode();
-    mark(this, 'hidden', false);
     this.showInTopLayer();
     this.placePanel();
     this.updateBodyFocus();
@@ -412,21 +422,13 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       windowStack.bringToFront(parts.entry);
     }
     if (this.closeOnBack) parts.releaseBack = holdBackButton(windowOf(this), () => this.closeFromBack(), 1);
-    this.setProperty('open', true);
-    if (!this.peekProperty('value')) this.bindings.writeModel(true);
-    this.syncProperty('value', true);
     if (this.focusOnOpen) this.focusFirst();
     this.afterSlide(() => parts.opened.fire({ source: this }));
-    return true;
   }
 
   /** Closes it as the user did, with the reason (`'swipe'`, `'scrim'`…). */
   protected closeBy(reason: OverlayCloseReason): boolean {
     const parts = this.parts;
-    if (parts.pending) {
-      parts.pending = false;
-      return true;
-    }
     if (!parts.open) return true;
     if (parts.closing) return false;
     const e: OverlayClosingEventArgs = { cancel: false, reason, source: this };
@@ -447,6 +449,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     if (!parts.open) return true;
     const focusInside = holdsFocus(this);
     parts.open = false;
+    parts.pending = false;
     parts.uninert?.();
     parts.uninert = null;
     windowStack.remove(parts.entry);
@@ -461,7 +464,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       parts.slide = null;
       if (parts.open) return;
       this.hideFromTopLayer();
-      mark(this, 'hidden', true);
+      kept(this, false);
       parts.unposition?.();
       parts.unposition = null;
       this.panelClosed();
@@ -526,9 +529,8 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   private createParts(): Parts {
     const name = (this.constructor as typeof OverlayPanel).overlayClass;
     this.class.add(name);
-    // Closed with the attribute, not core's hide: an overlay opened before it is in the page waits for onMounted,
-    // which a part core hid never gets.
-    mark(this, 'hidden', true);
+    // Closed, it is out of the page: opening shows it (see openBy).
+    kept(this, false);
     const div = (parent: ComponentBase, suffix: string) => part<HTMLDivElement>(parent, 'div', `${name}__${suffix}`);
     const scrimPart = div(this, 'scrim');
     scrimPart.attr.add({ 'aria-hidden': 'true' });

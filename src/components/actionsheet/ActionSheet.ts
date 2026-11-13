@@ -2,7 +2,7 @@ import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp
 import { part } from '../../core/draw-parts';
 import { chevronDown } from '../../core/glyphs';
 import { givenField, givenList, givenValue } from '../../core/given-field';
-import { mark, put, text as writeText } from '../../core/part-writes';
+import { kept, put, text as writeText } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { lineAfter } from '../../parts/menu/line-after';
 import { MenuList } from '../../parts/menu/MenuList';
@@ -59,9 +59,9 @@ export class ActionSheet extends BottomSheet {
     if (own.onItemClick) this.onItemClick(own.onItemClick);
     this.observeProperty<string>('message', (text) => {
       writeText(parts.message, text ?? '');
-      mark(parts.message, 'hidden', !text);
+      kept(parts.message, !!text);
     });
-    this.observeProperty<boolean | undefined>('showCancel', (on) => mark(parts.cancelRow, 'hidden', on === false));
+    this.observeProperty<boolean | undefined>('showCancel', (on) => kept(parts.cancelRow, on !== false));
     this.observeProperty('items', () => {
       if (this.isOpen && parts.levels.length <= 1) this.showLevel([this.peekProperty<readonly MenuItem[]>('items') ?? NO_ITEMS]);
     });
@@ -195,7 +195,7 @@ export class ActionSheet extends BottomSheet {
     this.class.add('mx-action-sheet');
     // The message above the list, in the content area.
     const message = part<HTMLDivElement>(this.contentPart, 'div', 'mx-action-sheet__message');
-    mark(message, 'hidden', true);
+    kept(message, false);
     const list = new MenuList();
     list.source = this;
     list.openSubmenus = false;

@@ -3,16 +3,8 @@
    the cancel strip are its units (units.css). The items are large enough for a finger; the shortcuts
    menus show beside their items are left out. */
 @layer mx.components {
-  .mx-action-sheet__message[hidden] {
-    display: none;
-  }
-
   .mx-action-sheet__cancel {
     display: flex;
     flex: none;
-  }
-
-  .mx-action-sheet__cancel[hidden] {
-    display: none;
   }
 }

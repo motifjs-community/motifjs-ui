@@ -28,7 +28,7 @@
     position: absolute;
   }
 
-  .mx-drawer:is([hidden], [popover]:not(:popover-open)) {
+  .mx-drawer[popover]:not(:popover-open) {
     display: none;
   }
 
@@ -123,10 +123,6 @@
     min-inline-size: 0;
   }
 
-  .mx-drawer__header[hidden] {
-    display: none;
-  }
-
   .mx-drawer__title {
     flex: 1 1 auto;
     min-inline-size: 0;
@@ -155,10 +151,6 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-  }
-
-  .mx-drawer__footer[hidden] {
-    display: none;
   }
 
   /* What a drawer in push mode moves aside. */

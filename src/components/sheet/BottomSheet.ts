@@ -1,7 +1,7 @@
 import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { part, partBefore } from '../../core/draw-parts';
 import { boxOf, lengthOf, measure, onLayout, pageOf, probeLengths, readAgain, rectOf, scrollerUnder, viewportOf } from '../../core/measure';
-import { css, mark, put } from '../../core/part-writes';
+import { css, kept, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { OverlayPanel } from '../../parts/overlay/OverlayPanel';
 import { SwipeTracker } from '../../parts/overlay/swipe-tracker';
@@ -102,7 +102,7 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onDetentChanging) this.onDetentChanging(own.onDetentChanging);
     if (own.onDetentChanged) this.onDetentChanged(own.onDetentChanged);
-    this.observeProperty<boolean | undefined>('showHandle', (on) => mark(parts.handlePart, 'hidden', on === false));
+    this.observeProperty<boolean | undefined>('showHandle', (on) => kept(parts.handlePart, on !== false));
     this.observeProperty('detents', () => this.isOpen && this.placePanel());
     this.observeProperty('topGap', () => {
       this.probeGap();

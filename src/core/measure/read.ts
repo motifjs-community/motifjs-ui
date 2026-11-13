@@ -98,6 +98,8 @@ export function styleOf<K extends string>(component: ComponentBase, names: reado
 
 /** Whether `component` is written right to left (a fragment as what holds it): read once in a run, fresh outside one. */
 export function isRtl(component: ComponentBase): boolean {
+  // A part out of the page (hidden, or not placed yet) reads the way of the place it shows in: the nearest one in the page.
+  for (let at = holderOf(component); at; at = at.parent) if (elementOf(at)?.isConnected) return rtlOf(at);
   const holder = holderOf(component);
   return holder ? rtlOf(holder) : false;
 }

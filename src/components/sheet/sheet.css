@@ -36,7 +36,7 @@
     inset-block-end: var(--_keyboard, 0px);
   }
 
-  .mx-bottom-sheet:is([hidden], [popover]:not(:popover-open)) {
+  .mx-bottom-sheet[popover]:not(:popover-open) {
     display: none;
   }
 
@@ -107,20 +107,12 @@
     cursor: grabbing;
   }
 
-  .mx-bottom-sheet__handle[hidden] {
-    display: none;
-  }
-
   .mx-bottom-sheet__header {
     display: flex;
     flex: none;
     align-items: center;
     min-inline-size: 0;
     touch-action: none;
-  }
-
-  .mx-bottom-sheet__header[hidden] {
-    display: none;
   }
 
   .mx-bottom-sheet__title {
@@ -151,9 +143,5 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-  }
-
-  .mx-bottom-sheet__footer[hidden] {
-    display: none;
   }
 }

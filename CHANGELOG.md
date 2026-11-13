@@ -26,8 +26,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   the legend, the message and the tooltip; the app menu's lists, items, icons, views, search and slots; the timeline's
   dates, glyphs, descriptions, contents and arrows; the uploader's drop area, Upload button, list and row buttons.
   The uploader's file input keeps the attribute: the browser opens the picker from it in the page.
-- Overlays (`Drawer`, `BottomSheet`, `Popup`, `ActionSheet`, `AppMenu`) hide their header, title and footer the same
-  way. The overlay itself is still closed with the attribute.
+- Overlays (`Drawer`, `BottomSheet`, `ActionSheet`, `AppMenu`) are out of the page while closed (core's hide), and so
+  are their header, title, footer, handle, message and cancel row. Opening shows the overlay; it opens over the page
+  at once where its place is in the page, else when core reports it there (`onMounted`). An overlay no longer waits
+  for the page before `onOpening`: the event comes when the open is asked for.
+- A part out of the page (hidden, not placed yet) reads its reading direction from the nearest part in the page, so a
+  closed `Drawer` names its side for a right-to-left page.
 
 ## [0.1.0-beta.9] - 2026-11-13
 

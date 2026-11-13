@@ -87,7 +87,7 @@ describe('ActionSheet', () => {
     cancel(sheet).click();
     expect(await done).toBe(null);
     sheet.showCancel = false;
-    expect(sheet.element.querySelector<HTMLElement>('.mx-action-sheet__cancel')!.hidden).toBe(true);
+    expect(sheet.element.querySelector('.mx-action-sheet__cancel')).toBeNull();
   });
 
   it('opens a submenu in its place, with a way back', async () => {
