@@ -27,7 +27,7 @@ async function settle() {
   for (let i = 0; i < 6; i++) await tick();
 }
 
-const input = (b: TextBox) => b.inputElement;
+const input = (b: TextBox) => b.inputPart.element;
 const message = (b: TextBox) => b.element.querySelector('.mx-field__message')!.textContent;
 
 /** Types into a plain input the way the browser reports it. */
@@ -152,6 +152,19 @@ describe('TextBox', () => {
     expect(Object.keys(go)).toEqual(['text', 'enabled']);
   });
 
+  it('changes a button in place: a new text or state keeps its part', async () => {
+    const s = reactive({ text: 'Go', can: false });
+    let b!: TextBox;
+    page(<TextBox ref={(x: TextBox) => (b = x)} buttons={[{ text: () => s.text, enabled: () => s.can }]} />);
+    await settle();
+    const button = b.element.querySelector<HTMLButtonElement>('.mx-field__end button')!;
+    Object.assign(s, { text: 'Open', can: true });
+    await settle();
+    expect(b.element.querySelector('.mx-field__end button')).toBe(button);
+    expect(button.textContent).toBe('Open');
+    expect(button.disabled).toBe(false);
+  });
+
   it('changes the value when the field is left with updateOn="change"', async () => {
     const s = reactive({ q: '' });
     let b!: TextBox;
@@ -191,6 +204,23 @@ describe('TextBox', () => {
     expect(s.q).toBe('');
     // Nothing to clear: Escape goes on to whatever is around the field.
     expect(press(input(b), 'Escape')).toBe(false);
+  });
+
+  it('takes typed text from code as typing does: the input shows it, the value follows, the caret goes to its end', async () => {
+    const s = reactive({ q: 'abc' });
+    let b!: TextBox;
+    page(<TextBox ref={(x: TextBox) => (b = x)} showCounter maxLength={10} x-model={() => s.q} />);
+    await settle();
+    b.typeText('x');
+    await settle();
+    expect(input(b).value).toBe('x');
+    expect(s.q).toBe('x');
+    expect([input(b).selectionStart, input(b).selectionEnd]).toEqual([1, 1]);
+    expect(b.element.querySelector('.mx-field__counter')!.textContent).toBe('1/10');
+    b.readOnly = true;
+    b.typeText('y');
+    await settle();
+    expect(s.q).toBe('x');
   });
 
   it('takes focus from a press anywhere in its box, not only on the text line', async () => {

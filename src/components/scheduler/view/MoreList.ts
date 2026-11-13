@@ -1,7 +1,8 @@
 import { Component } from '@motifx/core';
 import { givenField } from '../../../core/given-field';
 import type { SchedulerFields } from '../scheduler-fields';
-import { css, part, text } from '../../../core/draw-parts';
+import { part } from '../../../core/draw-parts';
+import { css, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -21,9 +22,9 @@ interface Props<T> {
 /** An item as last drawn. */
 interface ItemDrawn<T> {
   item: T;
-  button: HTMLButtonElement;
-  time: HTMLElement;
-  text: HTMLElement;
+  button: Component<HTMLButtonElement>;
+  time: Component<HTMLElement>;
+  text: Component<HTMLElement>;
 }
 
 /**
@@ -33,7 +34,7 @@ interface ItemDrawn<T> {
 export class MoreList<T> extends Component<HTMLDivElement, Props<T>> {
   /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
-  private title!: HTMLElement;
+  private title!: Component<HTMLElement>;
   private items!: KeyedParts<T, Component<HTMLDivElement>>;
   private readonly itemDrawn = new WeakMap<Component<HTMLDivElement>, ItemDrawn<T>>();
 
@@ -43,10 +44,10 @@ export class MoreList<T> extends Component<HTMLDivElement, Props<T>> {
 
   override onConfigured(): void {
     const { host } = this.props;
-    this.element.className = 'mx-scheduler__more-list';
-    this.title = part(this, 'div', 'mx-scheduler__more-title').element;
+    this.class.add('mx-scheduler__more-list');
+    this.title = part(this, 'div', 'mx-scheduler__more-title');
     const list = part<HTMLDivElement>(this, 'div', 'mx-scheduler__more-items');
-    list.element.setAttribute('role', 'list');
+    list.attr.add({ role: 'list' });
     this.items = new KeyedParts<T, Component<HTMLDivElement>>(
       list,
       (item) => host.model.idOf(item),
@@ -67,13 +68,13 @@ export class MoreList<T> extends Component<HTMLDivElement, Props<T>> {
 
   private makeItem(item: T): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.setAttribute('role', 'listitem');
+    c.attr.add({ role: 'listitem' });
     const button = part<HTMLButtonElement>(c, 'button', 'mx-scheduler__more-item');
-    button.element.type = 'button';
-    button.element.addEventListener('click', (e) => this.props.choose(this.itemDrawn.get(c)!.item, e));
+    button.attr.add({ type: 'button' });
+    button.motif.on('click', (_, e) => this.props.choose(this.itemDrawn.get(c)!.item, e));
     const time = part(button, 'span', 'mx-scheduler__more-time');
     const text = part(button, 'span', 'mx-scheduler__more-text');
-    this.itemDrawn.set(c, { item, button: button.element, time: time.element, text: text.element });
+    this.itemDrawn.set(c, { item, button, time, text });
     this.drawItem(c, item);
     return c;
   }

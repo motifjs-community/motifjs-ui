@@ -1,8 +1,10 @@
-import { untracked } from '@motifx/core';
+import { untracked, type ComponentBase } from '@motifx/core';
+import { focusOn } from '../../core/focus';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { ActionSheet } from '../actionsheet/ActionSheet';
 import { ContextMenu } from '../contextmenu/ContextMenu';
 import type { ContextMenuOpeningEventArgs } from '../contextmenu/context-menu-opening-event-args';
+import type { ContextMenuTarget } from '../contextmenu/context-menu-target';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabDragSubject } from './tab-drag-subject';
@@ -62,31 +64,37 @@ type Entry = [TabMenuCommand, boolean?, string?, (keyof UiStrings)?];
  */
 export class TabMenus {
   readonly menu: ContextMenu;
-  private readonly others = new Map<Element, ContextMenu>();
+  private readonly others = new Set<ContextMenu>();
   /** The action sheet a phone shows a document's commands in (from its title, or its row in the list). */
   private sheet: ActionSheet | null = null;
+  /** What a menu opened by `openAt` is for: an opening made by code has no event that tells. */
+  private given: Pick<TabDragSubject, 'document' | 'group'> | null = null;
 
   constructor(private readonly manager: TabDocumentManager) {
-    this.menu = this.create(manager.element);
+    this.menu = this.create(manager);
   }
 
   /** Gives the strips under `root` (a new window's) the menus; returns the function that takes them off. */
-  attach(root: HTMLElement): () => void {
+  attach(root: ContextMenuTarget): () => void {
     const menu = this.create(root);
-    this.others.set(root, menu);
+    this.others.add(menu);
     return () => {
-      this.others.delete(root);
+      this.others.delete(menu);
       if (!menu.isDisposed) void menu.dispose();
     };
   }
 
-  /** The menu that opens on `el`. */
-  menuFor(el: Element): ContextMenu {
-    for (const [root, menu] of this.others) if (root.contains(el)) return menu;
-    return this.menu;
+  /** Opens the menu of a tab's document, or of a group's strip without one, at a point: a long press let go where it started. */
+  openAt(subject: Pick<TabDragSubject, 'document' | 'group'>, x: number, y: number, source: ComponentBase): boolean {
+    this.given = subject;
+    try {
+      return this.menu.open({ x, y }, source);
+    } finally {
+      this.given = null;
+    }
   }
 
-  private create(target: HTMLElement): ContextMenu {
+  private create(target: ContextMenuTarget): ContextMenu {
     // A sheet on a phone, a sheet for a finger on a tablet, a menu on a desktop (or as `menuPresentation` says).
     const menu = new ContextMenu({ target, presentation: () => this.manager.menuPresentationNow });
     menu.onOpening((e) => untracked(() => this.opening(e, menu)));
@@ -179,26 +187,27 @@ export class TabMenus {
   }
 
   /** A document's commands in an action sheet, asking `onContextMenuOpening` first as a tab's menu does. */
-  openSheet(doc: TabDocument, group: TabGroup, byKeyboard: boolean, returnFocus: HTMLElement | null): boolean {
+  openSheet(doc: TabDocument, group: TabGroup, byKeyboard: boolean, returnFocus: ComponentBase | null): boolean {
     const m = this.manager;
     if (!m.contextMenu) return false;
     const args: TabContextMenuEventArgs = { document: doc, group, items: this.forTab(doc, group), byKeyboard, cancel: false, source: m };
     m.contextMenuOpening(args);
     if (args.cancel) return false;
     if (!this.sheet) {
-      this.sheet = new ActionSheet({ container: m.element });
-      this.sheet.element.classList.add('mx-tabdocs__menu-sheet');
+      this.sheet = new ActionSheet({ container: m });
+      this.sheet.class.add('mx-tabdocs__menu-sheet');
       m.controls.add(this.sheet);
     }
     const sheet = this.sheet;
     sheet.title = doc.title;
     sheet.items = args.items;
-    if (returnFocus) returnFocus.focus({ preventScroll: true });
+    // Focus waits on what opened the sheet: the sheet gives it back there when it closes.
+    if (returnFocus) focusOn(returnFocus, { preventScroll: true });
     return sheet.open(byKeyboard);
   }
 
   dispose(): void {
-    for (const menu of [this.menu, ...this.others.values()]) if (!menu.isDisposed) void menu.dispose();
+    for (const menu of [this.menu, ...this.others]) if (!menu.isDisposed) void menu.dispose();
     this.others.clear();
     if (this.sheet && !this.sheet.isDisposed) void this.sheet.dispose();
     this.sheet = null;
@@ -229,16 +238,12 @@ export class TabMenus {
 
   private opening(e: ContextMenuOpeningEventArgs, menu: ContextMenu): void {
     const m = this.manager;
-    const target = e.target;
-    const strip = m.groups.find((g) => g.element.contains(target));
-    // On a tablet a strip may show tabs of groups folded into it: the menu is the tab's own group's.
-    const tab = strip?.tabOf(target) ?? (strip ? m.tabOfHeader(target) : undefined);
-    const group = tab?.group ?? strip;
-    const doc = tab?.document ?? null;
-    if (!m.contextMenu || !group || !strip || (!doc && !strip.isStripSpace(target))) {
+    const subject = this.given ?? this.subjectOf(e.event);
+    if (!m.contextMenu || !subject) {
       e.cancel = true;
       return;
     }
+    const { document: doc, group } = subject;
     const args: TabContextMenuEventArgs = {
       document: doc,
       group,
@@ -251,5 +256,15 @@ export class TabMenus {
     menu.label = doc ? doc.title : m.textOf('tabDocsGroup', { n: m.groups.indexOf(group) + 1 });
     e.items = args.items;
     e.cancel = args.cancel;
+  }
+
+  /** What a right click or the menu key is on: a tab, or a strip's empty room; `null` elsewhere. */
+  private subjectOf(e: Event): Pick<TabDragSubject, 'document' | 'group'> | null {
+    const strip = this.manager.groups.find((g) => g.motif.isEventFrom(e));
+    if (!strip) return null;
+    // On a tablet a strip may show tabs of groups folded into it: the menu is the tab's own group's.
+    const tab = strip.stripTabOfEvent(e);
+    if (tab) return { document: tab.document, group: tab.group ?? strip };
+    return strip.isStripSpaceEvent(e) ? { document: null, group: strip } : null;
   }
 }

@@ -1,13 +1,13 @@
 import { LanguageLook } from '../../core/language-look';
-import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
+import { Component, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { registerControl } from '../../core/control-map';
-import { focusInitial, isFocusable } from '../../core/focus';
-import { chevronDown } from '../../core/glyphs';
+import { canTakeFocus, focusFirstIn, focusOn } from '../../core/focus';
+import { clearParts, glyphPart, part, partBefore, removePart } from '../../core/draw-parts';
+import { flag, mark, put } from '../../core/part-writes';
 import { givenField, givenList } from '../../core/given-field';
-import { iconNode } from '../../core/icon-node';
-import type { IconSource } from '../../core/icon-source';
+import { showIcon } from '../../core/show-icon';
+import { iconCopy, type IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { MenuList } from '../../parts/menu/MenuList';
 import type { MenuItem } from '../../parts/menu/menu-item';
@@ -40,17 +40,17 @@ const OWN = [
 
 const LOOK = ['variant', 'tone', 'size', 'iconPosition', 'stretch'] as const;
 
-/** The parts of a button. On one object made on first use: the base constructor already asks for the focus element. */
+/** The parts of a button. On one object made on first use: the base constructor already asks for the focus part. */
 interface Parts {
-  /** What is pressed: the button itself, or its main part when it has a menu. */
-  face: HTMLButtonElement;
-  arrow: HTMLButtonElement | null;
+  /** With a menu, the main part and the arrow are components of the button: JSX children are the main part's. */
+  facePart: Component<HTMLButtonElement> | null;
+  arrowPart: Component<HTMLButtonElement> | null;
   stopArrowLabel: (() => void) | null;
-  caption: HTMLSpanElement | null;
-  icon: HTMLSpanElement | null;
+  caption: Component<HTMLSpanElement> | null;
+  icon: Component<HTMLSpanElement> | null;
   releaseIcon: () => void;
-  spinner: HTMLSpanElement | null;
-  chevron: HTMLSpanElement | null;
+  spinner: Component<HTMLSpanElement> | null;
+  chevron: Component<HTMLSpanElement> | null;
   popup: Popup | null;
   list: MenuList | null;
   content: ComponentBase | null;
@@ -58,7 +58,7 @@ interface Parts {
 
 const PARTS = Symbol('mx.button');
 
-function withMenu(props: IBaseProp<ButtonProps> | undefined): boolean {
+function withMenu(props: ButtonProps | undefined): boolean {
   return !!props && (props.split !== undefined || props.menu !== undefined || props.dropDown !== undefined);
 }
 
@@ -78,15 +78,18 @@ function withMenu(props: IBaseProp<ButtonProps> | undefined): boolean {
  */
 export class Button extends Control<HTMLElement, ButtonProps> {
   /** A variant, tone or size not given is the design language's, or the one of the place the button sits in. */
-  private readonly look = new LanguageLook(this.element, { variant: '--_button-variant', tone: '--_button-tone', size: '--_button-size' }, () =>
+  private readonly look = new LanguageLook(this, { variant: '--_button-variant', tone: '--_button-tone', size: '--_button-size' }, () =>
     this.renderLook(),
   );
+  /** The icon as given, a function too: the "more" menu calls it again for its own copy. */
+  private givenIcon: Bind<IconSource | null | undefined>;
 
   constructor(props?: IBaseProp<ButtonProps>) {
     // A button with a menu is two parts in a group, so its element is chosen here.
     super(withMenu(props) ? 'div' : 'button', props);
     const own = (this.props ?? {}) as ButtonProps;
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
+    this.givenIcon = own.icon;
 
     this.observeProperty<string>('text', (text) => this.renderText(text));
     this.observeProperty('icon', () => this.renderIcon());
@@ -138,7 +141,17 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     return this.getProperty<IconSource | null | undefined>('icon') ?? null;
   }
   set icon(value: Bind<IconSource | null>) {
+    this.givenIcon = value;
     this.assignProperty('icon', value);
+  }
+  /**
+   * @internal A new copy of the icon for a second place (the "more" menu of a toolbar or a ribbon): an address as it
+   * is, a function given called again. `null` for a component given as is, which stays in the button.
+   */
+  iconCopy(): IconSource | null {
+    // Read tracked: a menu item drawn from it follows the icon.
+    const shown = this.icon;
+    return shown ? iconCopy(this.givenIcon, shown) : null;
   }
   get iconPosition(): 'start' | 'end' {
     return this.getProperty<'start' | 'end' | undefined>('iconPosition') ?? 'start';
@@ -224,7 +237,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
 
   /** Indicates whether the button was created with a menu (`split`, `menu` or `dropDown`). */
   get hasMenu(): boolean {
-    return this.element.tagName !== 'BUTTON';
+    return this.parts.facePart !== null;
   }
 
   /** Indicates whether the menu or drop-down is open. Reactive. Set it to open or close it. */
@@ -257,30 +270,39 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     if (this.parts.popup?.isOpen) this.parts.list?.refresh();
   }
 
+  /**
+   * Sets focus on the first item of the open menu that `test` accepts. Returns `false` if the menu is not open or
+   * no item is accepted.
+   */
+  focusMenuItem(test: (item: MenuItem) => boolean): boolean {
+    const parts = this.parts;
+    if (!parts.popup?.isOpen || !parts.list) return false;
+    return parts.list.focusWhere(test);
+  }
+
   // Focus and keys.
 
-  protected override get focusElement(): HTMLElement {
-    return this.parts.face;
+  override get focusPart(): ComponentBase {
+    return this.faceComponent;
   }
 
   override get canFocus(): boolean {
-    const face = this.parts.face;
-    return (this.isEnabled || this.focusableWhenDisabled) && face.isConnected && isFocusable(face);
+    return (this.isEnabled || this.focusableWhenDisabled) && canTakeFocus(this.faceComponent);
   }
 
   /** The access key clicks the button, as HTML `accesskey` does. With a menu and no `split`, it opens the menu. */
   override onAccessKey(): boolean {
     if (!this.focus()) return false;
-    this.parts.face.click();
+    this.faceComponent.attr.add({ click: true });
     return true;
   }
 
   protected override applyProperty(name: string, value: unknown): void {
     super.applyProperty(name, value);
     if (name === 'tabStop') {
-      const arrow = this.parts.arrow;
-      if (arrow && value === false) arrow.setAttribute('tabindex', '-1');
-      else arrow?.removeAttribute('tabindex');
+      const arrow = this.parts.arrowPart;
+      if (arrow && value === false) put(arrow, 'tabindex', '-1');
+      else if (arrow) put(arrow, 'tabindex', null);
     } else if (name === 'enabled' && value === false) {
       this.close();
     }
@@ -294,19 +316,19 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   }
 
   private createParts(): Parts {
-    this.element.classList.add('mx-button');
-    let face = this.element as HTMLButtonElement;
-    if (this.hasMenu) {
-      face = this.element.ownerDocument.createElement('button');
-      face.classList.add('mx-button__main');
-      this.element.prepend(face);
-      registerControl(face, this);
+    this.class.add('mx-button');
+    let facePart: Component<HTMLButtonElement> | null = null;
+    // The constructor picked the element from the same props.
+    if (withMenu(this.props)) {
+      facePart = new Component<HTMLButtonElement>('button');
+      facePart.class.add('mx-button__main');
+      this.controls.insert(0, facePart);
     }
-    face.classList.add('mx-button__face');
-    face.type = 'button';
+    (facePart ?? this).class.add('mx-button__face');
+    put(facePart ?? this, 'type', 'button');
     return {
-      face,
-      arrow: null,
+      facePart,
+      arrowPart: null,
       stopArrowLabel: null,
       caption: null,
       icon: null,
@@ -327,26 +349,24 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   private placeChildren(): void {
     const childs = this.childs ?? [];
     if (!childs.length) return;
-    this.controls.add(...childs);
-    if (this.hasMenu) {
-      this.motif.on('x:built', () => this.parts.face.append(...childs.map((c) => c.element as Node).filter(Boolean)));
-    }
+    (this.parts.facePart ?? this).controls.add(...childs);
   }
 
   private listen(): void {
     // Busy: a click does nothing, before any other listener sees it.
-    this.element.addEventListener(
-      'click',
-      (e) => {
-        if (!this.peekProperty('busy')) return;
-        e.preventDefault();
-        e.stopImmediatePropagation();
-      },
-      true,
-    );
-    const face = this.parts.face;
-    face.addEventListener('click', () => this.faceClicked());
-    face.addEventListener('keydown', (e) => this.faceKeyDown(e));
+    this.motif.on('click:capture', (_, e) => {
+      if (!this.peekProperty('busy')) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    });
+    const face = this.faceComponent;
+    face.motif.on('click', () => this.faceClicked());
+    face.motif.on('keydown', (_, e) => this.faceKeyDown(e));
+  }
+
+  /** The part that is pressed and takes focus: the button itself, or its main part with a menu. Its parts are its children. */
+  get faceComponent(): ComponentBase {
+    return this.parts.facePart ?? this;
   }
 
   private faceClicked(): void {
@@ -386,26 +406,27 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       const caption = parts.caption ?? this.placeCaption();
       renderAccessKey(caption, parsed);
       // An empty caption would still take a gap next to the icon.
-      caption.hidden = !parsed.text;
+      mark(caption, 'hidden', !parsed.text);
     }
-    if (parts.popup && parts.content) parts.popup.element.setAttribute('aria-label', parsed.text);
+    if (parts.popup && parts.content) put(parts.popup, 'aria-label', parsed.text);
     this.renderIconOnly();
   }
 
   /** An icon and no text: the language may draw it square or round. */
   private renderIconOnly(): void {
-    const text = this.parts.caption?.textContent ?? '';
+    const text = parseAccessKey(this.peekProperty<string>('text') ?? '').text;
     const only = !!this.peekProperty('icon') && !text && !this.childs?.length;
-    this.element.toggleAttribute('data-icon-only', only);
+    mark(this, 'data-icon-only', only);
   }
 
   /** The caption has its own element, so the language can trim its line box to the letters (`text-box`). */
-  private placeCaption(): HTMLSpanElement {
+  private placeCaption(): Component<HTMLSpanElement> {
     const parts = this.parts;
-    const caption = this.element.ownerDocument.createElement('span');
-    caption.className = 'mx-button__text';
-    if (parts.icon) parts.icon.after(caption);
-    else parts.face.prepend(caption);
+    const face = this.faceComponent;
+    // Right after the icon, else first.
+    const items = face.controls.items;
+    const before = parts.icon ? (items[items.indexOf(parts.icon) + 1] ?? null) : (items[0] ?? null);
+    const caption = partBefore<HTMLSpanElement>(face, before, 'span', 'mx-button__text');
     parts.caption = caption;
     return caption;
   }
@@ -415,34 +436,30 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     const icon = this.peekProperty<IconSource | null>('icon');
     parts.releaseIcon();
     parts.releaseIcon = () => {};
-    this.element.toggleAttribute('data-icon', !!icon);
+    mark(this, 'data-icon', !!icon);
     this.renderIconOnly();
     if (!icon) {
-      parts.icon?.remove();
+      removePart(parts.icon);
       parts.icon = null;
       return;
     }
     if (!parts.icon) {
-      parts.icon = this.element.ownerDocument.createElement('span');
-      parts.icon.className = 'mx-button__icon';
-      parts.icon.setAttribute('aria-hidden', 'true');
-      parts.face.prepend(parts.icon);
+      // First in the pressed part.
+      const face = this.faceComponent;
+      parts.icon = partBefore<HTMLSpanElement>(face, face.controls.items[0] ?? null, 'span', 'mx-button__icon');
+      parts.icon.attr.add({ 'aria-hidden': 'true' });
     }
-    const shown = iconNode(icon);
-    parts.icon.replaceChildren(shown.node);
-    parts.releaseIcon = shown.release;
+    clearParts(parts.icon);
+    parts.releaseIcon = showIcon(icon, parts.icon);
   }
 
   private renderBusy(busy: boolean): void {
     const parts = this.parts;
-    this.element.toggleAttribute('data-busy', busy);
-    if (busy) parts.face.setAttribute('aria-busy', 'true');
-    else parts.face.removeAttribute('aria-busy');
+    mark(this, 'data-busy', busy);
+    flag(this.faceComponent, 'aria-busy', busy);
     if (busy && !parts.spinner) {
-      parts.spinner = this.element.ownerDocument.createElement('span');
-      parts.spinner.className = 'mx-button__spinner';
-      parts.spinner.setAttribute('aria-hidden', 'true');
-      parts.face.append(parts.spinner);
+      parts.spinner = part<HTMLSpanElement>(this.faceComponent, 'span', 'mx-button__spinner');
+      parts.spinner.attr.add({ 'aria-hidden': 'true' });
     }
     if (busy) this.close();
   }
@@ -455,39 +472,47 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     this.look.read();
   }
 
+  /**
+   * @internal Reads the design language's choice at once, inside the write of a fit that tries a size and measures it
+   * (a ribbon group).
+   */
+  readLookNow(): void {
+    this.look.readNow();
+  }
+
+  /** @internal The same for several buttons with one layout: a fit that sized them all at once. */
+  static readLooksNow(buttons: readonly Button[]): void {
+    LanguageLook.readNowTogether(buttons.map((button) => button.look as LanguageLook<string>));
+  }
+
   override onMounted(): void {
     this.readLook();
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
     const look = this.look;
-    data.variant = this.peekProperty<ButtonVariant>('variant') ?? look.get('variant') ?? 'solid';
-    data.tone = this.peekProperty<ButtonTone>('tone') ?? look.get('tone') ?? 'standard';
-    data.size = this.peekProperty<ButtonSize>('size') ?? look.get('size') ?? 'md';
-    data.iconPosition = this.peekProperty<'start' | 'end'>('iconPosition') ?? 'start';
-    this.element.toggleAttribute('data-stretch', !!this.peekProperty('stretch'));
+    put(this, 'data-variant', this.peekProperty<ButtonVariant>('variant') ?? look.get('variant') ?? 'solid');
+    put(this, 'data-tone', this.peekProperty<ButtonTone>('tone') ?? look.get('tone') ?? 'standard');
+    put(this, 'data-size', this.peekProperty<ButtonSize>('size') ?? look.get('size') ?? 'md');
+    put(this, 'data-icon-position', this.peekProperty<'start' | 'end'>('iconPosition') ?? 'start');
+    mark(this, 'data-stretch', !!this.peekProperty('stretch'));
   }
 
   private renderHint(hint: string | undefined): void {
-    const face = this.parts.face;
-    if (hint) face.title = hint;
-    else face.removeAttribute('title');
+    put(this.faceComponent, 'title', hint || null);
   }
 
   private renderPressed(): void {
-    const parts = this.parts;
     const on = !!this.peekProperty('toggle') && !this.opensMenuItself();
     const pressed = on && !!this.peekProperty('pressed');
-    if (on) parts.face.setAttribute('aria-pressed', String(pressed));
-    else parts.face.removeAttribute('aria-pressed');
-    this.element.toggleAttribute('data-pressed', pressed);
+    put(this.faceComponent, 'aria-pressed', on ? String(pressed) : null);
+    mark(this, 'data-pressed', pressed);
   }
 
   /** Disabled, the parts take `aria-disabled` and keep their place in the Tab order. */
   private renderFocusable(on: boolean): void {
     const parts = this.parts;
-    for (const part of [parts.face, parts.arrow]) part?.toggleAttribute('data-mx-focusable-disabled', on);
+    for (const part of [this.faceComponent, parts.arrowPart]) if (part) mark(part, 'data-mx-focusable-disabled', on);
     // Already disabled: cover the parts again, the new way.
     if (this.peekProperty('enabled') === false) {
       super.applyProperty('enabled', true);
@@ -503,38 +528,37 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   /** `split` or not: the arrow part, the chevron, which part says it opens a popup, the native type. */
   private renderMode(): void {
     const parts = this.parts;
-    parts.face.type = this.opensMenuItself() ? 'button' : (this.peekProperty<'button' | 'submit' | 'reset'>('type') ?? 'button');
+    put(this.faceComponent, 'type', this.opensMenuItself() ? 'button' : (this.peekProperty<'button' | 'submit' | 'reset'>('type') ?? 'button'));
     if (!this.hasMenu) return;
     const split = !!this.peekProperty('split');
-    this.element.dataset.mode = split ? 'split' : 'menu';
-    if (split && !parts.arrow) {
-      const arrow = this.element.ownerDocument.createElement('button');
-      arrow.type = 'button';
-      arrow.className = 'mx-button__face mx-button__arrow';
-      arrow.toggleAttribute('data-mx-focusable-disabled', !!this.peekProperty('focusableWhenDisabled'));
-      if (this.peekProperty('tabStop') === false) arrow.tabIndex = -1;
-      arrow.append(chevronDown());
-      arrow.addEventListener('click', (e) => {
+    put(this, 'data-mode', split ? 'split' : 'menu');
+    if (split && !parts.arrowPart) {
+      const arrowPart = new Component<HTMLButtonElement>('button');
+      arrowPart.attr.add({ type: 'button' });
+      arrowPart.class.add('mx-button__face mx-button__arrow');
+      mark(arrowPart, 'data-mx-focusable-disabled', !!this.peekProperty('focusableWhenDisabled'));
+      if (this.peekProperty('tabStop') === false) put(arrowPart, 'tabindex', '-1');
+      glyphPart(arrowPart, 'chevron-down');
+      arrowPart.motif.on('click', (_, e) => {
         // The arrow opens the menu; the button's own click listeners are for its action.
         e.stopPropagation();
         this.toggleMenu();
       });
-      arrow.addEventListener('keydown', (e) => this.arrowKeyDown(e));
-      parts.face.after(arrow);
-      registerControl(arrow, this);
-      parts.stopArrowLabel = onLanguage(this, () => arrow.setAttribute('aria-label', uiLocale.strings.moreOptions));
-      parts.arrow = arrow;
-    } else if (!split && parts.arrow) {
+      arrowPart.motif.on('keydown', (_, e) => this.arrowKeyDown(e));
+      // Right after the main part.
+      this.controls.insert(this.controls.items.indexOf(parts.facePart!) + 1, arrowPart);
+      parts.stopArrowLabel = onLanguage(this, () => put(arrowPart, 'aria-label', uiLocale.strings.moreOptions));
+      parts.arrowPart = arrowPart;
+    } else if (!split && parts.arrowPart) {
       parts.stopArrowLabel?.();
-      parts.arrow.remove();
-      parts.arrow = parts.stopArrowLabel = null;
+      this.controls.remove(parts.arrowPart);
+      parts.stopArrowLabel = null;
+      parts.arrowPart = null;
     }
     if (!split && !parts.chevron) {
-      parts.chevron = chevronDown();
-      parts.chevron.classList.add('mx-button__chevron');
-      parts.face.append(parts.chevron);
+      parts.chevron = glyphPart(this.faceComponent, 'chevron-down', 'mx-button__chevron');
     } else if (split && parts.chevron) {
-      parts.chevron.remove();
+      removePart(parts.chevron);
       parts.chevron = null;
     }
     this.markToggle();
@@ -545,13 +569,14 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   /** The part that opens the popup says what it opens and whether it is open. */
   private markToggle(): void {
     const parts = this.parts;
-    const toggle = parts.arrow ?? parts.face;
-    if (toggle !== parts.face) {
-      parts.face.removeAttribute('aria-haspopup');
-      parts.face.removeAttribute('aria-expanded');
+    const face = this.faceComponent;
+    const toggle = parts.arrowPart ?? face;
+    if (toggle !== face) {
+      put(face, 'aria-haspopup', null);
+      put(face, 'aria-expanded', null);
     }
-    toggle.setAttribute('aria-haspopup', this.peekProperty('dropDown') ? 'dialog' : 'menu');
-    toggle.setAttribute('aria-expanded', String(!!this.peekProperty('opened')));
+    put(toggle, 'aria-haspopup', this.peekProperty('dropDown') ? 'dialog' : 'menu');
+    put(toggle, 'aria-expanded', String(!!this.peekProperty('opened')));
   }
 
   // The menu.
@@ -565,11 +590,11 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     if (!this.hasMenu || !this.isEnabled || this.peekProperty('busy') || !this.fill()) return false;
     const parts = this.parts;
     const popup = parts.popup!;
-    popup.open(this.element, { toggle: parts.arrow ?? parts.face });
+    popup.open(this, { toggle: parts.arrowPart ?? this.faceComponent });
     this.setProperty('opened', true);
     this.markToggle();
     if (parts.content) {
-      if (!focusInitial(popup.element)) popup.element.focus();
+      if (!focusFirstIn(popup)) focusOn(popup);
     } else {
       parts.list!.focusItem(focus);
     }
@@ -591,13 +616,13 @@ export class Button extends Control<HTMLElement, ButtonProps> {
         popup.controls.add(content);
         parts.content = content;
       }
-      popup.element.setAttribute('role', 'dialog');
-      popup.element.setAttribute('aria-label', parseAccessKey(this.peekProperty<string>('text') ?? '').text);
+      put(popup, 'role', 'dialog');
+      put(popup, 'aria-label', parseAccessKey(this.peekProperty<string>('text') ?? '').text);
     } else {
       if (parts.content) popup.controls.remove(parts.content);
       parts.content = null;
-      popup.element.removeAttribute('role');
-      popup.element.removeAttribute('aria-label');
+      put(popup, 'role', null);
+      put(popup, 'aria-label', null);
       if (!parts.list) {
         const list = new MenuList();
         list.source = this;
@@ -631,7 +656,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
 
   private itemChosen(e: MenuItemClickEventArgs): void {
     this.close();
-    runItem(e.item, e, e.source, e.event, this.element as Element);
+    runItem(e.item, e, e.source, e.event, this);
     this.props?.onItemClick?.(e);
   }
 }

@@ -1,3 +1,4 @@
+import { errorHandler } from '@motifx/core';
 const MINUTE = 60_000;
 const DAY = 86_400_000;
 /** Offsets kept per zone before the cache starts again. */
@@ -43,7 +44,7 @@ export class TimeZone {
     let zone = TimeZone.made.get(name);
     if (zone) return zone;
     if (!TimeZone.isValid(name)) {
-      if (!TimeZone.warned.has(name)) console.warn(`TimeZone: "${name}" is not a time zone this browser knows; its own is used.`);
+      if (!TimeZone.warned.has(name)) errorHandler.reportSuppressed('TimeZone', new Error(`TimeZone: "${name}" is not a time zone this browser knows; its own is used.`));
       TimeZone.warned.add(name);
       return TimeZone.local;
     }

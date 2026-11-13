@@ -1,6 +1,8 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { part } from '../../core/draw-parts';
 import { chevronDown } from '../../core/glyphs';
 import { givenField, givenList, givenValue } from '../../core/given-field';
+import { mark, put, text as writeText } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { lineAfter } from '../../parts/menu/line-after';
 import { MenuList } from '../../parts/menu/MenuList';
@@ -20,9 +22,9 @@ const NO_ITEMS: readonly MenuItem[] = [];
 const FIT: readonly BottomSheetDetent[] = ['fit'];
 
 interface Parts {
-  message: HTMLDivElement;
+  message: Component<HTMLDivElement>;
   list: MenuList;
-  cancelRow: HTMLDivElement;
+  cancelRow: Component<HTMLDivElement>;
   cancel: Button;
   /** The menus gone into, the outermost first: a submenu shows in place of its menu, with a way back. */
   levels: (readonly MenuItem[])[];
@@ -56,10 +58,10 @@ export class ActionSheet extends BottomSheet {
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onItemClick) this.onItemClick(own.onItemClick);
     this.observeProperty<string>('message', (text) => {
-      parts.message.textContent = text ?? '';
-      parts.message.hidden = !text;
+      writeText(parts.message, text ?? '');
+      mark(parts.message, 'hidden', !text);
     });
-    this.observeProperty<boolean | undefined>('showCancel', (on) => (parts.cancelRow.hidden = on === false));
+    this.observeProperty<boolean | undefined>('showCancel', (on) => mark(parts.cancelRow, 'hidden', on === false));
     this.observeProperty('items', () => {
       if (this.isOpen && parts.levels.length <= 1) this.showLevel([this.peekProperty<readonly MenuItem[]>('items') ?? NO_ITEMS]);
     });
@@ -67,7 +69,7 @@ export class ActionSheet extends BottomSheet {
     const drawTexts = () => {
       const strings = uiLocale.strings;
       parts.cancel.text = (this.peekProperty<string | undefined>('cancelText') || strings.cancel).replace(/&/g, '&&');
-      if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', strings.actionSheetLabel);
+      if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) put(this.panelPart, 'aria-label', strings.actionSheetLabel);
     };
     parts.stopTexts = onLanguage(this, drawTexts);
     this.observeProperty('cancelText', drawTexts);
@@ -190,26 +192,24 @@ export class ActionSheet extends BottomSheet {
   }
 
   private createActions(): Parts {
-    this.element.classList.add('mx-action-sheet');
-    const doc = this.element.ownerDocument;
-    const message = doc.createElement('div');
-    message.className = 'mx-action-sheet__message';
-    message.hidden = true;
+    this.class.add('mx-action-sheet');
+    // The message above the list, in the content area.
+    const message = part<HTMLDivElement>(this.contentPart, 'div', 'mx-action-sheet__message');
+    mark(message, 'hidden', true);
     const list = new MenuList();
     list.source = this;
     list.openSubmenus = false;
     list.openOnHover = false;
-    list.element.classList.add('mx-action-sheet__list');
+    list.class.add('mx-action-sheet__list');
     list.onChosen((e) => this.chosen(e));
-    const cancelRow = doc.createElement('div');
-    cancelRow.className = 'mx-action-sheet__cancel';
+    const cancelRowPart = new Component<HTMLDivElement>('div');
+    cancelRowPart.class.add('mx-action-sheet__cancel');
     const cancel = new Button({ stretch: true });
-    cancel.element.addEventListener('click', () => this.close('button'));
-    this.contentElement.append(message);
-    this.panelElement.append(cancelRow);
-    this.placeIn(list, this.contentElement);
-    this.placeIn(cancel, cancelRow);
-    return { message, list, cancelRow, cancel, levels: [], byKeyboard: false, chosen: null, waiters: [], stopTexts: null, itemClick: new Emitter() };
+    cancel.motif.on('click', () => this.close('button'));
+    this.placeIn(cancelRowPart, this.panelPart);
+    this.placeIn(list, this.contentPart);
+    this.placeIn(cancel, cancelRowPart);
+    return { message, list, cancelRow: cancelRowPart, cancel, levels: [], byKeyboard: false, chosen: null, waiters: [], stopTexts: null, itemClick: new Emitter() };
   }
 
   /** Shows the innermost of `levels`; inside a submenu the first item goes back. */
@@ -241,7 +241,7 @@ export class ActionSheet extends BottomSheet {
     }
     parts.chosen = item;
     this.close('code');
-    runItem(item, { ...e, source: this }, this, e.event, this.element as Element);
+    runItem(item, { ...e, source: this }, this, e.event, this);
     parts.itemClick.fire({ ...e, source: this });
   }
 }
@@ -249,8 +249,8 @@ export class ActionSheet extends BottomSheet {
 const BACK = Symbol('back');
 
 /** The way back out of a submenu: an arrow pointing to the start. */
-function backMark(): HTMLSpanElement {
+function backMark(): Component<HTMLSpanElement> {
   const mark = chevronDown();
-  mark.classList.add('mx-action-sheet__back');
+  mark.class.add('mx-action-sheet__back');
   return mark;
 }

@@ -1,4 +1,4 @@
-import { Component, reactive } from '@motifx/core';
+import { Component, reactive, type ComponentBase } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
@@ -211,6 +211,7 @@ describe('ListBox', () => {
     await settle();
     expect(texts(c)[0]).toBe('Tümünü seç');
     c.selectAll = false;
+    await settle();
     expect(texts(c)).toEqual(CITIES);
   });
 
@@ -222,13 +223,13 @@ describe('ListBox', () => {
     expect(c.element.querySelectorAll('[role="group"]').length).toBe(2);
     const search = c.searchBox!;
     expect(search.element.nextElementSibling).toBe(listOf(c));
-    expect(search.inputElement.getAttribute('aria-label') ?? search.element.querySelector('label')?.textContent).toBeTruthy();
-    search.inputElement.value = 'pe';
-    search.inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    expect(search.inputPart.element.getAttribute('aria-label') ?? search.element.querySelector('label')?.textContent).toBeTruthy();
+    search.inputPart.element.value = 'pe';
+    search.inputPart.element.dispatchEvent(new InputEvent('input', { bubbles: true }));
     await settle();
     expect(texts(c)).toEqual(['Pear', 'Grape']);
-    search.inputElement.focus();
-    press(search.inputElement, 'ArrowDown');
+    search.inputPart.element.focus();
+    press(search.inputPart.element, 'ArrowDown');
     expect(document.activeElement).toBe(listOf(c));
     expect(active(c)).toBe('Pear');
     c.searchEnabled = false;
@@ -269,8 +270,8 @@ describe('ListBox', () => {
     expect(c.selectedItems.map((r) => r.name)).toEqual(['Row 4000']);
 
     const search = c.searchBox!;
-    search.inputElement.value = '499';
-    search.inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    search.inputPart.element.value = '499';
+    search.inputPart.element.dispatchEvent(new InputEvent('input', { bubbles: true }));
     await settle(30);
     expect(c.listItems.count).toBe(15);
     await c.selectAllItems();
@@ -284,6 +285,7 @@ describe('ListBox', () => {
     await settle();
     expect(listOf(c).querySelector('.mx-list__empty')?.textContent).toBe('No items');
     c.noItemsText = 'Nothing here';
+    await settle();
     expect(listOf(c).querySelector('.mx-list__empty')?.textContent).toBe('Nothing here');
     c.items = CITIES;
     await settle();
@@ -342,6 +344,33 @@ describe('ListBox', () => {
       expect(texts(c)).toEqual(['Ada L.', 'Linus', 'Ken']);
       expect(selected(c)).toEqual(['Linus']);
       expect(c.selectedItem).toBe(people[1]);
+    });
+
+    it('keeps the rows and their texts when the items are given again, and draws a template once per row', async () => {
+      const ada = { name: 'Ada' };
+      const linus = { name: 'Linus' };
+      const drawn = vi.fn((item: { name: string }, host: ComponentBase) => host.setText(item.name));
+      let plain!: ListBox<{ name: string }>;
+      let templated!: ListBox<{ name: string }>;
+      page(
+        <div>
+          <ListBox ref={(x: ListBox<{ name: string }>) => (plain = x)} items={[ada, linus]} textField="name" />
+          <ListBox ref={(x: ListBox<{ name: string }>) => (templated = x)} items={[ada, linus]} itemTemplate={drawn} />
+        </div>,
+      );
+      await settle();
+      const row = option(plain, 'Ada');
+      const text = row.querySelector('.mx-list__text');
+      expect(drawn).toHaveBeenCalledTimes(2);
+      ada.name = 'Ada L.';
+      plain.items = [ada, linus, { name: 'Ken' }];
+      templated.items = [ada, linus, { name: 'Ken' }];
+      await settle();
+      expect(option(plain, 'Ada L.')).toBe(row);
+      expect(row.querySelector('.mx-list__text')).toBe(text);
+      expect(texts(plain)).toEqual(['Ada L.', 'Linus', 'Ken']);
+      // Only the new row is drawn.
+      expect(drawn).toHaveBeenCalledTimes(3);
     });
   });
 });

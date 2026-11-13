@@ -510,8 +510,13 @@ describe('MenuBar', () => {
       await settle();
       const rows = () => Array.from(win().querySelectorAll<HTMLElement>('.mx-tabs__panel:not([hidden]) .mx-shortcut-editor__list .mx-list__item'));
       expect(rows().map((r) => r.textContent)).toEqual(['SaveCtrl+S', 'PrintCtrl+P']);
-      // The commands page lists the app's commands too.
-      expect(Array.from(win().querySelectorAll('.mx-tabs__panel[hidden] .mx-customizer__commands .mx-list__item')).map((r) => r.textContent)).toEqual(['Save', 'Print']);
+      // The commands page lists the app's commands too (a hidden page is out of the page: shown to be read).
+      const tabNamed = (text: string) => Array.from(win().querySelectorAll<HTMLElement>('.mx-tabs__tab')).find((el) => el.textContent === text)!;
+      tabNamed('Commands').click();
+      await settle();
+      expect(Array.from(win().querySelectorAll('.mx-tabs__panel .mx-customizer__commands .mx-list__item')).map((r) => r.textContent)).toEqual(['Save', 'Print']);
+      tabNamed('Keyboard').click();
+      await settle();
       rows()[0].click();
       await settle();
       const input = win().querySelector<HTMLInputElement>('.mx-shortcut-editor__capture input')!;

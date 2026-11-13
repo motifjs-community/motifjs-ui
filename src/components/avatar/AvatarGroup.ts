@@ -1,8 +1,8 @@
-import type { Bind, IBaseProp } from '@motifx/core';
+import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { mark, put } from '../../core/draw-parts';
 import { LanguageLook } from '../../core/language-look';
 import { onLanguage } from '../../core/on-language';
+import { mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Avatar } from './Avatar';
 import type { AvatarGroupLayout } from './avatar-group-layout';
@@ -25,35 +25,36 @@ const OWN = ['size', 'layout', 'max', 'total', 'label'] as const;
  */
 export class AvatarGroup extends Control<HTMLDivElement, AvatarGroupProps> {
   /** A layout not given is the design language's. */
-  private readonly look = new LanguageLook(this.element, { layout: '--_avatar-group-layout' }, () => this.renderLook());
+  private readonly look = new LanguageLook(this, { layout: '--_avatar-group-layout' }, () => this.renderLook());
   /** The `+N` for those not shown. */
   private readonly more = new Avatar({ tone: 'standard' });
+  /** What the group hears: its avatars, and what holds avatars in its place (a JSX list, a condition, a fragment). */
+  private readonly heard = new WeakSet<ComponentBase>();
+  /** The avatars are counted again at the end of this turn. */
+  private countDue = false;
+  private disposing = false;
 
   constructor(props?: IBaseProp<AvatarGroupProps>) {
     super('div', props);
     const own = (this.props ?? {}) as AvatarGroupProps;
-    this.element.classList.add('mx-avatar-group');
-    this.element.setAttribute('role', 'group');
-    this.more.element.classList.add('mx-avatar-group__more');
+    this.class.add('mx-avatar-group');
+    this.attr.add({ role: 'group' });
+    this.more.class.add('mx-avatar-group__more');
     if (this.childs?.length) this.controls.add(...this.childs);
     this.controls.add(this.more);
     void this.motif.on(
       'controladded',
-      () => {
+      (_sender, e: { control: ComponentBase }) => {
         // The `+N` stays after the avatars, whenever they are added.
         if (this.controls.items.at(-1) !== this.more) this.controls.move(this.more);
-        this.renderShown();
+        this.listen(e.control);
+        this.countLater();
       },
       false,
     );
-    void this.motif.on('controlremoved', () => this.renderShown(), false);
-    // Avatars from a JSX list come and go inside the list, not as the group's own controls: only the
-    // group's own children are watched, nothing below them.
-    if (typeof MutationObserver === 'function') {
-      const rows = new MutationObserver(() => this.renderShown());
-      rows.observe(this.element, { childList: true });
-      this.motif.setDisposable(() => rows.disconnect());
-    }
+    void this.motif.on('controlremoved', () => this.countLater(), false);
+    // Avatars of a JSX list or a condition come and go inside what holds them: the group hears that too.
+    for (const child of this.controls.items) this.listen(child);
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
 
     for (const name of ['max', 'total', 'label'] as const) this.observeProperty(name, () => this.renderShown());
@@ -95,16 +96,14 @@ export class AvatarGroup extends Control<HTMLDivElement, AvatarGroupProps> {
     this.assignProperty('label', value);
   }
 
-  /** The elements of the provided avatars in order, including those from JSX lists. The `+N` is not included. */
-  get avatars(): HTMLElement[] {
-    return Array.from(this.element.children).filter(
-      (el): el is HTMLElement => el instanceof HTMLElement && el !== this.more.element && el.classList.contains('mx-avatar'),
-    );
+  /** The avatars in the group, in order, those of JSX lists and conditions included. Hidden ones and the `+N` are not. */
+  get members(): Avatar[] {
+    return this.collect(this, []);
   }
 
   /** The number of people counted in the `+N`, or 0 when it is not shown. */
   get hiddenCount(): number {
-    const given = this.avatars.length;
+    const given = this.members.length;
     const max = countOf(this.peekProperty('max'));
     const total = Math.max(countOf(this.peekProperty('total')) ?? given, given);
     const shown = max === null ? given : Math.min(given, max);
@@ -116,20 +115,81 @@ export class AvatarGroup extends Control<HTMLDivElement, AvatarGroupProps> {
     this.renderLook();
   }
 
+  override onDisposing(): void {
+    // Its avatars go with it: nothing is counted again.
+    this.disposing = true;
+  }
+
+  /**
+   * Hears, once, an avatar or what holds avatars in the group's place: an avatar added, built, shown, hidden or gone
+   * has them counted again. Any other component keeps what is inside it.
+   */
+  private listen(component: ComponentBase): void {
+    if (component === this.more || this.heard.has(component)) return;
+    const avatar = component instanceof Avatar;
+    if (!avatar && !holdsInPlace(component)) return;
+    this.heard.add(component);
+    const count = () => this.countLater();
+    void component.motif.on('x:built', count);
+    void component.motif.on('x:visibilityChanged', count);
+    // A hide with a leave animation is over only then.
+    void component.motif.on('x:deactivated', count);
+    if (avatar) {
+      void component.motif.on('x:disposed', count);
+      return;
+    }
+    void component.motif.on(
+      'controladded',
+      (_sender, e: { control: ComponentBase }) => {
+        this.listen(e.control);
+        count();
+      },
+      false,
+    );
+    void component.motif.on('controlremoved', count, false);
+    for (const child of component.controls.items) this.listen(child);
+  }
+
+  /** The avatars in `component` that are in the page, in order: what holds avatars is looked into, any other component is not. */
+  private collect(component: ComponentBase, found: Avatar[]): Avatar[] {
+    for (const child of component.controls.items) {
+      if (child === this.more || child.isDisposed || child.isWait || !child.isVisible) continue;
+      if (child instanceof Avatar) found.push(child);
+      else if (holdsInPlace(child)) this.collect(child, found);
+    }
+    return found;
+  }
+
+  /** Counts the avatars again once the changes of this turn are in. */
+  private countLater(): void {
+    if (this.countDue) return;
+    this.countDue = true;
+    queueMicrotask(() => {
+      this.countDue = false;
+      // Disposal clears the group's own fields, `disposing` too; its disposed flag stays.
+      if (!this.disposing && !this.isDisposed) this.renderShown();
+    });
+  }
+
   private renderShown(): void {
     const max = countOf(this.peekProperty('max'));
-    this.avatars.forEach((el, i) => mark(el, 'data-beyond', max !== null && i >= max));
+    this.members.forEach((avatar, i) => mark(avatar, 'data-beyond', max !== null && i >= max));
     const hidden = this.hiddenCount;
     this.more.initials = uiLocale.text('moreItems', { count: hidden });
     this.more.label = uiLocale.text('avatarGroupMore', { count: hidden });
-    mark(this.more.element, 'data-beyond', hidden <= 0);
-    put(this.element, 'aria-label', this.peekProperty<string>('label') || null);
+    mark(this.more, 'data-beyond', hidden <= 0);
+    put(this, 'aria-label', this.peekProperty<string>('label') || null);
   }
 
   private renderLook(): void {
-    put(this.element, 'data-size', this.peekProperty<AvatarSize>('size') ?? 'md');
-    put(this.element, 'data-layout', this.peekProperty<AvatarGroupLayout>('layout') ?? (this.look.get('layout') as AvatarGroupLayout | null) ?? 'stack');
+    put(this, 'data-size', this.peekProperty<AvatarSize>('size') ?? 'md');
+    put(this, 'data-layout', this.peekProperty<AvatarGroupLayout>('layout') ?? (this.look.get('layout') as AvatarGroupLayout | null) ?? 'stack');
   }
+}
+
+/** A JSX list, condition or fragment: its node is a comment, not an element, so what it holds stands in the group's place. */
+function holdsInPlace(component: ComponentBase): boolean {
+  return component.element?.nodeType === Node.COMMENT_NODE;
 }
 
 /** A whole count of 0 or more, else none. */

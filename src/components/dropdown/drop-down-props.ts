@@ -1,4 +1,4 @@
-import type { Bind } from '@motifx/core';
+import type { Bind, ComponentBase } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 import type { FieldProps } from '../../parts/field/field-props';
 import type { ItemField } from '../../parts/list/item-field';
@@ -35,9 +35,9 @@ export interface DropDownProps<T, V> extends FieldProps<V | null> {
   searchMode?: Bind<'contains' | 'startswith'>;
   clearButton?: Bind<boolean>;
   /** Customizes how an option is drawn. It can return a cleanup function. */
-  itemTemplate?: Bind<((item: T, host: HTMLElement) => (() => void) | void) | null>;
+  itemTemplate?: Bind<((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null>;
   /** Customizes how the selected item is drawn in the field. It can return a cleanup function. */
-  fieldTemplate?: Bind<((item: T, host: HTMLElement) => (() => void) | void) | null>;
+  fieldTemplate?: Bind<((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null>;
   /** The list is at least as wide as the field. The default is `true`. */
   matchWidth?: Bind<boolean>;
   onOpened?: () => void;

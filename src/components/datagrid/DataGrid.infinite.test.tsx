@@ -1,6 +1,7 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -60,6 +61,8 @@ function make(props: Partial<DataGridProps<Row>> = {}, viewport = 360) {
     async toEnd() {
       vp.scrollTop = grid.total * 36;
       vp.dispatchEvent(new Event('scroll'));
+      // The scroll is read in the next measuring round; the part it asks for loads after it.
+      await whenMeasured(grid);
       await settle();
     },
   };
@@ -197,7 +200,7 @@ describe('DataGrid infinite mode', () => {
     const { grid } = make();
     await settle();
     grid.focusCell(0, 'name');
-    const cell = grid.getCellElement(0, 'name')!;
+    const cell = grid.getCellPart(0, 'name')!.element;
     key(cell, 'End', { ctrlKey: true });
     await settle();
     expect(grid.focusedRowIndex).toBe(19);

@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, tick } from '../../../tests/helpers';
@@ -114,6 +114,25 @@ describe('settings', () => {
     await grid.dispose();
   });
 
+  it('keeps the toolbar buttons of items given again as new objects, and writes only what changed', async () => {
+    const s = reactive({ items: [{ name: 'a', text: 'A' }, { name: 'b', text: 'B' }, 'searchPanel'] as unknown[] });
+    const grid = make({ rows: () => [], settings: { searchPanel: true }, toolbar: { items: () => s.items as never } });
+    await settle();
+    const parts = () => [...grid.element.querySelectorAll<HTMLElement>('.mx-data-grid__toolbar button, .mx-data-grid__search')];
+    const before = parts();
+    expect(before.map((b) => b.textContent).slice(0, 2)).toEqual(['A', 'B']);
+    const writes: MutationRecord[] = [];
+    const watcher = new MutationObserver((list) => writes.push(...list));
+    watcher.observe(before[1], { subtree: true, childList: true, characterData: true, attributes: true });
+    s.items = [{ name: 'a', text: 'A2' }, { name: 'b', text: 'B' }, { name: 'searchPanel', hint: 'Find' }];
+    await settle();
+    watcher.disconnect();
+    expect(parts()).toEqual(before);
+    expect(parts().map((b) => b.textContent).slice(0, 2)).toEqual(['A2', 'B']);
+    expect(writes).toEqual([]);
+    await grid.dispose();
+  });
+
   it('marks a grid with no rows to show and gives it emptyRows of room, live', async () => {
     const s = reactive({ rows: [] as Row[] });
     const grid = make({ rows: () => s.rows });
@@ -165,8 +184,8 @@ describe('settings', () => {
     await settle();
     const tip = (grid as any).tip;
     const cell = cellOf(grid, 0, 'name');
-    cell.dataset.error = 'Too long';
-    tip.hover({ target: cell } as unknown as PointerEvent);
+    vi.spyOn((grid as any).model, 'error').mockReturnValue('Too long');
+    cell.dispatchEvent(new Event('pointermove', { bubbles: true }));
     expect(delays).toContain(120);
     tip.hide();
     await grid.dispose();
@@ -218,7 +237,7 @@ describe('settings', () => {
     grid.settings.headerFilterPageSize = 25;
     expect(values.list('name').source.pageSize).toBe(25);
     grid.settings.headerFilterRows = 5;
-    (grid as any).openHeaderFilter('name', header(grid, 'name'));
+    (grid as any).openHeaderFilter('name', (grid as any).headerAnchor('name'));
     expect((grid as any).headerFilter.list.props.height).toBe(5);
     await grid.dispose();
   });
@@ -416,8 +435,8 @@ describe('state and rows programmatically', () => {
     expect(await grid.byKey(7)).toMatchObject({ name: 'Name 7' });
     const visible = grid.getVisibleRows();
     expect(visible[0]).toMatchObject({ rowIndex: 0, rowType: 'data', key: 1, row: { id: 1 } });
-    expect(grid.getRowElement(0)).toBe(rowEl(grid, 0));
-    expect(grid.getCellElement(0, 'name')).toBe(cellOf(grid, 0, 'name'));
+    expect(grid.getRowPart(0)?.element).toBe(rowEl(grid, 0));
+    expect(grid.getCellPart(0, 'name')?.element).toBe(cellOf(grid, 0, 'name'));
     expect(await grid.navigateToRow(60)).toBe(true);
     expect([grid.focusedRowIndex, grid.focusedRowKey]).toEqual([59, 60]);
     grid.focusedRowKey = 10;
@@ -528,9 +547,9 @@ describe('state and rows programmatically', () => {
 
   it("puts a column's own header content in place of the title", async () => {
     const cols: GridColumn<Row>[] = [columns[0], { ...columns[1], headerCell: (ctx) => {
-      const el = document.createElement('b');
-      el.textContent = `${ctx.title}!`;
-      return el;
+      const bold = new Component<HTMLElement>('b');
+      bold.setText(`${ctx.title}!`);
+      return bold;
     } }];
     const grid = make({ rows: makeRows(2), columns: cols });
     await settle();

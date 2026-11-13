@@ -1,11 +1,14 @@
-import { Component, Emitter, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, createSignal, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
 import { follow } from '../../core/follow';
 import { givenField } from '../../core/given-field';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
+import { removePart } from '../../core/draw-parts';
+import { focusFirstIn, holdsFocus, rememberFocus } from '../../core/focus';
 import { dismissMark, plusMark } from '../../core/glyphs';
-import { isHtmlElement, isNode } from '../../core/node-kind';
+import { isRtl } from '../../core/measure';
+import { css, mark, put } from '../../core/part-writes';
 import type { UiStrings } from '../../core/ui-strings';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
@@ -50,10 +53,16 @@ interface Cell {
   component: Component<HTMLDivElement>;
 }
 
+/** A row's buttons by key; `add1` is the add button of a group that takes no more groups (one choice, no menu). */
+type CellKey = Part | 'add1';
+
 interface Row {
   item: FilterBuilderItem;
   component: Component<HTMLDivElement>;
-  cells: Cell[];
+  /** The keys of the buttons the row shows now, in order. */
+  keys: CellKey[];
+  made: Map<CellKey, Cell>;
+  readonly cells: Cell[];
 }
 
 interface Editing {
@@ -70,7 +79,20 @@ interface Parts {
   /** The value written last, or taken from the prop. */
   value: data.FilterExpression | null;
   holder: Component<HTMLDivElement> | null;
-  rows: Row[];
+  /** Each item's row, made when the item comes into the tree and kept while it stays. */
+  rowOf: Map<FilterBuilderItem, Row>;
+  /** Bumped when items come, go or move: the rows and their places follow. */
+  shape: Signal<number>;
+  /** Bumped when what every row shows changes (the options, the texts, the language). */
+  looks: Signal<number>;
+  /** Each item's own count, bumped when that item changes: only its row's buttons write again. */
+  ticks: WeakMap<FilterBuilderItem, Signal<number>>;
+  /** Bumped when the Tab stop may have moved: each button looks whether it is the one. */
+  stop: Signal<number>;
+  /** Focus goes to the Tab stop as soon as it is made. */
+  pendingFocus: boolean;
+  /** The condition whose editor opens as soon as its value's button is made. */
+  waitingEdit: FilterBuilderCondition | null;
   focus: { item: FilterBuilderItem; part: Part } | null;
   editing: Editing | null;
   /** The pointer went down in the open editor: focus leaving it then is not a reason to close it. */
@@ -91,11 +113,9 @@ interface Parts {
   editorPrepared: Emitter<FilterBuilderEditorPreparedEventArgs>;
 }
 
-const faceOf = (button: Button): HTMLElement =>
-  button.element.classList.contains('mx-button__face') ? button.element : (button.element.querySelector<HTMLElement>('.mx-button__face') ?? button.element);
-
+/** Focus to the checked item of a button's open menu. */
 const focusChecked = (button: Button) => {
-  if (button.opened) button.element.querySelector<HTMLElement>('.mx-menu__item[aria-checked="true"]')?.focus();
+  if (button.opened) button.focusMenuItem((item) => item.checked === true);
 };
 
 const empty = (v: unknown) => v === undefined || v === null || v === '' || (typeof v === 'number' && Number.isNaN(v));
@@ -117,7 +137,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     super('div', props);
     const own = (this.props ?? {}) as FilterBuilderProps;
     const parts = this.parts;
-    this.element.classList.add('mx-filter-builder');
+    this.class.add('mx-filter-builder');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onValueChanged) this.onValueChanged(own.onValueChanged);
     if (own.onItemAdding) this.onItemAdding(own.onItemAdding);
@@ -131,7 +151,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     this.observeProperty<data.FilterExpression | null | undefined>('value', (value) => this.takeValue(value ?? null));
     this.takeValue(this.peekProperty<data.FilterExpression | null>('value') ?? null);
     this.listen();
-    // What the rows show: a change of any of it draws them again (a new value each read, so each read draws).
+    // What every row shows: a change of any of it writes the rows' buttons again, in place (a new value each read, so each read writes).
     const stopDrawing = follow(
       this,
       'drawing',
@@ -140,20 +160,20 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
         return {};
       },
       () => {
-        if (parts.ready) this.draw(this.focusWithin);
+        if (parts.ready) this.restyle();
       },
     );
     parts.ready = true;
-    this.draw(false);
+    this.buildTree();
     // The kit's language: the texts and how values are written.
-    onLanguage(this, () => parts.ready && this.draw(this.focusWithin));
+    onLanguage(this, () => parts.ready && this.restyle());
     queueMicrotask(() => {
       for (const name of ['aria-label', 'aria-labelledby', 'aria-describedby']) {
-        const value = this.element.getAttribute(name);
+        const value = this.attr.get(name);
         if (value === null) continue;
         parts.named[name] = value;
-        parts.holder?.element.setAttribute(name, value);
-        this.element.removeAttribute(name);
+        parts.holder?.attr.add({ [name]: value });
+        this.attr.remove(name);
       }
     });
     this.motif.setDisposable(() => {
@@ -264,13 +284,15 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   refresh(): void {
     const parts = this.parts;
     untracked(() => {
+      const keepFocus = this.focusWithin;
       if (!parts.model.same(parts.model.toExpression(parts.root), parts.value)) {
         this.stopEditor(false, false);
-        parts.root = parts.model.fromExpression(parts.value);
+        this.adopt(parts.root, parts.model.fromExpression(parts.value));
         parts.focus = null;
       }
       parts.version.n++;
-      this.draw(this.focusWithin);
+      parts.looks.value++;
+      this.settle(keepFocus);
     });
   }
 
@@ -279,9 +301,9 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return this.parts.model;
   }
 
-  /** The element with `role="treegrid"`. */
-  get treeElement(): HTMLElement | null {
-    return this.parts.holder?.element ?? null;
+  /** The part with `role="treegrid"`. */
+  get treePart(): Component<HTMLDivElement> | null {
+    return this.parts.holder;
   }
 
   /** The condition whose value editor is open. */
@@ -367,9 +389,8 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     untracked(() => {
       const parts = this.parts;
       this.stopEditor(false, false);
-      parts.root = parts.model.newGroup(parts.root.operation);
       parts.focus = null;
-      this.changed(false);
+      this.changed(false, () => this.adopt(parts.root, parts.model.newGroup(parts.root.operation)));
     });
   }
 
@@ -385,7 +406,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
 
   /** Sets focus on a button in an item's row: by default, its field, or a group's operation. */
   focusItem(item: FilterBuilderItem, part?: 'remove' | 'group' | 'add' | 'field' | 'operation' | 'value'): boolean {
-    const cell = this.cellOf(item, part ?? (item.kind === 'group' ? 'group' : 'field')) ?? this.parts.rows.find((r) => r.item === item)?.cells[0];
+    const cell = this.cellOf(item, part ?? (item.kind === 'group' ? 'group' : 'field')) ?? this.parts.rowOf.get(item)?.cells[0];
     if (!cell) return false;
     this.moveTo(cell);
     return true;
@@ -412,7 +433,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     parts.itemAdded.fire({ item, group, byUser, source: this });
     const first = item.kind === 'group' ? item.items[0] : item;
     parts.focus = first ? { item: first, part: 'field' } : { item, part: 'group' };
-    this.changed(byUser);
+    this.changed(byUser, () => parts.shape.value++);
     return item;
   }
 
@@ -443,7 +464,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     const next = group.items[at] ?? group.items[at - 1];
     const part = parts.focus?.part;
     parts.focus = next ? { item: next, part: part && part !== 'value' ? part : 'remove' } : { item: group, part: 'add' };
-    this.changed(byUser);
+    this.changed(byUser, () => parts.shape.value++);
     return true;
   }
 
@@ -488,7 +509,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     apply(e.value);
     if (change === 'field') this.fitToField(item as FilterBuilderCondition, previousValue as string);
     parts.itemChanged.fire({ item, change, value: e.value, previousValue, byUser, source: this });
-    this.changed(byUser, focus);
+    this.changed(byUser, () => this.touch(item), focus);
     return true;
   }
 
@@ -511,9 +532,13 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     } else if (!alike) c.value = undefined;
   }
 
-  /** The tree changed: the value follows (when it is another filter) and the rows are drawn again. */
-  private changed(byUser: boolean, focus = byUser) {
+  /** The tree changed (`bump` says what): the value follows (when it is another filter) and only the rows of what changed write again. */
+  private changed(byUser: boolean, bump: () => void, focus = byUser) {
     const parts = this.parts;
+    const keepFocus = focus || this.focusWithin;
+    // A change made while a value is being edited gives up that edit, as before.
+    this.stopEditor(false, false);
+    untracked(bump);
     parts.version.n++;
     const next = parts.model.toExpression(parts.root);
     if (!parts.model.same(next, parts.value)) {
@@ -523,22 +548,69 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
       this.bindings.writeModel(next);
       parts.valueChanged.fire({ value: next, previousValue: previous, byUser, source: this });
     }
-    this.draw(focus || this.focusWithin);
+    this.settle(keepFocus);
   }
 
-  /** A value from the prop or programmatically: the tree is built again, unless it is the value the tree stands for already. */
+  /**
+   * A value from the prop or programmatically: the tree takes it, unless it is the value the tree stands for already.
+   * The items that stay where they are keep their rows; only what differs writes again.
+   */
   private takeValue(value: data.FilterExpression | null) {
     const parts = this.parts;
     if (parts.ready && parts.model.same(value, parts.value)) return;
     const previous = parts.value;
     parts.value = value;
-    parts.root = parts.model.fromExpression(value);
     parts.focus = null;
-    if (!parts.ready) return;
+    if (!parts.ready) {
+      parts.root = parts.model.fromExpression(value);
+      return;
+    }
+    const keepFocus = this.focusWithin;
     this.stopEditor(false, false);
+    untracked(() => this.adopt(parts.root, parts.model.fromExpression(value)));
     parts.version.n++;
     parts.valueChanged.fire({ value, previousValue: previous, byUser: false, source: this });
-    this.draw(this.focusWithin);
+    this.settle(keepFocus);
+  }
+
+  /**
+   * Makes the tree `into` say what `from` says, item by item in place: an item of the same kind in the same place is
+   * kept (its row too) and takes the other's field, operation and value; the rest come or go.
+   */
+  private adopt(into: FilterBuilderGroup, from: FilterBuilderGroup) {
+    if (into.operation !== from.operation) {
+      into.operation = from.operation;
+      this.touch(into);
+    }
+    const items = into.items;
+    from.items.forEach((now, i) => {
+      const was = items[i];
+      if (was && was.kind === 'group' && now.kind === 'group') return this.adopt(was, now);
+      if (was && was.kind === 'condition' && now.kind === 'condition') {
+        if (was.field === now.field && was.operation === now.operation && JSON.stringify(was.value ?? null) === JSON.stringify(now.value ?? null)) return;
+        was.field = now.field;
+        was.operation = now.operation;
+        was.value = now.value;
+        return this.touch(was);
+      }
+      if (was) was.parent = null;
+      now.parent = into;
+      items[i] = now;
+    });
+    for (const gone of items.splice(from.items.length)) gone.parent = null;
+    this.parts.shape.value++;
+  }
+
+  /** An item changed: its row's buttons write again. */
+  private touch(item: FilterBuilderItem) {
+    this.tickOf(item).value++;
+  }
+
+  private tickOf(item: FilterBuilderItem): Signal<number> {
+    const ticks = this.parts.ticks;
+    let tick = ticks.get(item);
+    if (!tick) ticks.set(item, (tick = createSignal(0)));
+    return tick;
   }
 
   private inTree(item: FilterBuilderItem): boolean {
@@ -567,99 +639,132 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     this.getProperty('label');
   }
 
-  /** Draws every row again, the same button keeping focus. */
-  private draw(keepFocus: boolean) {
+  /**
+   * Builds the tree once: its rows come and go with the items, and each row's buttons write only what changed of
+   * their own item (or of what every row shows).
+   */
+  private buildTree() {
     const parts = this.parts;
     untracked(() => {
-      parts.editing = null;
-      const old = parts.holder;
       const holder = new Component<HTMLDivElement>('div');
-      holder.element.className = 'mx-filter-builder__tree';
-      holder.element.setAttribute('role', 'treegrid');
-      holder.element.setAttribute('aria-label', this.label || parts.model.text('filterBuilderLabel'));
-      for (const [name, value] of Object.entries(parts.named)) holder.element.setAttribute(name, value);
-      holder.element.dataset.size = this.size;
+      holder.class.add('mx-filter-builder__tree');
+      holder.attr.add({ role: 'treegrid' });
       parts.holder = holder;
-      parts.rows = [];
-      this.drawGroup(parts.root, holder, 1, 1);
-      this.controls.add(holder);
-      if (old) {
-        old.element.remove();
-        void old.dispose({ skipLeaveTransition: true });
-      }
-      const cell = this.currentCell();
-      for (const row of parts.rows) for (const c of row.cells) c.button.tabStop = c === cell;
-      if (keepFocus && cell) cell.button.focus();
-    });
-  }
-
-  private drawGroup(group: FilterBuilderGroup, holder: Component<HTMLDivElement>, position: number, setSize: number) {
-    const model = this.parts.model;
-    const level = model.level(group);
-    const row = this.newRow(group, level, position, setSize, holder);
-    if (group.parent) this.addRemove(row);
-    const groupOps = model.groupOperations();
-    this.addCell(row, 'group', {
-      text: model.groupText(group.operation),
-      label: model.text('filterBuilderGroupLabel', { operation: model.groupText(group.operation) }),
-      menu: groupOps.map((op) => ({
-        text: model.groupText(op),
-        group: 'operation',
-        checked: op === group.operation,
-        click: () => this.changeGroupOperation(group, op, true),
-      })),
-    });
-    const fields = model.fields().length > 0;
-    if (model.canAddGroup(group)) {
-      this.addCell(row, 'add', {
-        icon: plusMark,
-        label: model.text('filterBuilderAdd'),
-        enabled: fields,
-        menu: [
-          { text: model.text('filterBuilderAddCondition'), click: () => this.addItem(group, model.newCondition(), true) },
-          { text: model.text('filterBuilderAddGroup'), click: () => this.addGroupTo(group, true) },
-        ],
+      holder.bindings.watch(() => {
+        void parts.looks.value;
+        const label = parts.named['aria-label'] ?? (this.label || parts.model.text('filterBuilderLabel'));
+        const size = this.size;
+        untracked(() => {
+          put(holder, 'aria-label', label);
+          put(holder, 'data-size', size);
+        });
       });
-    } else {
-      this.addCell(row, 'add', { icon: plusMark, label: model.text('filterBuilderAddCondition'), enabled: fields, click: () => this.addItem(group, model.newCondition(), true) });
-    }
-    group.items.forEach((item, i) => {
-      if (item.kind === 'group') this.drawGroup(item, holder, i + 1, group.items.length);
-      else this.drawCondition(item, holder, i + 1, group.items.length);
+      holder.bindings.list(
+        () => {
+          void parts.shape.value;
+          return untracked(() => this.treeItems());
+        },
+        (item: FilterBuilderItem) => this.makeRow(item).component,
+      );
+      this.controls.add(holder);
+      this.settle(false);
     });
   }
 
-  private drawCondition(c: FilterBuilderCondition, holder: Component<HTMLDivElement>, position: number, setSize: number) {
+  /** What every row shows changed: the rows' buttons write again, in place. */
+  private restyle() {
+    untracked(() => {
+      const keepFocus = this.focusWithin;
+      this.parts.looks.value++;
+      this.settle(keepFocus);
+    });
+  }
+
+  /** The tree's Tab stop on the current button, and focus there when it was in the tree (once that button is made). */
+  private settle(keepFocus: boolean) {
+    untracked(() => {
+      const parts = this.parts;
+      parts.pendingFocus = keepFocus;
+      parts.stop.value++;
+    });
+  }
+
+  /** The items in the order of their rows: each group, then its items. */
+  private treeItems(): FilterBuilderItem[] {
+    const list: FilterBuilderItem[] = [];
+    const walk = (item: FilterBuilderItem) => {
+      list.push(item);
+      if (item.kind === 'group') item.items.forEach(walk);
+    };
+    walk(this.parts.root);
+    return list;
+  }
+
+  /** The rows in their order. */
+  private get rows(): Row[] {
+    const rowOf = this.parts.rowOf;
+    return this.treeItems()
+      .map((item) => rowOf.get(item))
+      .filter((row): row is Row => !!row);
+  }
+
+  /** What a row's button shows for its item now. */
+  private lookOf(item: FilterBuilderItem, key: CellKey): { text?: string; label: string; enabled?: boolean; menu?: MenuItem[]; empty?: boolean } {
     const model = this.parts.model;
-    const field = model.fieldOrPlain(c.field);
-    const row = this.newRow(c, model.level(c), position, setSize, holder);
-    this.addRemove(row);
-    const caption = model.caption(c.field);
-    this.addCell(row, 'field', {
-      text: caption,
-      label: model.text('filterBuilderFieldLabel', { field: caption }),
-      menu: this.fieldMenu(c),
-    });
-    const opText = model.operationText(c.operation);
-    this.addCell(row, 'operation', {
-      text: opText,
-      label: model.text('filterBuilderOperationLabel', { operation: opText }),
-      menu: model.operations(field).map((op) => ({
-        text: model.operationText(op),
-        group: 'operation',
-        checked: op === c.operation,
-        click: () => this.changeOperation(c, op, true),
-      })),
-    });
-    if (!model.hasValue(c.operation)) return;
+    const fields = model.fields().length > 0;
+    if (key === 'remove') return { label: model.text(item.kind === 'group' ? 'filterBuilderRemoveGroup' : 'filterBuilderRemoveCondition') };
+    if (item.kind === 'group') {
+      const group = item;
+      if (key === 'add1') return { label: model.text('filterBuilderAddCondition'), enabled: fields };
+      if (key === 'add') {
+        return {
+          label: model.text('filterBuilderAdd'),
+          enabled: fields,
+          menu: [
+            { text: model.text('filterBuilderAddCondition'), click: () => this.addItem(group, model.newCondition(), true) },
+            { text: model.text('filterBuilderAddGroup'), click: () => this.addGroupTo(group, true) },
+          ],
+        };
+      }
+      return {
+        text: model.groupText(group.operation),
+        label: model.text('filterBuilderGroupLabel', { operation: model.groupText(group.operation) }),
+        menu: model.groupOperations().map((op) => ({
+          text: model.groupText(op),
+          group: 'operation',
+          checked: op === group.operation,
+          click: () => this.changeGroupOperation(group, op, true),
+        })),
+      };
+    }
+    const c = item;
+    if (key === 'field') {
+      const caption = model.caption(c.field);
+      return { text: caption, label: model.text('filterBuilderFieldLabel', { field: caption }), menu: this.fieldMenu(c) };
+    }
+    if (key === 'operation') {
+      const opText = model.operationText(c.operation);
+      return {
+        text: opText,
+        label: model.text('filterBuilderOperationLabel', { operation: opText }),
+        menu: model.operations(model.fieldOrPlain(c.field)).map((op) => ({
+          text: model.operationText(op),
+          group: 'operation',
+          checked: op === c.operation,
+          click: () => this.changeOperation(c, op, true),
+        })),
+      };
+    }
     const valueText = model.valueText(c);
     const shown = valueText || model.text('filterBuilderEnterValue');
-    const cell = this.addCell(row, 'value', {
-      text: shown,
-      label: model.text('filterBuilderValueLabel', { value: shown }),
-      click: () => this.startEditor(c),
-    });
-    cell.button.element.toggleAttribute('data-empty', !valueText);
+    return { text: shown, label: model.text('filterBuilderValueLabel', { value: shown }), empty: !valueText };
+  }
+
+  /** The buttons an item's row shows now. */
+  private keysOf(item: FilterBuilderItem): CellKey[] {
+    const model = this.parts.model;
+    if (item.kind === 'group') return [...(item.parent ? (['remove'] as const) : []), 'group', model.canAddGroup(item) ? 'add' : 'add1'];
+    return model.hasValue(item.operation) ? ['remove', 'field', 'operation', 'value'] : ['remove', 'field', 'operation'];
   }
 
   /** The fields to choose from, as submenus of their parts with `allowHierarchicalFields`. */
@@ -688,115 +793,176 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return top;
   }
 
-  private newRow(item: FilterBuilderItem, level: number, position: number, setSize: number, holder: Component<HTMLDivElement>): Row {
+  /** An item's row, made once when the item comes: its place and its buttons follow the item from then on. */
+  private makeRow(item: FilterBuilderItem): Row {
+    const parts = this.parts;
+    const model = parts.model;
     const component = new Component<HTMLDivElement>('div');
-    const element = component.element;
-    element.className = 'mx-filter-builder__row';
-    element.setAttribute('role', 'row');
-    element.setAttribute('aria-level', String(level + 1));
-    element.setAttribute('aria-posinset', String(position));
-    element.setAttribute('aria-setsize', String(setSize));
-    element.dataset.kind = item.kind;
-    element.style.setProperty('--_level', String(level));
-    holder.controls.add(component);
-    const row: Row = { item, component, cells: [] };
-    this.parts.rows.push(row);
+    component.class.add('mx-filter-builder__row');
+    component.attr.add({ role: 'row', 'data-kind': item.kind });
+    const row: Row = {
+      item,
+      component,
+      keys: [],
+      made: new Map(),
+      get cells() {
+        return this.keys.map((key) => this.made.get(key)).filter((cell): cell is Cell => !!cell);
+      },
+    };
+    // Its place in the tree: written when items come, go or move.
+    component.bindings.watch(() => {
+      void parts.shape.value;
+      untracked(() => {
+        const group = item.parent;
+        if (group ? !this.inTree(item) : item !== parts.root) return;
+        const level = model.level(item);
+        put(component, 'aria-level', String(level + 1));
+        put(component, 'aria-posinset', String(group ? group.items.indexOf(item) + 1 : 1));
+        put(component, 'aria-setsize', String(group ? group.items.length : 1));
+        css(component, '--_level', String(level));
+      });
+    });
+    // Its buttons: one comes or goes when the item's operation takes a value or not, or a group may take groups or not.
+    component.bindings.list(
+      () => {
+        void this.tickOf(item).value;
+        void parts.looks.value;
+        void parts.shape.value;
+        return untracked(() => (row.keys = this.keysOf(item)));
+      },
+      (key: CellKey) => this.makeCell(row, key),
+    );
+    parts.rowOf.set(item, row);
+    component.motif.setDisposable(() => {
+      if (parts.rowOf.get(item) === row) parts.rowOf.delete(item);
+    });
     return row;
   }
 
-  private addRemove(row: Row) {
-    const model = this.parts.model;
+  /** A row's button, made once: it writes again only when its item, or what every row shows, changes. */
+  private makeCell(row: Row, key: CellKey): Component<HTMLDivElement> {
+    const parts = this.parts;
     const item = row.item;
-    this.addCell(row, 'remove', {
-      icon: dismissMark,
-      label: model.text(item.kind === 'group' ? 'filterBuilderRemoveGroup' : 'filterBuilderRemoveCondition'),
-      click: () => this.remove(item, true),
-    });
-  }
-
-  private addCell(
-    row: Row,
-    part: Part,
-    look: { text?: string; icon?: () => HTMLSpanElement; label: string; enabled?: boolean; menu?: MenuItem[]; click?: () => void },
-  ): Cell {
+    const part: Part = key === 'add1' ? 'add' : key;
     const component = new Component<HTMLDivElement>('div');
-    component.element.className = 'mx-filter-builder__cell';
-    component.element.setAttribute('role', 'gridcell');
-    component.element.dataset.part = part;
-    row.component.controls.add(component);
+    component.class.add('mx-filter-builder__cell');
+    component.attr.add({ role: 'gridcell', 'data-part': part });
+    const first = untracked(() => this.lookOf(item, key));
+    const icon = part === 'remove' ? dismissMark : part === 'add' ? plusMark : null;
     // Variant, tone and size come from the part's place; a size given to the builder wins.
     const button = new Button({
-      text: look.text ?? '',
-      icon: look.icon ?? null,
-      hint: look.icon ? look.label : '',
-      size: this.getProperty<ControlSize | undefined>('size'),
-      enabled: look.enabled ?? true,
+      text: first.text ?? '',
+      icon,
+      hint: icon ? first.label : '',
+      size: untracked(() => this.getProperty<ControlSize | undefined>('size')),
+      enabled: first.enabled ?? true,
       tabStop: false,
-      ...(look.menu ? { menu: look.menu } : {}),
+      ...(first.menu ? { menu: first.menu } : {}),
     });
-    button.element.classList.add(`mx-filter-builder__${part}`);
+    button.class.add(`mx-filter-builder__${part}`);
     component.controls.add(button);
-    faceOf(button).setAttribute('aria-label', look.label);
-    if (look.click) {
-      const click = look.click;
-      faceOf(button).addEventListener('click', () => untracked(click));
-    }
+    const cell: Cell = { item, part, button, component };
+    row.made.set(key, cell);
+    component.bindings.watch(() => {
+      void this.tickOf(item).value;
+      void parts.looks.value;
+      untracked(() => {
+        const look = this.lookOf(item, key);
+        button.text = look.text ?? '';
+        button.hint = icon ? look.label : '';
+        button.enabled = look.enabled ?? true;
+        button.size = this.getProperty<ControlSize | undefined>('size') as ControlSize;
+        if (look.menu) button.menu = look.menu;
+        put(button.faceComponent, 'aria-label', look.label);
+        if (part === 'value') mark(button, 'data-empty', look.empty);
+      });
+    });
+    const clicks: Partial<Record<CellKey, () => unknown>> = {
+      remove: () => this.remove(item, true),
+      value: () => this.startEditor(item as FilterBuilderCondition),
+      add1: () => this.addItem(item as FilterBuilderGroup, parts.model.newCondition(), true),
+    };
+    const click = clicks[key];
+    if (click) button.faceComponent.motif.on('click', () => untracked(click));
     // A menu of choices opens on the one chosen now.
-    if (look.menu) faceOf(button).addEventListener('click', () => focusChecked(button));
-    const cell: Cell = { item: row.item, part, button, component };
-    row.cells.push(cell);
-    return cell;
+    if (first.menu) button.faceComponent.motif.on('click', () => focusChecked(button));
+    // The one Tab stop of the tree, and focus kept on it after a change.
+    component.bindings.watch(() => {
+      void parts.stop.value;
+      untracked(() => {
+        const on = this.currentCell() === cell;
+        button.tabStop = on;
+        if (on && parts.pendingFocus && parts.editing?.cell !== cell) {
+          parts.pendingFocus = false;
+          // A button made just now is in the page once the whole change is.
+          if (!button.focus()) queueMicrotask(() => !button.isDisposed && this.currentCell() === cell && button.focus());
+        }
+      });
+    });
+    if (key === 'value' && parts.waitingEdit === item) queueMicrotask(() => parts.waitingEdit === item && this.startEditor(item));
+    component.motif.setDisposable(() => {
+      if (row.made.get(key) === cell) row.made.delete(key);
+    });
+    return component;
   }
 
   // Focus and keys.
 
   private cellOf(item: FilterBuilderItem, part: Part): Cell | undefined {
-    return this.parts.rows.find((r) => r.item === item)?.cells.find((c) => c.part === part);
+    return this.rowIn(item)?.cells.find((c) => c.part === part);
   }
 
-  /** The button that is the tree's Tab stop: the one focused last, else the first. */
+  /** An item's row, while the item is in the tree. */
+  private rowIn(item: FilterBuilderItem): Row | undefined {
+    return this.inTree(item) ? this.parts.rowOf.get(item) : undefined;
+  }
+
+  /** The button that is the tree's Tab stop: the one focused last, else the first; none while that one is still to be made. */
   private currentCell(): Cell | undefined {
-    const parts = this.parts;
-    const f = parts.focus;
-    return (f && this.cellOf(f.item, f.part)) || (f && parts.rows.find((r) => r.item === f.item)?.cells[0]) || parts.rows[0]?.cells[0];
+    const f = this.parts.focus;
+    if (f && this.inTree(f.item)) {
+      const row = this.parts.rowOf.get(f.item);
+      const exact = row?.cells.find((c) => c.part === f.part);
+      if (!row || exact) return exact;
+      return row.keys.some((key) => (key === 'add1' ? 'add' : key) === f.part) ? undefined : row.cells[0];
+    }
+    return this.rows[0]?.cells[0];
   }
 
-  private cellAt(target: EventTarget | null): Cell | undefined {
-    if (!isHtmlElement(target)) return undefined;
-    for (const row of this.parts.rows) for (const c of row.cells) if (faceOf(c.button) === target) return c;
-    return undefined;
+  /** The cell whose button an event started on: the row it started in, then the button there. */
+  private cellAt(e: Event): Cell | undefined {
+    const row = this.rows.find((r) => r.component.motif.isEventFrom(e));
+    return row?.cells.find((c) => c.button.faceComponent.motif.isEventFrom(e));
   }
 
   private moveTo(cell: Cell) {
     const parts = this.parts;
     parts.focus = { item: cell.item, part: cell.part };
-    for (const row of parts.rows) for (const c of row.cells) c.button.tabStop = c === cell;
+    for (const row of this.rows) for (const c of row.cells) c.button.tabStop = c === cell;
     cell.button.focus();
   }
 
   private listen() {
-    const el = this.element;
     // Moving keys before the buttons see them (a menu button opens on the arrows).
-    el.addEventListener('keydown', (e) => untracked(() => this.onMoveKey(e)), true);
-    el.addEventListener('keydown', (e) => untracked(() => this.onEditorKey(e)));
-    el.addEventListener('focusin', (e) => {
-      const cell = this.cellAt(e.target);
+    this.motif.on('keydown:capture', (_, e) => untracked(() => this.onMoveKey(e)));
+    this.motif.on('keydown', (_, e) => untracked(() => this.onEditorKey(e)));
+    this.motif.on('focusin', (_, e) => {
+      const cell = this.cellAt(e);
       if (!cell || this.parts.editing?.cell === cell) return;
       this.parts.focus = { item: cell.item, part: cell.part };
-      for (const row of this.parts.rows) for (const c of row.cells) c.button.tabStop = c === cell;
+      for (const row of this.rows) for (const c of row.cells) c.button.tabStop = c === cell;
     });
-    el.addEventListener('pointerdown', (e) => {
+    this.motif.on('pointerdown', (_, e) => {
       const editing = this.parts.editing;
-      this.parts.pressedInEditor = !!editing && editing.box.element.contains(e.target as Node);
+      this.parts.pressedInEditor = !!editing && editing.box.motif.isEventFrom(e);
     });
-    el.addEventListener('focusout', (e) => {
+    // Focus gone from the editor closes it, its value kept; a press inside it that leaves focus nowhere does not.
+    this.motif.on('focusout', (_, e) => {
       const editing = this.parts.editing;
-      if (!editing || editing.box.element.contains(e.relatedTarget as Node)) return;
+      if (!editing) return;
       setTimeout(() => {
-        if (this.parts.editing !== editing || this.isDisposed) return;
-        const active = document.activeElement;
-        if (active && editing.box.element.contains(active)) return;
-        if ((!active || active === document.body) && this.parts.pressedInEditor) return;
+        if (this.parts.editing !== editing || this.isDisposed || holdsFocus(editing.box)) return;
+        if (this.parts.pressedInEditor && !rememberFocus(e)) return;
         untracked(() => this.stopEditor(true, false));
       });
     });
@@ -804,13 +970,13 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
 
   private onMoveKey(e: KeyboardEvent) {
     const parts = this.parts;
-    const cell = this.cellAt(e.target);
+    const cell = this.cellAt(e);
     if (!cell || e.defaultPrevented) return;
-    const rows = parts.rows;
+    const rows = this.rows;
     const row = rows.findIndex((r) => r.item === cell.item);
     const cells = rows[row].cells;
     const at = cells.indexOf(cell);
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
+    const rtl = isRtl(this);
     const go = (target: Cell | undefined) => {
       e.preventDefault();
       e.stopPropagation();
@@ -878,9 +1044,13 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     if (parts.editing?.condition === c) return true;
     this.stopEditor(true, false);
     const cell = this.cellOf(c, 'value');
-    if (!cell) return false;
+    if (!cell) {
+      // A condition changed or added just now: its value's button is still to be made, and the editor opens there.
+      parts.waitingEdit = c;
+      return true;
+    }
     const box = new Component<HTMLDivElement>('div');
-    box.element.className = 'mx-filter-builder__editor';
+    box.class.add('mx-filter-builder__editor');
     cell.component.controls.add(box);
     const field = model.fieldOrPlain(c.field);
     const editing: Editing = { condition: c, cell, box, editors: [], draft: Array.isArray(c.value) ? [...c.value] : c.value };
@@ -909,12 +1079,10 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return true;
   }
 
+  /** A control takes focus itself; any other editor gives it to the first place inside that takes it. */
   private focusEditor(editor: ComponentBase) {
-    if (editor instanceof Control) {
-      if (editor.focus()) return;
-    }
-    const target = isHtmlElement(editor.element) ? editor.element.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]') : null;
-    target?.focus();
+    if (editor instanceof Control && editor.focus()) return;
+    focusFirstIn(editor);
   }
 
   /** The editor of a value: your own (the operation's, the field's, or from `onEditorPreparing`), else the kit's for the field's type. */
@@ -999,7 +1167,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
 
   private onEditorKey(e: KeyboardEvent) {
     const editing = this.parts.editing;
-    if (!editing || e.defaultPrevented || !editing.box.element.contains(e.target as Node)) return;
+    if (!editing || e.defaultPrevented || !editing.box.motif.isEventFrom(e)) return;
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
@@ -1008,7 +1176,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
       e.preventDefault();
       this.stopEditor(true, true);
     } else if (e.key === 'Tab') {
-      const at = editing.editors.findIndex((ed) => isNode(ed.element) && ed.element.contains(e.target as Node));
+      const at = editing.editors.findIndex((ed) => ed.motif.isEventFrom(e));
       const next = editing.editors[at + (e.shiftKey ? -1 : 1)];
       if (next) {
         e.preventDefault();
@@ -1023,6 +1191,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   /** Closes the value editor: its value is kept (`keep`) or given up, and focus goes back to the value's button (`focus`). */
   private stopEditor(keep: boolean, focus: boolean) {
     const parts = this.parts;
+    parts.waitingEdit = null;
     const editing = parts.editing;
     if (!editing) return;
     parts.editing = null;
@@ -1031,18 +1200,16 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     let draft = editing.draft;
     if (typeof draft === 'string' && c.operation !== 'in' && c.operation !== 'notin') draft = draft === '' ? undefined : draft;
     if (Array.isArray(draft) && c.operation !== 'between') draft = draft.length ? draft : undefined;
-    const wasFocused = editing.box.element.contains(document.activeElement);
+    const wasFocused = holdsFocus(editing.box);
     if (focus || wasFocused) parts.focus = { item: c, part: 'value' };
+    editing.cell.button.visible = true;
     if (keep && this.inTree(c) && JSON.stringify(draft ?? null) !== JSON.stringify(c.value ?? null)) {
-      editing.box.element.remove();
-      void editing.box.dispose({ skipLeaveTransition: true });
-      if (!this.changeValue(c, draft, true, focus)) this.draw(focus || wasFocused);
+      removePart(editing.box);
+      if (!this.changeValue(c, draft, true, focus)) this.settle(focus || wasFocused);
       return;
     }
-    editing.cell.button.visible = true;
     if (focus || wasFocused) editing.cell.button.focus();
-    editing.box.element.remove();
-    void editing.box.dispose({ skipLeaveTransition: true });
+    removePart(editing.box);
   }
 
   // Parts.
@@ -1067,7 +1234,13 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
       root: model.newGroup(),
       value: null,
       holder: null,
-      rows: [],
+      rowOf: new Map(),
+      shape: createSignal(0),
+      looks: createSignal(0),
+      ticks: new WeakMap(),
+      stop: createSignal(0),
+      pendingFocus: false,
+      waitingEdit: null,
       focus: null,
       editing: null,
       pressedInEditor: false,

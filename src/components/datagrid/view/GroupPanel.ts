@@ -1,8 +1,15 @@
-import { untracked } from '@motifx/core';
-import { chevronDown, chevronUp } from '../../../core/glyphs';
+import { untracked, type Component, type ComponentBase } from '@motifx/core';
+import { glyphPart, loose, part, removePart } from '../../../core/draw-parts';
+import { focusOn, isFocused, rememberFocus } from '../../../core/focus';
+import { isInPage, isRendered, rectOf, type Rect } from '../../../core/measure';
 import { nextId } from '../../../core/next-id';
+import { orderControls } from '../../../core/order-controls';
+import { css, mark, put, text } from '../../../core/part-writes';
 import type { GridModel } from '../model/GridModel';
+import type { GroupDrop } from './group-drop';
 import type { GroupPanelHost } from './group-panel-host';
+
+const NO_DROP: GroupDrop = Object.freeze({ index: -1, offset: 0 });
 
 /**
  * The group panel at the start of the toolbar: a chip per grouped column, in order, or a line that
@@ -12,11 +19,14 @@ import type { GroupPanelHost } from './group-panel-host';
  * follows nothing: it draws itself again whenever the grid tells a change.
  */
 export class GroupPanel<T> {
-  readonly element: HTMLDivElement;
-  private readonly empty: HTMLSpanElement;
-  private readonly hint: HTMLSpanElement;
-  private readonly drop: HTMLSpanElement;
-  private readonly chips = new Map<string, HTMLButtonElement>();
+  /** The panel's component; the toolbar holds it while `groupPanel` is on. */
+  readonly part: Component<HTMLDivElement>;
+  private readonly empty: Component<HTMLSpanElement>;
+  private readonly hint: Component<HTMLSpanElement>;
+  /** The id of the hint, which describes every chip. */
+  private readonly hintId = nextId('group-hint');
+  private readonly drop: Component<HTMLSpanElement>;
+  private readonly chips = new Map<string, Component<HTMLButtonElement>>();
   private suppressClick = false;
   private readonly stops: (() => void)[] = [];
 
@@ -24,86 +34,88 @@ export class GroupPanel<T> {
     private readonly model: GridModel<T>,
     private readonly host: GroupPanelHost,
   ) {
-    const el = document.createElement('div');
-    el.className = 'mx-data-grid__group-panel';
-    el.setAttribute('role', 'group');
-    this.empty = document.createElement('span');
-    this.empty.className = 'mx-data-grid__group-empty';
-    this.hint = document.createElement('span');
-    this.hint.className = 'mx-data-grid__hidden-text';
-    this.hint.id = nextId('group-hint');
-    this.drop = document.createElement('span');
-    this.drop.className = 'mx-data-grid__chip-drop';
-    this.drop.setAttribute('aria-hidden', 'true');
-    this.drop.hidden = true;
-    el.append(this.empty, this.hint, this.drop);
-    this.element = el;
+    this.part = loose<HTMLDivElement>('div', 'mx-data-grid__group-panel');
+    this.part.attr.add({ role: 'group' });
+    this.empty = part<HTMLSpanElement>(this.part, 'span', 'mx-data-grid__group-empty');
+    this.hint = part<HTMLSpanElement>(this.part, 'span', 'mx-data-grid__hidden-text');
+    this.hint.attr.add({ id: this.hintId });
+    this.drop = part<HTMLSpanElement>(this.part, 'span', 'mx-data-grid__chip-drop');
+    this.drop.attr.add({ 'aria-hidden': 'true' });
+    mark(this.drop, 'hidden', true);
     this.stops.push(model.notices.on(() => this.draw()));
     this.draw();
   }
 
   /** Whether headers can be dropped here now: the panel shows and dragging is on. */
   get accepts(): boolean {
-    return this.model.settings.get('groupPanelDragging') && this.element.isConnected && this.element.offsetParent !== null;
+    return this.model.settings.get('groupPanelDragging') && isInPage(this.part) && isRendered(this.part);
   }
 
-  /** Where drops for the panel are taken: the whole toolbar it sits in, not only its chips. */
-  get dropArea(): HTMLElement {
-    return this.element.closest<HTMLElement>('.mx-data-grid__toolbar') ?? this.element;
+  /** Where drops for the panel are taken: the whole toolbar it sits in (its parent), not only its chips. */
+  get dropArea(): ComponentBase {
+    return this.part.parent ?? this.part;
   }
 
   /** Marks the drop area while a header that can be grouped is dragged. */
   showReady(on: boolean) {
-    this.dropArea.toggleAttribute('data-drop-ready', on);
+    mark(this.dropArea, 'data-drop-ready', on);
   }
 
-  /** The place among the chips a point drops at, or -1 when it is not over the drop area. */
-  dropIndexAt(x: number, y: number): number {
-    const box = this.dropArea.getBoundingClientRect();
-    if (x < box.left || x > box.right || y < box.top || y > box.bottom) return -1;
+  /**
+   * Where a point drops among the chips, and where its mark goes; reads only. Read it in a read, or first in a
+   * handler, then write it with `showDropAt`.
+   */
+  dropAt(x: number, y: number): GroupDrop {
+    const area = rectOf(this.dropArea);
+    if (x < area.left || x > area.right || y < area.top || y > area.bottom) return NO_DROP;
     const rtl = this.host.isRtl();
-    let n = 0;
-    for (const field of this.model.groups.fields()) {
-      const r = this.chips.get(field)?.getBoundingClientRect();
+    const rects = this.chipRects();
+    let index = 0;
+    for (const r of rects) {
       if (!r) continue;
       const centre = r.left + r.width / 2;
-      if (rtl ? x < centre : x > centre) n++;
+      if (rtl ? x < centre : x > centre) index++;
     }
-    return n;
+    return { index, offset: this.markOffset(index, rects, rtl) };
   }
 
-  /** Marks where a drop at place `index` lands; -1 hides the mark. */
-  showDrop(index: number) {
-    const el = this.element;
-    this.dropArea.toggleAttribute('data-drop', index >= 0);
-    if (index < 0) {
-      this.drop.hidden = true;
+  /** Marks where a drop read with `dropAt` lands; one at -1 hides the mark. */
+  showDropAt(drop: GroupDrop) {
+    mark(this.dropArea, 'data-drop', drop.index >= 0);
+    if (drop.index < 0) {
+      mark(this.drop, 'hidden', true);
       return;
     }
-    const fields = this.model.groups.fields();
-    const base = el.getBoundingClientRect();
-    const rtl = this.host.isRtl();
-    const before = this.chips.get(fields[index]);
-    const after = this.chips.get(fields[index - 1]);
-    let x: number;
-    if (before) {
-      const r = before.getBoundingClientRect();
-      x = rtl ? r.right : r.left;
-    } else if (after) {
-      const r = after.getBoundingClientRect();
-      x = rtl ? r.left : r.right;
-    } else x = rtl ? base.right : base.left;
-    this.drop.style.insetInlineStart = `${rtl ? base.right - x : x - base.left}px`;
-    this.drop.hidden = false;
+    css(this.drop, 'inset-inline-start', `${drop.offset}px`);
+    mark(this.drop, 'hidden', false);
   }
 
   /** The chip of a grouped column, while it shows. */
-  chipOf(field: string): HTMLButtonElement | undefined {
+  chipOf(field: string): Component<HTMLButtonElement> | undefined {
     return this.chips.get(field);
   }
 
   dispose() {
     for (const stop of this.stops) stop();
+    // Out of the toolbar the panel is no one's child: it goes here.
+    if (!this.part.parent && !this.part.isDisposed) void this.part.dispose();
+  }
+
+  /** Where each grouped column's chip is on the screen, in group order. */
+  private chipRects(): (Rect | null)[] {
+    return this.model.groups.fields().map((field) => {
+      const chip = this.chips.get(field);
+      return chip ? rectOf(chip) : null;
+    });
+  }
+
+  /** Pixels from the panel's inline start to the edge a drop at place `index` lands on. */
+  private markOffset(index: number, rects: readonly (Rect | null)[], rtl: boolean): number {
+    const base = rectOf(this.part);
+    const before = rects[index];
+    const after = rects[index - 1];
+    const x = before ? (rtl ? before.right : before.left) : after ? (rtl ? after.left : after.right) : rtl ? base.right : base.left;
+    return rtl ? base.right - x : x - base.left;
   }
 
   private draw() {
@@ -122,60 +134,52 @@ export class GroupPanel<T> {
     const labels = texts.map((t) => model.text(t.dir === 'desc' ? 'gridGroupChipDescending' : 'gridGroupChipAscending', { title: t.title }));
     const dragging = settings.get('groupPanelDragging');
     untracked(() => {
-      const el = this.element;
       // Moving a chip in the page blurs it: focus comes back to it.
-      const focused = el.ownerDocument.activeElement as HTMLElement | null;
-      el.setAttribute('aria-label', label);
-      el.toggleAttribute('data-locked', !dragging);
-      this.empty.textContent = empty;
-      this.empty.hidden = texts.length > 0;
-      this.hint.textContent = hint;
+      const focus = rememberFocus();
+      put(this.part, 'aria-label', label);
+      mark(this.part, 'data-locked', !dragging);
+      text(this.empty, empty);
+      mark(this.empty, 'hidden', texts.length > 0);
+      text(this.hint, hint);
       const wanted = new Set(texts.map((t) => t.field));
       for (const [field, chip] of this.chips) {
         if (wanted.has(field)) continue;
-        chip.remove();
+        removePart(chip);
         this.chips.delete(field);
       }
-      let before: ChildNode | null = this.empty.nextSibling;
-      texts.forEach((t, i) => {
+      const chips = texts.map((t, i) => {
         const chip = this.chips.get(t.field) ?? this.makeChip(t.field);
-        chip.dataset.dir = t.dir;
-        (chip.firstChild as HTMLElement).textContent = t.title;
-        if (chip.getAttribute('aria-label') !== labels[i]) chip.setAttribute('aria-label', labels[i]);
-        if (chip !== before) el.insertBefore(chip, before);
-        before = chip.nextSibling;
+        put(chip, 'data-dir', t.dir);
+        text(chip.controls.items[0], t.title);
+        put(chip, 'aria-label', labels[i]);
+        return chip;
       });
-      if (focused && el.contains(focused) && el.ownerDocument.activeElement !== focused) focused.focus();
+      // The chips after the empty text, in order; the hint and the drop mark after them.
+      orderControls(this.part, [this.empty, ...chips]);
+      if (focus?.isIn(this.part)) focus.restore();
     });
   }
 
-  private makeChip(field: string): HTMLButtonElement {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'mx-data-grid__chip';
-    chip.dataset.group = field;
-    chip.tabIndex = -1;
-    chip.setAttribute('aria-describedby', this.hint.id);
-    const text = document.createElement('span');
-    text.className = 'mx-data-grid__chip-text';
-    const arrows = document.createElement('span');
-    arrows.className = 'mx-data-grid__chip-sort';
-    arrows.setAttribute('aria-hidden', 'true');
-    const up = chevronUp();
-    up.classList.add('mx-data-grid__sort-up');
-    const down = chevronDown();
-    down.classList.add('mx-data-grid__sort-down');
-    arrows.append(up, down);
-    chip.append(text, arrows);
-    chip.addEventListener('click', () => {
+  /** A chip, not placed yet: the panel puts it in order. */
+  private makeChip(field: string): Component<HTMLButtonElement> {
+    const chip = loose<HTMLButtonElement>('button', 'mx-data-grid__chip');
+    chip.attr.add({ type: 'button', 'data-group': field });
+    put(chip, 'tabindex', '-1');
+    chip.attr.add({ 'aria-describedby': this.hintId });
+    part(chip, 'span', 'mx-data-grid__chip-text');
+    const arrows = part<HTMLSpanElement>(chip, 'span', 'mx-data-grid__chip-sort');
+    arrows.attr.add({ 'aria-hidden': 'true' });
+    glyphPart(arrows, 'chevron-up', 'mx-data-grid__sort-up');
+    glyphPart(arrows, 'chevron-down', 'mx-data-grid__sort-down');
+    chip.motif.on('click', () => {
       if (this.suppressClick) {
         this.suppressClick = false;
         return;
       }
       if (this.model.columns.can(field, 'sortable')) this.model.toggleGroupOrder(field);
     });
-    chip.addEventListener('keydown', (e) => this.onChipKey(e, field));
-    chip.addEventListener('pointerdown', (e) => this.pressChip(e, field));
+    chip.motif.on('keydown', (_, e) => this.onChipKey(e, field));
+    chip.motif.on('pointerdown', (_, e) => this.pressChip(e, field));
     this.chips.set(field, chip);
     return chip;
   }
@@ -187,13 +191,8 @@ export class GroupPanel<T> {
     if (!model.settings.get('groupPanelDragging') || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
-      const fields = model.groups.fields();
-      const at = fields.indexOf(field);
+      this.passFocus(field);
       model.ungroup(field, true);
-      // Focus goes to the chip that takes its place, else back to the rows.
-      const next = this.chips.get(fields[at + 1] ?? fields[at - 1]);
-      if (next) next.focus();
-      else this.host.focusRows();
       return;
     }
     if (e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
@@ -204,8 +203,21 @@ export class GroupPanel<T> {
       if (to < 0 || to >= fields.length) return;
       model.groupBy(field, to, true);
       model.announce(model.text('gridMovedTo', { title: model.columns.title(field), position: to + 1, count: fields.length }));
-      this.chips.get(field)?.focus();
+      const chip = this.chips.get(field);
+      if (chip) focusOn(chip);
     }
+  }
+
+  /**
+   * Focus leaves a chip about to go, before anything is written for it (a focused element taken out of the page
+   * makes the browser work out styles at once): to the chip that takes its place, else back to the rows.
+   */
+  private passFocus(field: string) {
+    const fields = this.model.groups.fields();
+    const at = fields.indexOf(field);
+    const next = this.chips.get(fields[at + 1] ?? fields[at - 1]);
+    if (next) focusOn(next);
+    else this.host.focusRows();
   }
 
   /** Dragging a chip: along the panel moves it, onto the headers ungroups it (the column lands where it is dropped). */
@@ -213,32 +225,42 @@ export class GroupPanel<T> {
     const { model } = this;
     if (e.button !== 0 || !model.settings.get('groupPanelDragging')) return;
     const chip = this.chips.get(field)!;
-    chip.setPointerCapture?.(e.pointerId);
+    chip.attr.add({ setPointerCapture: e.pointerId });
     const startX = e.clientX;
     const startY = e.clientY;
     let dragging = false;
     let place = -1;
-    let header = false;
-    const move = (ev: PointerEvent) => {
+    // The place among the headers the last move pointed at; -1 off them.
+    let onHeaders = -1;
+    const move = (_: ComponentBase, ev: PointerEvent) => {
+      if (!dragging && Math.max(Math.abs(ev.clientX - startX), Math.abs(ev.clientY - startY)) < model.settings.get('dragThreshold')) return;
+      // Read first, then write.
+      const drop = this.dropAt(ev.clientX, ev.clientY);
+      const headerDrop = drop.index < 0 ? this.host.headerDropAt(field, ev.clientX, ev.clientY) : NO_DROP;
+      place = drop.index;
+      onHeaders = headerDrop.index;
       if (!dragging) {
-        if (Math.max(Math.abs(ev.clientX - startX), Math.abs(ev.clientY - startY)) < model.settings.get('dragThreshold')) return;
         dragging = true;
-        chip.toggleAttribute('data-dragging', true);
+        // The ghost copies the chip's size before anything is written for the drag.
         this.host.ghost.show(chip, ev.clientX, ev.clientY, 'chip');
+        mark(chip, 'data-dragging', true);
       }
-      place = this.dropIndexAt(ev.clientX, ev.clientY);
-      this.showDrop(place);
-      header = place < 0 && this.host.showHeaderDrop(field, ev.clientX, ev.clientY);
-      this.host.ghost.move(ev.clientX, ev.clientY, place >= 0 ? 'move' : header ? 'ungroup' : 'none');
+      this.showDropAt(drop);
+      this.host.showHeaderDrop(headerDrop);
+      this.host.ghost.move(ev.clientX, ev.clientY, place >= 0 ? 'move' : onHeaders >= 0 ? 'ungroup' : 'none');
     };
-    const up = (ev: PointerEvent) => {
-      chip.removeEventListener('pointermove', move);
-      chip.removeEventListener('pointerup', up);
-      chip.removeEventListener('pointercancel', up);
-      chip.toggleAttribute('data-dragging', false);
+    const up = (_: ComponentBase, ev: PointerEvent) => {
+      void chip.motif.off('pointermove', move);
+      void chip.motif.off('pointerup', up);
+      void chip.motif.off('pointercancel', up);
+      // The drop lands where the last move pointed: a chip dropped on the headers goes, and focus leaves it first,
+      // before anything is written.
+      const ungroup = dragging && ev.type !== 'pointercancel' && place < 0 && onHeaders >= 0 && model.groupDropAllowed(field, 'chip', 'headers', onHeaders);
+      if (ungroup && isFocused(chip)) this.passFocus(field);
+      mark(chip, 'data-dragging', false);
       this.host.ghost.hide();
-      this.showDrop(-1);
-      this.host.showHeaderDrop(field, Number.NaN, Number.NaN);
+      this.showDropAt(NO_DROP);
+      this.host.showHeaderDrop(NO_DROP);
       if (!dragging) return;
       this.suppressClick = true;
       setTimeout(() => (this.suppressClick = false));
@@ -247,10 +269,10 @@ export class GroupPanel<T> {
         const from = model.groups.indexOf(field);
         const to = place > from ? place - 1 : place;
         if (model.groupDropAllowed(field, 'chip', 'panel', to)) model.groupBy(field, to, true);
-      } else if (header) this.host.dropOnHeaders(field, ev.clientX);
+      } else if (ungroup) this.host.dropOnHeaders(field, onHeaders);
     };
-    chip.addEventListener('pointermove', move);
-    chip.addEventListener('pointerup', up);
-    chip.addEventListener('pointercancel', up);
+    void chip.motif.on('pointermove', move);
+    void chip.motif.on('pointerup', up);
+    void chip.motif.on('pointercancel', up);
   }
 }

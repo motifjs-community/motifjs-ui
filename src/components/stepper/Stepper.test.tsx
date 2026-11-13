@@ -38,8 +38,8 @@ describe('Stepper', () => {
         const [a, b, c] = faces(jsx);
         expect([a, b, c].map(f => f.dataset.status)).toEqual(['done', 'current', 'pending']);
         expect(b.getAttribute('aria-current')).toBe('step');
-        expect(a.querySelector<HTMLElement>('.mx-stepper__mark')!.hidden).toBe(false);
-        expect(a.querySelector<HTMLElement>('.mx-stepper__number')!.hidden).toBe(true);
+        expect(a.querySelector('.mx-stepper__mark')).not.toBe(null);
+        expect(a.querySelector('.mx-stepper__number')).toBe(null);
         expect(c.querySelector('.mx-stepper__number')!.textContent).toBe('3');
         expect(b.querySelector('.mx-stepper__description')!.textContent).toBe('Where to send it');
         expect(c.querySelector('.mx-stepper__note')!.textContent).toBe(enStrings.stepOptional);
@@ -71,6 +71,7 @@ describe('Stepper', () => {
         await settle();
         expect(s.step).toBe(0);
         st.linear = false;
+        await settle();
         expect(faces(st)[3].getAttribute('aria-disabled')).toBe(null);
     });
 
@@ -115,6 +116,7 @@ describe('Stepper', () => {
         expect(document.activeElement).toBe(one);
         key(one, 'End');
         expect(document.activeElement).toBe(three);
+        await settle();
         expect([one, two, three].map(f => f.tabIndex)).toEqual([-1, -1, 0]);
     });
 
@@ -129,9 +131,43 @@ describe('Stepper', () => {
         await settle();
         expect(faces(stepper)[1].querySelector('.mx-stepper__label')!.textContent).toBe('Zwei');
         expect(faces(stepper)[1].dataset.status).toBe('error');
-        expect(faces(stepper)[1].querySelector<HTMLElement>('.mx-stepper__mark')!.hidden).toBe(false);
+        expect(faces(stepper)[1].querySelector('.mx-stepper__mark')).not.toBe(null);
+        const items = Array.from(stepper.element.querySelectorAll('.mx-stepper__item'));
         stepper.clickable = true;
+        await settle();
         expect(faces(stepper)[0].tagName).toBe('BUTTON');
+        // The steps stay; only their faces change kind.
+        expect(Array.from(stepper.element.querySelectorAll('.mx-stepper__item'))).toEqual(items);
+    });
+
+    it('keeps its steps when the value or an item changes, and writes only the step that changed', async () => {
+        const s = reactive({ second: 'Two', items: ['One', 'Two', 'Three'] as (string | { text: () => string })[] });
+        s.items[1] = { text: () => s.second };
+        const stepper = new Stepper({ items: () => s.items, value: 0 });
+        page(stepper);
+        await settle();
+        const items = () => Array.from(stepper.element.querySelectorAll<HTMLElement>('.mx-stepper__item'));
+        const before = items();
+        const labels = before.map(li => li.querySelector('.mx-stepper__label')!);
+        stepper.value = 1;
+        await settle();
+        expect(items()).toEqual(before);
+        expect(before[1].dataset.status).toBe('current');
+        const seen: Node[] = [];
+        const watcher = new MutationObserver(records => seen.push(...records.map(r => r.target)));
+        watcher.observe(stepper.element, { subtree: true, childList: true, characterData: true, attributes: true });
+        s.second = 'Zwei';
+        await settle();
+        watcher.disconnect();
+        expect(labels[1].textContent).toBe('Zwei');
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen.every(node => before[1].contains(node))).toBe(true);
+        s.items = [...s.items, 'Four'];
+        await settle();
+        const after = items();
+        expect(after.slice(0, 3)).toEqual(before);
+        expect(after[3].querySelector('.mx-stepper__label')!.textContent).toBe('Four');
+        expect(after[2].querySelector('.mx-stepper__line')).not.toBe(null);
     });
 
     it('goes forward and back programmatically, over disabled steps, and tells the change', async () => {

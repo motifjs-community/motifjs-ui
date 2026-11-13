@@ -1,5 +1,5 @@
 import { data } from '@motifx-community/data';
-import { reactive } from '@motifx/core';
+import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
@@ -423,7 +423,7 @@ describe('toolbar', () => {
     grid.settings.searchPanel = true;
     await settle();
     expect(barItems(grid)).toEqual(['Refresh', 'Export', '|', 'Search in the grid']);
-    grid.toolbar.items = [{ text: 'Only', icon: () => document.createElement('i'), showText: 'inMenu' }];
+    grid.toolbar.items = [{ text: 'Only', icon: () => new Component('i'), showText: 'inMenu' }];
     await settle();
     expect(barItems(grid)).toEqual(['|', 'Only']);
     grid.toolbar.visible = false;
@@ -436,7 +436,14 @@ describe('toolbar', () => {
     const grid = await make({
       toolbar: {
         items: [
-          { name: 'pick', content: () => Object.assign(document.createElement('select'), { className: 'my-pick' }) },
+          {
+            name: 'pick',
+            content: () => {
+              const pick = new Component<HTMLSelectElement>('select');
+              pick.class.add('my-pick');
+              return pick;
+            },
+          },
           { text: 'Print', overflow: 'always', click: () => undefined },
         ],
       },
@@ -460,7 +467,8 @@ describe('toolbar', () => {
     expect(grid.element.querySelectorAll('.mx-data-grid__row[data-status="new"]').length).toBe(1);
     const open = vi.spyOn((grid as any).menu, 'openColumns');
     button('mx-data-grid__columns').click();
-    expect(open).toHaveBeenCalledWith(button('mx-data-grid__columns'));
+    expect(open).toHaveBeenCalledTimes(1);
+    expect((open.mock.calls[0][0] as any).element).toBe(button('mx-data-grid__columns'));
     await grid.dispose();
   });
 });

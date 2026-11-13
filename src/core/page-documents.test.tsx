@@ -1,4 +1,4 @@
-import { Component } from '@motifx/core';
+import { Component, type ComponentBase } from '@motifx/core';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
 import { TestButton } from '../../tests/controls';
@@ -8,14 +8,14 @@ import { ListBox } from '../components/listbox/ListBox';
 import { addTooltip } from '../components/tooltip/add-tooltip';
 import { Popup } from '../parts/popup/Popup';
 import { Control } from './control';
-import { watchDocument } from './document-watch';
-import { deepActiveElement } from './focus';
+import { deepActiveElement, standFor } from './focus';
 import { installFocusGuard } from './focus-guard';
 import { addShortcut } from './keyboard';
 import { mirrorPage } from './mirror-page';
 import { isElement, isHtmlElement, isNode } from './node-kind';
-import { connectDocument, disconnectDocument, pageDocuments } from './page-documents';
-import { ResizeWatch } from './resize-watch';
+import { connectDocument, disconnectDocument, noteWindowRoot, pageDocuments } from './page-documents';
+import { whenMeasured } from './measure';
+import { pageBody, placeOnPage } from './page-layer';
 import { windowStack } from './window-stack';
 
 // A same-origin <iframe> stands in for a window the app opened: a document of its own, with its
@@ -36,7 +36,7 @@ beforeAll(() => {
 
 let frames: HTMLIFrameElement[] = [];
 let stops: (() => void)[] = [];
-let hosts: Component[] = [];
+let hosts: ComponentBase[] = [];
 
 afterEach(async () => {
   for (const stop of stops.splice(0)) stop();
@@ -70,6 +70,13 @@ function press(target: Element, key: string, init: KeyboardEventInit = {}): bool
   const e = new view.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
   target.dispatchEvent(e);
   return e.defaultPrevented;
+}
+
+/** Places a component in another window's body, as the kit places what it shows in a window the page opened. */
+function placeIn(doc: Document, component: ComponentBase): void {
+  placeOnPage(doc, component);
+  stops.push(noteWindowRoot(pageBody(doc), doc.defaultView!));
+  hosts.push(component);
 }
 
 function button(doc: Document, text = 'Go'): HTMLButtonElement {
@@ -113,8 +120,7 @@ describe('kit: other documents', () => {
     expect(run).toHaveBeenCalledTimes(1);
     // An access key in that document.
     const save = new TestButton({ text: '&Save' });
-    save.build();
-    doc.body.append(save.element);
+    placeIn(doc, save);
     const click = vi.fn();
     save.element.addEventListener('click', click);
     press(b, 's', { altKey: true });
@@ -128,17 +134,17 @@ describe('kit: other documents', () => {
   it('a shortcut scoped to a component holds for its parts moved into another window', () => {
     class Panel extends Control<HTMLDivElement> {}
     const outer = new Panel();
-    const inner = new Panel();
     hosts.push(mountHost(outer));
-    outer.controls.add(inner);
     const run = vi.fn(() => true);
     stops.push(addShortcut('F2', run, { scope: outer }));
     const doc = other();
-    doc.body.append(inner.element);
-    const b = doc.createElement('button');
-    inner.element.append(b);
-    b.focus();
-    press(b, 'F2');
+    const b = <button />;
+    const inner = new Panel({ childs: [b] });
+    placeIn(doc, inner);
+    stops.push(standFor(inner, outer));
+    const el = b.element as HTMLButtonElement;
+    el.focus();
+    press(el, 'F2');
     expect(run).toHaveBeenCalledTimes(1);
   });
 
@@ -173,8 +179,10 @@ describe('kit: other documents', () => {
 
   it('a tooltip shows for a target in another window, in that window', async () => {
     const doc = other();
-    const target = button(doc, 'Help');
-    stops.push(addTooltip(target, { text: 'Opens the guide', delay: 0 }));
+    const part = <button>Help</button>;
+    placeIn(doc, part);
+    const target = part.element as HTMLButtonElement;
+    stops.push(addTooltip(part, { text: 'Opens the guide', delay: 0 }));
     const e = new doc.defaultView!.MouseEvent('pointerover', { bubbles: true });
     Object.defineProperty(e, 'pointerType', { value: 'mouse' });
     target.dispatchEvent(e);
@@ -192,7 +200,8 @@ describe('kit: other documents', () => {
     const popup = new Popup();
     hosts.push(mountHost(popup));
     const doc = other();
-    const anchor = button(doc, 'Open');
+    const anchor = <button>Open</button>;
+    placeIn(doc, anchor);
     popup.open(anchor);
     expect(popup.element.ownerDocument).toBe(doc);
     expect(popup.isOpen).toBe(true);
@@ -203,9 +212,11 @@ describe('kit: other documents', () => {
 
   it('a context menu opened on an element in another window opens there; its keys work there', async () => {
     const doc = other();
-    const target = button(doc, 'File');
+    const part = <button>File</button>;
+    placeIn(doc, part);
+    const target = part.element as HTMLButtonElement;
     const chosen = vi.fn();
-    const menu = new ContextMenu({ target, items: [{ text: 'Open' }, { text: 'Save', click: chosen }] });
+    const menu = new ContextMenu({ target: part, items: [{ text: 'Open' }, { text: 'Save', click: chosen }] });
     hosts.push(mountHost(menu));
     target.focus();
     target.dispatchEvent(new doc.defaultView!.MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX: 10, clientY: 10 }));
@@ -239,14 +250,14 @@ describe('kit: other documents', () => {
 
   it('each document stacks its own windows: one on top in each', () => {
     const doc = other();
-    const a = { element: document.createElement('div'), setActive: vi.fn() };
-    const b = { element: doc.createElement('div'), setActive: vi.fn() };
-    document.body.append(a.element);
-    doc.body.append(b.element);
+    const a = { part: new Component<HTMLDivElement>('div'), setActive: vi.fn() };
+    const b = { part: new Component<HTMLDivElement>('div'), setActive: vi.fn() };
+    hosts.push(mountHost(a.part));
+    placeIn(doc, b.part);
     windowStack.bringToFront(a);
     windowStack.bringToFront(b);
-    expect(windowStack.top(document)).toBe(a);
-    expect(windowStack.top(doc)).toBe(b);
+    expect(windowStack.top(window)).toBe(a);
+    expect(windowStack.top(doc.defaultView!)).toBe(b);
     expect(a.setActive).toHaveBeenLastCalledWith(true);
     expect(b.setActive).toHaveBeenLastCalledWith(true);
     windowStack.remove(a);
@@ -256,66 +267,21 @@ describe('kit: other documents', () => {
   it("a form shown from a component in another window opens there, on top of that window's stack", async () => {
     const doc = other();
     const host = new Component<HTMLDivElement>('div');
-    host.build();
-    doc.body.append(host.element);
-    hosts.push(host);
+    placeIn(doc, host);
     const form = new MxForm({ title: 'Rename' });
     const done = form.showDialog(host);
     await settle();
+    await whenMeasured(form);
     expect(form.element.ownerDocument).toBe(doc);
     expect(form.element.hasAttribute('open')).toBe(true);
     // A window of the page shown later does not take that window's top.
-    const page = { element: document.createElement('div'), setActive: () => {} };
-    document.body.append(page.element);
+    const page = { part: new Component<HTMLDivElement>('div'), setActive: () => {} };
+    hosts.push(mountHost(page.part));
     windowStack.bringToFront(page);
-    expect(windowStack.top(doc)?.element).toBe(form.element);
+    expect(windowStack.top(doc.defaultView!)?.part).toBe(form);
     windowStack.remove(page);
     form.close('cancel');
     expect(await done).toBe('cancel');
-  });
-
-  it('ResizeWatch moves a target to the observer of the window it is moved into', async () => {
-    const doc = other();
-    const watched: string[] = [];
-    const fake = (name: string) =>
-      class {
-        constructor(private readonly cb: () => void) {}
-        observe() {
-          watched.push(`${name} observe`);
-          this.cb();
-        }
-        unobserve() {
-          watched.push(`${name} unobserve`);
-        }
-        disconnect() {}
-      };
-    vi.stubGlobal('ResizeObserver', fake('page'));
-    (doc.defaultView as unknown as { ResizeObserver: unknown }).ResizeObserver = fake('frame');
-    let calls = 0;
-    const watch = new ResizeWatch(() => calls++);
-    const el = document.createElement('div');
-    document.body.append(el);
-    watch.observe(el);
-    expect(watched).toEqual(['page observe']);
-    doc.body.append(el);
-    await settle();
-    expect(watched).toEqual(['page observe', 'page unobserve', 'frame observe']);
-    expect(calls).toBe(2);
-    watch.disconnect();
-    vi.unstubAllGlobals();
-  });
-
-  it('watchDocument tells when an element moves into another window and back', async () => {
-    const doc = other();
-    const el = document.createElement('div');
-    document.body.append(el);
-    const seen: Document[] = [];
-    stops.push(watchDocument(el, (d) => seen.push(d)));
-    doc.body.append(el);
-    await settle();
-    document.body.append(el);
-    await settle();
-    expect(seen).toEqual([doc, document]);
   });
 
   it('mirrorPage copies the page\'s style sheets and root attributes, and follows them', async () => {

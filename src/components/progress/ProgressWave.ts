@@ -1,7 +1,19 @@
-import { ResizeWatch } from '../../core/resize-watch';
+import type { Component, ComponentBase } from '@motifx/core';
+import { removePart } from '../../core/draw-parts';
+import { everyFrame, mediaOf, onLayout, onMedia, rectOf, styleOf } from '../../core/measure';
+import { put } from '../../core/part-writes';
+import { svgComponent } from '../../parts/chart/svg-parts';
 import { linePath, ringPath } from './wave-geometry';
 
-const SVG = 'http://www.w3.org/2000/svg';
+const REDUCED = '(prefers-reduced-motion: reduce)';
+
+/** What a frame reads: the size of the drawing, the thickness of its line, and the bar's `--_fraction` now. */
+interface WaveRead {
+  width: number;
+  height: number;
+  thickness: number;
+  shown: number;
+}
 
 /** What the design language gives a wave: lengths in px, times in ms, the shares of the work as 0 to 1. */
 export interface WaveLook {
@@ -25,60 +37,48 @@ export interface WaveLook {
  * its swing, the value) and the bar is in sight, and keeps still under reduced motion.
  */
 export class ProgressWave {
-  private readonly path: SVGPathElement;
-  /** The line's own drawing; the arc's path goes into the circle. */
-  private readonly svg: SVGSVGElement | null = null;
-  private readonly sizes: ResizeWatch;
-  private readonly sight: IntersectionObserver | null = null;
-  private readonly calm: MediaQueryList | null;
+  private readonly path: Component<SVGPathElement>;
+  /** The line's own drawing; the arc's path goes into the circle (`holder`). */
+  private readonly svg: Component<SVGSVGElement> | null = null;
+  private readonly stopSize: () => void;
+  private readonly stopSight: () => void;
+  /** Reduced motion asked for in the bar's window. */
+  private calm: boolean;
+  private readonly stopCalm: () => void;
   private look: WaveLook;
   private target = 0;
   private swingFrom = 0;
   private swingTo = 0;
   private swingSince = 0;
   private phase = 0;
-  private frame = 0;
+  private stopFrames: (() => void) | null = null;
   private last = 0;
   private seen = true;
-  private width = 0;
-  private height = 0;
-  private thickness = 0;
 
   constructor(
-    private readonly host: HTMLElement,
-    holder: Element,
+    private readonly host: Component<HTMLElement>,
+    private readonly holder: ComponentBase,
     readonly shape: 'line' | 'circle',
     look: WaveLook,
   ) {
     this.look = look;
-    const view = host.ownerDocument.defaultView;
-    this.path = document.createElementNS(SVG, 'path');
+    // Parts of `holder` (the track, or the ring), as SVG parts are.
     if (shape === 'line') {
-      this.svg = document.createElementNS(SVG, 'svg');
-      this.svg.classList.add('mx-progress__wave');
-      this.svg.setAttribute('aria-hidden', 'true');
-      this.svg.append(this.path);
-      holder.append(this.svg);
+      const svg = svgComponent(holder, 'svg', 'mx-progress__wave');
+      svg.attr.add({ 'aria-hidden': 'true' });
+      this.svg = svg;
+      this.path = svgComponent(svg, 'path');
     } else {
-      this.path.classList.add('mx-progress__arc');
-      holder.append(this.path);
+      this.path = svgComponent(holder, 'path', 'mx-progress__arc');
     }
-    this.calm = view?.matchMedia?.('(prefers-reduced-motion: reduce)') ?? null;
-    this.sizes = new ResizeWatch(() => {
-      this.measure();
-      this.kick();
+    this.calm = mediaOf(host, REDUCED);
+    this.stopCalm = onMedia(host, REDUCED, (calm) => (this.calm = calm));
+    this.stopSize = onLayout(this.svg ?? holder, 'size', () => this.kick(), { owner: host });
+    this.stopSight = onLayout(host, 'sight', (seen) => {
+      this.seen = seen;
+      if (seen) this.kick();
+      else this.stop();
     });
-    this.sizes.observe(this.svg ?? holder);
-    const Sight = view?.IntersectionObserver;
-    if (typeof Sight === 'function') {
-      this.sight = new Sight((entries) => {
-        this.seen = entries[entries.length - 1].isIntersecting;
-        if (this.seen) this.kick();
-        else this.stop();
-      });
-      this.sight.observe(host);
-    }
-    this.measure();
   }
 
   /** The language's wave and the share of the work done now (0 to 1). */
@@ -91,49 +91,49 @@ export class ProgressWave {
       this.swingTo = swing;
       this.swingSince = performance.now();
     }
-    this.measure();
     this.kick();
-  }
-
-  /** Reads the size of the drawing and the thickness of its line again. */
-  measure(): void {
-    const box = (this.svg ?? (this.path.ownerSVGElement as SVGSVGElement | null))?.getBoundingClientRect();
-    this.width = box?.width ?? 0;
-    this.height = box?.height ?? 0;
-    this.thickness = parseFloat(getComputedStyle(this.path).strokeWidth) || 0;
   }
 
   dispose(): void {
     this.stop();
-    this.sizes.disconnect();
-    this.sight?.disconnect();
-    (this.svg ?? this.path).remove();
+    this.stopSize();
+    this.stopSight();
+    this.stopCalm();
+    removePart(this.svg ?? this.path);
   }
 
+  /** Draws at every frame of the bar's window until nothing moves. */
   private kick(): void {
-    if (this.frame || !this.seen) return;
-    const view = this.host.ownerDocument.defaultView;
-    if (view) this.frame = view.requestAnimationFrame(this.tick);
+    if (this.stopFrames || !this.seen) return;
+    this.stopFrames = everyFrame(this.host, this.readFrame, this.drawFrame);
   }
 
   private stop(): void {
-    if (this.frame) this.host.ownerDocument.defaultView?.cancelAnimationFrame(this.frame);
-    this.frame = 0;
+    this.stopFrames?.();
+    this.stopFrames = null;
     this.last = 0;
   }
 
-  private readonly tick = (now: number): void => {
-    this.frame = 0;
+  private readonly readFrame = (): WaveRead => {
+    const box = rectOf(this.svg ?? this.holder);
+    const stroke = styleOf(this.path, ['stroke-width'])['stroke-width'];
+    const fraction = styleOf(this.host, ['--_fraction'])['--_fraction'];
+    return { width: box.width, height: box.height, thickness: parseFloat(stroke) || 0, shown: parseFloat(fraction) || 0 };
+  };
+
+  private readonly drawFrame = (read: WaveRead): false | void => {
+    const now = performance.now();
     const spent = this.last ? Math.min(now - this.last, 100) : 0;
     this.last = now;
     const swing = this.swingAt(now);
     const look = this.look;
-    const travels = swing > 0 && look.speed > 0 && !this.calm?.matches;
+    const travels = swing > 0 && look.speed > 0 && !this.calm;
     if (travels) this.phase = (this.phase + ((look.backward ? -1 : 1) * spent) / look.speed + 1) % 1;
-    const shown = parseFloat(getComputedStyle(this.host).getPropertyValue('--_fraction')) || 0;
-    this.draw(shown, swing);
-    if (travels || swing !== this.swingTo || Math.abs(shown - this.target) > 1e-4) this.kick();
-    else this.last = 0;
+    this.draw(read, swing);
+    if (travels || swing !== this.swingTo || Math.abs(read.shown - this.target) > 1e-4) return;
+    this.stopFrames = null;
+    this.last = 0;
+    return false;
   };
 
   private swingAt(now: number): number {
@@ -143,17 +143,17 @@ export class ProgressWave {
     return this.swingFrom + (this.swingTo - this.swingFrom) * easing(Math.max(0, done));
   }
 
-  private draw(shown: number, amplitude: number): void {
+  private draw(read: WaveRead, amplitude: number): void {
     const swing = { amplitude, length: this.look.length, phase: this.phase };
-    const t = this.thickness;
+    const { shown, width, height, thickness: t } = read;
     let d: string;
     if (this.shape === 'line') {
-      d = linePath(shown * this.width, this.height, t, swing);
+      d = linePath(shown * width, height, t, swing);
     } else {
       // The ring's middle line: the drawing holds the circle and room for the wave all round.
-      const centre = this.width / 2;
+      const centre = width / 2;
       d = ringPath(centre, centre - this.look.amplitude - t / 2, t, shown, swing);
     }
-    if (this.path.getAttribute('d') !== d) this.path.setAttribute('d', d);
+    put(this.path, 'd', d);
   }
 }

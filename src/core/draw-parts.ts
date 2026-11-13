@@ -1,99 +1,69 @@
-import { Component, type ComponentBase } from '@motifx/core';
+import { Component, motifComponent, type ComponentBase } from '@motifx/core';
 import type { IconSource } from './icon-source';
-import { isNode } from './node-kind';
-
-// Each write below is created only when the value changed: an attribute, a style or a text written again with the same
-// value still has the browser work out the styles of what it touches again.
-
-/** A mark written as `"true"`, or taken away. */
-export function flag(el: HTMLElement, name: string, on: unknown): void {
-  if (on) {
-    if (el.getAttribute(name) !== 'true') el.setAttribute(name, 'true');
-  } else if (el.hasAttribute(name)) el.removeAttribute(name);
-}
-
-/** An attribute there with no value, or taken away. */
-export function mark(el: HTMLElement, name: string, on: unknown): void {
-  if (on) {
-    if (el.getAttribute(name) !== '') el.setAttribute(name, '');
-  } else if (el.hasAttribute(name)) el.removeAttribute(name);
-}
-
-/** An attribute written as it is, or taken away when there is none. */
-export function put(el: HTMLElement, name: string, value: string | null | undefined): void {
-  if (value === null || value === undefined || value === '') {
-    if (el.hasAttribute(name)) el.removeAttribute(name);
-  } else if (el.getAttribute(name) !== value) el.setAttribute(name, value);
-}
-
-/** A style property (a custom one too); `''` takes it away. */
-export function css(el: HTMLElement, name: string, value: string): void {
-  if (el.style.getPropertyValue(name) === value) return;
-  if (value === '') el.style.removeProperty(name);
-  else el.style.setProperty(name, value);
-}
-
-/** The text of a part that holds only text. */
-export function text(el: HTMLElement, value: string): void {
-  if (el.textContent !== value) el.textContent = value;
-}
-
-/** Shown or not: `hidden` for what reads it, and `display: none` as well, since a part's own rules give it a display. */
-export function shown(el: HTMLElement | null, on: boolean): void {
-  if (!el) return;
-  if (el.hidden === on) el.hidden = !on;
-  css(el, 'display', on ? '' : 'none');
-}
 
 /** A part drawn by hand: a MotifJS component of a tag and a class, added to `parent`. */
 export function part<E extends HTMLElement = HTMLElement>(parent: ComponentBase, tag: string, className: string): Component<E> {
-  const c = new Component<E>(tag);
-  if (className) c.element.className = className;
+  const c = loose<E>(tag, className);
   parent.controls.add(c);
   return c;
+}
+
+/** A text of `parent`, as a text node component: put before `before`, at the end without one. */
+export function textPart(parent: ComponentBase, value: string, before: ComponentBase | null = null): ComponentBase {
+  const c = motifComponent('text', (node: ComponentBase) => node.setText(value)) as ComponentBase;
+  const at = before ? parent.controls.items.indexOf(before) : -1;
+  if (at >= 0) parent.controls.insert(at, c);
+  else parent.controls.add(c);
+  return c;
+}
+
+/** A part of a tag and a class, not placed yet: added to a parent later (`controls.add` / `insert`). */
+export function loose<E extends HTMLElement = HTMLElement>(tag: string, className = ''): Component<E> {
+  const c = new Component<E>(tag);
+  if (className) c.class.add(className);
+  return c;
+}
+
+/** A part of `parent` put before `before` (at the end for `null`). */
+export function partBefore<E extends HTMLElement = HTMLElement>(parent: ComponentBase, before: ComponentBase | null, tag: string, className: string): Component<E> {
+  const c = loose<E>(tag, className);
+  const at = before ? parent.controls.items.indexOf(before) : -1;
+  if (at >= 0) parent.controls.insert(at, c);
+  else parent.controls.add(c);
+  return c;
+}
+
+/** Takes a part out of its parent and disposes it (with what it holds), at once. */
+export function removePart(c: ComponentBase | null | undefined): void {
+  if (!c || c.isDisposed) return;
+  if (c.parent) c.parent.controls.remove(c);
+  else void c.dispose();
+}
+
+/** Takes every part out of `parent` and disposes them. */
+export function clearParts(parent: ComponentBase): void {
+  for (const c of [...parent.controls.items]) removePart(c);
 }
 
 /** A glyph of the kit's set (`span.mx-glyph`, see `glyph`) as a part of `parent`. */
 export function glyphPart(parent: ComponentBase, name: string, className = ''): Component<HTMLSpanElement> {
   const c = part<HTMLSpanElement>(parent, 'span', className ? `mx-glyph ${className}` : 'mx-glyph');
-  c.element.dataset.icon = name;
-  c.element.setAttribute('aria-hidden', 'true');
+  c.attr.add({ 'data-icon': name, 'aria-hidden': 'true' });
   return c;
 }
 
 /**
- * An icon as a child of `parent`: an `<img>` for an address (`alt` empty unless given), an element of your own
- * taken in as a component, or the component itself. It goes with `parent`; dispose the one returned when the
- * icon changes.
+ * An icon as a child of `parent`: an `<img>` for an address (`alt` empty unless given), or the component itself.
+ * It goes with `parent`; dispose the one returned when the icon changes.
  */
 export function iconPart(parent: ComponentBase, source: IconSource, alt = ''): ComponentBase {
   if (typeof source === 'string') {
     const img = part<HTMLImageElement>(parent, 'img', '');
-    img.element.src = source;
-    img.element.alt = alt;
+    img.attr.add({ src: source, alt });
     return img;
   }
-  const c = isNode(source) ? new Component(source as HTMLElement) : source;
-  parent.controls.add(c);
-  return c;
-}
-
-const placeholders = new WeakMap<Element, Comment>();
-
-/**
- * In the page or not, in its place: removed, a placeholder keeps its place, and it comes back there. For a part
- * whose parent is not changed while it is out (what `x-display` does for JSX).
- */
-export function kept(el: HTMLElement, on: boolean): void {
-  const holder = placeholders.get(el);
-  if (on) {
-    if (holder?.parentNode) holder.replaceWith(el);
-    return;
-  }
-  if (!el.parentNode) return;
-  const mark = holder ?? document.createComment('');
-  placeholders.set(el, mark);
-  el.replaceWith(mark);
+  parent.controls.add(source);
+  return source;
 }
 
 const handed = new WeakMap<object, { value: unknown }>();

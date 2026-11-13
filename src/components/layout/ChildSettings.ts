@@ -4,9 +4,9 @@ import { follow } from '../../core/follow';
 /** What a container does with its children's settings. */
 interface ChildSettingsHandler {
   /** A child arrived or one of its settings changed. */
-  changed(child: ComponentBase, element: HTMLElement): void;
+  changed(child: ComponentBase): void;
   /** A child left (moved elsewhere or disposed): undo what `changed` wrote on it. */
-  left(child: ComponentBase, element: HTMLElement): void;
+  left(child: ComponentBase): void;
 }
 
 /**
@@ -58,7 +58,7 @@ export class ChildSettings {
   set(child: ComponentBase, name: string, value: Bind<unknown>): void {
     if (!this.tracked.has(child)) return;
     this.bind(child, name, value);
-    this.handler.changed(child, child.element as HTMLElement);
+    this.handler.changed(child);
   }
 
   private add(child: ComponentBase): void {
@@ -69,7 +69,7 @@ export class ChildSettings {
     for (const name of this.names) if (props[name] !== undefined) this.bind(child, name, props[name] as Bind<unknown>);
     this.reading = false;
     void child.motif.on('x:disposing', () => this.leave(child));
-    this.handler.changed(child, child.element);
+    this.handler.changed(child);
   }
 
   private leave(child: ComponentBase): void {
@@ -79,7 +79,7 @@ export class ChildSettings {
     if (stops) for (const stop of stops.values()) this.stop(stop);
     this.stops.delete(child);
     this.values.delete(child);
-    if (!this.owner.isDisposed) this.handler.left(child, child.element as HTMLElement);
+    if (!this.owner.isDisposed) this.handler.left(child);
   }
 
   private bind(child: ComponentBase, name: string, value: Bind<unknown>): void {
@@ -98,7 +98,7 @@ export class ChildSettings {
     // One of the child's bindings: the child's or the page's `reState()` reads it again.
     const stop = follow(child, name, value as () => unknown, (next) => {
       values.set(name, next);
-      if (!first && !this.reading) this.handler.changed(child, child.element as HTMLElement);
+      if (!first && !this.reading) this.handler.changed(child);
     });
     first = false;
     stops.set(name, stop);

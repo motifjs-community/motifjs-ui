@@ -1,10 +1,12 @@
-import { Component } from "@motifx/core";
+import { Component, type ComponentBase } from "@motifx/core";
 import { part } from "../../core/draw-parts";
+import { measure, rectOf, whenMeasured, type Rect } from "../../core/measure";
+import { css, mark, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 
-/** Something a key hint presses: the element its letters stand on, the letters wanted, and what pressing it does. */
+/** Something a key hint presses: the part its letters stand on, the letters wanted, and what pressing it does. */
 export interface KeyHint {
-    element: HTMLElement;
+    part: ComponentBase;
     // The letters given for it; empty: they come from its text.
     keys: string;
     text: string;
@@ -26,6 +28,19 @@ interface Drawn {
     badge: Component<HTMLSpanElement>;
 }
 
+/** The hints waiting to be drawn, and the surface their letters go in. */
+interface Wanted {
+    hints: KeyHint[];
+    parts: ComponentBase[];
+    host: Component<HTMLElement>;
+}
+
+interface Spots {
+    wanted: Wanted;
+    root: Rect;
+    boxes: Rect[];
+}
+
 /**
  * The letters shown on the tabs and then on the commands of a menu while key hints are on: typing one presses what it
  * stands on. Letters given are kept; the others come from the text, one letter where it is the only one starting so,
@@ -37,11 +52,12 @@ export class RibbonKeyHints {
     typed = '';
     level: 'tabs' | 'commands' | 'inner' | null = null;
     inner: InnerHints | null = null;
+    wanted: Wanted | null = null;
 
-    constructor(owner: Component<HTMLElement>, readonly tabs: () => KeyHint[], readonly commands: () => KeyHint[], readonly ended: () => void) {
+    constructor(readonly owner: Component<HTMLElement>, readonly tabs: () => KeyHint[], readonly commands: () => KeyHint[], readonly ended: () => void) {
         this.layer = part<HTMLDivElement>(owner, 'div', 'mx-ribbon-menu__hints');
-        this.layer.element.setAttribute('aria-hidden', 'true');
-        this.layer.element.hidden = true;
+        this.layer.attr.add({ 'aria-hidden': 'true' });
+        mark(this.layer, 'hidden', true);
     }
 
     get active(): boolean {
@@ -59,7 +75,7 @@ export class RibbonKeyHints {
         this.level = null;
         this.clear();
         this.closeInner();
-        this.layer.element.hidden = true;
+        mark(this.layer, 'hidden', true);
         this.ended();
     }
 
@@ -90,11 +106,14 @@ export class RibbonKeyHints {
             const level = this.level;
             this.clear();
             exact.hint.press();
+            // Nothing else drew or ended the hints while waiting for what the press changed to be laid out.
+            const waiting = this.drawn;
+            const untouched = () => this.level !== null && this.drawn === waiting;
             const opens = exact.hint.opens;
             if (opens) {
-                // What it opened shows its own letters once it is open.
-                queueMicrotask(() => {
-                    if (!this.level) return;
+                // What it opened shows its own letters once it is open and laid out.
+                void whenMeasured(this.owner).then(() => {
+                    if (!untouched()) return;
                     this.inner = opens();
                     this.level = 'inner';
                     this.typed = '';
@@ -102,8 +121,8 @@ export class RibbonKeyHints {
                 });
                 return true;
             }
-            // Pressing a tab goes on to the hints of its commands; pressing a command ends them.
-            if (level === 'tabs' && this.level === 'tabs') queueMicrotask(() => this.level && this.start('commands'));
+            // Pressing a tab goes on to the hints of its commands once they are laid out; pressing a command ends them.
+            if (level === 'tabs' && this.level === 'tabs') void whenMeasured(this.owner).then(() => untouched() && this.start('commands'));
             else if (this.level === level) this.stop();
             return true;
         }
@@ -111,25 +130,41 @@ export class RibbonKeyHints {
         return true;
     }
 
+    // The letters are drawn with the next measuring round, where what they stand on is read.
     draw(hints: KeyHint[], host: Component<HTMLElement> = this.layer): void {
         this.clear();
-        const layer = this.layer.element;
-        layer.hidden = host !== this.layer;
-        // Over the menu, the letters are placed in its layer; in a popup (the page's top layer), in the popup itself.
-        const root = host === this.layer ? (layer.offsetParent?.getBoundingClientRect() ?? layer.getBoundingClientRect()) : host.element.getBoundingClientRect();
-        const keys = lettersFor(hints);
-        hints.forEach((hint, i) => {
-            const box = hint.element.getBoundingClientRect();
+        mark(this.layer, 'hidden', host !== this.layer);
+        const parts = hints.map(hint => hint.part);
+        this.wanted = { hints, parts, host };
+        measure(this.owner, this.readSpots, this.drawBadges);
+    }
+
+    // Over the menu, the letters are placed in its layer, which covers the menu; in a popup (the page's top layer), in the
+    // popup itself.
+    readonly readSpots = (): Spots | null => {
+        const wanted = this.wanted;
+        if (!wanted) return null;
+        const root = rectOf(wanted.host === this.layer ? this.owner : wanted.host);
+        return { wanted, root, boxes: wanted.parts.map(rectOf) };
+    };
+
+    readonly drawBadges = (spots: Spots | null): void => {
+        if (!spots || spots.wanted !== this.wanted) return;
+        const { wanted, root, boxes } = spots;
+        this.wanted = null;
+        const keys = lettersFor(wanted.hints);
+        wanted.hints.forEach((hint, i) => {
+            const box = boxes[i];
             if (!box.width && !box.height) return;
-            const badge = part<HTMLSpanElement>(host, 'span', 'mx-ribbon-menu__hint');
-            badge.element.textContent = keys[i];
+            const badge = part<HTMLSpanElement>(wanted.host, 'span', 'mx-ribbon-menu__hint');
+            text(badge, keys[i]);
             // A wide command (an icon and its text) has its letters under the icon; anything else under its middle.
             const x = this.level !== 'tabs' && box.width > box.height * 2 ? box.left + box.height / 2 : box.left + box.width / 2;
-            badge.element.style.left = `${x - root.left}px`;
-            badge.element.style.top = `${box.bottom - root.top}px`;
+            css(badge, 'left', `${x - root.left}px`);
+            css(badge, 'top', `${box.bottom - root.top}px`);
             this.drawn.push({ hint, keys: keys[i], badge });
         });
-    }
+    };
 
     closeInner(): void {
         const inner = this.inner;
@@ -139,12 +174,13 @@ export class RibbonKeyHints {
 
     filter(typed: string): void {
         this.typed = typed;
-        for (const d of this.drawn) d.badge.element.hidden = !d.keys.startsWith(typed);
+        for (const d of this.drawn) mark(d.badge, 'hidden', !d.keys.startsWith(typed));
     }
 
     clear(): void {
         for (const d of this.drawn) void d.badge.dispose();
         this.drawn = [];
+        this.wanted = null;
         this.typed = '';
     }
 }

@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { Sortable } from './Sortable';
 
@@ -24,12 +25,14 @@ async function settle() {
     for (let i = 0; i < 4; i++) await tick();
 }
 
-const texts = <T,>(s: Sortable<T>) => s.elements.map(el => el.textContent);
+// The items' elements, read from the sortable's parts.
+const elements = <T,>(s: Sortable<T>) => s.itemParts().map(item => item.element as HTMLElement);
+const texts = <T,>(s: Sortable<T>) => elements(s).map(el => el.textContent);
 const key = (el: Element, key: string, init: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
 
 /** Lays the items out one under the other, 20 px each, so the places can be told apart. */
 function layOut(s: Sortable<unknown>) {
-    s.elements.forEach((el, i) => vi.spyOn(el, 'getBoundingClientRect').mockImplementation(() => ({ top: i * 20, bottom: i * 20 + 20, left: 0, right: 100, width: 100, height: 20, x: 0, y: i * 20, toJSON: () => ({}) }) as DOMRect));
+    elements(s).forEach((el, i) => vi.spyOn(el, 'getBoundingClientRect').mockImplementation(() => ({ top: i * 20, bottom: i * 20 + 20, left: 0, right: 100, width: 100, height: 20, x: 0, y: i * 20, toJSON: () => ({}) }) as DOMRect));
     vi.spyOn(s.element, 'getBoundingClientRect').mockImplementation(() => ({ top: 0, bottom: 100, left: 0, right: 100, width: 100, height: 100, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect);
 }
 
@@ -50,9 +53,9 @@ describe('Sortable', () => {
         await settle();
         expect(s.element.getAttribute('aria-label')).toBe('Steps');
         expect(texts(s)).toEqual(['One', 'Two', 'Three']);
-        expect(s.elements.every(el => el.classList.contains('mx-sortable__item'))).toBe(true);
-        expect(s.elements.map(el => el.tabIndex)).toEqual([0, -1, -1]);
-        const one = s.elements[0];
+        expect(elements(s).every(el => el.classList.contains('mx-sortable__item'))).toBe(true);
+        expect(elements(s).map(el => el.tabIndex)).toEqual([0, -1, -1]);
+        const one = elements(s)[0];
         one.focus();
         key(one, 'ArrowDown', { ctrlKey: true });
         expect(texts(s)).toEqual(['Two', 'One', 'Three']);
@@ -78,8 +81,14 @@ describe('Sortable', () => {
                 items={() => state.list}
                 itemTemplate={item => {
                     made.push(item);
+                    // The handle is a component of the item: the sortable finds it in the component tree.
                     const row = new Component<HTMLDivElement>('div');
-                    row.element.innerHTML = `<span class="grip"></span><b>${item}</b>`;
+                    const grip = new Component<HTMLSpanElement>('span');
+                    grip.class.add('grip');
+                    const name = new Component<HTMLElement>('b');
+                    name.element.textContent = item;
+                    row.controls.add(grip);
+                    row.controls.add(name);
                     return row;
                 }}
                 handle=".grip"
@@ -93,7 +102,7 @@ describe('Sortable', () => {
         await settle();
         expect(texts(s)).toEqual(['a', 'b', 'c']);
         expect(made).toEqual(['a', 'b', 'c']);
-        const grips = s.elements.map(el => el.querySelector<HTMLElement>('.grip')!);
+        const grips = elements(s).map(el => el.querySelector<HTMLElement>('.grip')!);
         expect(grips.map(g => g.tabIndex)).toEqual([0, -1, -1]);
         expect(grips[0].getAttribute('role')).toBe('button');
         key(grips[0], 'ArrowDown', { ctrlKey: true });
@@ -123,20 +132,22 @@ describe('Sortable', () => {
         await settle();
         layOut(s);
         Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => s.element });
-        const one = s.elements[0];
+        const one = elements(s)[0];
         pointer(one, 'pointerdown', 10, 10);
         pointer(window, 'pointermove', 10, 12);
         expect(s.isDragging).toBe(false);
         pointer(window, 'pointermove', 10, 30);
+        measureNow(s);
         expect(s.isDragging).toBe(true);
         expect(one.hasAttribute('data-dragging')).toBe(true);
         pointer(window, 'pointermove', 10, 55);
+        measureNow(s);
         expect(s.line.element.hidden).toBe(false);
         pointer(window, 'pointerup', 10, 55);
         expect(s.isDragging).toBe(false);
         expect(texts(s)).toEqual(['Two', 'Three', 'One']);
         expect(told).toEqual(['start', 'change:1', 'change:2', 'end', 'reorder:0>2']);
-        pointer(s.elements[2], 'pointerdown', 10, 50);
+        pointer(elements(s)[2], 'pointerdown', 10, 50);
         pointer(window, 'pointermove', 10, 20);
         expect(s.isDragging).toBe(true);
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
@@ -154,11 +165,11 @@ describe('Sortable', () => {
         );
         await settle();
         expect(s.element.hasAttribute('data-sortable')).toBe(false);
-        expect(s.elements[0].hasAttribute('tabindex')).toBe(false);
-        key(s.elements[0], 'ArrowDown', { ctrlKey: true });
+        expect(elements(s)[0].hasAttribute('tabindex')).toBe(false);
+        key(elements(s)[0], 'ArrowDown', { ctrlKey: true });
         expect(texts(s)).toEqual(['One', 'Two']);
         s.allowReordering = true;
-        expect(s.elements[0].tabIndex).toBe(0);
+        expect(elements(s)[0].tabIndex).toBe(0);
         s.onDragStarting(e => (e.cancel = true));
         expect(s.move(0, 1)).toBe(false);
         expect(texts(s)).toEqual(['One', 'Two']);

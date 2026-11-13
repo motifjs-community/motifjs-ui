@@ -1,13 +1,16 @@
-import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, glyphPart, mark, part, put, shown, text } from "../../core/draw-parts";
+import { glyphPart, part } from "../../core/draw-parts";
+import { boxOf, holderOf, measure, styleOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { followPointer } from "../../parts/window/follow-pointer";
 import { resizeBox } from "../../parts/window/resize-box";
 import { resizeFrame } from "../../parts/window/resize-frame";
 import type { WindowBox } from "../../parts/window/window-box";
 import type { ResizeEventArgs } from "./resize-event-args";
+import type { ResizeStart } from "./resize-start";
 import type { ResizableProps, ResizeEdge, ResizeHandles, ResizeSize } from "./resizable-props";
 
 const OWN = ['handles', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'area', 'keepAspectRatio', 'step', 'width', 'height', 'size'] as const;
@@ -37,41 +40,47 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
     starting = new Emitter<ResizeEventArgs>();
     resizing = new Emitter<ResizeEventArgs>();
     resized = new Emitter<ResizeEventArgs>();
-    frame: HTMLDivElement;
+    frame: Component<HTMLDivElement>;
+    /** The grip in the end corner, which is the Tab stop for keyboard resizing. */
     grip: Component<HTMLDivElement>;
     live: Component<HTMLSpanElement>;
+    /** The handle of each edge and corner. */
+    private readonly handleParts: ReadonlyMap<ResizeEdge, Component<HTMLDivElement>>;
+    /** The edge and the event of the resize that ended, told with the size once it is laid out. */
+    private ended: { edge: ResizeEdge; event?: Event } | null = null;
 
     constructor(props?: IBaseProp<ResizableProps>) {
         super('div', props);
         const own = (this.props ?? {}) as ResizableProps;
-        const el = this.element;
-        el.classList.add('mx-resizable');
+        this.class.add('mx-resizable');
         if (this.childs?.length) this.controls.add(...this.childs);
-        this.frame = resizeFrame(el.ownerDocument, 'mx-resizable__frame', 'mx-resizable__handle');
-        el.append(this.frame);
+        const { frame, handles } = resizeFrame('mx-resizable__frame', 'mx-resizable__handle');
+        this.controls.add(frame);
+        this.frame = frame;
+        this.handleParts = handles;
         this.grip = part<HTMLDivElement>(this, 'div', 'mx-resizable__grip');
-        this.grip.element.setAttribute('role', 'button');
-        this.grip.element.tabIndex = 0;
+        this.grip.attr.add({ role: 'button' });
+        put(this.grip, 'tabindex', '0');
         glyphPart(this.grip, 'grip', 'mx-resizable__grip-glyph');
         this.live = part<HTMLSpanElement>(this, 'span', 'mx-sr-only');
-        this.live.element.setAttribute('aria-live', 'polite');
+        this.live.attr.add({ 'aria-live': 'polite' });
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onResizeStarting) this.onResizeStarting(own.onResizeStarting);
         if (own.onResizing) this.onResizing(own.onResizing);
         if (own.onResized) this.onResized(own.onResized);
 
         this.observeProperty('handles', () => this.drawHandles());
-        this.observeProperty<number | string | null>('width', w => css(el, 'inline-size', this.length(w)));
-        this.observeProperty<number | string | null>('height', h => css(el, 'block-size', this.length(h)));
+        this.observeProperty<number | string | null>('width', w => css(this, 'inline-size', this.length(w)));
+        this.observeProperty<number | string | null>('height', h => css(this, 'block-size', this.length(h)));
         this.observeProperty<ResizeSize | null>('size', size => {
             if (!size) return;
-            css(el, 'inline-size', `${size.width}px`);
-            css(el, 'block-size', `${size.height}px`);
+            css(this, 'inline-size', `${size.width}px`);
+            css(this, 'block-size', `${size.height}px`);
         });
-        onLanguage(this, () => put(this.grip.element, 'aria-label', uiLocale.strings.resize));
-        this.frame.addEventListener('pointerdown', e => this.pointerDown(e, null));
-        this.grip.element.addEventListener('pointerdown', e => this.pointerDown(e, 'bottom-end'));
-        this.grip.element.addEventListener('keydown', e => this.keyDown(e));
+        onLanguage(this, () => put(this.grip, 'aria-label', uiLocale.strings.resize));
+        for (const [edge, handle] of this.handleParts) handle.motif.on('pointerdown', (_, e) => this.pointerDown(e, edge, handle));
+        this.grip.motif.on('pointerdown', (_, e) => this.pointerDown(e, 'bottom-end', null));
+        this.grip.motif.on('keydown', (_, e) => this.keyDown(e));
         this.motif.setDisposable(() => {
             for (const emitter of [this.starting, this.resizing, this.resized]) emitter.dispose();
         });
@@ -110,10 +119,10 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
     set maxHeight(value: Bind<number | null>) {
         this.assignProperty('maxHeight', value);
     }
-    get area(): 'parent' | HTMLElement | null {
-        return this.getProperty<'parent' | HTMLElement | null | undefined>('area') ?? null;
+    get area(): 'parent' | ComponentBase | null {
+        return this.getProperty<'parent' | ComponentBase | null | undefined>('area') ?? null;
     }
-    set area(value: Bind<'parent' | HTMLElement | null>) {
+    set area(value: Bind<'parent' | ComponentBase | null>) {
         this.assignProperty('area', value);
     }
     get keepAspectRatio(): boolean {
@@ -171,12 +180,8 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
 
     /** The current size in pixels. */
     get currentSize(): ResizeSize {
-        return { width: this.element.offsetWidth, height: this.element.offsetHeight };
-    }
-
-    /** The grip in the end corner, which is the Tab stop for keyboard resizing. */
-    get gripElement(): HTMLDivElement {
-        return this.grip.element;
+        const box = boxOf(this);
+        return { width: box.offsetWidth, height: box.offsetHeight };
     }
 
     length(value: number | string | null | undefined): string {
@@ -192,45 +197,61 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
 
     drawHandles(): void {
         const allowed = this.allowed();
-        for (const handle of Array.from(this.frame.children) as HTMLElement[]) shown(handle, allowed.has(handle.dataset.edge as ResizeEdge));
-        shown(this.grip.element, allowed.size > 0);
+        for (const [edge, handle] of this.handleParts) shown(handle, allowed.has(edge));
+        shown(this.grip, allowed.size > 0);
     }
 
-    // Where the box is and how big, in pixels from its offset parent.
-    box(): WindowBox {
-        const el = this.element;
-        return { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
-    }
-
-    // The room the box may fill: its area's size, or no limit.
-    room(): { w: number; h: number } {
+    // The component the box stays inside: its parent, or the area given; none for no limit.
+    areaOf(): ComponentBase | null {
         const area = this.area;
-        const el = area === 'parent' ? (this.element.offsetParent as HTMLElement | null) : area;
-        if (!el) return { w: Number.POSITIVE_INFINITY, h: Number.POSITIVE_INFINITY };
-        return { w: el.clientWidth, h: el.clientHeight };
+        if (area === 'parent') return this.parent ? holderOf(this.parent) : null;
+        return area;
+    }
+
+    // What a resize starts from, read once before anything is written: where the box is and how big, the room its
+    // area leaves, and how it is laid out. A positioned box is where its `left` and `top` put it; one in the flow is
+    // measured from its area, else from its parent.
+    readStart(): ResizeStart {
+        const own = boxOf(this);
+        const area = this.areaOf();
+        const style = styleOf(this, ['position', 'left', 'top']);
+        const positioned = style.position === 'absolute' || style.position === 'fixed';
+        let x = 0;
+        let y = 0;
+        const from = area ?? (this.parent ? holderOf(this.parent) : null);
+        if (positioned) {
+            x = parseFloat(style.left) || 0;
+            y = parseFloat(style.top) || 0;
+        } else if (from) {
+            const around = boxOf(from);
+            x = own.left - around.left - around.clientLeft + (around.rtl ? -around.scrollStart : around.scrollStart);
+            y = own.top - around.top - around.clientTop + around.scrollTop;
+        }
+        const room = area ? boxOf(area) : null;
+        return {
+            box: { x, y, w: own.offsetWidth, h: own.offsetHeight },
+            room: room ? { w: room.clientWidth, h: room.clientHeight } : { w: Number.POSITIVE_INFINITY, h: Number.POSITIVE_INFINITY },
+            positioned,
+            rtl: own.rtl,
+        };
     }
 
     limits(): Limits {
         return { minW: this.minWidth, minH: this.minHeight, maxW: this.maxWidth ?? Number.POSITIVE_INFINITY, maxH: this.maxHeight ?? Number.POSITIVE_INFINITY };
     }
 
-    get positioned(): boolean {
-        const position = getComputedStyle(this.element).position;
-        return position === 'absolute' || position === 'fixed';
-    }
-
     // The edge in physical terms: right to left, `start` is the right side.
-    physical(edge: ResizeEdge): ResizeEdge {
-        if (getComputedStyle(this.element).direction !== 'rtl') return edge;
+    physical(edge: ResizeEdge, rtl: boolean): ResizeEdge {
+        if (!rtl) return edge;
         return edge.replace('start', 'END').replace('end', 'start').replace('END', 'end') as ResizeEdge;
     }
 
     // The box the pointer asks for: within the limits and the room, and keeping its shape when told.
-    next(edge: ResizeEdge, start: WindowBox, dx: number, dy: number): WindowBox {
+    next(edge: ResizeEdge, from: ResizeStart, dx: number, dy: number): WindowBox {
         const { minW, minH, maxW, maxH } = this.limits();
-        const positioned = this.positioned;
-        const side = this.physical(edge);
-        const box = resizeBox(side, start, dx, dy, { w: minW, h: minH }, this.room());
+        const start = from.box;
+        const side = this.physical(edge, from.rtl);
+        const box = resizeBox(side, start, dx, dy, { w: minW, h: minH }, from.room);
         box.w = Math.min(box.w, maxW);
         box.h = Math.min(box.h, maxH);
         if (this.keepAspectRatio && start.h > 0 && start.w > 0) {
@@ -242,7 +263,7 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
             if (byWidth) box.w = box.h * ratio;
             else box.h = box.w / ratio;
         }
-        if (positioned) {
+        if (from.positioned) {
             if (side.includes('start')) box.x = start.x + start.w - box.w;
             if (side.includes('top')) box.y = start.y + start.h - box.h;
         } else {
@@ -254,13 +275,12 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
         return box;
     }
 
-    applyBox(box: WindowBox): void {
-        const el = this.element;
-        css(el, 'inline-size', `${box.w}px`);
-        css(el, 'block-size', `${box.h}px`);
-        if (this.positioned) {
-            css(el, 'left', `${Math.round(box.x)}px`);
-            css(el, 'top', `${Math.round(box.y)}px`);
+    applyBox(box: WindowBox, positioned: boolean): void {
+        css(this, 'inline-size', `${box.w}px`);
+        css(this, 'block-size', `${box.h}px`);
+        if (positioned) {
+            css(this, 'left', `${Math.round(box.x)}px`);
+            css(this, 'top', `${Math.round(box.y)}px`);
         }
     }
 
@@ -268,60 +288,67 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
         return { edge, width: box.w, height: box.h, byUser: true, cancel: false, source: this, event };
     }
 
-    pointerDown(e: PointerEvent, given: ResizeEdge | null): void {
-        const handle = given ? null : (e.target as HTMLElement).closest<HTMLElement>('.mx-resizable__handle');
-        const edge = given ?? (handle?.dataset.edge as ResizeEdge | undefined);
-        if (e.button !== 0 || !edge || !this.isEnabled || !this.allowed().has(edge)) return;
+    // A press on a handle, or on the grip (`handle` null).
+    pointerDown(e: PointerEvent, edge: ResizeEdge, handle: Component<HTMLDivElement> | null): void {
+        if (e.button !== 0 || !this.isEnabled || !this.allowed().has(edge)) return;
         e.preventDefault();
-        const start = this.box();
-        const args = this.args(edge, start, e);
+        const from = this.readStart();
+        const args = this.args(edge, from.box, e);
         this.starting.fire(args);
         if (args.cancel) return;
-        const on = handle ?? this.grip.element;
-        mark(this.element, 'data-resizing', true);
-        put(this.element, 'data-edge', edge);
+        const on = handle ?? this.grip;
+        mark(this, 'data-resizing', true);
+        put(this, 'data-edge', edge);
         if (handle) mark(handle, 'data-active', true);
-        let last = start;
         followPointer(on, e, (dx, dy) => {
-            last = this.next(edge, start, dx, dy);
-            this.applyBox(last);
-            this.resizing.fire(this.args(edge, last, e));
+            const box = this.next(edge, from, dx, dy);
+            this.applyBox(box, from.positioned);
+            this.resizing.fire(this.args(edge, box, e));
         }, () => {
-            mark(this.element, 'data-resizing', false);
-            put(this.element, 'data-edge', null);
+            mark(this, 'data-resizing', false);
+            put(this, 'data-edge', null);
             if (handle) mark(handle, 'data-active', false);
-            this.finish(edge, last, e);
+            this.finish(edge, e);
         });
     }
 
     // The arrow keys on the grip: Left and Right change the width (the other way round right to left), Up and Down the height.
     keyDown(e: KeyboardEvent): void {
         if (!this.isEnabled || e.altKey || e.ctrlKey || e.metaKey) return;
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
         const step = this.step;
         let dx = 0;
         let dy = 0;
-        if (e.key === 'ArrowRight') dx = rtl ? -step : step;
-        else if (e.key === 'ArrowLeft') dx = rtl ? step : -step;
+        if (e.key === 'ArrowRight') dx = step;
+        else if (e.key === 'ArrowLeft') dx = -step;
         else if (e.key === 'ArrowDown') dy = step;
         else if (e.key === 'ArrowUp') dy = -step;
         else return;
         e.preventDefault();
-        const start = this.box();
-        const args = this.args('bottom-end', start, e);
+        const from = this.readStart();
+        const args = this.args('bottom-end', from.box, e);
         this.starting.fire(args);
         if (args.cancel) return;
-        const box = this.next('bottom-end', start, rtl ? -dx : dx, dy);
-        this.applyBox(box);
+        // Right to left the end corner is on the left: a step to the right moves its edge in.
+        const box = this.next('bottom-end', from, dx, dy);
+        this.applyBox(box, from.positioned);
         this.resizing.fire(this.args('bottom-end', box, e));
-        this.finish('bottom-end', box, e);
+        this.finish('bottom-end', e);
     }
 
-    finish(edge: ResizeEdge, box: WindowBox, event?: Event): void {
-        const size = this.currentSize;
+    // The size is told once the box is laid out with it: the styles of the page may keep it from what was written.
+    finish(edge: ResizeEdge, event?: Event): void {
+        this.ended = { edge, event };
+        measure(this, this.readSize, this.tellSize);
+    }
+
+    private readonly readSize = (): ResizeSize => this.currentSize;
+
+    private readonly tellSize = (size: ResizeSize): void => {
+        const { edge, event } = this.ended ?? { edge: 'bottom-end' as ResizeEdge };
+        this.ended = null;
         this.resized.fire({ edge, width: size.width, height: size.height, byUser: true, cancel: false, source: this, event });
         // `x-model` takes the size back.
         this.bindings.writeModel(size);
-        text(this.live.element, uiLocale.text('sizeNow', { width: size.width, height: size.height }));
-    }
+        text(this.live, uiLocale.text('sizeNow', { width: size.width, height: size.height }));
+    };
 }

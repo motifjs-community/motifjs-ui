@@ -1,6 +1,6 @@
 import { read, type Bind, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { put } from "../../core/draw-parts";
+import { mark, put } from "../../core/part-writes";
 import { PanelContent } from "../tabs/PanelContent";
 import type { MultiView } from "./MultiView";
 import type { ViewProps } from "./view-props";
@@ -24,10 +24,9 @@ export class View extends Control<HTMLDivElement, ViewProps> {
     constructor(props?: IBaseProp<ViewProps>) {
         super('div', props);
         const own = (this.props ?? {}) as ViewProps;
-        this.element.classList.add('mx-multi-view__view');
-        this.element.setAttribute('role', 'group');
-        this.element.setAttribute('aria-hidden', 'true');
-        this.element.inert = true;
+        this.class.add('mx-multi-view__view');
+        this.attr.add({ role: 'group', 'aria-hidden': 'true' });
+        mark(this, 'inert', true);
         this.content = new PanelContent(this, this.childs ?? [], own.content);
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         this.observeProperty('title', () => this.owner?.viewChanged());
@@ -85,8 +84,8 @@ export class View extends Control<HTMLDivElement, ViewProps> {
 
     /** @internal In sight or not; the multi-view decides. */
     reveal(on: boolean, keepAlive: boolean): void {
-        put(this.element, 'aria-hidden', on ? null : 'true');
-        this.element.inert = !on;
+        put(this, 'aria-hidden', on ? null : 'true');
+        mark(this, 'inert', !on);
         if (on) this.content.build();
         else if (!keepAlive) this.content.release();
     }

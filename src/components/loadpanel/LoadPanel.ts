@@ -1,9 +1,12 @@
-import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { mark, part, shown, text } from "../../core/draw-parts";
-import { deepActiveElement, focusInitial, isFocusable } from "../../core/focus";
-import { isElement } from "../../core/node-kind";
+import { part } from "../../core/draw-parts";
+import { appRootOf, placeOnPage } from "../../core/page-layer";
+import { focusFirstIn, focusOn, holdsFocus, rememberFocus } from "../../core/focus";
+import type { FocusMark } from "../../core/focus-mark";
+import { isInPage } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { inertAround } from "../../parts/overlay/inert-around";
 import { Button } from "../button/Button";
@@ -32,9 +35,12 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
     cancelButton: Button;
     shownNow = false;
     timer: ReturnType<typeof setTimeout> | null = null;
-    host: HTMLElement | null = null;
+    // The target given; `null` covers the page.
+    targetPart: ComponentBase | null = null;
+    // The component covered while shown; `null` over the page.
+    host: ComponentBase | null = null;
     undo: (() => void) | null = null;
-    returnTo: HTMLElement | null = null;
+    returnTo: FocusMark | null = null;
     // The value is being given back: the observer must not show or hide again.
     telling = false;
     shownEmitter = new Emitter<void>();
@@ -44,19 +50,18 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
     constructor(props?: IBaseProp<LoadPanelProps>) {
         super('div', props);
         const own = (this.props ?? {}) as LoadPanelProps;
-        const el = this.element;
-        el.classList.add('mx-load-panel');
-        el.tabIndex = -1;
-        shown(el, false);
+        this.class.add('mx-load-panel');
+        put(this, 'tabindex', '-1');
+        shown(this, false);
         this.pane = part<HTMLDivElement>(this, 'div', 'mx-load-panel__pane');
-        this.pane.element.setAttribute('role', 'status');
+        this.pane.attr.add({ role: 'status' });
         this.spinner = new Spinner({ size: 'lg' });
-        this.spinner.element.classList.add('mx-load-panel__indicator');
-        this.spinner.element.setAttribute('aria-hidden', 'true');
+        this.spinner.class.add('mx-load-panel__indicator');
+        this.spinner.attr.add({ 'aria-hidden': 'true' });
         this.pane.controls.add(this.spinner);
         this.messagePart = part<HTMLDivElement>(this.pane, 'div', 'mx-load-panel__message');
         this.cancelButton = new Button({ onclick: () => this.cancel() });
-        this.cancelButton.element.classList.add('mx-load-panel__cancel');
+        this.cancelButton.class.add('mx-load-panel__cancel');
         this.pane.controls.add(this.cancelButton);
 
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
@@ -65,12 +70,13 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         if (own.onHidden) this.hiddenEmitter.event(own.onHidden);
         if (own.onCancel) this.cancelled.event(own.onCancel);
 
+        this.observeProperty<LoadPanelTarget | undefined>('target', target => this.takeTarget(target ?? null));
         this.observeProperty<string>('text', () => this.drawTexts());
         this.observeProperty<string>('cancelText', () => this.drawTexts());
-        this.observeProperty<boolean>('shade', on => mark(el, 'data-shade', on !== false));
-        this.observeProperty<boolean>('showPane', on => mark(el, 'data-pane', on !== false));
-        this.observeProperty<boolean>('showIndicator', on => shown(this.spinner.element, on !== false));
-        this.observeProperty<boolean>('cancelable', on => shown(this.cancelButton.element, !!on));
+        this.observeProperty<boolean>('shade', on => mark(this, 'data-shade', on !== false));
+        this.observeProperty<boolean>('showPane', on => mark(this, 'data-pane', on !== false));
+        this.observeProperty<boolean>('showIndicator', on => shown(this.spinner, on !== false));
+        this.observeProperty<boolean>('cancelable', on => shown(this.cancelButton, !!on));
         this.observeProperty<boolean>('value', value => {
             if (this.telling) {
                 return;
@@ -82,10 +88,11 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
             }
         });
         onLanguage(this, () => this.drawTexts());
-        el.addEventListener('click', e => {
-            if (e.target === el && this.peekProperty<boolean>('closeOnOutside')) this.hide();
+        // A press on the shade itself, not on the pane.
+        this.motif.on('click:self', () => {
+            if (this.peekProperty<boolean>('closeOnOutside')) this.hide();
         });
-        el.addEventListener('keydown', e => {
+        this.motif.on('keydown', (_, e) => {
             if (e.key === 'Escape' && this.peekProperty<boolean>('cancelable')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -210,19 +217,13 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         if (!this.shownNow) {
             return;
         }
-        const el = this.element;
-        const focusInside = el.contains(deepActiveElement(el));
+        const focusInside = holdsFocus(this);
         this.shownNow = false;
         this.undo?.();
         this.undo = null;
-        shown(el, false);
-        if (focusInside) {
-            const back = this.returnTo;
-            if (back?.isConnected && isFocusable(back)) {
-                back.focus({ preventScroll: true });
-            } else if (this.host) {
-                focusInitial(this.host);
-            }
+        shown(this, false);
+        if (focusInside && !this.returnTo?.restore({ preventScroll: true }) && this.host) {
+            focusFirstIn(this.host);
         }
         this.returnTo = null;
         this.host = null;
@@ -236,41 +237,55 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
     }
 
     mount(): void {
-        const target = this.peekProperty<LoadPanelTarget | undefined>('target') ?? null;
-        const host = target === null ? this.element.ownerDocument.body : isElement(target) ? (target as HTMLElement) : (target.element as HTMLElement);
-        if (!host?.isConnected) {
+        const target = this.targetPart;
+        // What it covers: the target, or the page.
+        if (target && !isInPage(target)) {
             this.tell(false);
             return;
         }
-        const el = this.element;
         if (!this.isBuilt) {
             this.build();
         }
-        mark(el, 'data-page', target === null);
-        if (el.parentElement !== host) {
-            host.append(el);
+        mark(this, 'data-page', !target);
+        // Over the page: the page's layer holds it; over a target: a child of the target's component.
+        if (!target) {
+            if (!isInPage(this)) placeOnPage(this, this);
+        } else if (this.parent !== target) {
+            target.controls.add(this);
         }
-        const active = deepActiveElement();
-        this.returnTo = active && (target === null || host.contains(active)) ? active : null;
-        const busy = host.getAttribute('aria-busy');
-        host.setAttribute('aria-busy', 'true');
-        if (target !== null) host.setAttribute('data-mx-covered', '');
-        const free = inertAround(el, host);
-        this.undo = () => {
-            free();
-            if (busy === null) host.removeAttribute('aria-busy');
-            else host.setAttribute('aria-busy', busy);
-            host.removeAttribute('data-mx-covered');
-        };
-        this.host = host;
+        const focus = rememberFocus();
+        this.returnTo = focus && (!target || focus.isIn(target)) ? focus : null;
+        // The components around the panel, up to its target (with none, the page).
+        const free = inertAround(this, target);
+        if (target) {
+            // Held over the target's own values, which come back when the hold ends.
+            const busy = target.attr.hold({ 'aria-busy': 'true', 'data-mx-covered': '' });
+            this.undo = () => {
+                free();
+                busy.dispose();
+            };
+        } else {
+            // Over the page: the app's root in its window is busy, held over its own value as a target's is.
+            const busy = appRootOf(this).attr.hold({ 'aria-busy': 'true' });
+            this.undo = () => {
+                free();
+                busy.dispose();
+            };
+        }
+        this.host = target;
         this.shownNow = true;
-        shown(el, true);
+        shown(this, true);
         // Focus that was under it waits on the pane (the Cancel button when there is one), never dropped.
         if (this.returnTo) {
             if (this.peekProperty<boolean>('cancelable')) this.cancelButton.focus();
-            else el.focus({ preventScroll: true });
+            else focusOn(this, { preventScroll: true });
         }
         this.shownEmitter.fire();
+    }
+
+    /** Keeps the target, the component it covers (`null` for the page). */
+    takeTarget(target: LoadPanelTarget): void {
+        this.targetPart = target;
     }
 
     tell(value: boolean): void {
@@ -287,7 +302,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
 
     drawTexts(): void {
         const strings = uiLocale.strings;
-        text(this.messagePart.element, this.peekProperty<string>('text') || strings.loading);
+        text(this.messagePart, this.peekProperty<string>('text') || strings.loading);
         const cancel = this.peekProperty<string>('cancelText') || strings.cancel;
         if (this.cancelButton.text !== cancel) this.cancelButton.text = cancel;
     }

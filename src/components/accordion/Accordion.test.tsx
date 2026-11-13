@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { Accordion } from './Accordion';
 import { AccordionItem } from './AccordionItem';
 
@@ -52,7 +53,7 @@ describe('Accordion', () => {
     expect(shipping.textContent).toBe('Shipping');
     expect(shipping.getAttribute('aria-keyshortcuts')).toBe('Alt+S');
     expect(open(a)).toEqual([false, true]);
-    const region = a.items[1].regionElement;
+    const region = a.items[1].regionPart.element;
     expect(payment.getAttribute('aria-controls')).toBe(region.id);
     expect(region.getAttribute('role')).toBe('region');
     expect(region.getAttribute('aria-labelledby')).toBe(payment.id);
@@ -210,12 +211,12 @@ describe('Accordion', () => {
     expect(a.value).toEqual(['two']);
     a.value = [0];
     expect(open(a)).toEqual([true, false]);
-    two.headerElement.focus();
+    two.headerPart.element.focus();
     a.remove(two);
     await settle();
     expect(two.isDisposed).toBe(true);
     expect(a.items).toEqual([one]);
-    expect(document.activeElement).toBe(one.headerElement);
+    expect(document.activeElement).toBe(one.headerPart.element);
     expect(a.element.dataset.variant).toBe('separated');
   });
 
@@ -248,6 +249,8 @@ describe('Accordion', () => {
     expect(built).toHaveBeenCalledTimes(1);
     headers(a)[1].click();
     headers(a)[1].click();
+    // The closed section's content goes once the layer has read that no closing animation runs.
+    await whenMeasured(a);
     headers(a)[1].click();
     expect(made).toBe(2);
     headers(a)[0].click();
@@ -326,12 +329,12 @@ describe('Accordion', () => {
     Object.assign(s, { level: 4, regions: false, variant: 'flush', size: 'lg', chevron: 'start', title: 'Uno', hint: 'Help', expanded: true });
     await settle();
     const item = a.items[0];
-    expect(item.headerElement.parentElement!.getAttribute('aria-level')).toBe('4');
-    expect(item.regionElement.hasAttribute('role')).toBe(false);
-    expect(item.regionElement.hasAttribute('aria-labelledby')).toBe(false);
+    expect(item.headerPart.element.parentElement!.getAttribute('aria-level')).toBe('4');
+    expect(item.regionPart.element.hasAttribute('role')).toBe(false);
+    expect(item.regionPart.element.hasAttribute('aria-labelledby')).toBe(false);
     expect({ ...a.element.dataset }).toMatchObject({ variant: 'flush', size: 'lg', chevron: 'start' });
-    expect(item.headerElement.textContent).toBe('Uno');
-    expect(item.headerElement.title).toBe('Help');
+    expect(item.headerPart.element.textContent).toBe('Uno');
+    expect(item.headerPart.element.title).toBe('Help');
     expect(item.expanded).toBe(true);
     s.visible = false;
     await settle();
@@ -342,9 +345,9 @@ describe('Accordion', () => {
     const a = new Accordion();
     for (let i = 0; i < 7; i++) a.add(new AccordionItem({ title: `Item ${i}` }));
     page(a);
-    expect(a.items[0].regionElement.hasAttribute('role')).toBe(false);
+    expect(a.items[0].regionPart.element.hasAttribute('role')).toBe(false);
     a.remove(a.items[6]);
-    expect(a.items[0].regionElement.getAttribute('role')).toBe('region');
+    expect(a.items[0].regionPart.element.getAttribute('role')).toBe('region');
   });
 
   it('disables everything inside with enabled', async () => {

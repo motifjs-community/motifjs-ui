@@ -1,5 +1,7 @@
-import { createSignal, untracked } from '@motifx/core';
+import { Component, createSignal, untracked } from '@motifx/core';
+import { isInPage, isRtl, measure, onLayout, pageOf, styleOf } from '../../core/measure';
 import { nextId } from '../../core/next-id';
+import { css, mark } from '../../core/part-writes';
 import { windowStack, type StackedWindow } from '../../core/window-stack';
 import { followPointer } from '../../parts/window/follow-pointer';
 import { resizeBox } from '../../parts/window/resize-box';
@@ -13,6 +15,7 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 import type { TabRect } from './tab-rect';
+import { dropPart, layoutPart } from './place-node';
 
 /**
  * A floating window of a `TabDocumentManager`, in the page. It holds groups as the document area
@@ -23,9 +26,10 @@ import type { TabRect } from './tab-rect';
  * settings (`scrollButtons`, `tabSize`, `tabMinWidth`, `singleTabTitle`, `barButtons`) take precedence.
  */
 export class TabWindow extends TabBarSettings {
-  readonly element: HTMLDivElement;
+  /** As a component of the layout. */
+  readonly part: Component<HTMLDivElement>;
   /** @internal Where its layout goes. */
-  readonly body: HTMLDivElement;
+  readonly bodyPart: Component<HTMLDivElement>;
   /** @internal The top of its layout. */
   root: LayoutItem | null = null;
   /** @internal Where "Dock" puts it back: a dock area, or a group among the documents (or in an area). */
@@ -35,33 +39,32 @@ export class TabWindow extends TabBarSettings {
   private readonly active = createSignal(false);
   private readonly entry: StackedWindow;
   private readonly stops: (() => void)[] = [];
+  private readonly readRoom = () => this.room();
+  private readonly keepInView = (room: { w: number; h: number }) => this.owner.keepWindowInView(this, room);
 
   constructor(
     private readonly owner: TabDocumentManager,
     rect: TabRect,
   ) {
     super();
-    const doc = owner.element.ownerDocument;
-    const el = (this.element = doc.createElement('div'));
-    el.className = 'mx-tabdocs__window';
-    el.id = nextId('tabdocs-window');
-    el.setAttribute('role', 'dialog');
-    this.body = doc.createElement('div');
-    this.body.className = 'mx-tabdocs__window-body';
-    const frame = resizeFrame(doc, 'mx-tabdocs__window-frame', 'mx-tabdocs__window-edge');
-    el.append(this.body, frame);
-    this.entry = { element: el, setActive: (on) => this.markActive(on) };
+    this.part = new Component<HTMLDivElement>('div');
+    this.part.class.add('mx-tabdocs__window');
+    this.part.attr.add({ id: nextId('tabdocs-window'), role: 'dialog' });
+    this.bodyPart = new Component<HTMLDivElement>('div');
+    this.bodyPart.class.add('mx-tabdocs__window-body');
+    // A press on a handle resizes it from that side or corner.
+    const { frame, handles } = resizeFrame('mx-tabdocs__window-frame', 'mx-tabdocs__window-edge');
+    for (const [edge, handle] of handles) handle.motif.on('pointerdown', (_, e) => untracked(() => this.resizeStart(handle, edge, e)));
+    this.part.controls.add(this.bodyPart, frame);
+    layoutPart(this.part);
+    layoutPart(this.bodyPart);
+    this.entry = { part: this.part, setActive: (on) => this.markActive(on) };
     // A click or focus anywhere in it brings it to the front.
     const front = () => untracked(() => this.bringToFront());
-    el.addEventListener('pointerdown', front, true);
-    el.addEventListener('focusin', front);
-    frame.addEventListener('pointerdown', (e) => untracked(() => this.resizeStart(e)));
-    const view = doc.defaultView;
-    if (view) {
-      const keep = () => untracked(() => owner.keepWindowInView(this));
-      view.addEventListener('resize', keep);
-      this.stops.push(() => view.removeEventListener('resize', keep));
-    }
+    this.part.motif.on('pointerdown:capture', front);
+    this.part.motif.on('focusin', front);
+    // The page window changes size: the window stays in view.
+    this.stops.push(onLayout(this.part, 'page', () => measure(this.part, this.readRoom, this.keepInView)));
     this.place(rect);
   }
 
@@ -131,79 +134,71 @@ export class TabWindow extends TabBarSettings {
   place(rect: TabRect): void {
     const r = { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(Math.max(0, rect.width)), height: Math.round(Math.max(0, rect.height)) };
     this.box.value = r;
-    const style = this.element.style;
-    style.setProperty('--_x', `${r.x}px`);
-    style.setProperty('--_y', `${r.y}px`);
-    style.setProperty('--_w', `${r.width}px`);
-    style.setProperty('--_h', `${r.height}px`);
+    css(this.part, '--_x', `${r.x}px`);
+    css(this.part, '--_y', `${r.y}px`);
+    css(this.part, '--_w', `${r.width}px`);
+    css(this.part, '--_h', `${r.height}px`);
   }
 
   /** @internal */
   markMaximized(on: boolean): void {
     this.maximized.value = on;
-    this.element.toggleAttribute('data-maximized', on);
+    mark(this.part, 'data-maximized', on);
   }
 
   /** @internal Shows it on top of the others. */
   bringToFront(): void {
-    if (!this.element.isConnected) return;
+    if (!isInPage(this.part)) return;
     windowStack.bringToFront(this.entry);
     this.owner.windowRaised();
   }
 
   /** @internal While it is moved by the pointer: drops under it are seen through it. */
   markMoving(on: boolean): void {
-    this.element.toggleAttribute('data-moving', on);
+    if (!this.part.isDisposed) mark(this.part, 'data-moving', on);
   }
 
   /** @internal The smallest size the window's style allows. */
   minSize(): { w: number; h: number } {
-    const view = this.element.ownerDocument.defaultView;
-    const css = view?.getComputedStyle(this.element);
-    return { w: parseFloat(css?.minInlineSize || css?.minWidth || '') || 0, h: parseFloat(css?.minBlockSize || css?.minHeight || '') || 0 };
+    const style = styleOf(this.part, ['min-inline-size', 'min-width', 'min-block-size', 'min-height']);
+    return { w: parseFloat(style['min-inline-size'] || style['min-width']) || 0, h: parseFloat(style['min-block-size'] || style['min-height']) || 0 };
   }
 
   /** @internal The room it moves in: the viewport. */
   room(): { w: number; h: number } {
-    const root = this.element.ownerDocument.documentElement;
-    const view = this.element.ownerDocument.defaultView;
-    return { w: root.clientWidth || view?.innerWidth || 0, h: root.clientHeight || view?.innerHeight || 0 };
+    const page = pageOf(this.part);
+    return { w: page.width, h: page.height };
   }
 
   /** @internal */
   dispose(): void {
     for (const stop of this.stops.splice(0)) stop();
     windowStack.remove(this.entry);
-    this.element.remove();
+    dropPart(this.part);
   }
 
   private markActive(on: boolean): void {
+    // The manager going away disposes its windows' parts first: the stack still tells the ones left.
+    if (this.part.isDisposed) return;
     this.active.value = on;
-    this.element.toggleAttribute('data-active', on);
+    mark(this.part, 'data-active', on);
     // Another window came to the front: the manager's list follows the stack.
     if (!on) this.owner.windowRaised();
   }
 
-  private get rtl(): boolean {
-    const view = this.element.ownerDocument.defaultView;
-    return !!view && view.getComputedStyle(this.element).direction === 'rtl';
-  }
-
-  /** A click on an edge or a corner: the window follows it until it is let go. */
-  private resizeStart(e: PointerEvent): void {
-    const handle = (e.target as Element).closest<HTMLElement>('.mx-tabdocs__window-edge');
+  /** A press on the handle of an edge or a corner: the window follows the pointer until it is let go. */
+  private resizeStart(handle: Component<HTMLDivElement>, edge: WindowEdge, e: PointerEvent): void {
     const owner = this.owner;
-    if (e.button !== 0 || !handle || this.isMaximized || !owner.isEnabled || !owner.windowChanging('resizeWindow', this, true)) return;
+    if (e.button !== 0 || this.isMaximized || !owner.isEnabled || !owner.windowChanging('resizeWindow', this, true)) return;
     e.preventDefault();
-    const edge = handle.dataset.edge as WindowEdge;
-    const rtl = this.rtl;
+    const rtl = isRtl(this.part);
     const room = this.room();
     const r = this.rect;
     // In the box `resizeBox` takes, x runs from the start edge.
     const start: WindowBox = { x: rtl ? room.w - r.x - r.width : r.x, y: r.y, w: r.width, h: r.height };
     const bounds = owner.keepFloatingInView ? room : { w: Infinity, h: Infinity };
     const min = this.minSize();
-    this.element.toggleAttribute('data-resizing', true);
+    mark(this.part, 'data-resizing', true);
     followPointer(
       handle,
       e,
@@ -212,7 +207,7 @@ export class TabWindow extends TabBarSettings {
         this.place({ x: rtl ? room.w - b.x - b.w : b.x, y: b.y, width: b.w, height: b.h });
       },
       () => {
-        this.element.removeAttribute('data-resizing');
+        mark(this.part, 'data-resizing', false);
         owner.windowChanged('resizeWindow', this, true);
       },
     );

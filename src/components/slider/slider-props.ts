@@ -33,7 +33,7 @@ export interface SliderProps extends FieldProps<SliderValue> {
   showValue?: Bind<SliderShowValue>;
   /** The format used by the tooltip and the tick labels. */
   format?: Bind<Intl.NumberFormatOptions | null>;
-  /** The default is the page's `lang`. */
+  /** The default is the kit's language (`uiLocale.locale`). */
   locale?: Bind<string>;
   /**
    * With `input` (the default), the value updates while the thumb moves. With `change`, it updates when the thumb is

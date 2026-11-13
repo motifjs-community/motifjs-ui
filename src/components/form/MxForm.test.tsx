@@ -1,6 +1,7 @@
 import { Component, effect, reactive } from '@motifx/core';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { Button } from '../button/Button';
@@ -40,6 +41,9 @@ function page(...children: Parameters<typeof mountHost>) {
 async function settle() {
   for (let i = 0; i < 5; i++) await tick();
   await new Promise((r) => setTimeout(r, 0));
+  // A form is shown, and closed where the browser fired no close event, in its window's next measuring round.
+  const inPage = hosts[hosts.length - 1];
+  if (inPage && !inPage.isDisposed) await whenMeasured(inPage);
   for (let i = 0; i < 5; i++) await tick();
 }
 
@@ -77,7 +81,7 @@ describe('MxForm', () => {
     expect(title.textContent).toBe('Settings');
     expect(form.element.getAttribute('aria-labelledby')).toBe(title.id);
     expect(form.isOpen && !form.isModal && form.isActive).toBe(true);
-    expect(windowStack.top()?.element).toBe(form.element);
+    expect(windowStack.top()?.part).toBe(form);
     expect(windowStack.top()?.modal).toBe(false);
     expect(log).toEqual(['load', 'shown']);
     expect(document.activeElement).toBe(content(form).querySelector('input'));
@@ -294,7 +298,8 @@ describe('MxForm', () => {
     modal.controls.add(cancel);
     modal.cancelButton = cancel;
     press('Escape', {}, modal.element);
-    expect(clicked).toHaveBeenCalledTimes(1);
+    // Core clicks the button after the key: wait for its click.
+    await vi.waitFor(() => expect(clicked).toHaveBeenCalledTimes(1));
     expect(await done).toBe('cancelled');
   });
 
@@ -313,13 +318,20 @@ describe('MxForm', () => {
     content(form).append(area);
     const input = box.element.querySelector('input')!;
     expect(press('Enter', {}, input)).toBe(true);
-    expect(accepted).toHaveBeenCalledTimes(1);
+    // Core clicks the button after the key: wait for its click, and let core run before counting none came.
+    await vi.waitFor(() => expect(accepted).toHaveBeenCalledTimes(1));
+    // Each key goes where focus is, as a user's would.
+    area.focus();
     press('Enter', {}, area);
+    other.element.focus();
     press('Enter', {}, other.element);
+    input.focus();
     press('Enter', { shiftKey: true }, input);
+    await settle();
     expect(accepted).toHaveBeenCalledTimes(1);
     ok.enabled = false;
     press('Enter', {}, input);
+    await settle();
     expect(accepted).toHaveBeenCalledTimes(1);
   });
 
@@ -379,8 +391,10 @@ describe('MxForm', () => {
     const second = new MxForm({ title: 'Second' });
     const done = second.showDialog(first);
     await settle();
-    expect(second.parent).toBe(first);
-    expect(windowStack.top()?.element).toBe(second.element);
+    // A child of the first form's content area, placed in it by core.
+    expect(second.parent?.element).toBe(first.contentPart.element);
+    expect(second.parent?.parent).toBe(first);
+    expect(windowStack.top()?.part).toBe(second);
     expect(first.isActive).toBe(false);
     expect(second.isActive).toBe(true);
     second.close('ok');
@@ -444,8 +458,8 @@ describe('MxForm', () => {
 
   it('title bar buttons: switches, maximize, minimize to the title bar or to a target', async () => {
     const host = page();
-    const target = document.createElement('div');
-    document.body.append(target);
+    const target = new Component<HTMLDivElement>('div');
+    page(target);
     const form = new MxForm({ title: 'Notes', showMinimize: true, showMaximize: true });
     form.show(host);
     await settle();
@@ -465,13 +479,13 @@ describe('MxForm', () => {
     form.minimizeTarget = target;
     form.minimize();
     expect(form.element.hasAttribute('data-docked')).toBe(true);
-    const chip = target.querySelector<HTMLButtonElement>('.mx-form-chip')!;
+    const chip = target.element.querySelector<HTMLButtonElement>('.mx-form-chip')!;
     expect(chip.textContent).toBe('Notes');
     expect(windowStack.size).toBe(0);
     chip.click();
     expect(form.windowState).toBe('normal');
-    expect(target.querySelector('.mx-form-chip')).toBeNull();
-    expect(windowStack.top()?.element).toBe(form.element);
+    expect(target.element.querySelector('.mx-form-chip')).toBeNull();
+    expect(windowStack.top()?.part).toBe(form);
 
     form.showMinimize = false;
     form.showClose = false;

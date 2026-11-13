@@ -43,7 +43,7 @@ const fields: FilterBuilderField[] = [
   { dataField: 'note', caption: 'Note', dataType: 'object' },
 ];
 
-const rows = (b: FilterBuilder) => Array.from(b.treeElement!.querySelectorAll<HTMLElement>(':scope > [role="row"]'));
+const rows = (b: FilterBuilder) => Array.from(b.treePart!.element.querySelectorAll<HTMLElement>(':scope > [role="row"]'));
 const face = (row: HTMLElement, part: string) => row.querySelector<HTMLButtonElement>(`[data-part="${part}"] .mx-button__face`)!;
 const rowText = (row: HTMLElement) =>
   Array.from(row.querySelectorAll<HTMLElement>('[data-part]:not([data-part="remove"]):not([data-part="add"]) .mx-button__face'))
@@ -85,7 +85,7 @@ describe('FilterBuilder', () => {
     const b = new FilterBuilder({ fields, value });
     page(b);
     await settle();
-    const tree = b.treeElement!;
+    const tree = b.treePart!.element;
     expect(tree.getAttribute('role')).toBe('treegrid');
     expect(tree.getAttribute('aria-label')).toBe('Filter');
     const r = rows(b);
@@ -162,7 +162,9 @@ describe('FilterBuilder', () => {
     expect(focusedPart()).toBe('field');
 
     choose(rows(b)[1], 'field', 'Amount');
+    await settle();
     choose(rows(b)[1], 'operation', 'Is greater than');
+    await settle();
     expect(rowText(rows(b)[1])).toBe('Amount Is greater than <enter a value>');
     face(rows(b)[1], 'value').click();
     expect(b.editingCondition).not.toBeNull();
@@ -180,11 +182,13 @@ describe('FilterBuilder', () => {
     await settle();
     expect(rows(b).map((r) => r.getAttribute('aria-level'))).toEqual(['1', '2', '2', '3']);
     choose(rows(b)[2], 'group', 'Or');
+    await settle();
     expect(rowText(rows(b)[2])).toBe('Or');
     face(rows(b)[3], 'remove').click();
     await settle();
     expect(rows(b)).toHaveLength(3);
     face(rows(b)[2], 'remove').click();
+    await settle();
     expect(rows(b)).toHaveLength(2);
     expect(b.value).toEqual(data.where('amount', '>', 250));
   });
@@ -208,6 +212,7 @@ describe('FilterBuilder', () => {
     const fieldItems = menuItems(rows(b)[1], 'field');
     expect(document.activeElement).toBe(fieldItems[0]);
     fieldItems[1].click();
+    await settle();
     expect(rowText(rows(b)[1])).toBe('Amount Equals <enter a value>');
     expect(focusedPart()).toBe('field');
     press('ArrowRight');
@@ -258,6 +263,7 @@ describe('FilterBuilder', () => {
     expect(rows(b)).toHaveLength(3);
     expect(focusedRow(b)).toBe(2);
     press('Delete');
+    await settle();
     expect(rows(b)).toHaveLength(2);
     expect(b.value).toEqual(data.where('amount', '=', 42));
     expect(tabbable()).toHaveLength(1);
@@ -313,49 +319,55 @@ describe('FilterBuilder', () => {
     expect(ops('state')).toEqual(['=', '<>', 'isblank', 'isnotblank']);
     expect(ops('note')).toEqual(['isblank', 'isnotblank']);
 
-    const editorOf = (dataField: string, operation: string) => {
+    const editorOf = async (dataField: string, operation: string) => {
       const c = b.addCondition(b.root, dataField)!;
       b.setOperation(c, operation);
       expect(b.openEditor(c)).toBe(true);
+      await settle();
       const made = [...b.element.querySelectorAll<HTMLElement>('.mx-filter-builder__editor > *')];
       b.closeEditor(false);
       b.removeItem(c);
+      await settle();
       return made;
     };
-    expect(editorOf('city', 'contains')).toHaveLength(1);
+    expect(await editorOf('city', 'contains')).toHaveLength(1);
     // "Between": two editors, from and to, named for the field.
-    const range = editorOf('amount', 'between');
+    const range = await editorOf('amount', 'between');
     expect(range).toHaveLength(2);
     expect(range.map((el) => el.querySelector('input')!.getAttribute('aria-label') ?? el.querySelector('label')?.textContent)).toEqual(['Amount, from', 'Amount, to']);
-    expect(editorOf('orderDate', 'between')).toHaveLength(2);
+    expect(await editorOf('orderDate', 'between')).toHaveLength(2);
     // No value: no value button, no editor.
     const blank = b.addCondition(b.root, 'note')!;
     expect(b.openEditor(blank)).toBe(false);
+    await settle();
     expect(rows(b)[1].querySelector('[data-part="value"]')).toBeNull();
     expect(rowText(rows(b)[1])).toBe('Note Is blank');
     b.removeItem(blank);
+    await settle();
 
     const prepared: unknown[] = [];
     b.onEditorPrepared((e) => void prepared.push(e.editor));
-    const open = (dataField: string, operation: string) => {
+    const open = async (dataField: string, operation: string) => {
       const c = b.addCondition(b.root, dataField)!;
       b.setOperation(c, operation);
       b.openEditor(c);
+      await settle();
       const editor = prepared[prepared.length - 1];
       b.closeEditor(false);
       b.removeItem(c);
+      await settle();
       return editor;
     };
-    expect(open('city', 'startswith')).toBeInstanceOf(TextBox);
-    expect(open('amount', '<')).toBeInstanceOf(NumberBox);
-    expect(open('orderDate', '>=')).toBeInstanceOf(DateBox);
-    expect(open('paid', '=')).toBeInstanceOf(DropDown);
-    expect(open('state', '=')).toBeInstanceOf(DropDown);
+    expect(await open('city', 'startswith')).toBeInstanceOf(TextBox);
+    expect(await open('amount', '<')).toBeInstanceOf(NumberBox);
+    expect(await open('orderDate', '>=')).toBeInstanceOf(DateBox);
+    expect(await open('paid', '=')).toBeInstanceOf(DropDown);
+    expect(await open('state', '=')).toBeInstanceOf(DropDown);
     b.fields = fields.map((f) => (f.dataField === 'state' || f.dataField === 'city' ? { ...f, filterOperations: ['=', 'anyof', 'noneof'] } : f));
     await settle();
     expect(b.model.operations(b.model.field('state')!)).toEqual(['=', 'in', 'notin']);
-    expect(open('state', 'in')).toBeInstanceOf(TagBox);
-    expect(open('city', 'notin')).toBeInstanceOf(TagBox);
+    expect(await open('state', 'in')).toBeInstanceOf(TagBox);
+    expect(await open('city', 'notin')).toBeInstanceOf(TagBox);
   });
 
   it('keeps every operation and type in the value, and texts its values', async () => {
@@ -436,6 +448,7 @@ describe('FilterBuilder', () => {
     const inner = b.addGroup()!;
     expect(inner).not.toBeNull();
     expect(b.addGroup(inner)).toBeNull();
+    await settle();
     const r = rows(b);
     // The group at the limit adds conditions only: a plain button.
     expect(face(r[1], 'add').getAttribute('aria-haspopup')).toBeNull();
@@ -479,6 +492,7 @@ describe('FilterBuilder', () => {
     b.setConditionValue(d, 1);
     const z = b.addCondition(b.root, 'amount')!;
     b.setOperation(z, 'isZero');
+    await settle();
     expect(rowText(rows(b)[2])).toBe('Amount Is zero');
     const value = data.and(data.where('orderDate', '>=', new Date(2026, 0, 30)), data.where('amount', '=', 0));
     expect(b.value).toEqual(value);
@@ -535,6 +549,7 @@ describe('FilterBuilder', () => {
     expect(log).toEqual(['removing', 'removed', 'removing']);
     // From the user: byUser is true.
     log.length = 0;
+    await settle();
     choose(rows(b).find((r) => r.dataset.kind === 'group' && r.getAttribute('aria-level') === '2')!, 'add', 'Add Condition');
     expect(log).toEqual(['adding condition', 'added condition true']);
   });
@@ -555,17 +570,21 @@ describe('FilterBuilder', () => {
     page(b);
     await settle();
     const city = b.addCondition(b.root, 'city')!;
-    b.openEditor(city);
+    // Opened at once, the editor comes with the condition's row.
+    expect(b.openEditor(city)).toBe(true);
+    await settle();
     const input = b.element.querySelector<HTMLInputElement>('.mx-filter-builder__editor input')!;
     expect(input.placeholder).toBe('Type a city');
     expect(input.maxLength).toBe(3);
     b.closeEditor(false);
     const code = b.addCondition(b.root, 'code')!;
+    await settle();
     b.openEditor(code);
     type('ab');
     press('Enter');
     expect(code.value).toBe('AB');
     const skip = b.addCondition(b.root, 'skip')!;
+    await settle();
     expect(b.openEditor(skip)).toBe(false);
   });
 
@@ -635,7 +654,7 @@ describe('FilterBuilder', () => {
     const b = new FilterBuilder({ fields, value: data.or(data.where('city', 'contains', 'an'), data.where('note', 'isnotblank')), texts: { filterBuilderLabel: 'Sipariş filtresi' } });
     page(b);
     await settle();
-    expect(b.treeElement!.getAttribute('aria-label')).toBe('Sipariş filtresi');
+    expect(b.treePart!.element.getAttribute('aria-label')).toBe('Sipariş filtresi');
     expect(rows(b).map(rowText)).toEqual(['Veya', 'City İçerir an', 'Note Boş değildir']);
     expect(b.filterText).toBe("[City] İçerir 'an' Veya [Note] Boş değildir");
     uiLocale.strings = enStrings;
@@ -676,5 +695,42 @@ describe('FilterBuilder', () => {
       face(rows(b)[1], 'field').click();
       expect(menuItems(rows(b)[1], 'field').map((i) => i.textContent!.trim())).toEqual(['Town', 'Amount', 'Note']);
     });
+  });
+
+  it('changes rows in place: a change keeps the rows and buttons, and leaves the other items alone', async () => {
+    const b = new FilterBuilder({ fields, value: data.and(data.where('city', '=', 'Ankara'), data.where('amount', '>', 5)) });
+    page(b);
+    await settle();
+    const tree = b.treePart;
+    const before = rows(b);
+    const faces = before.map((r) => Array.from(r.querySelectorAll('.mx-button__face')));
+    const otherText = face(before[1], 'value').firstChild;
+    const writes: MutationRecord[] = [];
+    const watcher = new MutationObserver((list) => writes.push(...list));
+    watcher.observe(before[1], { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['aria-label'] });
+    const amount = b.root.items[1] as import('./filter-builder-condition').FilterBuilderCondition;
+    b.setConditionValue(amount, 9);
+    b.setOperation(amount, '<');
+    await settle();
+    expect(b.treePart).toBe(tree);
+    expect(rows(b)).toEqual(before);
+    expect(rows(b).map((r) => Array.from(r.querySelectorAll('.mx-button__face')))).toEqual(faces);
+    expect(rowText(before[2])).toBe('Amount Is less than 9');
+    // The other condition is not written again.
+    watcher.disconnect();
+    expect(writes).toEqual([]);
+    expect(face(before[1], 'value').firstChild).toBe(otherText);
+    // A condition added and one taken out: the others keep their rows.
+    b.addCondition(b.root, 'paid');
+    await settle();
+    expect(rows(b).slice(0, 3)).toEqual(before);
+    b.removeItem(b.root.items[0]);
+    await settle();
+    expect(rows(b)).toEqual([before[0], before[2], rows(b)[2]]);
+    // A value from outside: the items in the same places keep their rows.
+    b.value = data.and(data.where('amount', '>', 1), data.where('paid', '=', true));
+    await settle();
+    expect(rows(b).slice(0, 2)).toEqual([before[0], before[2]]);
+    expect(rows(b).map(rowText)).toEqual(['And', 'Amount Is greater than 1', 'Paid Equals true']);
   });
 });

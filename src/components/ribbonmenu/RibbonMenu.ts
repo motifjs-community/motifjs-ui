@@ -1,18 +1,20 @@
-import { Component, Emitter, Transporter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, Emitter, createSignal, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp, type Signal } from "@motifx/core";
 import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute } from "../../core/access-key";
+import { compareTreeOrder, treeDepth } from "../../core/component-tree";
 import { Control } from "../../core/control";
-import { glyphPart, mark, part, put, shown } from "../../core/draw-parts";
+import { glyphPart, part } from "../../core/draw-parts";
 import { fillTemplate } from "../../core/fill-template";
-import { focusInitial, focusableIn } from "../../core/focus";
+import { canTakeFocus, focusFirstIn, focusOn, hasFocusableIn, holdsFocus } from "../../core/focus";
 import { follow } from "../../core/follow";
 import { givenField, givenList, givenValue } from "../../core/given-field";
-import { chevronDown, glyph, moreMark } from "../../core/glyphs";
+import { glyph, moreMark } from "../../core/glyphs";
 import type { IconSource } from "../../core/icon-source";
-import { onLookChanged } from "../../core/look-watch";
+import { liveControls } from "../../core/live-controls";
+import { boxOf, isRendered, isRtl, lengthOf, measure, mediaOf, onLayout, probeLengths, readAgain, sameWindow, scrollBy, whenMeasured } from "../../core/measure";
+import { onDocument } from "../../core/window-events";
 import { nextId } from "../../core/next-id";
 import { onLanguage } from "../../core/on-language";
-import { ResizeWatch } from "../../core/resize-watch";
-import { TokenLengths } from "../../core/token-lengths";
+import { mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { MenuItem } from "../../parts/menu/menu-item";
 import type { MenuItemClickEventArgs } from "../../parts/menu/menu-item-click-event-args";
@@ -71,6 +73,7 @@ interface TabLook {
 interface TabPart {
     tab: RibbonTab;
     key: string;
+    id: string;
     host: Component<HTMLButtonElement>;
     caption: Component<HTMLSpanElement>;
     accessKey: string | null;
@@ -79,6 +82,7 @@ interface TabPart {
 interface Panel {
     tab: RibbonTab;
     key: string;
+    id: string;
     // The groups as given, before the user's changes.
     raw: GroupLook[];
     host: Component<HTMLDivElement>;
@@ -99,6 +103,7 @@ interface GroupLook {
     moreHint: string;
     priority: number;
     collapsible: boolean;
+    hiddenByUser?: boolean;
 }
 
 interface GroupPart {
@@ -112,13 +117,16 @@ interface GroupPart {
     more: Button | null;
     made: Map<RibbonCommand, Made>;
     stop: () => void;
-    // The element Tab reaches in the group.
-    current: HTMLElement | null;
+    // The part Tab reaches in the group.
+    current: ComponentBase | null;
     look: GroupLook | null;
     wanted: Wanted[];
     // How far it gave way to the room: 0 as given, 1 large commands medium, 2 all small, 3 folded into one button (in
     // the simplified layout 2 is in the "more" menu).
     level: number;
+    // Left out of the simplified row for the "more" menu, or folded into its button.
+    out: boolean;
+    folded: boolean;
     // The button the group folds into, and the popup it opens with the group in it.
     fold: Button | null;
     popup: Popup | null;
@@ -138,8 +146,12 @@ interface Made {
     control: ComponentBase;
     type: RibbonCommandType;
     want: Wanted;
+    // The command it draws: a command given anew under its key is written here, and what shows it follows.
+    command: Signal<RibbonCommand>;
     made: Map<RibbonCommand, Made> | null;
     stop: (() => void) | null;
+    // The size it is drawn at.
+    size?: RibbonCommandSize;
 }
 
 interface Where {
@@ -215,43 +227,51 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     panels = new Map<RibbonTab, Panel>();
     stopTabs: (() => void) | null = null;
     rovingQueued = false;
-    layoutQueued = false;
-    laidOut = -1;
     // The commands are open over the page (display 'tabs' or 'auto').
     floating = false;
     compact = false;
+    /** What the last fit was for: the room's width, and whether something changed since (content, look, layout). */
+    fittedWidth = -1;
+    fitDue = true;
+    /** The steps the groups of `fitPanel` gave way by at the last fit: where the next fit starts. */
+    fitCount = 0;
+    fitPanel: Panel | null = null;
+    fitSimple = false;
+    /** Buttons a fit step sized, whose looks it reads together. */
+    lookDue: Button[] = [];
     // The user's changes: our own copy, never the object the app gave.
     custom: RibbonMenuCustomization = {};
     hints: RibbonKeyHints;
     customMenu: ContextMenu;
-    lengths: TokenLengths;
     altDown = false;
     altChord = false;
+    // Focus went out of a part of the menu to an element; where it lands decides whether what is open over the page closes.
+    focusLeaving = false;
 
     constructor(props?: IBaseProp<RibbonMenuProps>) {
         super(props);
         const own = (this.props ?? {}) as RibbonMenuProps;
-        this.element.classList.add('mx-ribbon-menu');
+        this.class.add('mx-ribbon-menu');
         // Hidden automatically, the menu is this strip until it is opened over the page.
         this.reveal = part<HTMLButtonElement>(this, 'button', 'mx-ribbon-menu__reveal');
-        this.reveal.element.type = 'button';
+        this.reveal.attr.add({ type: 'button' });
         glyphPart(this.reveal, 'chevron-down', 'mx-ribbon-menu__reveal-glyph');
         this.frame = part<HTMLDivElement>(this, 'div', 'mx-ribbon-menu__frame');
         this.bar = part<HTMLDivElement>(this.frame, 'div', 'mx-ribbon-menu__bar');
         this.startHost = part<HTMLDivElement>(this.bar, 'div', 'mx-ribbon-menu__bar-start');
         this.app = part<HTMLButtonElement>(this.bar, 'button', 'mx-ribbon-menu__app');
-        this.app.element.type = 'button';
+        this.app.attr.add({ type: 'button' });
         this.appCaption = part<HTMLSpanElement>(this.app, 'span', 'mx-ribbon-menu__app-text');
-        shown(this.app.element, false);
+        shown(this.app, false);
         this.quickTop = part<HTMLDivElement>(this.bar, 'div', 'mx-ribbon-menu__quick');
         this.picker = new Button({ menu: [] });
-        this.picker.element.classList.add('mx-ribbon-menu__picker');
+        this.picker.class.add('mx-ribbon-menu__picker');
         this.bar.controls.add(this.picker);
         this.tabList = part<HTMLDivElement>(this.bar, 'div', 'mx-ribbon-menu__tabs');
-        this.tabList.element.setAttribute('role', 'tablist');
+        this.tabList.attr.add({ role: 'tablist' });
         this.endHost = part<HTMLDivElement>(this.bar, 'div', 'mx-ribbon-menu__bar-end');
-        shown(this.startHost.element, false);
-        shown(this.endHost.element, false);
+        shown(this.startHost, false);
+        shown(this.endHost, false);
         this.body = part<HTMLDivElement>(this.frame, 'div', 'mx-ribbon-menu__body');
         // The commands scroll in the stage when they do not fit even after giving way; the buttons at its ends scroll it.
         this.stage = part<HTMLDivElement>(this.body, 'div', 'mx-ribbon-menu__stage');
@@ -259,19 +279,19 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         this.forward = this.makeScroll(1);
         // Its variant and size come from its place.
         this.switcher = new Button({ icon: glyph('chevron-up') });
-        this.switcher.element.classList.add('mx-ribbon-menu__switch');
-        this.switcher.element.addEventListener('click', e => this.switchLayout(e));
+        this.switcher.class.add('mx-ribbon-menu__switch');
+        this.switcher.motif.on('click', (_, e) => this.switchLayout(e));
         this.body.controls.add(this.switcher);
         this.quickBelow = part<HTMLDivElement>(this.frame, 'div', 'mx-ribbon-menu__quick mx-ribbon-menu__quick--below');
         for (const quick of [this.quickTop, this.quickBelow]) {
-            quick.element.setAttribute('role', 'toolbar');
-            shown(quick.element, false);
+            quick.attr.add({ role: 'toolbar' });
+            shown(quick, false);
         }
         this.hints = new RibbonKeyHints(this, () => this.tabHints(), () => this.commandHints(), () => {});
         this.customMenu = new ContextMenu();
         this.customMenu.onOpening(e => this.customMenuOpening(e));
         this.controls.add(this.customMenu);
-        this.lengths = new TokenLengths(this.element, [COMPACT], () => this.queueLayout());
+        probeLengths(this, [COMPACT]);
 
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.label !== undefined) this.bindProperty('text', own.label);
@@ -300,28 +320,26 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         this.observeProperty('quickBar', () => this.drawQuick());
         this.observeProperty('customization', () => this.takeCustomization());
         onLanguage(this, () => this.drawNames());
-        this.tabList.element.addEventListener('click', e => this.tabClick(e));
-        this.tabList.element.addEventListener('dblclick', e => this.tabDoubleClick(e));
-        this.app.element.addEventListener('click', e => this.appButtonClick.fire({ target: this.app.element, originalEvent: e, source: this }));
-        this.reveal.element.addEventListener('click', () => this.openOver(true));
-        this.element.addEventListener('keydown', e => this.ownKeyDown(e));
-        this.element.addEventListener('focusout', e => this.focusLeft(e));
-        const doc = this.element.ownerDocument;
-        const keyDown = (e: KeyboardEvent) => this.pageKeyDown(e);
-        const keyUp = (e: KeyboardEvent) => this.pageKeyUp(e);
-        const pointerDown = (e: PointerEvent) => this.pagePointerDown(e);
-        doc.addEventListener('keydown', keyDown, true);
-        doc.addEventListener('keyup', keyUp, true);
-        doc.addEventListener('pointerdown', pointerDown, true);
-        this.tabList.element.addEventListener('keydown', e => this.tabKeyDown(e));
-        this.body.element.addEventListener('keydown', e => this.commandKeyDown(e));
-        this.body.element.addEventListener('focusin', e => this.commandFocused(e));
+        this.tabList.motif.on('click', (_, e) => this.tabClick(e));
+        this.tabList.motif.on('dblclick', (_, e) => this.tabDoubleClick(e));
+        this.app.motif.on('click', (_, e) => this.appButtonClick.fire({ part: this.app, originalEvent: e, source: this }));
+        this.reveal.motif.on('click', () => this.openOver(true));
+        this.motif.on('keydown', (_, e) => this.ownKeyDown(e));
+        this.motif.on('focusout', (_, e) => this.focusLeft(e));
+        // Key hints and the open commands answer keys, presses and focus anywhere in the page.
+        const stopPage = [
+            onDocument(this, 'keydown', e => this.pageKeyDown(e), true),
+            onDocument(this, 'keyup', e => this.pageKeyUp(e), true),
+            onDocument(this, 'pointerdown', e => this.pagePointerDown(e), true),
+            onDocument(this, 'focusin', e => this.focusLanded(e), true),
+        ];
+        this.tabList.motif.on('keydown', (_, e) => this.tabKeyDown(e));
+        this.body.motif.on('keydown', (_, e) => this.commandKeyDown(e));
+        this.body.motif.on('focusin', (_, e) => this.commandFocused(e));
         // Another width, design language, theme or density: the groups give way again.
-        const room = new ResizeWatch(() => {
-            if (this.element.clientWidth !== this.laidOut) this.queueLayout();
-        });
-        room.observe(this.element);
-        this.motif.setDisposable(onLookChanged(() => this.queueLayout()));
+        // Only another width: the fit itself makes the menu higher or lower, which must not fit it again.
+        onLayout(this, 'size', () => measure(this, this.readRoom, this.fit));
+        onLayout(this, 'look', () => this.queueLayout());
         // Commands that name commands of the app take their fields from them: read again when those change.
         const listening = commands.onChanged(() => this.namesCommands() && this.refresh());
         this.motif.setDisposable(() => listening.dispose());
@@ -329,13 +347,9 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         this.drawLayout();
         this.drawDisplay();
         this.motif.setDisposable(() => {
-            doc.removeEventListener('keydown', keyDown, true);
-            doc.removeEventListener('keyup', keyUp, true);
-            doc.removeEventListener('pointerdown', pointerDown, true);
+            for (const stop of stopPage) stop();
             this.stopQuick?.();
             this.dropMade(this.quickMade);
-            this.lengths.dispose();
-            room.disconnect();
             this.stopTabs?.();
             for (const panel of this.panels.values()) this.dropPanel(panel);
             for (const emitter of [this.selecting, this.selectionChanged, this.commandClick, this.groupMore, this.layoutChanged, this.displayChanged, this.customized, this.appButtonClick, this.itemsChanged]) emitter.dispose();
@@ -600,7 +614,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     openOver(open: boolean): void {
         if (this.display === 'always') return;
         this.setFloating(open);
-        if (open) queueMicrotask(() => this.focus());
+        // Focus goes in once the open commands are laid out.
+        if (open) void whenMeasured(this).then(() => this.floating && this.focus());
     }
 
     /** Shows the key hints, as Alt or F10 does. */
@@ -610,10 +625,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     }
 
     /** The tabs Tab and the arrows reach, in their order. */
-    protected override get focusElement(): HTMLElement {
+    override get focusPart(): ComponentBase {
         const key = this.shownKey;
         const index = this.looks.findIndex(look => look.key === key);
-        return index >= 0 ? this.entries[index].host.element : this.element;
+        return index >= 0 ? this.entries[index].host : this;
     }
 
     // Tabs.
@@ -645,13 +660,19 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         };
     }
 
-    // The tabs are made again when they are others; a tab's panel stays while its tab does.
+    // Each tab is made once for its key and kept while its key is given: a tab added, removed or moved changes only
+    // that; a tab's panel stays while its tab does.
     drawTabs(): void {
-        const stale = this.entries.length !== this.looks.length || this.entries.some((p, i) => p.key !== String(this.looks[i].key));
-        if (stale) {
-            for (const p of this.entries) void p.host.dispose();
-            this.entries = this.looks.map(look => this.makeTab(look));
-        }
+        const free = new Map(this.entries.map(p => [p.key, p]));
+        this.entries = this.looks.map(look => {
+            const old = free.get(String(look.key));
+            free.delete(String(look.key));
+            return old ?? this.makeTab(look);
+        });
+        for (const p of free.values()) void p.host.dispose();
+        this.entries.forEach((p, i) => {
+            if (this.tabList.controls.items.indexOf(p.host) !== i) this.tabList.controls.moveToIndex(p.host, i);
+        });
         this.looks.forEach((look, i) => (this.entries[i].tab = look.tab));
         // A tab given again under the same key, as another object, keeps its panel; its groups are read from it.
         for (const look of this.looks) {
@@ -664,11 +685,12 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         }
         this.looks.forEach((look, i) => {
             const p = this.entries[i];
-            const host = p.host.element;
+            const host = p.host;
             const parsed = parseAccessKey(look.text);
-            renderAccessKey(p.caption.element, parsed);
-            const key = parsed.key ? accessKeyToken(parsed.key) : null;
-            setAccessKeyAttribute(host, p.accessKey, key);
+            renderAccessKey(p.caption, parsed);
+            // A disabled tab takes no key.
+            const key = parsed.key && look.enabled ? accessKeyToken(parsed.key) : null;
+            setAccessKeyAttribute(p.host, p.accessKey, key);
             p.accessKey = key;
             shown(host, look.visible);
             put(host, 'title', look.hint || null);
@@ -688,15 +710,14 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
 
     makeTab(look: TabLook): TabPart {
         const host = part<HTMLButtonElement>(this.tabList, 'button', 'mx-ribbon-menu__tab');
-        host.element.type = 'button';
-        host.element.setAttribute('role', 'tab');
-        host.element.id = nextId('mx-ribbon-tab');
+        const id = nextId('mx-ribbon-tab');
+        host.attr.add({ type: 'button', role: 'tab', id });
         const caption = part<HTMLSpanElement>(host, 'span', 'mx-ribbon-menu__tab-text');
-        return { tab: look.tab, key: String(look.key), host, caption, accessKey: null };
+        return { tab: look.tab, key: String(look.key), id, host, caption, accessKey: null };
     }
 
     drawNames(): void {
-        put(this.tabList.element, 'aria-label', parseAccessKey(this.text ?? '').text || uiLocale.strings.ribbonMenuLabel);
+        put(this.tabList, 'aria-label', parseAccessKey(this.text ?? '').text || uiLocale.strings.ribbonMenuLabel);
         for (const panel of this.panels.values()) for (const group of panel.groups.values()) this.drawMoreHint(group);
         const simple = this.peekProperty<RibbonMenuLayout>('layout') === 'simple';
         const name = simple ? uiLocale.strings.ribbonMenuClassic : uiLocale.strings.ribbonMenuSimple;
@@ -707,14 +728,14 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     drawSelection(): void {
         const key = this.shownKey;
         this.looks.forEach((look, i) => {
-            const host = this.entries[i].host.element;
+            const host = this.entries[i].host;
             const selected = look.key === key;
-            host.setAttribute('aria-selected', String(selected));
-            host.tabIndex = selected ? 0 : -1;
+            put(host, 'aria-selected', String(selected));
+            put(host, 'tabindex', selected ? '0' : '-1');
         });
         const look = this.looks.find(l => l.key === key);
         if (look) this.showPanel(look);
-        for (const [tab, panel] of this.panels) shown(panel.host.element, tab === look?.tab);
+        for (const [tab, panel] of this.panels) shown(panel.host, tab === look?.tab);
         this.drawPicker();
         this.queueLayout();
     }
@@ -732,7 +753,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     }
 
     tabClick(e: MouseEvent): void {
-        const index = this.indexOfTab(e.target);
+        const index = this.indexOfTab(e);
         if (index < 0) return;
         const look = this.looks[index];
         if (!look.enabled || !this.isEnabled) return;
@@ -745,16 +766,16 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     }
 
     tabDoubleClick(e: MouseEvent): void {
-        if (this.indexOfTab(e.target) < 0 || this.display === 'auto') return;
+        if (this.indexOfTab(e) < 0 || this.display === 'auto') return;
         this.changeDisplay(this.display === 'tabs' ? 'always' : 'tabs', e);
     }
 
     tabKeyDown(e: KeyboardEvent): void {
-        const index = this.indexOfTab(e.target);
+        const index = this.indexOfTab(e);
         if (index < 0 || e.isComposing || e.altKey || e.ctrlKey || e.metaKey) return;
         const stops = this.looks.map((_, i) => i).filter(i => this.looks[i].visible && this.looks[i].enabled);
         const at = stops.indexOf(index);
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
+        const rtl = isRtl(this);
         let to = -1;
         if (e.key === (rtl ? 'ArrowLeft' : 'ArrowRight')) to = stops[(at + 1) % stops.length];
         else if (e.key === (rtl ? 'ArrowRight' : 'ArrowLeft')) to = stops[(at - 1 + stops.length) % stops.length];
@@ -764,7 +785,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             e.preventDefault();
             if (this.display !== 'always' && !this.floating) {
                 this.setFloating(true);
-                queueMicrotask(() => this.focusCommands());
+                void whenMeasured(this).then(() => this.floating && this.focusCommands());
             } else {
                 this.focusCommands();
             }
@@ -772,12 +793,12 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         }
         if (to === undefined || to < 0) return;
         e.preventDefault();
-        if (this.choose(this.looks[to], e)) this.entries[to].host.element.focus();
+        if (this.choose(this.looks[to], e)) focusOn(this.entries[to].host);
     }
 
-    indexOfTab(target: EventTarget | null): number {
-        const host = (target as Element | null)?.closest?.('.mx-ribbon-menu__tab');
-        return this.entries.findIndex(p => p.host.element === host);
+    // The tab an event started in; -1 when it started in none.
+    indexOfTab(e: Event): number {
+        return this.entries.findIndex(p => p.host.motif.isEventFrom(e));
     }
 
     /** Shows the tab of `look` unless `onSelecting` refuses. Returns `false` when it was refused. */
@@ -796,22 +817,22 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     // Panels and groups.
 
     showPanel(look: TabLook): void {
-        const index = this.looks.indexOf(look);
-        const tabHost = this.entries[index].host.element;
+        const tab = this.entries[this.looks.indexOf(look)];
         let panel = this.panels.get(look.tab);
         if (!panel) {
             const host = part<HTMLDivElement>(this.stage, 'div', 'mx-ribbon-menu__panel');
-            host.element.setAttribute('role', 'tabpanel');
-            host.element.addEventListener('scroll', () => this.drawEnds());
-            host.element.addEventListener('wheel', e => this.wheel(host.element, e), { passive: false });
-            host.element.id = nextId('mx-ribbon-panel');
-            const made: Panel = { tab: look.tab, key: String(look.key), raw: [], host, groups: new Map(), stop: () => {}, overflow: null };
+            host.attr.add({ role: 'tabpanel' });
+            host.motif.on('scroll', () => this.drawEnds());
+            host.motif.on('wheel', (_, e) => this.wheel(host, e));
+            const id = nextId('mx-ribbon-panel');
+            host.attr.add({ id });
+            const made: Panel = { tab: look.tab, key: String(look.key), id, raw: [], host, groups: new Map(), stop: () => {}, overflow: null };
             this.followGroups(made);
             panel = made;
             this.panels.set(look.tab, panel);
         }
-        put(panel.host.element, 'aria-labelledby', tabHost.id);
-        put(tabHost, 'aria-controls', panel.host.element.id);
+        put(panel.host, 'aria-labelledby', tab.id);
+        put(tab.host, 'aria-controls', panel.id);
     }
 
     followGroups(panel: Panel): void {
@@ -877,8 +898,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         for (const look of looks) {
             const group = keep.get(look.group)!;
             group.look = look;
-            group.label.element.textContent = look.text;
-            shown(group.host.element, look.visible);
+            text(group.label, look.text);
+            shown(group.host, look.visible);
             this.drawMore(panel, group, look);
         }
         this.drawDividers(panel);
@@ -888,16 +909,17 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
 
     makeGroup(panel: Panel, group: RibbonGroup): GroupPart {
         const divider = part<HTMLDivElement>(panel.host, 'div', 'mx-ribbon-menu__divider');
-        divider.element.setAttribute('aria-hidden', 'true');
+        divider.attr.add({ 'aria-hidden': 'true' });
         const host = part<HTMLDivElement>(panel.host, 'div', 'mx-ribbon-menu__group');
-        host.element.setAttribute('role', 'group');
+        host.attr.add({ role: 'group' });
         const inner = part<HTMLDivElement>(host, 'div', 'mx-ribbon-menu__group-inner');
         const commands = part<HTMLDivElement>(inner, 'div', 'mx-ribbon-menu__commands');
         const foot = part<HTMLDivElement>(inner, 'div', 'mx-ribbon-menu__group-foot');
         const label = part<HTMLSpanElement>(foot, 'span', 'mx-ribbon-menu__group-label');
-        label.element.id = nextId('mx-ribbon-group');
-        host.element.setAttribute('aria-labelledby', label.element.id);
-        const made: GroupPart = { group, divider, host, inner, commands, foot, label, more: null, made: new Map(), stop: () => {}, current: null, look: null, wanted: [], level: 0, fold: null, popup: null };
+        const labelId = nextId('mx-ribbon-group');
+        label.attr.add({ id: labelId });
+        host.attr.add({ 'aria-labelledby': labelId });
+        const made: GroupPart = { group, divider, host, inner, commands, foot, label, more: null, made: new Map(), stop: () => {}, current: null, look: null, wanted: [], level: 0, out: false, folded: false, fold: null, popup: null };
         this.followCommands(panel, made);
         return made;
     }
@@ -925,7 +947,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                 return group.group;
             }
         };
-        group.made = this.placeCommands(group.commands, group.made, this.customCommands(panel, group), where, false);
+        // A command the user hid is kept out of sight, after the others, for when it is shown again.
+        const shownWanted = this.customCommands(panel, group);
+        const hidden = group.wanted.filter(w => !shownWanted.includes(w)).map(w => ({ ...w, visible: false }));
+        group.made = this.placeCommands(group.commands, group.made, [...shownWanted, ...hidden], where, false);
         this.drawSizes(group);
         this.queueRoving();
         this.queueLayout();
@@ -943,8 +968,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     drawMore(panel: Panel, group: GroupPart, look: GroupLook): void {
         if (look.more && !group.more) {
             const more = new Button({ icon: glyph('more') });
-            more.element.classList.add('mx-ribbon-menu__more');
-            more.element.addEventListener('click', e => this.morePressed(panel.tab, group, more, e));
+            more.class.add('mx-ribbon-menu__more');
+            more.motif.on('click', (_, e) => this.morePressed(panel.tab, group, more, e));
             group.foot.controls.add(more);
             group.more = more;
         } else if (!look.more && group.more) {
@@ -957,11 +982,11 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     drawMoreHint(group: GroupPart): void {
         if (!group.more) return;
         const own = String(givenField(group.group, 'moreHint') ?? '');
-        group.more.hint = own || fillTemplate(uiLocale.strings.ribbonMenuMore, { group: group.label.element.textContent ?? '' });
+        group.more.hint = own || fillTemplate(uiLocale.strings.ribbonMenuMore, { group: group.look?.text ?? '' });
     }
 
     morePressed(tab: RibbonTab, group: GroupPart, more: Button, e: Event): void {
-        const args: RibbonGroupMoreEventArgs = { group: group.group, tab, target: more.element, originalEvent: e, source: this };
+        const args: RibbonGroupMoreEventArgs = { group: group.group, tab, part: more, originalEvent: e, source: this };
         givenValue<((e: RibbonGroupMoreEventArgs) => void) | undefined>(group.group, 'more')?.(args);
         this.groupMore.fire(args);
     }
@@ -974,21 +999,41 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             const key = String(givenValue<Key | undefined>(command, 'key') ?? index);
             const fixed = givenField(command, 'fixed') === true;
             const size = inRow ? 'small' : (givenField<RibbonCommandSize | undefined>(command, 'size') ?? (type === 'gallery' ? 'large' : 'medium'));
-            return { command, key, fixed, type, size, visible: fieldOf(command, 'visible', this.element) !== false, simple: givenField(command, 'simple') !== false };
+            return { command, key, fixed, type, size, visible: fieldOf(command, 'visible', this) !== false, simple: givenField(command, 'simple') !== false };
         });
     }
 
-    // A command is made again only when its type changes; its place follows the list.
+    // A command is made once and kept while it is given, as itself or anew under its key (a change by path gives a new
+    // object); it is made again only when its kind changes. Its place follows the list.
     placeCommands(host: Component<HTMLDivElement>, made: Map<RibbonCommand, Made>, wanted: Wanted[], where: Where | ((command: RibbonCommand) => Where), inRow: boolean): Map<RibbonCommand, Made> {
         const keep = new Map<RibbonCommand, Made>();
+        const used = new Set<Made>();
+        const same = (m: Made | undefined, want: Wanted): m is Made =>
+            !!m && !used.has(m) && m.type === want.type && (want.type !== 'content' || givenValue(m.command.peek(), 'content') === givenValue(want.command, 'content'));
+        const found = new Map<Wanted, Made>();
         for (const want of wanted) {
             const old = made.get(want.command);
-            const m = old && old.type === want.type ? old : this.makeCommand(want, typeof where === 'function' ? where(want.command) : where, inRow);
+            if (same(old, want)) {
+                found.set(want, old);
+                used.add(old);
+            }
+        }
+        for (const want of wanted) {
+            if (found.has(want)) continue;
+            const old = [...made.values()].find(m => m.want.key === want.key && same(m, want));
+            if (old) {
+                found.set(want, old);
+                used.add(old);
+            }
+        }
+        for (const want of wanted) {
+            const m = found.get(want) ?? this.makeCommand(want, typeof where === 'function' ? where(want.command) : where, inRow);
+            if (m.command.peek() !== want.command) this.giveCommand(m, want.command);
             m.want = want;
             keep.set(want.command, m);
         }
         const gone = new Map<RibbonCommand, Made>();
-        for (const [command, old] of made) if (keep.get(command) !== old) gone.set(command, old);
+        for (const [command, old] of made) if (!used.has(old)) gone.set(command, old);
         this.dropMade(gone);
         let index = 0;
         for (const want of wanted) {
@@ -997,7 +1042,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             if (!items.includes(m.control)) host.controls.add(index, m.control);
             else if (items.indexOf(m.control) !== index) host.controls.moveToIndex(m.control, index);
             index++;
-            shown(m.control.element as HTMLElement, want.visible);
+            shown(m.control, want.visible);
             // A row's commands are small; a group's take their size from how far the group gave way.
             if (inRow) this.drawSize(m, 'small');
         }
@@ -1012,35 +1057,48 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         }
     }
 
+    // A command given anew under its key: what shows it reads it from here on.
+    giveCommand(m: Made, command: RibbonCommand): void {
+        untracked(() => {
+            m.command.value = command;
+            if (m.control instanceof RibbonGallery) m.control.command = command;
+            if (m.control instanceof Button && m.type === 'toggle') {
+                // A toggle bound to the app follows the new binding; one of its own keeps its state.
+                const pressed = valueOf<Bind<boolean> | undefined>(command, 'pressed', this, 'checked');
+                if (typeof pressed === 'function') m.control.pressed = pressed;
+            }
+        });
+    }
+
     makeCommand(want: Wanted, where: Where, inRow: boolean): Made {
         const { command, type } = want;
+        const box = createSignal(command);
         if (type === 'separator') {
             const line = new Component<HTMLDivElement>('div');
-            line.element.className = 'mx-ribbon-menu__separator';
-            line.element.setAttribute('role', 'separator');
-            line.element.setAttribute('aria-orientation', 'vertical');
-            return { control: line, type, want, made: null, stop: null };
+            line.class.add('mx-ribbon-menu__separator');
+            line.attr.add({ role: 'separator', 'aria-orientation': 'vertical' });
+            return { control: line, type, want, command: box, made: null, stop: null };
         }
         if (type === 'content') {
-            const box = new Component<HTMLDivElement>('div');
-            box.element.className = 'mx-ribbon-menu__content';
+            const holder = new Component<HTMLDivElement>('div');
+            holder.class.add('mx-ribbon-menu__content');
             const content = givenValue<(() => ComponentBase) | undefined>(command, 'content')?.();
-            if (content) box.controls.add(content);
-            return { control: box, type, want, made: null, stop: null };
+            if (content) holder.controls.add(content);
+            return { control: holder, type, want, command: box, made: null, stop: null };
         }
         if (type === 'gallery') {
-            const gallery = new RibbonGallery(command, (item, e) => this.galleryPicked(command, item, where, e));
-            return { control: gallery, type, want, made: null, stop: null };
+            const gallery = new RibbonGallery(command, (item, e) => this.galleryPicked(box.peek(), item, where, e));
+            return { control: gallery, type, want, command: box, made: null, stop: null };
         }
         if (type === 'row') {
             const row = new Component<HTMLDivElement>('div');
-            row.element.className = 'mx-ribbon-menu__row';
-            row.element.setAttribute('role', 'group');
-            const made: Made = { control: row, type, want, made: new Map(), stop: null };
+            row.class.add('mx-ribbon-menu__row');
+            row.attr.add({ role: 'group' });
+            const made: Made = { control: row, type, want, command: box, made: new Map(), stop: null };
             made.stop = follow(
                 this,
                 'row',
-                () => this.wantedOf(givenField<readonly RibbonCommand[] | undefined>(command, 'commands'), true),
+                () => this.wantedOf(givenField<readonly RibbonCommand[] | undefined>(box.value, 'commands'), true),
                 wanted => {
                     made.made = this.placeCommands(row, made.made!, wanted, where, true);
                     this.queueRoving();
@@ -1049,29 +1107,30 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             );
             return made;
         }
-        return { control: this.makeButton(command, type, where), type, want, made: null, stop: null };
+        return { control: this.makeButton(box, type, where), type, want, command: box, made: null, stop: null };
     }
 
-    makeButton(command: RibbonCommand, type: RibbonCommandType, where: Where): Button {
+    makeButton(box: Signal<RibbonCommand>, type: RibbonCommandType, where: Where): Button {
         // Its text and hint are given by its size (drawSize).
         const props: ButtonProps = {
             icon: () => {
-                const name = String(fieldOf(command, 'glyph', this.element) ?? '');
-                return name ? glyph(name) : (fieldOf<IconSource | null | undefined>(command, 'icon', this.element) ?? null);
+                const name = String(fieldOf(box.value, 'glyph', this) ?? '');
+                return name ? glyph(name) : (fieldOf<IconSource | null | undefined>(box.value, 'icon', this) ?? null);
             },
-            enabled: () => fieldOf(command, 'enabled', this.element) !== false
+            enabled: () => fieldOf(box.value, 'enabled', this) !== false
         };
         if (type === 'toggle') {
             props.toggle = true;
-            props.pressed = valueOf<Bind<boolean> | undefined>(command, 'pressed', this.element, 'checked');
+            props.pressed = valueOf<Bind<boolean> | undefined>(box.peek(), 'pressed', this, 'checked');
         }
-        if (type === 'split' || type === 'menu') props.menu = () => givenField<readonly MenuItem[] | undefined>(command, 'menu') ?? [];
+        if (type === 'split' || type === 'menu') props.menu = () => givenField<readonly MenuItem[] | undefined>(box.value, 'menu') ?? [];
         if (type === 'split') props.split = true;
         // A command chosen from its menu closes commands open over the page.
         if (type === 'split' || type === 'menu') props.onItemClick = () => this.floating && this.setFloating(false);
         const made = new Button(props);
-        made.element.classList.add('mx-ribbon-menu__command');
-        if (type !== 'menu') made.element.addEventListener('click', e => this.commandPressed(command, made, where, e));
+        made.class.add('mx-ribbon-menu__command');
+        // Heard on the part that is pressed: the arrow of a split command opens its menu, only its own part runs it.
+        if (type !== 'menu') made.faceComponent.motif.on('click', (_, e) => this.commandPressed(box.peek(), made, where, e));
         return made;
     }
 
@@ -1083,12 +1142,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     }
 
     commandPressed(command: RibbonCommand, button: Button, where: Where, e: Event): void {
-        // The arrow of a split command opens its menu; only its own part runs it.
-        if ((e.target as Element | null)?.closest?.('.mx-button__arrow')) return;
         const args: RibbonCommandClickEventArgs = { command, group: where.group, tab: where.tab, originalEvent: e, source: this };
-        runItem(command, args, this, e, this.element);
+        runItem(command, args, this, e, this);
         // A click set the toggle's own state; one bound to the app follows the app again.
-        const pressed = valueOf<Bind<boolean> | undefined>(command, 'pressed', this.element, 'checked');
+        const pressed = valueOf<Bind<boolean> | undefined>(command, 'pressed', this, 'checked');
         if (typeof pressed === 'function') button.pressed = pressed;
         this.commandClick.fire(args);
         if (this.floating) this.setFloating(false);
@@ -1104,10 +1161,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
 
     drawLayout(): void {
         const simple = this.shownLayout() === 'simple';
-        put(this.element, 'data-layout', simple ? 'simple' : 'classic');
-        shown(this.switcher.element, this.peekProperty('layoutSwitch') !== false && !this.compact);
+        put(this, 'data-layout', simple ? 'simple' : 'classic');
+        shown(this.switcher, this.peekProperty('layoutSwitch') !== false && !this.compact);
         this.switcher.icon = glyph(simple ? 'chevron-down' : 'chevron-up');
-        put(this.switcher.element.querySelector<HTMLElement>('.mx-button__main') ?? this.switcher.element, 'aria-expanded', String(!simple));
+        put(this.switcher.faceComponent, 'aria-expanded', String(!simple));
         this.drawNames();
         this.queueLayout();
     }
@@ -1126,47 +1183,95 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     }
 
     queueLayout(): void {
-        if (this.layoutQueued) return;
-        this.layoutQueued = true;
-        queueMicrotask(() => {
-            this.layoutQueued = false;
-            if (!this.isDisposed) untracked(() => this.fit());
-        });
+        this.fitDue = true;
+        measure(this, this.readRoom, this.fit);
     }
 
-    fit(): void {
+    // The room of the menu, and the width it turns compact under.
+    readonly readRoom = (): { width: number; compact: number } => ({ width: boxOf(this).clientWidth, compact: lengthOf(this, COMPACT, 480) });
+
+    // Each step a group gives way is measured at once: the one place the menu reads after it wrote.
+    readonly fit = (room: { width: number; compact: number }): void => {
+        if (!this.fitDue && room.width === this.fittedWidth) return;
         const panel = this.shownPanel();
-        const width = this.element.clientWidth;
-        this.laidOut = width;
-        const compact = width > 0 && width < this.lengths.get(COMPACT, 480);
+        const compact = room.width > 0 && room.width < room.compact;
         if (compact !== this.compact) {
             this.compact = compact;
-            mark(this.element, 'data-compact', compact);
+            mark(this, 'data-compact', compact);
             this.drawLayout();
         }
+        // After drawing the layout, which asks for a fit itself: this fit is that one.
+        this.fitDue = false;
+        this.fittedWidth = room.width;
         if (!panel) return;
         const simple = this.shownLayout() === 'simple';
         const groups = [...panel.groups.values()].filter(g => g.look?.visible !== false);
-        for (const group of panel.groups.values()) this.setLevel(group, 0, simple);
-        this.drawOverflow(panel, simple);
-        const el = panel.host.element;
-        const fits = () => el.scrollWidth <= el.clientWidth + 0.5;
-        if (this.peekProperty('adaptive') === false || !el.clientWidth || fits()) return this.finishFit(panel);
+        // Another layout draws every level anew: the steps mean other sizes there.
+        const relayout = simple !== this.fitSimple || panel !== this.fitPanel;
+        this.fitSimple = simple;
+        for (const group of panel.groups.values()) if (!groups.includes(group) && (relayout || group.level !== 0)) this.setLevel(group, 0, simple);
         const order = groups
             .map((group, index) => ({ group, index }))
             .sort((a, b) => (a.group.look?.priority ?? 0) - (b.group.look?.priority ?? 0) || b.index - a.index)
             .map(x => x.group);
         const last = simple ? 2 : 3;
-        for (let level = 1; level <= last; level++) {
-            for (const group of order) {
-                if (level === last && group.look?.collapsible === false) continue;
-                this.setLevel(group, level, simple);
-                if (simple && level === last) this.drawOverflow(panel, simple);
-                if (fits()) return this.finishFit(panel);
+        // The steps in the order the groups give way; each one narrows the menu.
+        const steps: { group: GroupPart; level: number }[] = [];
+        if (this.peekProperty('adaptive') !== false) {
+            for (let level = 1; level <= last; level++) {
+                for (const group of order) if (level < last || group.look?.collapsible !== false) steps.push({ group, level });
             }
         }
-        this.finishFit(panel);
-    }
+        let fresh = relayout;
+        const take = (count: number) => {
+            const levels = new Map<GroupPart, number>(groups.map(group => [group, 0]));
+            for (let i = 0; i < count; i++) levels.set(steps[i].group, steps[i].level);
+            for (const [group, level] of levels) if (fresh || group.level !== level) this.setLevel(group, level, simple);
+            fresh = false;
+            Button.readLooksNow(this.lookDue.splice(0));
+            this.drawOverflow(panel, simple);
+        };
+        const fits = () =>
+            readAgain(() => {
+                const box = boxOf(panel.host);
+                return !box.clientWidth || box.scrollWidth <= box.clientWidth + 0.5;
+            });
+        const done = (count: number) => {
+            this.fitCount = count;
+            this.fitPanel = panel;
+            this.finishFit(panel);
+        };
+        // The last fit is where to start: it mostly still holds, and two layouts tell so. Otherwise the fewest steps
+        // that fit are searched by halves, a few layouts instead of one for each step.
+        const known = relayout ? 0 : Math.min(this.fitCount, steps.length);
+        take(known);
+        let low: number;
+        let high: number;
+        if (fits()) {
+            if (known === 0) return done(0);
+            take(known - 1);
+            if (!fits()) {
+                take(known);
+                return done(known);
+            }
+            low = 0;
+            high = known - 1;
+        } else {
+            if (known === steps.length) return done(known);
+            low = known + 1;
+            high = steps.length;
+            take(high);
+            if (!fits()) return done(high);
+        }
+        while (low < high) {
+            const middle = (low + high) >> 1;
+            take(middle);
+            if (fits()) high = middle;
+            else low = middle + 1;
+        }
+        take(low);
+        done(low);
+    };
 
     finishFit(panel: Panel): void {
         this.drawDividers(panel);
@@ -1178,38 +1283,46 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
 
     makeScroll(direction: 1 | -1): Button {
         const button = new Button({ icon: glyph(direction > 0 ? 'chevron-end' : 'chevron-start') });
-        button.element.classList.add('mx-ribbon-menu__scroll', direction > 0 ? 'mx-ribbon-menu__scroll--forward' : 'mx-ribbon-menu__scroll--back');
-        button.element.tabIndex = -1;
-        button.element.setAttribute('aria-hidden', 'true');
-        button.element.addEventListener('mousedown', e => e.preventDefault());
-        button.element.addEventListener('click', () => this.scrollBy(direction));
-        shown(button.element, false);
+        button.class.add('mx-ribbon-menu__scroll', direction > 0 ? 'mx-ribbon-menu__scroll--forward' : 'mx-ribbon-menu__scroll--back');
+        put(button, 'tabindex', '-1');
+        button.attr.add({ 'aria-hidden': 'true' });
+        button.motif.on('mousedown', (_, e) => e.preventDefault());
+        button.motif.on('click', () => this.scrollPanel(direction));
+        shown(button, false);
         this.stage.controls.add(button);
         return button;
     }
 
     drawEnds(): void {
-        const el = this.shownPanel()?.host.element;
-        const room = el?.clientWidth ?? 0;
-        const needed = el?.scrollWidth ?? 0;
-        const at = Math.abs(el?.scrollLeft ?? 0);
-        shown(this.back.element, needed > room + 1 && at > 1);
-        shown(this.forward.element, needed > room + 1 && at + room < needed - 1);
+        measure(this, this.readEnds, this.writeEnds);
     }
 
-    scrollBy(direction: 1 | -1): void {
-        const el = this.shownPanel()?.host.element;
-        if (!el) return;
-        const smooth = typeof matchMedia === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
-        el.scrollBy({ left: direction * (rtl ? -1 : 1) * el.clientWidth * 0.8, behavior: smooth ? 'smooth' : 'auto' });
+    // How wide the commands of the shown panel are, the room they have and how far they are scrolled.
+    readonly readEnds = (): { room: number; needed: number; at: number } => {
+        const panel = this.shownPanel();
+        const box = panel ? boxOf(panel.host) : null;
+        return { room: box?.clientWidth ?? 0, needed: box?.scrollWidth ?? 0, at: box?.scrollStart ?? 0 };
+    };
+
+    readonly writeEnds = ({ room, needed, at }: { room: number; needed: number; at: number }): void => {
+        shown(this.back, needed > room + 1 && at > 1);
+        shown(this.forward, needed > room + 1 && at + room < needed - 1);
+    };
+
+    scrollPanel(direction: 1 | -1): void {
+        const host = this.shownPanel()?.host;
+        if (!host) return;
+        const smooth = mediaOf(this, '(prefers-reduced-motion: no-preference)');
+        scrollBy(host, { start: direction * boxOf(host).clientWidth * 0.8 }, smooth ? 'smooth' : 'auto');
     }
 
     // A plain mouse wheel scrolls the commands sideways.
-    wheel(el: HTMLElement, e: WheelEvent): void {
-        if (e.deltaX || !e.deltaY || el.scrollWidth <= el.clientWidth) return;
+    wheel(host: Component<HTMLDivElement>, e: WheelEvent): void {
+        if (e.deltaX || !e.deltaY) return;
+        const box = boxOf(host);
+        if (box.scrollWidth <= box.clientWidth) return;
         e.preventDefault();
-        el.scrollLeft += e.deltaY;
+        scrollBy(host, { start: box.rtl ? -e.deltaY : e.deltaY });
     }
 
     // The app's own content at the start and the end of the row of tabs: a button, a search field, any editor.
@@ -1222,15 +1335,16 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (control) host.controls.add(control);
         if (side === 'start') this.startControl = control;
         else this.endControl = control;
-        shown(host.element, !!control);
+        shown(host, !!control);
     }
 
     setLevel(group: GroupPart, level: number, simple: boolean): void {
         group.level = level;
-        this.drawSizes(group);
+        this.drawSizes(group, true);
         if (!simple && level >= 3) this.foldGroup(group);
         else this.unfold(group);
-        mark(group.host.element, 'data-out', simple && level >= 2);
+        group.out = simple && level >= 2;
+        mark(group.host, 'data-out', group.out);
     }
 
     // The size a command of the group is drawn at.
@@ -1241,34 +1355,37 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         return given;
     }
 
-    drawSizes(group: GroupPart): void {
+    // In the fit (`now`), each button takes its look at once, so the next step measures it as drawn.
+    drawSizes(group: GroupPart, now = false): void {
         for (const m of group.made.values()) {
             if (m.type === 'row') continue;
             // A gallery is as high as the group until it gives way to its button alone.
             const simple = this.shownLayout() === 'simple';
             const size = m.type === 'gallery' ? (group.level >= 2 || simple || m.want.size === 'small' ? 'small' : 'large') : this.sizeAt(m.want.size, group.level);
-            this.drawSize(m, size);
-            mark(m.control.element as HTMLElement, 'data-simple-hidden', !m.want.simple);
+            this.drawSize(m, size, now);
+            mark(m.control, 'data-simple-hidden', !m.want.simple);
         }
     }
 
-    drawSize(m: Made, size: RibbonCommandSize): void {
-        const el = m.control.element as HTMLElement;
-        if (el.getAttribute('data-ribbon-size') === size) return;
-        el.setAttribute('data-ribbon-size', size);
+    drawSize(m: Made, size: RibbonCommandSize, now = false): void {
+        if (m.size === size) return;
+        m.size = size;
+        put(m.control, 'data-ribbon-size', size);
         if (m.control instanceof RibbonGallery) m.control.setSmall(size === 'small');
         if (!(m.control instanceof Button)) return;
         // A small command shows its icon alone; its text names it, as its tooltip.
-        const command = m.want.command;
+        const box = m.command;
         const button = m.control;
         if (size === 'small') {
             button.text = '';
-            button.hint = () => String(fieldOf(command, 'hint', this.element) ?? '') || parseAccessKey(String(fieldOf(command, 'text', this.element) ?? '')).text;
+            button.hint = () => String(fieldOf(box.value, 'hint', this) ?? '') || parseAccessKey(String(fieldOf(box.value, 'text', this) ?? '')).text;
         } else {
-            button.text = () => String(fieldOf(command, 'text', this.element) ?? '');
-            button.hint = () => String(fieldOf(command, 'hint', this.element) ?? '');
+            button.text = () => String(fieldOf(box.value, 'text', this) ?? '');
+            button.hint = () => String(fieldOf(box.value, 'hint', this) ?? '');
         }
-        button.readLook();
+        // In a fit the looks are read together once the step is written: one layout for all of them.
+        if (now) this.lookDue.push(button);
+        else button.readLook();
     }
 
     // A folded group is one large button with its name; it opens a popup with the group as it is. The popup stands
@@ -1282,26 +1399,22 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                     return name ? glyph(name) : (givenField<IconSource | null | undefined>(group.group, 'icon') ?? null);
                 }
             });
-            fold.element.classList.add('mx-ribbon-menu__command', 'mx-ribbon-menu__fold');
-            fold.element.setAttribute('data-ribbon-size', 'large');
-            fold.element.setAttribute('aria-haspopup', 'dialog');
-            fold.element.setAttribute('aria-expanded', 'false');
-            const arrow = new Component<HTMLSpanElement>('span');
-            arrow.element.className = 'mx-ribbon-menu__fold-arrow';
-            arrow.element.append(chevronDown());
-            fold.controls.add(arrow);
-            fold.element.addEventListener('click', () => this.toggleFold(group));
+            fold.class.add('mx-ribbon-menu__command', 'mx-ribbon-menu__fold');
+            fold.attr.add({ 'data-ribbon-size': 'large', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' });
+            glyphPart(part(fold, 'span', 'mx-ribbon-menu__fold-arrow'), 'chevron-down');
+            fold.motif.on('click', () => this.toggleFold(group));
             const popup = new Popup();
             popup.matchWidth = false;
-            popup.element.classList.add('mx-ribbon-menu__drop');
-            popup.element.setAttribute('role', 'dialog');
+            popup.class.add('mx-ribbon-menu__drop');
+            popup.attr.add({ role: 'dialog' });
             popup.onClosed(() => this.lend(group, false));
             group.host.controls.add(fold);
             group.host.controls.add(popup);
             group.fold = fold;
             group.popup = popup;
         }
-        mark(group.host.element, 'data-folded', true);
+        group.folded = true;
+        mark(group.host, 'data-folded', true);
     }
 
     toggleFold(group: GroupPart): void {
@@ -1312,25 +1425,27 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             return;
         }
         this.lend(group, true);
-        put(popup.element, 'aria-label', group.look?.text ?? '');
-        popup.open(fold.element);
-        fold.element.setAttribute('aria-expanded', 'true');
-        if (!focusInitial(popup.element)) popup.element.focus();
+        put(popup, 'aria-label', group.look?.text ?? '');
+        popup.open(fold);
+        put(fold, 'aria-expanded', 'true');
+        if (!focusFirstIn(popup)) focusOn(popup);
     }
 
     unfold(group: GroupPart): void {
         group.popup?.close('code');
         this.lend(group, false);
-        mark(group.host.element, 'data-folded', false);
+        group.folded = false;
+        mark(group.host, 'data-folded', false);
     }
 
     lend(group: GroupPart, open: boolean): void {
         // A group never folded has nothing to lend or take back.
         if (!group.popup || group.host.isDisposed) return;
-        group.fold?.element.setAttribute('aria-expanded', String(open));
+        if (group.fold) put(group.fold, 'aria-expanded', String(open));
         const into = open ? group.popup : group.host;
         if (group.inner.parent === into) return;
-        Transporter.transport(group.inner, into);
+        // Moved, not made again: the commands stay alive.
+        into.controls.add(group.inner);
         if (!open) group.host.controls.moveToIndex(group.inner, 0);
         this.queueRoving();
     }
@@ -1338,8 +1453,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     drawDividers(panel: Panel): void {
         let first = true;
         for (const group of panel.groups.values()) {
-            const on = group.look?.visible !== false && !group.host.element.hasAttribute('data-out');
-            shown(group.divider.element, on && !first);
+            const on = group.look?.visible !== false && !group.out;
+            shown(group.divider, on && !first);
             if (on) first = false;
         }
     }
@@ -1351,15 +1466,14 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (simple) {
             for (const group of panel.groups.values()) {
                 if (group.look?.visible === false) continue;
-                const out = group.host.element.hasAttribute('data-out');
-                const commands = this.menuItemsOf(group.made, m => out || !m.want.simple);
+                const commands = this.menuItemsOf(group.made, m => group.out || !m.want.simple);
                 if (commands.length) items.push({ text: group.look?.text ?? '', items: commands });
             }
         }
         if (items.length && !panel.overflow) {
             const more = new Button({ menu: [], icon: moreMark() });
-            more.element.classList.add('mx-ribbon-menu__command', 'mx-ribbon-menu__overflow');
-            more.element.setAttribute('data-ribbon-size', 'small');
+            more.class.add('mx-ribbon-menu__command', 'mx-ribbon-menu__overflow');
+            more.attr.add({ 'data-ribbon-size': 'small' });
             more.hint = uiLocale.strings.moreOptions;
             panel.host.controls.add(more);
             panel.overflow = more;
@@ -1367,7 +1481,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (!panel.overflow) return;
         panel.overflow.menu = items;
         panel.overflow.refresh();
-        shown(panel.overflow.element, items.length > 0);
+        shown(panel.overflow, items.length > 0);
     }
 
     menuItemsOf(made: Map<RibbonCommand, Made>, wanted: (m: Made) => boolean): MenuItem[] {
@@ -1390,15 +1504,15 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                 const gallery = m.control;
                 const where = this.whereOfMade(m);
                 items.push({
-                    text: parseAccessKey(String(fieldOf(m.want.command, 'text', this.element) ?? '')).text,
+                    text: parseAccessKey(String(fieldOf(m.want.command, 'text', this) ?? '')).text,
                     beginGroup: line,
-                    items: gallery.looks.map(look => ({ text: look.text, enabled: look.enabled, group: 'gallery', checked: look.key === gallery.chosen, click: (e: MenuItemClickEventArgs) => this.galleryPicked(m.want.command, look.item, where, e.event) }))
+                    items: gallery.items().map(item => ({ text: String(givenField(item, 'text') ?? ''), enabled: givenField(item, 'enabled') !== false, group: 'gallery', checked: gallery.isChosen(item), click: (e: MenuItemClickEventArgs) => this.galleryPicked(m.want.command, item, where, e.event) }))
                 });
                 line = false;
                 continue;
             }
             if (!(m.control instanceof Button)) continue;
-            items.push({ ...menuItemOf(m.control), text: () => parseAccessKey(String(fieldOf(m.want.command, 'text', this.element) ?? '')).text, beginGroup: line });
+            items.push({ ...menuItemOf(m.control), text: () => parseAccessKey(String(fieldOf(m.want.command, 'text', this) ?? '')).text, beginGroup: line });
             line = false;
         }
         return items;
@@ -1409,11 +1523,11 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
 
     drawDisplay(): void {
         const display = this.peekProperty<RibbonMenuDisplay>('display') ?? 'always';
-        put(this.element, 'data-display', display);
+        put(this, 'data-display', display);
         if (display === 'always') this.setFloating(false);
-        put(this.reveal.element, 'aria-label', uiLocale.strings.ribbonMenuReveal);
-        this.reveal.element.title = uiLocale.strings.ribbonMenuReveal;
-        put(this.reveal.element, 'aria-expanded', String(this.floating));
+        put(this.reveal, 'aria-label', uiLocale.strings.ribbonMenuReveal);
+        put(this.reveal, 'title', uiLocale.strings.ribbonMenuReveal);
+        put(this.reveal, 'aria-expanded', String(this.floating));
         this.queueLayout();
     }
 
@@ -1429,8 +1543,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     setFloating(on: boolean): void {
         if (on === this.floating) return;
         this.floating = on;
-        mark(this.element, 'data-floating', on);
-        put(this.reveal.element, 'aria-expanded', String(on));
+        mark(this, 'data-floating', on);
+        put(this.reveal, 'aria-expanded', String(on));
         if (!on) this.hints.stop();
         this.queueLayout();
     }
@@ -1444,17 +1558,24 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             e.preventDefault();
             this.setFloating(false);
             if (this.display === 'tabs') this.focus();
-            else this.reveal.element.focus();
+            else focusOn(this.reveal);
         }
     }
 
+    // Focus that goes nowhere keeps what is open over the page; focus that goes to an element is decided where it lands.
     focusLeft(e: FocusEvent): void {
-        const to = e.relatedTarget as Node | null;
-        if (this.floating && to && !this.element.contains(to)) this.setFloating(false);
+        this.focusLeaving = !!e.relatedTarget;
+    }
+
+    // Focus that left the menu for something else in the page closes what is open over the page.
+    focusLanded(e: FocusEvent): void {
+        if (!this.focusLeaving) return;
+        this.focusLeaving = false;
+        if (this.floating && !this.motif.isEventFrom(e)) this.setFloating(false);
     }
 
     pagePointerDown(e: PointerEvent): void {
-        const inside = this.element.contains(e.target as Node);
+        const inside = this.motif.isEventFrom(e);
         if (this.hints.active && !inside) this.hints.stop();
         if (this.floating && !inside) this.setFloating(false);
     }
@@ -1475,7 +1596,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             return;
         }
         if (this.altDown) this.altChord = true;
-        if (e.key === 'F10' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && this.claimsKeys()) {
+        if (e.key === 'F10' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && this.claimsKeys(e)) {
             e.preventDefault();
             this.showKeyHints();
         }
@@ -1485,38 +1606,36 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (e.key !== 'Alt') return;
         const tap = this.altDown && !this.altChord;
         this.altDown = false;
-        if (!tap || !this.claimsKeys()) return;
+        if (!tap || !this.claimsKeys(e)) return;
         if (this.hints.active) this.hints.stop();
         else this.showKeyHints();
     }
 
-    claimsKeys(): boolean {
-        if (this.peekProperty('keyHints') === false || !this.isEnabled || !this.element.isConnected) return false;
-        const doc = this.element.ownerDocument;
-        const focus = doc.activeElement;
-        const holder = focus?.closest?.('.mx-ribbon-menu');
-        if (holder) return holder === this.element;
-        const first = Array.from(doc.querySelectorAll<HTMLElement>('.mx-ribbon-menu')).find(el => el.getClientRects().length > 0);
-        return first === this.element;
+    // The keys are this menu's when focus is in it (the innermost menu holding focus), or, with focus in no menu, when
+    // it is the first menu shown in the page.
+    claimsKeys(e: KeyboardEvent): boolean {
+        if (this.peekProperty('keyHints') === false || !this.isEnabled) return false;
+        const menus = [...liveControls()].filter((c): c is RibbonMenu => c instanceof RibbonMenu && sameWindow(c, this));
+        const holder = menus.filter(m => holdsFocus(m, e)).sort((a, b) => treeDepth(b) - treeDepth(a))[0];
+        if (holder) return holder === this;
+        return menus.sort(compareTreeOrder).find(m => isRendered(m)) === this;
     }
 
     tabHints(): KeyHint[] {
         const hints: KeyHint[] = [];
-        if (!this.app.element.hidden) {
-            const parsed = parseAccessKey(this.appButton);
-            hints.push({ element: this.app.element, keys: parsed.key ?? '', text: parsed.text, press: () => this.app.element.click() });
-        }
+        // The button before the tabs is shown while it has a text (drawApp).
+        const app = parseAccessKey(this.appButton);
+        if (app.text) hints.push({ part: this.app, keys: app.key ?? '', text: app.text, press: () => this.app.attr.add({ click: true }) });
         this.looks.forEach((look, i) => {
             if (!look.visible || !look.enabled) return;
             const parsed = parseAccessKey(look.text);
-            const host = this.entries[i].host.element;
-            hints.push({ element: this.compact ? this.picker.element : host, keys: parsed.key ?? '', text: parsed.text, press: () => this.pressTab(look) });
+            const host = this.compact ? this.picker : this.entries[i].host;
+            hints.push({ part: host, keys: parsed.key ?? '', text: parsed.text, press: () => this.pressTab(look) });
         });
         let n = 1;
         for (const m of this.quickMade.values()) {
             if (!(m.control instanceof Button) || !m.want.visible || n > 9) continue;
-            const face = faceOf(m.control);
-            hints.push({ element: face, keys: String(n++), text: '', press: () => face.click() });
+            hints.push(buttonHint(m.control, String(n++), ''));
         }
         return hints;
     }
@@ -1524,7 +1643,6 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     pressTab(look: TabLook): void {
         this.choose(look, null);
         if (this.display !== 'always') this.setFloating(true);
-        this.fit();
     }
 
     commandHints(): KeyHint[] {
@@ -1532,18 +1650,15 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (!panel) return [];
         const hints: KeyHint[] = [];
         for (const group of panel.groups.values()) {
-            if (group.look?.visible === false || group.host.element.hasAttribute('data-out')) continue;
-            if (group.host.element.hasAttribute('data-folded') && group.fold) {
-                const fold = group.fold.element;
-                hints.push({ element: fold, keys: '', text: group.look?.text ?? '', press: () => !group.popup?.isOpen && this.toggleFold(group), opens: () => this.foldedHints(group) });
+            if (group.look?.visible === false || group.out) continue;
+            if (group.folded && group.fold) {
+                hints.push({ part: group.fold, keys: '', text: group.look?.text ?? '', press: () => !group.popup?.isOpen && this.toggleFold(group), opens: () => this.foldedHints(group) });
                 continue;
             }
             hints.push(...this.groupHints(group));
         }
-        if (panel.overflow && !panel.overflow.element.hidden) {
-            const more = faceOf(panel.overflow);
-            hints.push({ element: more, keys: '', text: uiLocale.strings.moreOptions, press: () => more.click() });
-        }
+        // The "more" button is shown while its menu has items (drawOverflow).
+        if (panel.overflow && panel.overflow.menu.length) hints.push(buttonHint(panel.overflow, '', uiLocale.strings.moreOptions));
         return hints;
     }
 
@@ -1558,34 +1673,36 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         const add = (m: Made) => {
             if (!m.want.visible) return;
             const command = m.want.command;
-            const text = parseAccessKey(String(fieldOf(command, 'text', this.element) ?? ''));
+            const text = parseAccessKey(String(fieldOf(command, 'text', this) ?? ''));
             const keys = String(givenField(command, 'keyHint') ?? '') || text.key || '';
-            if (m.control instanceof Button || m.control instanceof RibbonGallery) {
-                const face = faceOf(m.control instanceof Button ? m.control : m.control.opener);
-                hints.push({ element: face, keys, text: text.text, press: () => face.click() });
+            if (m.control instanceof Button) {
+                hints.push(buttonHint(m.control, keys, text.text));
+            } else if (m.control instanceof RibbonGallery) {
+                // Its grid opens at once, as a menu does (buttonHint).
+                const gallery = m.control;
+                hints.push({ part: gallery.opener.faceComponent, keys, text: text.text, press: () => gallery.toggle() });
             } else if (m.type === 'content') {
-                const target = focusableIn(m.control.element as HTMLElement)[0];
-                if (target) hints.push({ element: target, keys, text: text.text || nameOf(target), press: () => target.focus() });
+                // The app's content: its letters stand on it, and typing them gives focus to its first field. With no
+                // text, its hint names it.
+                const content = m.control;
+                if (hasFocusableIn(content)) hints.push({ part: content, keys, text: text.text || String(fieldOf(command, 'hint', this) ?? ''), press: () => focusFirstIn(content) });
             } else if (m.made) {
                 for (const inner of m.made.values()) add(inner);
             }
         };
         for (const m of group.made.values()) add(m);
-        if (group.more) {
-            const more = group.more.element;
-            hints.push({ element: more, keys: '', text: group.look?.text ?? '', press: () => more.click() });
-        }
+        if (group.more) hints.push(buttonHint(group.more, '', group.look?.text ?? ''));
         return hints;
     }
 
     // The button before the tabs.
     drawApp(): void {
         const parsed = parseAccessKey(this.peekProperty<string>('appButton') ?? '');
-        renderAccessKey(this.appCaption.element, parsed);
+        renderAccessKey(this.appCaption, parsed);
         const key = parsed.key ? accessKeyToken(parsed.key) : null;
-        setAccessKeyAttribute(this.app.element, this.appKey, key);
+        setAccessKeyAttribute(this.app, this.appKey, key);
         this.appKey = key;
-        shown(this.app.element, parsed.text !== '');
+        shown(this.app, parsed.text !== '');
     }
 
     // The quick commands: the app's, then the ones the user added, small, in the row of tabs or under the commands.
@@ -1599,10 +1716,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             this.quickMade = new Map();
             this.quickHost = host;
         }
-        shown(this.quickTop.element, false);
-        shown(this.quickBelow.element, false);
+        shown(this.quickTop, false);
+        shown(this.quickBelow, false);
         if (!host) return;
-        put(host.element, 'aria-label', uiLocale.strings.ribbonMenuQuick);
+        put(host, 'aria-label', uiLocale.strings.ribbonMenuQuick);
         this.stopQuick?.();
         const own = this.peekProperty<readonly RibbonCommand[]>('quickCommands');
         this.stopQuick = follow(
@@ -1618,7 +1735,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             },
             wanted => {
                 this.quickMade = this.placeCommands(host, this.quickMade, wanted, command => this.whereOf(command), true);
-                shown(host.element, wanted.some(w => w.visible));
+                shown(host, wanted.some(w => w.visible));
                 this.queueLayout();
             }
         );
@@ -1684,7 +1801,9 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     customGroups(panel: Panel, raw: GroupLook[]): GroupLook[] {
         const tab = this.tabKeyOf(panel.tab);
         const hidden = new Set(this.custom.hidden ?? []);
-        return ordered(raw.filter(look => look.fixed || !hidden.has(`${tab}/${look.key}`)), this.custom.order?.[tab], look => look.key);
+        const shownLooks = ordered(raw.filter(look => look.fixed || !hidden.has(`${tab}/${look.key}`)), this.custom.order?.[tab], look => look.key);
+        // A group the user hid is kept out of sight, after the others, for when it is shown again.
+        return [...shownLooks, ...raw.filter(look => !shownLooks.includes(look)).map(look => ({ ...look, visible: false, hiddenByUser: true }))];
     }
 
     customCommands(panel: Panel, group: GroupPart): Wanted[] {
@@ -1724,15 +1843,15 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     // The menu of the right button: the menu's own commands when customizable, and the app's, from onCustomMenuOpening.
     customMenuOpening(e: ContextMenuOpeningEventArgs): void {
         // The app's own content keeps its own menu.
-        if (e.target.closest('.mx-ribbon-menu__content')) {
+        if (this.fromContent(e.event)) {
             e.cancel = true;
             return;
         }
-        const { item, path } = this.customTarget(e.target);
+        const { item, path } = this.customTarget(e.event);
         const args: RibbonMenuCustomMenuOpeningEventArgs = {
             item,
             path,
-            items: this.peekProperty('customizable') === false ? [] : this.menuCommands(e.target),
+            items: this.peekProperty('customizable') === false ? [] : this.menuCommands(e.event),
             cancel: false,
             byKeyboard: e.byKeyboard,
             event: e.event,
@@ -1744,23 +1863,23 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     }
 
     // What the pointer or the focus is on: a tab, a group or a command, with its path.
-    customTarget(target: Element): { item: RibbonTab | RibbonGroup | RibbonCommand | null; path: string | null } {
-        const hit = this.hitOf(target);
+    customTarget(e: Event): { item: RibbonTab | RibbonGroup | RibbonCommand | null; path: string | null } {
+        const hit = this.hitOf(e);
         if (hit?.quick) return { item: hit.path ? this.findCommand(hit.path) : null, path: hit.path };
         if (hit) {
             const groupPath = `${this.tabKeyOf(hit.panel.tab)}/${hit.group.look?.key ?? ''}`;
             if (hit.made) return { item: hit.made.want.command, path: `${groupPath}/${hit.made.want.key}` };
             return { item: this.findGroup(groupPath), path: groupPath };
         }
-        const tab = this.entries[this.indexOfTab(target)];
+        const tab = this.entries[this.indexOfTab(e)];
         return tab ? { item: tab.tab, path: tab.key } : { item: null, path: null };
     }
 
     // The menu's own commands: what can be done with the command or the group under the pointer, and how it is shown.
-    menuCommands(target: Element): MenuItem[] {
+    menuCommands(e: Event): MenuItem[] {
         const s = uiLocale.strings;
         const items: MenuItem[] = [];
-        const hit = this.hitOf(target);
+        const hit = this.hitOf(e);
         if (hit?.quick) {
             if (hit.path) items.push({ text: s.ribbonMenuUnpin, click: () => this.pinByUser(hit.path!, false) });
         } else if (hit) {
@@ -1787,7 +1906,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                 }
             }
             if (group.look && !group.look.fixed) {
-                const looks = [...panel.groups.values()].map(g => g.look);
+                const looks = [...panel.groups.values()].map(g => g.look).filter(l => !l?.hiddenByUser);
                 const keys = looks.map(l => l?.key ?? '');
                 const at = keys.indexOf(group.look.key);
                 const name = group.look.text;
@@ -1843,11 +1962,11 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         return { tab: null, group: null };
     }
 
-    // What is under the pointer: a command of a group (or of a row in it), a group, or a quick command.
-    hitOf(target: Element): { panel: Panel; group: GroupPart; made: Made | null; quick?: false; path?: undefined } | { quick: true; path: string | null } | null {
-        if (this.quickHost?.element.contains(target)) {
+    // What the event started in: a command of a group (or of a row in it), a group, or a quick command.
+    hitOf(e: Event): { panel: Panel; group: GroupPart; made: Made | null; quick?: false; path?: undefined } | { quick: true; path: string | null } | null {
+        if (this.quickHost?.motif.isEventFrom(e)) {
             for (const [command, m] of this.quickMade) {
-                if (!(m.control.element as HTMLElement).contains(target)) continue;
+                if (!m.control.motif.isEventFrom(e)) continue;
                 const path = (this.custom.quick ?? []).find(p => this.resolve(p)?.command === command) ?? null;
                 return { quick: true, path };
             }
@@ -1856,17 +1975,60 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         const panel = this.shownPanel();
         if (!panel) return null;
         for (const group of panel.groups.values()) {
-            if (!group.host.element.contains(target) && !group.popup?.element.contains(target)) continue;
-            for (const m of group.made.values()) if ((m.control.element as HTMLElement).contains(target) && m.type !== 'row') return { panel, group, made: m };
+            if (!group.host.motif.isEventFrom(e) && !group.popup?.motif.isEventFrom(e)) continue;
+            for (const m of group.made.values()) if (m.control.motif.isEventFrom(e) && m.type !== 'row') return { panel, group, made: m };
             return { panel, group, made: null };
         }
         return null;
     }
 
+    // Whether an event started in the app's own content among the commands: it keeps its keys and its menu.
+    fromContent(e: Event): boolean {
+        const within = (made: Map<RibbonCommand, Made>): boolean => {
+            for (const m of made.values()) {
+                if (m.type === 'content' && m.control.motif.isEventFrom(e)) return true;
+                if (m.made && within(m.made)) return true;
+            }
+            return false;
+        };
+        if (within(this.quickMade)) return true;
+        for (const panel of this.panels.values()) for (const group of panel.groups.values()) if (within(group.made)) return true;
+        return false;
+    }
+
     // Keys in the commands: each group is a Tab stop, the arrows move between the commands, Escape goes to the tabs.
 
-    stopsOf(host: HTMLElement): HTMLElement[] {
-        return focusableIn(host).filter(el => !(el as HTMLButtonElement).disabled && !el.closest('.mx-ribbon-menu__content, .mx-popup'));
+    // The parts Tab and the arrows reach in a group, in their order: those of its commands (not the app's content), the
+    // button beside its name, and the button it folds into. While a folded group's popup is open, its commands are
+    // in the popup, not among these.
+    groupStops(group: GroupPart): ComponentBase[] {
+        const stops: ComponentBase[] = [];
+        if (group.inner.parent !== group.popup) {
+            this.madeStops(group.made, stops);
+            if (group.more) partStops(group.more, stops);
+        }
+        if (group.fold) partStops(group.fold, stops);
+        return stops;
+    }
+
+    madeStops(made: Map<RibbonCommand, Made>, stops: ComponentBase[]): void {
+        for (const m of made.values()) {
+            if (m.made) this.madeStops(m.made, stops);
+            else if (m.type !== 'content') partStops(m.control, stops);
+        }
+    }
+
+    // The stops of the groups of a panel, then the "more" button of the simplified row.
+    panelStops(panel: Panel): ComponentBase[] {
+        const stops: ComponentBase[] = [];
+        for (const group of panel.groups.values()) stops.push(...this.groupStops(group));
+        if (panel.overflow) partStops(panel.overflow, stops);
+        return stops;
+    }
+
+    // The stop Tab reaches in a group: `current` takes 0, the others -1.
+    drawStops(stops: ComponentBase[], current: ComponentBase | null): void {
+        for (const stop of stops) put(stop, 'tabindex', stop === current ? '0' : '-1');
     }
 
     shownPanel(): Panel | null {
@@ -1886,18 +2048,19 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     drawRoving(): void {
         for (const panel of this.panels.values()) {
             for (const group of panel.groups.values()) {
-                const stops = this.stopsOf(group.host.element);
-                const current = group.current && stops.includes(group.current) ? group.current : stops[0];
-                group.current = current ?? null;
-                for (const el of stops) el.tabIndex = el === current ? 0 : -1;
+                const stops = this.groupStops(group);
+                const current = group.current && stops.includes(group.current) ? group.current : (stops[0] ?? null);
+                group.current = current;
+                this.drawStops(stops, current);
             }
         }
     }
 
-    groupOf(target: Element): GroupPart | null {
+    // The group of the shown panel an event started in.
+    groupOf(e: Event): GroupPart | null {
         const panel = this.shownPanel();
         if (!panel) return null;
-        for (const group of panel.groups.values()) if (group.host.element.contains(target)) return group;
+        for (const group of panel.groups.values()) if (group.host.motif.isEventFrom(e)) return group;
         return null;
     }
 
@@ -1906,23 +2069,26 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (!panel) return;
         this.drawRoving();
         for (const group of panel.groups.values()) {
-            if (group.host.element.hidden || !group.current) continue;
-            group.current.focus();
+            if (group.look?.visible === false || !group.current) continue;
+            focusOn(group.current);
             return;
         }
     }
 
     commandFocused(e: FocusEvent): void {
-        const target = e.target as HTMLElement;
-        const group = this.groupOf(target);
-        if (!group || !this.stopsOf(group.host.element).includes(target)) return;
-        group.current = target;
-        for (const el of this.stopsOf(group.host.element)) el.tabIndex = el === target ? 0 : -1;
+        const group = this.groupOf(e);
+        if (!group) return;
+        const stops = this.groupStops(group);
+        const stop = stops.find(s => s.motif.isEventFrom(e));
+        if (!stop) return;
+        group.current = stop;
+        this.drawStops(stops, stop);
     }
 
     commandKeyDown(e: KeyboardEvent): void {
-        const target = e.target as HTMLElement;
-        if (e.defaultPrevented || e.isComposing || target.closest('.mx-ribbon-menu__content, .mx-popup')) return;
+        // The app's content keeps its keys. A popup among the commands closes on Escape itself, and its other keys
+        // reach no stop.
+        if (e.defaultPrevented || e.isComposing || this.fromContent(e)) return;
         if (e.key === 'Escape') {
             e.preventDefault();
             this.focus();
@@ -1930,10 +2096,10 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         }
         const panel = this.shownPanel();
         if (!panel) return;
-        const stops = this.stopsOf(panel.host.element);
-        const at = stops.indexOf(target);
+        const stops = this.panelStops(panel);
+        const at = stops.findIndex(s => s.motif.isEventFrom(e));
         if (at < 0) return;
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
+        const rtl = isRtl(this);
         let to = -1;
         if (e.key === (rtl ? 'ArrowLeft' : 'ArrowRight') || e.key === 'ArrowDown') to = (at + 1) % stops.length;
         else if (e.key === (rtl ? 'ArrowRight' : 'ArrowLeft') || e.key === 'ArrowUp') to = (at - 1 + stops.length) % stops.length;
@@ -1941,13 +2107,27 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         else if (e.key === 'End') to = stops.length - 1;
         if (to < 0) return;
         e.preventDefault();
-        stops[to].focus();
+        focusOn(stops[to]);
     }
 }
 
-// What is pressed of a button: its main part when it has a menu.
-function faceOf(button: Button): HTMLElement {
-    return button.element.querySelector<HTMLElement>(':scope > .mx-button__main') ?? button.element;
+// The parts of `part` that can take focus now, in their order, what opens over the page (a popup) left out.
+function partStops(part: ComponentBase, stops: ComponentBase[]): void {
+    if (part instanceof Popup) return;
+    if (canTakeFocus(part)) stops.push(part);
+    for (const child of part.controls.items) partStops(child, stops);
+}
+
+// A key hint on a button: its letters stand on the part that is pressed (its main part when it has a menu), and
+// typing them clicks that part. A menu opens or closes at once, before the hints close a popup the button is in.
+function buttonHint(button: Button, keys: string, text: string): KeyHint {
+    const face = button.faceComponent;
+    const press = () => {
+        if (!button.hasMenu || button.split) face.attr.add({ click: true });
+        else if (button.opened) button.close();
+        else button.open();
+    };
+    return { part: face, keys, text, press };
 }
 
 // The items in the order the user gave, the ones not in it after them, as given.
@@ -1958,12 +2138,4 @@ function copyOf(c: RibbonMenuCustomization): RibbonMenuCustomization {
     if (c.quick) out.quick = [...c.quick];
     if (c.order) out.order = Object.fromEntries(Object.entries(c.order).map(([k, v]) => [k, [...v]]));
     return out;
-}
-
-// The name assistive technology gives a field: its label, else its tooltip or placeholder.
-function nameOf(el: HTMLElement): string {
-    const by = el.getAttribute('aria-labelledby');
-    const labelled = by ? by.split(/\s+/).map(id => el.ownerDocument.getElementById(id)?.textContent ?? '').join(' ').trim() : '';
-    const label = (el as HTMLInputElement).labels?.[0]?.textContent?.trim() ?? '';
-    return el.getAttribute('aria-label') || labelled || label || el.title || el.getAttribute('placeholder') || '';
 }

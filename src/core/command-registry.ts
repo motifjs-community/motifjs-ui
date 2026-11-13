@@ -2,7 +2,8 @@ import { Emitter, untracked, type ComponentBase, type Event as MotifEvent } from
 import { parseAccessKey } from './access-key';
 import type { Command } from './command';
 import type { CommandsChangedEventArgs } from './commands-changed-event-args';
-import { deepActiveElement } from './focus';
+import { isWithin, treeDepth } from './component-tree';
+import { holdsFocus } from './focus';
 import { givenField } from './given-field';
 import { addShortcut, isKeys } from './keyboard';
 import { shortcuts } from './shortcut-registry';
@@ -61,17 +62,16 @@ export class CommandRegistry {
   }
 
   /**
-   * The command with `key` that holds here: of the scope that holds `from` (the item that names it), else of the scope
-   * that holds focus, else the app-wide one, else the last added.
+   * The command with `key` that holds here: of the scope that holds `from` (the component of the item that names it,
+   * such as its menu or toolbar), else of the scope that holds focus, else the app-wide one, else the last added.
    */
-  get(key: string, from?: Element | null): Command | null {
+  get(key: string, from?: ComponentBase | null): Command | null {
     const list = (this.byKey.get(key) ?? []).filter((c) => !c.scope?.isDisposed);
     if (list.length < 2) return list[0] ?? null;
-    const within = (el: Element | null | undefined) => (el ? list.filter((c) => c.scope && (c.scope.element as Node).contains(el)) : []);
-    const deepest = (found: Command[]) => found.sort((a, b) => depth(b.scope!) - depth(a.scope!))[0];
-    const here = within(from);
+    const deepest = (found: Command[]) => found.sort((a, b) => treeDepth(b.scope!) - treeDepth(a.scope!))[0];
+    const here = from ? list.filter((c) => c.scope && isWithin(from, c.scope)) : [];
     if (here.length) return deepest(here);
-    const focused = within(typeof document === 'undefined' ? null : deepActiveElement(document));
+    const focused = list.filter((c) => c.scope && holdsFocus(c.scope));
     if (focused.length) return deepest(focused);
     return list.find((c) => !c.scope) ?? list[list.length - 1];
   }
@@ -85,8 +85,8 @@ export class CommandRegistry {
     return [...this.byKey.values()].flat();
   }
 
-  /** Runs the command with `key` that holds here. Returns `false` when there is none or it is off. */
-  run(key: string, from?: Element | null, event: Event | null = null): boolean {
+  /** Runs the command with `key` that holds here (see `get`). Returns `false` when there is none or it is off. */
+  run(key: string, from?: ComponentBase | null, event: Event | null = null): boolean {
     const command = this.get(key, from);
     if (!command || untracked(() => givenField(command, 'enabled')) === false) return false;
     command.run?.({ command, item: null, source: command.scope ?? null, event });
@@ -112,13 +112,6 @@ export class CommandRegistry {
       },
     );
   }
-}
-
-
-function depth(component: ComponentBase): number {
-  let n = 0;
-  for (let el = component.element as Node | null; el; el = el.parentNode) n++;
-  return n;
 }
 
 /** The commands of the app. */

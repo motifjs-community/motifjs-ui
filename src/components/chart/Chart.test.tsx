@@ -2,7 +2,7 @@ import { reactive, type ComponentBase } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost } from '../../../tests/helpers';
-import type { ResizeWatch } from '../../core/resize-watch';
+import { measureNow, whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { Chart } from './Chart';
 import type { ChartProps } from './chart-props';
@@ -19,10 +19,15 @@ const BARS = [{ type: 'bar', yField: 'a', name: 'A' }, { type: 'bar', yField: 'b
 function mount(chart: Chart): Chart {
     hosts.push(mountHost(chart));
     chart.onMounted();
+    measureNow(chart);
     return chart;
 }
 const make = (props: ChartProps = {}) => mount(new Chart({ data: ROWS, xField: 'month', series: [...BARS], ...props }));
-const settle = () => Promise.resolve().then(() => Promise.resolve());
+// The changes land, then the draw they asked for runs with the window's next frame, here at once.
+const settle = async () => {
+    await Promise.resolve().then(() => Promise.resolve());
+    for (const host of hosts) if (!host.isDisposed) measureNow(host);
+};
 const $ = (chart: Chart, selector: string) => chart.element.querySelector(selector) as HTMLElement;
 const $$ = (chart: Chart, selector: string) => [...chart.element.querySelectorAll(selector)] as HTMLElement[];
 const key = (el: HTMLElement, name: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
@@ -88,7 +93,7 @@ describe('Chart', () => {
     it('hides a series from the legend, keeps the other color, and tells', async () => {
         const toggled = vi.fn();
         const chart = make({ onSeriesToggled: toggled });
-        const other = (chart.cartesian.parts[1].group as SVGGElement).style.getPropertyValue('--_mark');
+        const other = chart.cartesian.parts[1].groupPart.element.style.getPropertyValue('--_mark');
         const item = $$(chart, '.mx-chart__legend-item')[0];
         expect(item.getAttribute('aria-pressed')).toBe('true');
         item.click();
@@ -97,8 +102,8 @@ describe('Chart', () => {
         expect(item.hasAttribute('data-off')).toBe(true);
         expect(chart.isSeriesVisible(0)).toBe(false);
         expect(toggled.mock.calls[0][0].visible).toBe(false);
-        expect((chart.cartesian.parts[1].group as SVGGElement).style.getPropertyValue('--_mark')).toBe(other);
-        expect(chart.cartesian.parts[0].group.style.display).toBe('none');
+        expect(chart.cartesian.parts[1].groupPart.element.style.getPropertyValue('--_mark')).toBe(other);
+        expect(chart.cartesian.parts[0].groupPart.element.style.display).toBe('none');
     });
 
     it('can keep the legend from hiding anything', () => {
@@ -177,6 +182,13 @@ describe('Chart', () => {
         expect(rows[0].children[1].textContent).toBe('20');
         expect(rows[0].children[2].textContent).toBe('A');
         expect(tip.getAttribute('aria-hidden')).toBe('true');
+        // The next point is written into the same title and rows.
+        const title = $$(chart, '.mx-chart__tooltip-title')[0];
+        key($(chart, '.mx-chart__plot'), 'ArrowRight');
+        expect($$(chart, '.mx-chart__tooltip-title')[0]).toBe(title);
+        expect(title.textContent).not.toBe('Feb');
+        expect($$(chart, '.mx-chart__tooltip-row')).toEqual(rows);
+        expect($$(chart, '.mx-chart__tooltip-row')[0]).toBe(rows[0]);
     });
 
     it('writes names from data as text', () => {
@@ -334,21 +346,21 @@ describe('Chart', () => {
     it('breaks a line at an empty value', () => {
         const rows = [{ k: 'a', v: 1 }, { k: 'b', v: 2 }, { k: 'c', v: null }, { k: 'd', v: 4 }, { k: 'e', v: 5 }];
         const chart = make({ data: rows, xField: 'k', series: [{ yField: 'v' }] });
-        expect(chart.cartesian.parts[0].line.getAttribute('d')?.match(/M/g)).toHaveLength(2);
+        expect(chart.cartesian.parts[0].linePart.element.getAttribute('d')?.match(/M/g)).toHaveLength(2);
         const joined = make({ data: rows, xField: 'k', series: [{ yField: 'v', gaps: 'connect' }] });
-        expect(joined.cartesian.parts[0].line.getAttribute('d')?.match(/M/g)).toHaveLength(1);
+        expect(joined.cartesian.parts[0].linePart.element.getAttribute('d')?.match(/M/g)).toHaveLength(1);
     });
 
     it('shows a value alone between gaps as a dot', () => {
         const rows = [{ k: 'a', v: null }, { k: 'b', v: 2 }, { k: 'c', v: null }];
         const chart = make({ data: rows, xField: 'k', series: [{ yField: 'v' }] });
-        expect(chart.cartesian.parts[0].dots.getAttribute('d')).toContain('a');
+        expect(chart.cartesian.parts[0].dotsPart.element.getAttribute('d')).toContain('a');
     });
 
     it('thins a long line to the width, and keeps every value to read', () => {
         const rows = Array.from({ length: 20000 }, (_, i) => ({ k: i, v: Math.sin(i / 50) }));
         const chart = make({ data: rows, xField: 'k', series: [{ yField: 'v' }] });
-        expect(chart.cartesian.parts[0].line.getAttribute('d')?.match(/L/g)?.length).toBeLessThan(2000);
+        expect(chart.cartesian.parts[0].linePart.element.getAttribute('d')?.match(/L/g)?.length).toBeLessThan(2000);
         expect(chart.model?.slots).toHaveLength(20000);
     });
 
@@ -399,9 +411,25 @@ describe('Chart', () => {
     });
 
     it('stops watching its size when it goes', async () => {
-        const chart = make();
-        const stop = vi.spyOn(chart.watch as ResizeWatch, 'disconnect');
-        await chart.dispose();
-        expect(stop).toHaveBeenCalled();
+        const watched = new Set<Element>();
+        Object.defineProperty(window, 'ResizeObserver', {
+            configurable: true,
+            value: class {
+                observe(el: Element) { watched.add(el); }
+                unobserve(el: Element) { watched.delete(el); }
+                disconnect() { watched.clear(); }
+            }
+        });
+        try {
+            const chart = make();
+            const plot = $(chart, '.mx-chart__plot');
+            // The page tells the chart it arrived a moment later; the watch starts then.
+            await whenMeasured(chart);
+            expect(watched.has(plot)).toBe(true);
+            await chart.dispose();
+            expect(watched.has(plot)).toBe(false);
+        } finally {
+            delete (window as { ResizeObserver?: unknown }).ResizeObserver;
+        }
     });
 });

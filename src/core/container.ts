@@ -1,7 +1,13 @@
-import type { IBaseProp } from '@motifx/core';
-import { controlOf } from './control-map';
+import { untracked, type ComponentBase, type IBaseProp } from '@motifx/core';
+import { isWithin } from './component-tree';
 import { Control, type ControlProps } from './control';
-import { deepActiveElement, isFocusable, nextTabbable, tabbableIn } from './focus';
+import { controlFor, deepActiveElement, markOf, nextTabbable, tabbableIn, windowElementOf } from './focus';
+import type { FocusMark } from './focus-mark';
+import { controlsWithTabIndex } from './live-controls';
+import { isElement, isHtmlElement } from './node-kind';
+
+// Part of the focus layer: Tab order and the active control of a container work on elements here, found and ranked
+// through the component tree.
 
 /**
  * A control that remembers which control inside it is active and acts as a scope
@@ -23,8 +29,8 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
   TElement,
   TProps
 > {
-  /** The element that had focus last inside this container. */
-  private lastFocused: HTMLElement | null = null;
+  /** Where focus was last inside this container, and the control that held it then. */
+  private lastFocus: { mark: FocusMark; control: Control | null } | null = null;
 
   constructor(element: TElement | string, props?: IBaseProp<TProps>);
   // Last, so JSX takes the props type from it.
@@ -32,8 +38,8 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
   constructor(...args: unknown[]) {
     // Forwarded as they came (see Control); typed as the props-only overload.
     super(...(args as [IBaseProp<TProps>?]));
-    this.element.addEventListener('focusin', (e) => this.trackFocus(e.target as HTMLElement));
-    this.element.addEventListener('keydown', (e) => this.onTabKey(e));
+    this.motif.on('focusin', (_, e) => this.trackFocus(e));
+    this.motif.on('keydown', (_, e) => this.onTabKey(e));
   }
 
   /**
@@ -46,7 +52,7 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
   }
 
   set activeControl(control: Control | null) {
-    if (control && this.element.contains(control.element)) control.focus();
+    if (control && isWithin(control, this)) control.focus();
   }
 
   /**
@@ -63,33 +69,36 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
    * nothing inside can receive focus.
    */
   restoreFocus(): boolean {
-    const last = this.lastFocused;
-    if (last && this.element.contains(last) && isFocusable(last) && !last.closest('[aria-disabled="true"]')) {
-      last.focus();
-      if (deepActiveElement() === last) return true;
-    }
+    const last = this.lastFocus;
+    // The control that held it may be disabled since: focus does not go back into it.
+    if (last && last.mark.isIn(this) && untracked(() => (last.control ?? this).isEnabled) && last.mark.restore()) return true;
     const active = this.activeControl;
     if (active && active !== this) {
       if (active instanceof FocusContainer ? active.restoreFocus() : active.focus()) return true;
     }
-    const first = tabOrder(this.element)[0];
+    const first = tabOrder(this)[0];
     first?.focus();
     return !!first;
   }
 
-  private trackFocus(target: HTMLElement): void {
-    // Focus inside a window opened within this container belongs to that window.
-    const win = target.closest('dialog');
-    if (win !== this.element.closest('dialog') && win !== (this.element as Element)) return;
+  /** Follows focus down the component tree: the outermost nested container inside, else the innermost control, is active. */
+  private trackFocus(e: FocusEvent): void {
+    const target = e.target;
+    if (!isHtmlElement(target)) return;
     let leaf: Control | null = null;
     let nested: Control | null = null;
-    for (let n: HTMLElement | null = target; n && n !== this.element; n = n.parentElement) {
-      const c = controlOf(n);
-      if (!c) continue;
-      leaf ??= c;
-      if (c instanceof FocusContainer) nested = c; // the outermost nested container wins
+    for (let at: ComponentBase | undefined = this; at; ) {
+      const child: ComponentBase | undefined = at.controls.items.find((c) => c.motif.isEventFrom(e));
+      const control = child ? controlFor(child) : null;
+      if (control) {
+        // Focus inside a window opened within this container belongs to that window.
+        if (control.isWindow) return;
+        leaf = control;
+        if (!nested && control instanceof FocusContainer) nested = control;
+      }
+      at = child;
     }
-    this.lastFocused = target;
+    this.lastFocus = { mark: markOf(target), control: leaf };
     const active = nested ?? leaf;
     if (active !== this.activeControl) this.setProperty('activeControl', active);
   }
@@ -100,13 +109,23 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
     return true;
   }
 
+  /** Whether a control inside (not inside a window of its own) has a `tabIndex` other than 0: only then Tab needs help. */
+  private get hasTabIndexes(): boolean {
+    for (const control of controlsWithTabIndex()) {
+      if (control === this) continue;
+      for (let p = control.parentControl; p; p = p.parentControl) if (p === this) return true;
+    }
+    return false;
+  }
+
   private onTabKey(e: KeyboardEvent): void {
     if (e.key !== 'Tab' || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey || !this.runsTab) return;
-    const custom = !!this.element.querySelector('[data-mx-tabindex]');
+    const custom = this.hasTabIndexes;
     const cycle = this.cyclesTab;
     if (!custom && !cycle) return;
+    const root = this.element as Element;
     const current = deepActiveElement();
-    const order = custom ? tabOrder(this.element) : tabbableIn(this.element);
+    const order = custom ? tabOrder(this) : tabbableIn(root);
     if (!order.length) return;
     const back = e.shiftKey;
     let index = current ? order.findIndex((el) => el === current || el.contains(current)) : -1;
@@ -123,7 +142,7 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
     } else if (!target) {
       // Leaving the container: from the container as a whole, not from the
       // focused element (which may sit anywhere inside in DOM terms).
-      const outside = nextTabbable(this.element, this.element.closest('dialog') ?? this.element.ownerDocument.body, !back);
+      const outside = nextTabbable(root, windowElementOf(this, true) ?? root.ownerDocument.body, !back);
       if (!outside) return;
       target = outside;
     } else if (!custom) {
@@ -144,21 +163,48 @@ interface Ranked {
 /**
  * The elements Tab visits in `root`: at each level of the control tree,
  * siblings by ascending `tabIndex`, ties (and plain elements, index 0) in
- * document order. One radio button per group, as browsers do.
+ * document order. One radio button per group, as browsers do. Focus layer only.
  */
-export function tabOrder(root: Element): HTMLElement[] {
-  const ranked: Ranked[] = radioStops(tabbableIn(root)).map((el, index) => ({ el, index, path: pathOf(el, root) }));
+export function tabOrder(root: ComponentBase): HTMLElement[] {
+  const el: unknown = root.element;
+  if (!isElement(el)) return [];
+  const ranked: Ranked[] = radioStops(tabbableIn(el)).map((stop, index) => ({ el: stop, index, path: [] }));
+  rank(root, ranked, null);
   ranked.sort(compareRanked);
   return ranked.map((r) => r.el);
 }
 
-function pathOf(el: Element, root: Element): Ranked['path'] {
-  const path: Ranked['path'] = [];
-  for (let n: Element | null = el; n && n !== root; n = n.parentElement) {
-    const control = controlOf(n);
-    if (control) path.unshift({ control, key: control.tabIndex });
+/**
+ * Walks the component tree down from `component` and adds each Control met (a part standing for one counts as that
+ * control) to the path of the elements inside it. `inside` holds the elements under `component`, in document order.
+ */
+function rank(component: ComponentBase, inside: Ranked[], current: Control | null): void {
+  for (const child of component.controls.items) {
+    const el: unknown = child.element;
+    // A component without an element of its own (a fragment) hands its elements on to its children.
+    const held = isElement(el) ? heldBy(el, inside) : inside;
+    if (!held.length) continue;
+    const control = controlFor(child);
+    if (control && control !== current) {
+      const key = untracked(() => control.tabIndex);
+      for (const r of held) r.path.push({ control, key });
+    }
+    rank(child, held, control ?? current);
   }
-  return path;
+}
+
+/** The run of `sorted` (in document order) that lies in `el`, found by halving. */
+function heldBy(el: Element, sorted: Ranked[]): Ranked[] {
+  let low = 0;
+  let high = sorted.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (el.compareDocumentPosition(sorted[middle].el) & Node.DOCUMENT_POSITION_PRECEDING) low = middle + 1;
+    else high = middle;
+  }
+  let end = low;
+  while (end < sorted.length && el.contains(sorted[end].el)) end++;
+  return sorted.slice(low, end);
 }
 
 function compareRanked(a: Ranked, b: Ranked): number {

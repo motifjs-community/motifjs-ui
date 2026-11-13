@@ -1,4 +1,4 @@
-import type { Bind } from '@motifx/core';
+import type { Bind, ComponentBase } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { DraggableEventArgs } from './draggable-event-args';
 
@@ -15,8 +15,8 @@ export interface DragPosition {
 export interface DraggableProps extends ControlProps {
     /** The directions it can move in. The default is `'both'`. */
     axis?: Bind<DragAxis>;
-    /** The area it stays inside: its parent, or an element that contains it. The default is `null`, no limit. */
-    boundary?: Bind<'parent' | HTMLElement | null>;
+    /** The area it stays inside: its parent, or a component that contains it. The default is `null`, no limit. */
+    boundary?: Bind<'parent' | ComponentBase | null>;
     /**
    * A selector inside the draggable. Only this part starts a drag, and it receives keyboard input.
    * The default is `null`, the whole draggable.

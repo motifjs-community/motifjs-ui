@@ -37,6 +37,33 @@ const shownPanel = (t: Tabs) => panels(t).find((p) => !p.hidden);
 const titles = (t: Tabs) => headers(t).map((h) => h.querySelector('.mx-tabs__label')!.textContent);
 
 describe('Tabs', () => {
+  it('keeps the parts of a title when it changes: the access key is the same part, kept out while there is none', async () => {
+    let t!: Tabs;
+    let tab!: Tab;
+    page(
+      <Tabs ref={(x: Tabs) => (t = x)}>
+        <Tab ref={(x: Tab) => (tab = x)} title="&General" />
+      </Tabs>,
+    );
+    await settle();
+    const label = headers(t)[0].querySelector('.mx-tabs__label')!;
+    const key = label.querySelector('.mx-access-key')!;
+    expect(key.textContent).toBe('G');
+    tab.title = 'Gen&eral';
+    await settle();
+    expect(label.querySelector('.mx-access-key')).toBe(key);
+    expect(key.textContent).toBe('e');
+    expect(label.textContent).toBe('General');
+    tab.title = 'Plain';
+    await settle();
+    expect(label.querySelector('.mx-access-key')).toBeNull();
+    expect(label.textContent).toBe('Plain');
+    tab.title = '&Back';
+    await settle();
+    expect(label.querySelector('.mx-access-key')).toBe(key);
+    expect(label.textContent).toBe('Back');
+  });
+
   it('builds the tabs pattern from JSX children, the first tab selected', async () => {
     let t!: Tabs;
     page(
@@ -59,11 +86,14 @@ describe('Tabs', () => {
     expect(advanced.getAttribute('aria-selected')).toBe('false');
     expect([general.tabIndex, advanced.tabIndex]).toEqual([0, -1]);
     expect(general.getAttribute('aria-keyshortcuts')).toBe('Alt+G');
-    const [first, second] = panels(t);
+    // Only the shown panel is in the page, and only its tab names it.
+    const [first] = panels(t);
+    expect(panels(t)).toHaveLength(1);
     expect(general.getAttribute('aria-controls')).toBe(first.id);
+    expect(advanced.hasAttribute('aria-controls')).toBe(false);
     expect(first.getAttribute('aria-labelledby')).toBe(general.id);
-    expect(first.hidden).toBe(false);
-    expect(second.hidden).toBe(true);
+    expect(t.tabs.map((x) => x.isVisible)).toEqual([true, false]);
+    expect(first).toBe(t.tabs[0].element);
     expect(t.selectedIndex).toBe(0);
     expect(t.value).toBe(0);
     expect(t.tabs.map((x) => x.title)).toEqual(['&General', 'Advanced']);

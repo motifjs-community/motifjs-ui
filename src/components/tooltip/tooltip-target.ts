@@ -1,4 +1,4 @@
 import type { ComponentBase } from '@motifx/core';
 
-/** The element a tooltip describes: an element, or a component (its element). */
-export type TooltipTarget = Element | ComponentBase;
+/** The component a tooltip describes. */
+export type TooltipTarget = ComponentBase;

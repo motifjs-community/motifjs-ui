@@ -1,7 +1,10 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { clearParts, glyphPart, part, removePart } from '../../core/draw-parts';
+import { focusOn, holdsFocus, isFocused } from '../../core/focus';
 import { functionValue } from '../../core/function-value';
-import { chevronDown } from '../../core/glyphs';
+import { isRtl } from '../../core/measure';
+import { mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { addDays } from '../../parts/dates/add-days';
 import { addMonths } from '../../parts/dates/add-months';
@@ -22,13 +25,27 @@ const VIEWS: CalendarView[] = ['month', 'year', 'decade'];
 
 const PARTS = Symbol('mx.calendar');
 
+interface Grid {
+  shape: string;
+  week: Component<HTMLElement> | null;
+  heads: Component<HTMLTableCellElement>[];
+  rowHeads: Component<HTMLTableCellElement>[];
+  cells: Component<HTMLTableCellElement>[];
+}
+
 interface Parts {
-  previous: HTMLButtonElement;
-  title: HTMLButtonElement;
-  next: HTMLButtonElement;
-  grid: HTMLTableElement;
-  foot: HTMLDivElement;
-  today: HTMLButtonElement | null;
+  previousPart: Component<HTMLButtonElement>;
+  titlePart: Component<HTMLButtonElement>;
+  nextPart: Component<HTMLButtonElement>;
+  gridPart: Component<HTMLTableElement>;
+  footPart: Component<HTMLDivElement>;
+  today: Component<HTMLButtonElement> | null;
+  /** The grid's parts, built once for its shape. */
+  grid: Grid | null;
+  /** The cells drawn with a date, to tell which one an event came from. */
+  cells: { part: Component<HTMLTableCellElement>; time: number; enabled: boolean }[];
+  /** The drawn cell with the Tab stop. */
+  stopCell: Component<HTMLTableCellElement> | null;
   /** The cell with the Tab stop, in every view. */
   focused: Date;
   view: CalendarView;
@@ -38,6 +55,9 @@ interface Parts {
   pointed: Emitter<Date | null>;
   /** The day last told to `onDayPointed`, so the same one is not told again. */
   lastPointed: number | null;
+  focusedChanged: Emitter<Date>;
+  /** The date last told to `onFocusedDateChanged`. */
+  lastFocused: number;
 }
 
 /**
@@ -55,6 +75,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     if (own.disabledDates !== undefined) this.bindProperty('disabledDates', functionValue(own.disabledDates));
     if (own.onValueChanged) this.onValueChanged(own.onValueChanged);
     if (own.onDayPointed) this.onDayPointed(own.onDayPointed);
+    if (own.onFocusedDateChanged) this.onFocusedDateChanged(own.onFocusedDateChanged);
     const parts = this.parts;
     // A new value, from wherever it comes, shows its month.
     this.observeProperty<Date | null>('value', (value) => {
@@ -76,23 +97,24 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
       const strings = uiLocale.strings;
       const view = this.peekProperty<CalendarView | undefined>('shownView') ?? 'month';
       const [back, forward] = view === 'month' ? [strings.previousMonth, strings.nextMonth] : view === 'year' ? [strings.previousYear, strings.nextYear] : [strings.previousYears, strings.nextYears];
-      parts.previous.setAttribute('aria-label', back);
-      parts.next.setAttribute('aria-label', forward);
-      if (parts.today) parts.today.textContent = strings.today;
+      put(parts.previousPart, 'aria-label', back);
+      put(parts.nextPart, 'aria-label', forward);
+      if (parts.today) text(parts.today, strings.today);
     };
     const stopTexts = onLanguage(this, drawTexts);
     this.observeProperty('shownView', drawTexts);
-    parts.grid.addEventListener('keydown', (e) => this.keyDown(e));
-    parts.grid.addEventListener('click', (e) => this.clicked(e));
-    parts.grid.addEventListener('pointerover', (e) => this.pointedOver(e));
-    parts.grid.addEventListener('pointerleave', () => this.point(null));
-    parts.previous.addEventListener('click', () => this.page(-1));
-    parts.next.addEventListener('click', () => this.page(1));
-    parts.title.addEventListener('click', () => this.zoomOut());
+    parts.gridPart.motif.on('keydown', (_, e) => this.keyDown(e));
+    parts.gridPart.motif.on('click', (_, e) => this.clicked(e));
+    parts.gridPart.motif.on('pointerover', (_, e) => this.pointedOver(e));
+    parts.gridPart.motif.on('pointerleave', () => this.point(null));
+    parts.previousPart.motif.on('click', () => this.page(-1));
+    parts.nextPart.motif.on('click', () => this.page(1));
+    parts.titlePart.motif.on('click', () => this.zoomOut());
     this.motif.setDisposable(() => {
       stopTexts();
       parts.valueChanged.dispose();
       parts.pointed.dispose();
+      parts.focusedChanged.dispose();
     });
   }
 
@@ -197,6 +219,11 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return this.parts.valueChanged.event;
   }
 
+  /** Occurs when the Tab stop moves to another date, by the user or by `goTo`, so the month or year on screen may be another. */
+  get onFocusedDateChanged(): MotifEvent<Date> {
+    return this.parts.focusedChanged.event;
+  }
+
   /** Shows the month of `date` and places the Tab stop on it. */
   goTo(date: Date): void {
     this.parts.focused = dayStart(date);
@@ -205,10 +232,10 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
 
   /** Sets focus on the cell with the Tab stop. */
   override focus(): boolean {
-    const cell = this.parts.grid.querySelector<HTMLElement>('[tabindex="0"]');
+    const cell = this.parts.stopCell;
     if (!cell || !this.isEnabled) return false;
-    cell.focus();
-    return document.activeElement === cell;
+    focusOn(cell);
+    return isFocused(cell);
   }
 
   /** Indicates whether `date` can be selected: within min and max, and not one of the disabled dates. */
@@ -220,8 +247,8 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return !this.peekProperty<((d: Date) => boolean) | null>('disabledDates')?.(date);
   }
 
-  protected override get focusElement(): HTMLElement {
-    return this.parts.grid;
+  override get focusPart(): ComponentBase {
+    return this.parts.gridPart;
   }
 
   private get parts(): Parts {
@@ -230,40 +257,41 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
   }
 
   private createParts(): Parts {
-    const root = this.element;
-    root.classList.add('mx-calendar');
-    const header = root.appendChild(document.createElement('div'));
-    header.className = 'mx-calendar__header';
+    this.class.add('mx-calendar');
+    const header = part<HTMLDivElement>(this, 'div', 'mx-calendar__header');
     const button = (className: string) => {
-      const b = header.appendChild(document.createElement('button'));
-      b.type = 'button';
-      b.className = className;
+      const b = part<HTMLButtonElement>(header, 'button', className);
+      b.attr.add({ type: 'button' });
       return b;
     };
-    const previous = button('mx-calendar__nav mx-calendar__previous');
-    previous.append(chevronDown());
-    const title = button('mx-calendar__title');
-    title.setAttribute('aria-live', 'polite');
-    const next = button('mx-calendar__nav mx-calendar__next');
-    next.append(chevronDown());
-    const grid = root.appendChild(document.createElement('table'));
-    grid.className = 'mx-calendar__grid';
-    grid.setAttribute('role', 'grid');
-    const foot = root.appendChild(document.createElement('div'));
-    foot.className = 'mx-calendar__foot';
+    const previousPart = button('mx-calendar__nav mx-calendar__previous');
+    glyphPart(previousPart, 'chevron-down');
+    const titlePart = button('mx-calendar__title');
+    titlePart.attr.add({ 'aria-live': 'polite' });
+    const nextPart = button('mx-calendar__nav mx-calendar__next');
+    glyphPart(nextPart, 'chevron-down');
+    const gridPart = part<HTMLTableElement>(this, 'table', 'mx-calendar__grid');
+    gridPart.attr.add({ role: 'grid' });
+    const footPart = part<HTMLDivElement>(this, 'div', 'mx-calendar__foot');
+    const focused = dayStart(new Date());
     return {
-      previous,
-      title,
-      next,
-      grid,
-      foot,
+      previousPart,
+      titlePart,
+      nextPart,
+      gridPart,
+      footPart,
       today: null,
-      focused: dayStart(new Date()),
+      grid: null,
+      cells: [],
+      stopCell: null,
+      focused,
       view: 'month',
       ready: false,
       valueChanged: new Emitter(),
       pointed: new Emitter(),
       lastPointed: null,
+      focusedChanged: new Emitter(),
+      lastFocused: +focused,
     };
   }
 
@@ -275,10 +303,6 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return this.peekProperty<string>('locale') || uiLocale.locale;
   }
 
-  private get rtl(): boolean {
-    return getComputedStyle(this.element).direction === 'rtl';
-  }
-
   private render(): void {
     const parts = this.parts;
     if (!parts.ready) return;
@@ -286,27 +310,42 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     const minView = this.peekProperty<CalendarView>('minView') ?? 'month';
     if (VIEWS.indexOf(view) < VIEWS.indexOf(minView)) parts.view = minView;
     this.setProperty('shownView', parts.view);
-    this.element.dataset.view = parts.view;
-    const focusInside = parts.grid.contains(document.activeElement);
+    put(this, 'data-view', parts.view);
+    const focusInside = holdsFocus(parts.gridPart);
     const locale = this.currentLocale;
     const focused = parts.focused;
-    parts.grid.replaceChildren();
+    // The grid is built once for its shape (the view, the week numbers); another month, value or focus writes only
+    // the cells' texts and marks. Another shape builds the grid again.
+    const shape = `${parts.view}|${parts.view === 'month' && !!this.peekProperty('showWeekNumbers')}`;
+    if (parts.grid?.shape !== shape) {
+      clearParts(parts.gridPart);
+      parts.grid = this.buildGrid(shape);
+    }
+    parts.cells = [];
+    parts.stopCell = null;
     if (parts.view === 'month') this.renderMonth(locale);
     else this.renderBlock(locale);
-    if (parts.view === 'month') parts.title.textContent = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(focused);
-    else if (parts.view === 'year') parts.title.textContent = String(focused.getFullYear());
+    let title: string;
+    if (parts.view === 'month') title = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(focused);
+    else if (parts.view === 'year') title = String(focused.getFullYear());
     else {
       const start = Math.floor(focused.getFullYear() / 10) * 10;
-      parts.title.textContent = `${start} – ${start + 9}`;
+      title = `${start} – ${start + 9}`;
     }
-    parts.title.disabled = parts.view === 'decade';
-    parts.grid.setAttribute('aria-label', parts.title.textContent ?? '');
+    text(parts.titlePart, title);
+    mark(parts.titlePart, 'disabled', parts.view === 'decade');
+    put(parts.gridPart, 'aria-label', title);
     const [low, high] = this.shownRange();
     const min = this.peekProperty<Date | null>('min');
     const max = this.peekProperty<Date | null>('max');
-    parts.previous.disabled = !!min && low <= dayStart(min);
-    parts.next.disabled = !!max && high >= dayStart(max);
+    mark(parts.previousPart, 'disabled', !!min && low <= dayStart(min));
+    mark(parts.nextPart, 'disabled', !!max && high >= dayStart(max));
     if (focusInside) this.focus();
+    // Every move of the Tab stop is drawn here, so it is told here once.
+    if (+focused !== parts.lastFocused) {
+      parts.lastFocused = +focused;
+      parts.focusedChanged.fire(focused);
+    }
   }
 
   /** The first and last day of what is on screen. */
@@ -334,47 +373,81 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     const long = new Intl.DateTimeFormat(locale, { weekday: 'long' });
     const full = new Intl.DateTimeFormat(locale, { dateStyle: 'full' });
 
-    const head = parts.grid.createTHead().insertRow();
-    head.setAttribute('role', 'row');
-    if (weeks) {
-      const th = head.appendChild(document.createElement('th'));
-      th.className = 'mx-calendar__week';
-      th.setAttribute('role', 'columnheader');
-      const name = th.appendChild(document.createElement('span'));
-      name.className = 'mx-sr-only';
-      name.textContent = uiLocale.strings.week;
-    }
-    for (let i = 0; i < 7; i++) {
+    const grid = parts.grid!;
+    if (grid.week) text(grid.week, uiLocale.strings.week);
+    grid.heads.forEach((th, i) => {
       const day = addDays(start, i);
-      const th = head.appendChild(document.createElement('th'));
-      th.setAttribute('role', 'columnheader');
-      th.abbr = long.format(day);
-      th.textContent = short.format(day);
-    }
-    const body = parts.grid.createTBody();
-    for (let row = 0; row < 6; row++) {
-      const tr = body.insertRow();
-      tr.setAttribute('role', 'row');
+      put(th, 'abbr', long.format(day));
+      text(th, short.format(day));
+    });
+    if (weeks) grid.rowHeads.forEach((th, row) => text(th, String(isoWeek(addDays(start, row * 7)))));
+    grid.cells.forEach((td, i) => {
+      const day = addDays(start, i);
+      const outside = day.getMonth() !== focused.getMonth();
+      if (outside && !others) {
+        this.emptyCell(td);
+        return;
+      }
+      text(td, String(day.getDate()));
+      put(td, 'data-date', String(+day));
+      put(td, 'aria-label', full.format(day));
+      this.markCell(td, day, outside, sameDay(day, value), sameDay(day, today), this.canChoose(day), sameDay(day, focused));
+      put(td, 'data-range', this.rangeMark(day, range));
+    });
+  }
+
+  /** The grid's parts for a shape (`view|weeks`): the month's heads and 42 cells, or the 12 cells of a year or decade. */
+  private buildGrid(shape: string): Grid {
+    const gridPart = this.parts.gridPart;
+    const grid: Grid = { shape, week: null, heads: [], rowHeads: [], cells: [] };
+    const row = (section: Component<HTMLTableSectionElement>) => {
+      const tr = part<HTMLTableRowElement>(section, 'tr', '');
+      tr.attr.add({ role: 'row' });
+      return tr;
+    };
+    const cell = (tr: Component<HTMLTableRowElement>) => {
+      const td = part<HTMLTableCellElement>(tr, 'td', '');
+      td.attr.add({ role: 'gridcell' });
+      grid.cells.push(td);
+    };
+    if (shape.startsWith('month')) {
+      const weeks = shape.endsWith('true');
+      const head = row(part<HTMLTableSectionElement>(gridPart, 'thead', ''));
       if (weeks) {
-        const th = tr.appendChild(document.createElement('th'));
-        th.className = 'mx-calendar__week';
-        th.setAttribute('role', 'rowheader');
-        th.textContent = String(isoWeek(addDays(start, row * 7)));
+        const th = part<HTMLTableCellElement>(head, 'th', 'mx-calendar__week');
+        th.attr.add({ role: 'columnheader' });
+        grid.week = part(th, 'span', 'mx-sr-only');
       }
-      for (let col = 0; col < 7; col++) {
-        const day = addDays(start, row * 7 + col);
-        const outside = day.getMonth() !== focused.getMonth();
-        const td = tr.insertCell();
-        td.setAttribute('role', 'gridcell');
-        if (outside && !others) continue;
-        td.textContent = String(day.getDate());
-        td.dataset.date = String(+day);
-        td.setAttribute('aria-label', full.format(day));
-        this.markCell(td, outside, sameDay(day, value), sameDay(day, today), this.canChoose(day), sameDay(day, focused));
-        const mark = this.rangeMark(day, range);
-        if (mark) td.dataset.range = mark;
+      for (let i = 0; i < 7; i++) {
+        const th = part<HTMLTableCellElement>(head, 'th', '');
+        th.attr.add({ role: 'columnheader' });
+        grid.heads.push(th);
+      }
+      const body = part<HTMLTableSectionElement>(gridPart, 'tbody', '');
+      for (let r = 0; r < 6; r++) {
+        const tr = row(body);
+        if (weeks) {
+          const th = part<HTMLTableCellElement>(tr, 'th', 'mx-calendar__week');
+          th.attr.add({ role: 'rowheader' });
+          grid.rowHeads.push(th);
+        }
+        for (let col = 0; col < 7; col++) cell(tr);
+      }
+    } else {
+      const body = part<HTMLTableSectionElement>(gridPart, 'tbody', '');
+      for (let r = 0; r < 3; r++) {
+        const tr = row(body);
+        for (let col = 0; col < 4; col++) cell(tr);
       }
     }
+    return grid;
+  }
+
+  /** A cell of another month, when those are not shown: kept, with nothing in it. */
+  private emptyCell(td: Component<HTMLTableCellElement>): void {
+    text(td, '');
+    td.class.remove('mx-calendar__cell');
+    for (const name of ['tabindex', 'aria-selected', 'data-outside', 'data-today', 'aria-current', 'aria-disabled', 'data-date', 'aria-label', 'data-range']) put(td, name, null);
   }
 
   /** The range's ends in order, as days. */
@@ -400,8 +473,13 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
 
   private pointedOver(e: PointerEvent): void {
     if (this.parts.view !== 'month') return;
-    const cell = (e.target as Element).closest<HTMLElement>('.mx-calendar__cell');
-    this.point(cell?.dataset.date ? new Date(Number(cell.dataset.date)) : null);
+    const cell = this.cellFrom(e);
+    this.point(cell ? new Date(cell.time) : null);
+  }
+
+  /** The drawn cell of a date an event came from. */
+  private cellFrom(e: Event): Parts['cells'][number] | undefined {
+    return this.parts.cells.find((cell) => cell.part.motif.isEventFrom(e));
   }
 
   private point(day: Date | null): void {
@@ -424,23 +502,15 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     const short = new Intl.DateTimeFormat(locale, months ? { month: 'short' } : { year: 'numeric' });
     // The name starts with the text shown (Jan), so speech input finds the cell by it.
     const long = new Intl.DateTimeFormat(locale, months ? { month: 'long' } : { year: 'numeric' });
-    const body = parts.grid.createTBody();
-    for (let row = 0; row < 3; row++) {
-      const tr = body.insertRow();
-      tr.setAttribute('role', 'row');
-      for (let col = 0; col < 4; col++) {
-        const i = row * 4 + col;
-        const date = months ? new Date(year, i, 1) : new Date(decade - 1 + i, 0, 1);
-        const td = tr.insertCell();
-        td.setAttribute('role', 'gridcell');
-        td.textContent = short.format(date);
-        td.dataset.date = String(+date);
-        td.setAttribute('aria-label', months ? `${short.format(date)}, ${long.format(date)} ${year}` : long.format(date));
-        const same = (a: Date | null | undefined) => !!a && a.getFullYear() === date.getFullYear() && (!months || a.getMonth() === date.getMonth());
-        const outside = !months && (i === 0 || i === 11);
-        this.markCell(td, outside, same(value), same(today), this.canChooseIn(date), same(focused));
-      }
-    }
+    parts.grid!.cells.forEach((td, i) => {
+      const date = months ? new Date(year, i, 1) : new Date(decade - 1 + i, 0, 1);
+      text(td, short.format(date));
+      put(td, 'data-date', String(+date));
+      put(td, 'aria-label', months ? `${short.format(date)}, ${long.format(date)} ${year}` : long.format(date));
+      const same = (a: Date | null | undefined) => !!a && a.getFullYear() === date.getFullYear() && (!months || a.getMonth() === date.getMonth());
+      const outside = !months && (i === 0 || i === 11);
+      this.markCell(td, date, outside, same(value), same(today), this.canChooseIn(date), same(focused));
+    });
   }
 
   /** A month or a year can be chosen when one of its days can. */
@@ -452,34 +522,37 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return !(min && end < dayStart(min)) && !(max && start > dayStart(max));
   }
 
-  private markCell(td: HTMLTableCellElement, outside: boolean, selected: boolean, today: boolean, enabled: boolean, focused: boolean): void {
-    td.className = 'mx-calendar__cell';
-    td.tabIndex = focused ? 0 : -1;
-    td.setAttribute('aria-selected', String(selected));
-    td.toggleAttribute('data-outside', outside);
-    td.toggleAttribute('data-today', today);
-    if (today) td.setAttribute('aria-current', 'date');
-    if (!enabled) td.setAttribute('aria-disabled', 'true');
+  /** Marks the cell of a date and keeps it, with the Tab stop when it is the focused one. */
+  private markCell(td: Component<HTMLTableCellElement>, date: Date, outside: boolean, selected: boolean, today: boolean, enabled: boolean, focused: boolean): void {
+    td.class.add('mx-calendar__cell');
+    put(td, 'tabindex', focused ? '0' : '-1');
+    put(td, 'aria-selected', String(selected));
+    mark(td, 'data-outside', outside);
+    mark(td, 'data-today', today);
+    put(td, 'aria-current', today ? 'date' : null);
+    put(td, 'aria-disabled', enabled ? null : 'true');
+    const parts = this.parts;
+    parts.cells.push({ part: td, time: +date, enabled });
+    if (focused) parts.stopCell = td;
   }
 
   private renderToday(on: boolean): void {
     const parts = this.parts;
     if (on && !parts.today) {
-      const button = parts.foot.appendChild(document.createElement('button'));
-      button.type = 'button';
-      button.className = 'mx-calendar__today';
-      button.textContent = uiLocale.strings.today;
-      button.addEventListener('click', (e) => {
-        const today = dayStart(new Date());
-        this.goTo(today);
-        if (this.canChoose(today)) this.choose(today, e);
+      const today = part<HTMLButtonElement>(parts.footPart, 'button', 'mx-calendar__today');
+      today.attr.add({ type: 'button' });
+      text(today, uiLocale.strings.today);
+      today.motif.on('click', (_, e) => {
+        const day = dayStart(new Date());
+        this.goTo(day);
+        if (this.canChoose(day)) this.choose(day, e);
       });
-      parts.today = button;
+      parts.today = today;
     } else if (!on && parts.today) {
-      parts.today.remove();
+      removePart(parts.today);
       parts.today = null;
     }
-    this.element.toggleAttribute('data-foot', on);
+    mark(this, 'data-foot', on);
   }
 
   private page(step: number): void {
@@ -499,9 +572,9 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
   }
 
   private clicked(e: MouseEvent): void {
-    const cell = (e.target as Element).closest<HTMLElement>('.mx-calendar__cell');
-    if (!cell?.dataset.date || cell.getAttribute('aria-disabled') === 'true') return;
-    this.activate(new Date(Number(cell.dataset.date)), e);
+    const cell = this.cellFrom(e);
+    if (!cell?.enabled || !this.isEnabled) return;
+    this.activate(new Date(cell.time), e);
   }
 
   /** Enter or a click on a cell: a choice in the smallest view, else one view closer. */
@@ -530,7 +603,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
   private keyDown(e: KeyboardEvent): void {
     const parts = this.parts;
     const view = parts.view;
-    const back = this.rtl ? 1 : -1;
+    const back = isRtl(this) ? 1 : -1;
     const across = view === 'month' ? 7 : 4;
     let next: Date | null = null;
     const move = (amount: number) => (view === 'month' ? addDays(parts.focused, amount) : view === 'year' ? addMonths(parts.focused, amount) : addMonths(parts.focused, amount * 12));
@@ -562,8 +635,9 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
       }
       case 'Enter':
       case ' ': {
-        const cell = (e.target as Element).closest<HTMLElement>('.mx-calendar__cell');
-        if (cell?.dataset.date && cell.getAttribute('aria-disabled') !== 'true') this.activate(new Date(Number(cell.dataset.date)), e);
+        // A disabled calendar keeps focus on a cell when there is nowhere else to go; Enter picks nothing there.
+        const cell = this.cellFrom(e);
+        if (cell?.enabled && this.isEnabled) this.activate(new Date(cell.time), e);
         e.preventDefault();
         return;
       }

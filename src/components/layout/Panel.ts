@@ -1,5 +1,6 @@
 import type { Bind, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { put } from '../../core/part-writes';
 import type { LayoutSpace } from './layout-space';
 import type { PanelProps } from './panel-props';
 import type { PanelScroll } from './panel-scroll';
@@ -27,11 +28,11 @@ export class Panel extends Control<HTMLDivElement, PanelProps> {
   constructor(props?: IBaseProp<PanelProps>) {
     super('div', props);
     const own = (this.props ?? {}) as PanelProps;
-    this.element.classList.add('mx-panel');
+    this.class.add('mx-panel');
     this.observeProperty<string>('text', (text) => this.renderName(text));
     this.observeProperty('scrollable', () => this.renderScroll());
-    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(this.element, padding));
-    this.observeProperty<PanelVariant>('variant', (variant) => (this.element.dataset.variant = variant ?? 'plain'));
+    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(this, padding));
+    this.observeProperty<PanelVariant>('variant', (variant) => put(this, 'data-variant', variant ?? 'plain'));
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (this.childs?.length) this.controls.add(...this.childs);
   }
@@ -55,6 +56,10 @@ export class Panel extends Control<HTMLDivElement, PanelProps> {
     this.assignProperty('variant', value);
   }
 
+  override get focusPart(): Control | null {
+    return scrollOf(this.peekProperty<PanelScroll>('scrollable')) ? this : null;
+  }
+
   protected override applyProperty(name: string, value: unknown): void {
     // Only a scrolling panel is a Tab stop; renderScroll decides its tabindex.
     if (name === 'tabStop') this.renderScroll();
@@ -62,25 +67,23 @@ export class Panel extends Control<HTMLDivElement, PanelProps> {
   }
 
   private renderName(text: string | undefined): void {
-    const el = this.element;
     if (text) {
-      el.setAttribute('role', 'region');
-      el.setAttribute('aria-label', text);
+      put(this, 'role', 'region');
+      put(this, 'aria-label', text);
     } else {
-      el.removeAttribute('role');
-      el.removeAttribute('aria-label');
+      put(this, 'role', null);
+      put(this, 'aria-label', null);
     }
   }
 
   private renderScroll(): void {
-    const el = this.element;
     const scroll = scrollOf(this.peekProperty<PanelScroll>('scrollable'));
     if (scroll) {
-      el.dataset.scroll = scroll;
-      el.tabIndex = this.peekProperty('tabStop') === false ? -1 : 0;
+      put(this, 'data-scroll', scroll);
+      put(this, 'tabindex', String(this.peekProperty('tabStop') === false ? -1 : 0));
     } else {
-      delete el.dataset.scroll;
-      el.removeAttribute('tabindex');
+      put(this, 'data-scroll', null);
+      put(this, 'tabindex', null);
     }
   }
 }

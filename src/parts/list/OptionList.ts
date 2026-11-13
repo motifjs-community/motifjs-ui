@@ -1,26 +1,47 @@
 import { onLookChanged } from '../../core/look-watch';
-import { Component, Emitter, type Event as MotifEvent } from '@motifx/core';
-import { checkMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { Component, createSignal, Emitter, untracked, type ComponentBase, type Event as MotifEvent, type Signal } from '@motifx/core';
+import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { boxOf, measure, onLayout, reveal } from '../../core/measure';
+import { css, flag, mark, put, text as writeText } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
-import { isElement } from '../../core/node-kind';
 import { givenList } from '../../core/given-field';
 import { uiLocale } from '../../core/ui-locale';
 import type { ItemSource } from './item-source';
 import type { ListMove } from './list-move';
 import type { OptionChosenEventArgs } from './option-chosen-event-args';
+import type { OptionParts } from './option-parts';
 import { readItemField } from './read-item-field';
 import { onLanguage } from '../../core/on-language';
 import { foldText } from '../../core/fold-text';
 
 type Row = { header: string } | { index: number };
 
+/** An option, kept while its item is listed (an item not loaded yet: while its index is in view). */
+type OptionEntry<T> = { kind: 'option'; item: T | undefined; index: number; at: Signal<number> };
+type HeaderEntry = { kind: 'header'; text: string; id: string };
+type GroupEntry<T> = { kind: 'group'; text: string; id: string; options: Signal<OptionEntry<T>[]> };
+/** What the list shows, a part each: an option, a header (long lists), a group of options (short lists), a block that stands for the rows out of view, or the text of an empty list. */
+type SpaceEntry = { kind: 'space'; size: Signal<number> };
+type Entry<T> = OptionEntry<T> | HeaderEntry | GroupEntry<T> | SpaceEntry | { kind: 'empty' };
+/** The entries on show by what they stand for, so the next rows keep the parts of the same ones. */
+type Keys<T> = {
+  options: Map<unknown, OptionEntry<T>[]>;
+  loading: Map<number, OptionEntry<T>[]>;
+  headers: Map<string, HeaderEntry[]>;
+  groups: Map<string, GroupEntry<T>[]>;
+};
+
+const noKeys = <T>(): Keys<T> => ({ options: new Map(), loading: new Map(), headers: new Map(), groups: new Map() });
+
 /**
  * The options of a drop-down, a combo box or a list box (`role="listbox"`). The owner provides the
  * items and how to read them, sets which are selected, and moves the highlight from its own keys
  * (`handleKey`). The owner's element points to the highlighted option with `aria-activedescendant`.
  * Long lists draw only the rows in view, and with an `ItemSource` rows can load as they come into view.
+ * Each option is drawn once for its item: items given again keep the options of the items they keep, and what an
+ * option shows (text, selected, active, disabled) changes in place.
  */
 export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   static override elementTag = 'div';
@@ -29,8 +50,11 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   enabledOf: (item: T) => boolean = (item) => readItemField(item, undefined, 'enabled') !== false;
   iconOf: ((item: T) => IconSource | undefined) | null = null;
   groupOf: ((item: T) => string | undefined) | null = null;
-  /** Draws an option's content instead of its text. It can return a cleanup function. */
-  draw: ((item: T, host: HTMLElement) => (() => void) | void) | null = null;
+  /**
+   * Draws an option's content instead of its text, into `host`. `option` holds the option's parts, for an owner that
+   * marks the option itself. It can return a cleanup function.
+   */
+  draw: ((item: T, host: ComponentBase<HTMLElement>, option: OptionParts) => (() => void) | void) | null = null;
   isSelected: (item: T) => boolean = () => false;
   /** Shows check marks before the options and sets `aria-multiselectable`. */
   multiple = false;
@@ -51,52 +75,79 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   private retryFailed: () => void = () => {};
   /** With groups: the headers between the items. Without: one row per item. */
   private rows: Row[] | null = null;
-  private active = -1;
+  /** The highlighted option's index; each option reads it to mark itself. */
+  private readonly activeAt = createSignal(-1);
+  /** Changed when the items or their fields may have changed: the options read them again. */
+  private readonly state = createSignal(0);
+  private stateCount = 0;
+  /** What the list shows now, in order. */
+  private readonly entries = createSignal<Entry<T>[]>([]);
+  private keys: Keys<T> = noKeys();
+  private readonly before: SpaceEntry = { kind: 'space', size: createSignal(0) };
+  private readonly after: SpaceEntry = { kind: 'space', size: createSignal(0) };
+  private readonly emptyEntry: Entry<T> = { kind: 'empty' };
+  /** The options on show, in order. */
+  private shown: OptionEntry<T>[] = [];
+  /** The parts of each option drawn. */
+  private readonly partsOf = new Map<OptionEntry<T>, OptionParts>();
   private rowHeight = 0;
+  /** How far the list is scrolled and the room in its view, as last read. */
+  private viewTop = 0;
+  private viewHeight = 0;
+  /** The option a long list brings into view with its next reads; -1 for none. */
+  private revealing = -1;
   private drawn = { first: 0, end: 0 };
-  private releases: (() => void)[] = [];
   private typed = '';
   private typedAt = 0;
-  private frame = 0;
   private readonly baseId = nextId('list');
-  private readonly empty = document.createElement('div');
+  /** The text of an empty list, a part while the list is empty. */
+  private empty: Component<HTMLDivElement> | null = null;
   private readonly chosenEmitter = new Emitter<OptionChosenEventArgs<T>>();
 
   readonly onChosen: MotifEvent<OptionChosenEventArgs<T>> = this.chosenEmitter.event;
 
   override onConfigured(): void {
     this.class.add('mx-list');
-    this.element.id = this.baseId;
-    this.element.setAttribute('role', 'listbox');
-    this.empty.className = 'mx-list__empty';
-    // Seen, not an option: the empty list is named by its owner.
-    this.empty.setAttribute('aria-hidden', 'true');
+    this.attr.add({ id: this.baseId, role: 'listbox' });
     // Pressing an option keeps focus where it is (the field that owns the list).
-    this.element.addEventListener('mousedown', (e) => e.preventDefault());
-    this.element.addEventListener('click', (e) => this.clicked(e));
-    this.element.addEventListener('pointermove', (e) => {
-      const index = this.indexOf(e.target);
+    this.motif.on('mousedown', (_, e) => e.preventDefault());
+    this.motif.on('click', (_, e) => this.clicked(e));
+    this.motif.on('pointermove', (_, e) => {
+      const index = this.indexOf(e);
       if (index >= 0 && index !== this.active) this.setActive(index, false);
     });
-    this.element.addEventListener('scroll', () => {
-      if (!this.windowed) return;
-      cancelAnimationFrame(this.frame);
-      this.frame = requestAnimationFrame(() => this.drawWindow());
+    this.motif.on('scroll', () => {
+      if (this.windowed) this.readLayout();
     });
+    // Shown, or another size: the page keys move by what is in view now.
+    onLayout(this, 'size', () => this.readLayout());
     // Drawn again with the list; in the kit's language again when it changes.
     const stopEmpty = onLanguage(this, () => this.writeEmpty());
     // Another design language, theme or density: the rows have another height.
     const stopLook = onLookChanged(() => {
       this.rowHeight = 0;
-      if (this.windowed) this.drawWindow();
+      this.readLayout();
     });
+    // Built once: the entries it keeps keep their parts.
+    this.bindings.list(() => this.entries.value, (entry: Entry<T>) => this.make(entry));
     this.motif.setDisposable(() => {
       stopLook();
       stopEmpty();
-      cancelAnimationFrame(this.frame);
-      this.release();
       this.chosenEmitter.dispose();
     });
+  }
+
+  private get active(): number {
+    return untracked(() => this.activeAt.value);
+  }
+
+  private set active(index: number) {
+    this.activeAt.value = index;
+  }
+
+  /** The options read the items and their fields again. */
+  private restate(): void {
+    this.state.value = ++this.stateCount;
   }
 
   /** Sets the items as they are now. Set them again after they change. */
@@ -120,7 +171,8 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
       if (rows.length > items.length) this.rows = rows;
     }
     if (this.active >= items.length) this.active = -1;
-    this.drawAll();
+    this.restate();
+    this.show();
   }
 
   /** Sets items that load as they come into view (no groups). */
@@ -132,16 +184,18 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     this.retryFailed = () => source.retryFailed?.();
     this.rows = null;
     if (this.active >= this.size) this.active = -1;
-    this.drawAll();
+    this.restate();
+    this.show();
   }
 
-  /** Redraws the rows in view, such as after some have loaded. */
+  /** Reads the rows in view again, such as after some have loaded; the options of the same items stay. */
   redraw(): void {
+    this.restate();
     if (this.windowed && this.size) {
       this.drawn = { first: 0, end: 0 };
-      this.drawWindow();
+      this.drawLong();
     } else {
-      this.drawAll();
+      this.show();
     }
   }
 
@@ -161,34 +215,37 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     return this.itemAt(index);
   }
 
+  /** The id of the list's element, for the owner's `aria-controls`. */
+  get id(): string {
+    return this.baseId;
+  }
+
   /** The id of an option's element, for `aria-activedescendant`. */
   idOf(index: number): string {
     return `${this.baseId}-${index}`;
   }
 
-  /** Redraws the selection after it changes. */
+  /** Shows the selection after it changes (and the items' fields after they change in place). */
   refresh(): void {
-    for (const el of this.element.querySelectorAll<HTMLElement>('[role="option"]')) {
-      const item = this.itemAt(Number(el.dataset.index));
-      if (item !== undefined) this.markSelected(el, item);
-    }
+    this.restate();
   }
 
   setActive(index: number, scroll = true): void {
+    const last = this.active;
     this.active = index >= 0 && index < this.size ? index : -1;
-    for (const el of this.element.querySelectorAll('[data-active]')) el.removeAttribute('data-active');
-    if (this.active < 0) return;
-    if (scroll) this.scrollTo(this.active);
-    const el = this.optionElement(this.active);
-    el?.setAttribute('data-active', '');
+    // The options drawn mark themselves now, as the keys move; one drawn later reads the highlight itself.
+    const before = this.partsAt(last);
+    if (before) mark(before.row, 'data-active', false);
+    const now = this.partsAt(this.active);
+    if (now) mark(now.row, 'data-active', true);
+    if (this.active >= 0 && scroll) this.scrollTo(this.active);
   }
 
   /** Moves the highlight over enabled options and returns the new index. */
   move(how: ListMove): number {
     const n = this.size;
     if (!n) return -1;
-    if (!this.rowHeight) this.rowHeight = this.measure();
-    const page = Math.max(1, Math.floor(this.element.clientHeight / this.rowHeight) - 1);
+    const page = Math.max(1, Math.floor(this.viewHeight / (this.rowHeight || 32)) - 1);
     let target: number;
     let step: number;
     if (how === 'first') [target, step] = [0, 1];
@@ -279,89 +336,145 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     return -1;
   }
 
-  private drawAll(): void {
-    this.release();
-    // A long list draws over what is there, so its scroll position stays.
-    if (this.size && this.windowed) {
-      if (this.multiple) this.element.setAttribute('aria-multiselectable', 'true');
-      else this.element.removeAttribute('aria-multiselectable');
-      this.element.removeAttribute('data-empty');
-      this.drawn = { first: 0, end: 0 };
-      this.drawWindow();
-      return;
-    }
-    this.element.replaceChildren();
-    if (this.multiple) this.element.setAttribute('aria-multiselectable', 'true');
-    else this.element.removeAttribute('aria-multiselectable');
-    this.element.toggleAttribute('data-empty', !this.size);
+  /** Lays out what the list shows now; the entries it keeps keep their parts. */
+  private show(): void {
+    flag(this, 'aria-multiselectable', this.multiple);
+    mark(this, 'data-empty', !this.size);
     if (!this.size) {
-      this.writeEmpty();
-      this.element.append(this.empty);
+      this.commit(noKeys(), [this.emptyEntry], []);
       return;
     }
+    // A long list keeps its scroll position.
     if (this.windowed) {
       this.drawn = { first: 0, end: 0 };
-      this.drawWindow();
+      this.drawLong();
       return;
     }
-    let group: HTMLElement | null = null;
+    const keys = noKeys<T>();
+    const entries: Entry<T>[] = [];
+    const shown: OptionEntry<T>[] = [];
+    let group: GroupEntry<T> | null = null;
+    let options: OptionEntry<T>[] = [];
     for (let at = 0; at < this.rowCount; at++) {
       const row = this.rowAt(at);
       if ('header' in row) {
-        group = document.createElement('div');
-        group.setAttribute('role', 'group');
-        const header = group.appendChild(this.headerElement(row.header));
-        header.id = nextId('list-group');
-        group.setAttribute('aria-labelledby', header.id);
-        this.element.append(group);
+        if (group) group.options.value = options;
+        options = [];
+        group = this.keyOf(keys.groups, this.keys.groups, row.header, () => ({
+          kind: 'group',
+          text: row.header,
+          id: nextId('list-group'),
+          options: createSignal<OptionEntry<T>[]>([]),
+        }));
+        entries.push(group);
       } else {
-        (group ?? this.element).append(this.itemElement(row.index));
+        const option = this.optionAt(keys, row.index);
+        shown.push(option);
+        (group ? options : entries).push(option);
       }
     }
+    if (group) group.options.value = options;
+    this.commit(keys, entries, shown);
     if (this.active >= 0) this.setActive(this.active);
+    if (!this.rowHeight) this.readLayout();
+  }
+
+  private commit(keys: Keys<T>, entries: Entry<T>[], shown: OptionEntry<T>[]): void {
+    this.keys = keys;
+    this.shown = shown;
+    this.entries.value = entries;
+  }
+
+  /** The entry for `key` (its next one, for a key listed more than once): the one shown last if there was one. */
+  private keyOf<K, E>(next: Map<K, E[]>, last: Map<K, E[]>, key: K, make: () => E): E {
+    let list = next.get(key);
+    if (!list) next.set(key, (list = []));
+    const entry = last.get(key)?.[list.length] ?? make();
+    list.push(entry);
+    return entry;
+  }
+
+  /** The entry of the option at `index`: of its item, or of the index for an item not loaded yet. */
+  private optionAt(keys: Keys<T>, index: number): OptionEntry<T> {
+    const item = this.itemAt(index);
+    const make = (): OptionEntry<T> => ({ kind: 'option', item, index, at: createSignal(index) });
+    const entry = item === undefined ? this.keyOf(keys.loading, this.keys.loading, index, make) : this.keyOf(keys.options, this.keys.options, item, make);
+    entry.index = index;
+    entry.at.value = index;
+    return entry;
+  }
+
+  /** The parts of the option at `index`, if it is drawn. */
+  private partsAt(index: number): OptionParts | undefined {
+    const entry = this.shown.find((e) => e.index === index);
+    return entry && this.partsOf.get(entry);
+  }
+
+  /** Reads the list's view and a row's height with the window's next reads; a long list then draws the rows in view. */
+  private readLayout(): void {
+    measure(this, this.readView, this.layOut);
+  }
+
+  private readonly readView = () => {
+    const box = boxOf(this);
+    const first = this.shown[0];
+    const option = first && this.partsOf.get(first);
+    return { top: box.scrollTop, view: box.clientHeight, row: option ? boxOf(option.row).height : 0 };
+  };
+
+  private readonly layOut = (read: { top: number; view: number; row: number }) => {
+    this.viewTop = read.top;
+    this.viewHeight = read.view;
+    if (read.row && read.row !== this.rowHeight) {
+      this.rowHeight = read.row;
+      this.drawn = { first: 0, end: 0 };
+    }
+    // A short list brings its option into view itself.
+    if (!this.windowed || !this.size) return;
+    const index = this.revealing;
+    this.revealing = -1;
+    const height = this.rowHeight || 32;
+    // Scrolled first: the rows are drawn where the scroll ends.
+    if (index >= 0) reveal(this, { top: this.rowOf(index) * height, height }, { axis: 'y', then: () => this.readLayout() });
+    else this.drawWindow(height, read.top, read.view || height * 10);
+  };
+
+  /** Draws the rows in view of a long list as last read, then reads again: what changed is drawn in the next round. */
+  private drawLong(top = this.viewTop): void {
+    const height = this.rowHeight || 32;
+    this.drawWindow(height, top, this.viewHeight || height * 10);
+    this.readLayout();
   }
 
   /** In a long list: two empty blocks stand for the rows out of view. */
-  private drawWindow(): void {
-    if (!this.rowHeight) this.rowHeight = this.measure();
-    const height = this.rowHeight;
-    const top = this.element.scrollTop;
-    const view = this.element.clientHeight || height * 10;
-    const first = Math.max(0, Math.floor(top / height) - this.extraRows);
+  private drawWindow(height: number, scrolled: number, view: number): void {
     const count = this.rowCount;
+    // Fewer rows than before (a search) cannot stay scrolled past their end: drawn where the view will be, the rows
+    // of the items that stay are kept instead of dropped for a moment and made again.
+    const top = Math.min(scrolled, Math.max(0, count * height - view));
+    const first = Math.max(0, Math.floor(top / height) - this.extraRows);
     const end = Math.min(count, Math.ceil((top + view) / height) + this.extraRows);
     if (first === this.drawn.first && end === this.drawn.end) return;
     this.drawn = { first, end };
     this.ensure?.(first, end);
-    this.release();
-    const nodes: Node[] = [];
+    const keys = noKeys<T>();
+    // Two empty blocks stand for the rows out of view, before and after those drawn.
+    const entries: Entry<T>[] = [this.before];
+    const shown: OptionEntry<T>[] = [];
     for (let i = first; i < end; i++) {
       const row = this.rowAt(i);
-      const el = 'header' in row ? this.headerElement(row.header) : this.itemElement(row.index);
-      if (!('header' in row)) {
-        el.setAttribute('aria-setsize', String(this.size));
-        el.setAttribute('aria-posinset', String(row.index + 1));
+      if ('header' in row) {
+        entries.push(this.keyOf(keys.headers, this.keys.headers, row.header, () => ({ kind: 'header', text: row.header, id: nextId('list-group') })));
+        continue;
       }
-      nodes.push(el);
+      const option = this.optionAt(keys, row.index);
+      entries.push(option);
+      shown.push(option);
     }
-    this.element.replaceChildren(this.space(first * height), ...nodes, this.space((count - end) * height));
-    if (this.active >= 0) this.optionElement(this.active)?.setAttribute('data-active', '');
-  }
-
-  private space(size: number): HTMLElement {
-    const space = document.createElement('div');
-    space.className = 'mx-list__space';
-    space.setAttribute('aria-hidden', 'true');
-    space.style.blockSize = `${size}px`;
-    return space;
-  }
-
-  private measure(): number {
-    const probe = this.itemElement(0);
-    this.element.append(probe);
-    const height = probe.getBoundingClientRect().height;
-    probe.remove();
-    return height || 32;
+    entries.push(this.after);
+    this.before.size.value = first * height;
+    this.after.size.value = (count - end) * height;
+    this.commit(keys, entries, shown);
   }
 
   private rowOf(index: number): number {
@@ -370,86 +483,186 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
 
   private scrollTo(index: number): void {
     if (this.windowed) {
-      const height = this.rowHeight || this.measure();
+      // Drawn now where the scroll is expected to end; scrolled with the next reads, then drawn as read.
+      const height = this.rowHeight || 32;
       const at = this.rowOf(index) * height;
-      const view = this.element.clientHeight;
-      if (at < this.element.scrollTop) this.element.scrollTop = at;
-      else if (at + height > this.element.scrollTop + view) this.element.scrollTop = at + height - view;
-      this.drawWindow();
+      if (at < this.viewTop) this.viewTop = at;
+      else if (at + height > this.viewTop + this.viewHeight) this.viewTop = at + height - this.viewHeight;
+      this.revealing = index;
+      this.drawLong();
       return;
     }
-    const el = this.optionElement(index);
-    if (!el) return;
-    const row = el.getBoundingClientRect();
-    const view = this.element.getBoundingClientRect();
-    if (row.top < view.top) this.element.scrollTop -= view.top - row.top;
-    else if (row.bottom > view.bottom) this.element.scrollTop += row.bottom - view.bottom;
+    const option = this.partsAt(index);
+    // An option not drawn yet is brought into view when it marks itself active.
+    if (option) reveal(this, option.row, { axis: 'y' });
+    else this.revealing = index;
   }
 
-  private optionElement(index: number): HTMLElement | null {
-    return this.element.querySelector<HTMLElement>(`[data-index="${index}"]`);
+  /** Writes what `read` gives into the part each time it changes, and only then. */
+  private bind<V>(owner: ComponentBase, read: () => V, write: (value: V) => void): void {
+    owner.bindings.watch(() => {
+      const value = read();
+      untracked(() => write(value));
+    });
   }
 
-  private headerElement(text: string): HTMLElement {
-    const header = document.createElement('div');
-    header.className = 'mx-list__header';
-    header.textContent = text;
+  /** The part of an entry, made once: what it shows changes in place. */
+  private make(entry: Entry<T>): ComponentBase {
+    switch (entry.kind) {
+      case 'option':
+        return this.makeOption(entry);
+      case 'header':
+        return this.makeHeader(entry);
+      case 'group': {
+        const group = loose<HTMLDivElement>('div');
+        group.attr.add({ role: 'group', 'aria-labelledby': entry.id });
+        group.controls.add(this.makeHeader(entry));
+        group.bindings.list(() => entry.options.value, (option: OptionEntry<T>) => this.makeOption(option));
+        return group;
+      }
+      case 'space': {
+        const space = loose<HTMLDivElement>('div', 'mx-list__space');
+        space.attr.add({ 'aria-hidden': 'true' });
+        this.bind(space, () => entry.size.value, (size) => css(space, 'block-size', `${size}px`));
+        return space;
+      }
+      default: {
+        const empty = loose<HTMLDivElement>('div', 'mx-list__empty');
+        // Seen, not an option: the empty list is named by its owner.
+        empty.attr.add({ 'aria-hidden': 'true' });
+        this.empty = empty;
+        empty.motif.setDisposable(() => {
+          if (this.empty === empty) this.empty = null;
+        });
+        this.bind(empty, () => this.state.value, () => this.writeEmpty());
+        return empty;
+      }
+    }
+  }
+
+  private makeHeader(entry: HeaderEntry | GroupEntry<T>): Component<HTMLDivElement> {
+    const header = loose<HTMLDivElement>('div', 'mx-list__header');
+    header.attr.add({ id: entry.id });
+    header.setText(entry.text);
     return header;
   }
 
-  private itemElement(index: number): HTMLElement {
-    const el = document.createElement('div');
-    el.className = 'mx-list__item';
-    el.id = this.idOf(index);
-    el.dataset.index = String(index);
-    el.setAttribute('role', 'option');
-    const item = this.itemAt(index);
-    if (item === undefined) {
-      const failed = this.failedAt(index);
-      el.setAttribute('aria-selected', 'false');
-      if (failed) el.setAttribute('data-failed', '');
-      else {
-        el.setAttribute('aria-busy', 'true');
-        el.setAttribute('data-loading', '');
+  /** An option's row with its parts in order: check, icon, text. Each changes only with what it shows. */
+  private makeOption(entry: OptionEntry<T>): Component<HTMLDivElement> {
+    const row = loose<HTMLDivElement>('div', 'mx-list__item');
+    row.attr.add({ role: 'option' });
+    const text = part<HTMLSpanElement>(row, 'span', 'mx-list__text');
+    // Given to the owner as `OptionParts`; the check comes and goes with `multiple`.
+    const option: { -readonly [K in keyof OptionParts]: OptionParts[K] } = { row, text, check: null };
+    this.partsOf.set(entry, option);
+    let checkHost: ComponentBase | null = null;
+    let iconHost: ComponentBase | null = null;
+    let iconShown: IconSource | null = null;
+    let releaseIcon: (() => void) | null = null;
+    let drawnWith: OptionList<T>['draw'] | undefined;
+    let releaseDrawn: (() => void) | null = null;
+    let shownText: string | null = null;
+    row.motif.setDisposable(() => {
+      releaseIcon?.();
+      releaseDrawn?.();
+      // The list disposed first has let its fields go.
+      if (this.partsOf?.get(entry) === option) this.partsOf.delete(entry);
+    });
+    this.bind(row, () => entry.at.value, (index) => {
+      put(row, 'id', this.idOf(index));
+      put(row, 'data-index', String(index));
+    });
+    this.bind(row, () => this.activeAt.value === entry.at.value, (on) => {
+      mark(row, 'data-active', on);
+      if (on && !this.windowed && this.revealing === entry.index) {
+        this.revealing = -1;
+        reveal(this, row, { axis: 'y' });
       }
-      const text = el.appendChild(document.createElement('span'));
-      text.className = 'mx-list__text';
-      text.textContent = failed ? this.failedText() : uiLocale.strings.loading;
-      return el;
+    });
+    // A long list says where in the whole list an option is.
+    this.bind(row, () => (this.state.value, this.windowed ? [this.size, entry.at.value + 1] : null), (at) => {
+      put(row, 'aria-setsize', at && String(at[0]));
+      put(row, 'aria-posinset', at && String(at[1]));
+    });
+    const item = entry.item;
+    if (item === undefined) {
+      this.bind(row, () => (this.state.value, this.failedAt(entry.at.value)), (failed) => {
+        put(row, 'aria-selected', 'false');
+        mark(row, 'data-failed', failed);
+        put(row, 'aria-busy', failed ? null : 'true');
+        mark(row, 'data-loading', !failed);
+        writeText(text, failed ? this.failedText() : uiLocale.strings.loading);
+      });
+      return row;
     }
-    if (!this.enabledOf(item)) el.setAttribute('aria-disabled', 'true');
-    this.markSelected(el, item);
-    if (this.multiple) {
-      const check = el.appendChild(document.createElement('span'));
-      check.className = 'mx-list__check';
-      check.append(checkMark());
-    }
-    const icon = this.iconOf?.(item);
-    if (icon !== undefined && icon !== null) {
-      const host = el.appendChild(document.createElement('span'));
-      host.className = 'mx-list__icon';
-      host.setAttribute('aria-hidden', 'true');
-      const shown = iconNode(icon);
-      host.append(shown.node);
-      this.releases.push(shown.release);
-    }
-    const text = el.appendChild(document.createElement('span'));
-    text.className = 'mx-list__text';
-    const release = this.draw?.(item, text);
-    if (release) this.releases.push(release);
-    else if (!this.draw) text.textContent = this.textOf(item);
-    return el;
+    this.bind(row, () => (this.state.value, this.enabledOf(item)), (enabled) => put(row, 'aria-disabled', enabled ? null : 'true'));
+    this.bind(row, () => (this.state.value, this.isSelected(item)), (selected) => {
+      put(row, 'aria-selected', String(selected));
+      mark(row, 'data-selected', selected);
+    });
+    this.bind(row, () => (this.state.value, this.multiple), (multiple) => {
+      if (multiple === !!checkHost) return;
+      if (multiple) {
+        checkHost = partBefore(row, row.controls.items[0] ?? null, 'span', 'mx-list__check');
+        option.check = glyphPart(checkHost, 'check');
+      } else {
+        removePart(checkHost);
+        checkHost = null;
+        option.check = null;
+      }
+    });
+    this.bind(row, () => (this.state.value, this.iconOf?.(item) ?? null), (source) => {
+      if (source === iconShown) return;
+      iconShown = source;
+      releaseIcon?.();
+      releaseIcon = null;
+      removePart(iconHost);
+      iconHost = null;
+      if (source === null) return;
+      iconHost = partBefore<HTMLSpanElement>(row, text, 'span', 'mx-list__icon');
+      iconHost.attr.add({ 'aria-hidden': 'true' });
+      releaseIcon = showIcon(source, iconHost);
+    });
+    // The owner's drawing goes into the text's part once, and again only when the drawing itself changes; what it
+    // shows updates through its own bindings. The row and its other parts stay.
+    this.bind(row, () => (this.state.value, { draw: this.draw, value: this.draw ? null : this.textOf(item) }), ({ draw, value }) => {
+      if (draw !== drawnWith && (draw || drawnWith)) {
+        releaseDrawn?.();
+        releaseDrawn = null;
+        if (drawnWith) clearParts(text);
+        drawnWith = draw;
+        shownText = null;
+        if (draw) {
+          const release = draw(item, text, option);
+          releaseDrawn = typeof release === 'function' ? release : null;
+        }
+      }
+      if (value !== null && value !== shownText) {
+        shownText = value;
+        text.setText(value);
+      }
+    });
+    return row;
   }
 
-  private markSelected(el: HTMLElement, item: T): void {
-    const selected = this.isSelected(item);
-    el.setAttribute('aria-selected', String(selected));
-    el.toggleAttribute('data-selected', selected);
+  /**
+   * Binds an option's text to `read`, read again when the items are given again or refreshed, and written in place.
+   * For a `draw` that writes the text itself; the release it gives back stops the binding.
+   */
+  bindText(option: OptionParts, read: () => string): () => void {
+    let live = true;
+    this.bind(option.text, () => (live ? (this.state.value, read()) : null), (value) => {
+      if (value !== null) writeText(option.text, value);
+    });
+    return () => {
+      live = false;
+    };
   }
 
-  private indexOf(target: EventTarget | null): number {
-    const el = isElement(target) ? target.closest<HTMLElement>('[role="option"]') : null;
-    return el && this.element.contains(el) ? Number(el.dataset.index) : -1;
+  /** The index of the option an event started in, asked of the options drawn; -1 for none. */
+  private indexOf(e: Event): number {
+    for (const entry of this.shown) if (this.partsOf.get(entry)?.row.motif.isEventFrom(e)) return entry.index;
+    return -1;
   }
 
   /** "Could not load. Retry": a row or a list that failed, which a press loads again. */
@@ -458,15 +671,17 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   }
 
   private writeEmpty(): void {
+    const empty = this.empty;
+    if (!empty) return;
     const failed = this.failedAt();
-    this.empty.toggleAttribute('data-failed', failed);
-    this.empty.textContent = failed ? this.failedText() : (this.emptyText?.() ?? uiLocale.strings.noItems);
+    mark(empty, 'data-failed', failed);
+    writeText(empty, failed ? this.failedText() : (this.emptyText?.() ?? uiLocale.strings.noItems));
   }
 
   private clicked(e: MouseEvent): void {
-    const index = this.indexOf(e.target);
+    const index = this.indexOf(e);
     const item = index < 0 ? undefined : this.itemAt(index);
-    const onEmpty = !this.size && isElement(e.target) && this.empty.contains(e.target);
+    const onEmpty = !this.size && !!this.empty?.motif.isEventFrom(e);
     if ((onEmpty && this.failedAt()) || (index >= 0 && item === undefined && this.failedAt(index))) {
       this.retryFailed();
       return;
@@ -474,9 +689,5 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     if (index < 0 || item === undefined || !this.enabledOf(item)) return;
     this.setActive(index, false);
     this.chosenEmitter.fire({ item, index, event: e });
-  }
-
-  private release(): void {
-    for (const release of this.releases.splice(0)) release();
   }
 }

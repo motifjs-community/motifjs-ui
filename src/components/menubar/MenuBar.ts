@@ -1,13 +1,17 @@
-import { Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute, type ParsedAccessKey } from '../../core/access-key';
-import { shown } from '../../core/draw-parts';
+import { loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { kept, put, shown } from '../../core/part-writes';
+import { onDocument, onWindow } from '../../core/window-events';
+import { windowOf } from '../../core/page-documents';
+import { holderOf, isInPage, isRendered, isRtl, measure, onLayout } from '../../core/measure';
 import { Control } from '../../core/control';
+import { focusOn, holdsFocus, isFocused } from '../../core/focus';
 import { follow } from '../../core/follow';
 import { givenField, givenList, givenValue } from '../../core/given-field';
-import { iconNode } from '../../core/icon-node';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { addShortcut, installKeyboard } from '../../core/keyboard';
-import { isNode } from '../../core/node-kind';
 import { MenuList } from '../../parts/menu/MenuList';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
@@ -16,7 +20,7 @@ import { ItemTree } from '../../parts/item-tree/ItemTree';
 import { Customizer } from '../../parts/customizer/Customizer';
 import type { CustomizerNode } from '../../parts/customizer/customizer-node';
 import type { CustomizerSource } from '../../parts/customizer/customizer-source';
-import { MenuLayout } from './MenuLayout';
+import { ItemLayout } from '../../parts/item-layout/ItemLayout';
 import { mergedFrom, mergedLevel, mergedOf } from './menu-merge';
 import { mergeHosts } from './merge-hosts';
 import type { MergedItem } from './merged-item';
@@ -61,17 +65,41 @@ interface Entry {
   node: MenuNode;
   merged: MergedItem | null;
   key: string;
-  element: HTMLButtonElement;
+  /** The item's part, as a component. */
+  part: Component<HTMLButtonElement>;
   enabled: boolean;
   submenu: boolean;
   /** The label, lower case, for typing to an item. */
   text: string;
 }
 
+/** A top item's part, built once and kept while an item of its key is shown: a change writes only what it changes. */
+interface Slot {
+  key: string;
+  button: Component<HTMLButtonElement>;
+  label: Component<HTMLSpanElement>;
+  icon: ComponentBase | null;
+  iconSource: IconSource | null;
+  releaseIcon: (() => void) | null;
+  /** The label as drawn (`index:text`), and the access key it declares. */
+  drawnLabel: string | null;
+  token: string | null;
+  entry: Entry | null;
+  /** The bar a merged item comes from, and whether the part waits hidden for that bar to merge again. */
+  from: MenuBar | null;
+  stashed: boolean;
+}
+
 interface Parts {
-  bar: HTMLDivElement;
+  barPart: Component<HTMLDivElement>;
   entries: Entry[];
-  releases: (() => void)[];
+  /**
+   * The top items' parts by key, and the parts in order, the shown ones first and then those of merged bars that left,
+   * kept hidden: the bar's list follows `drawn`.
+   */
+  slots: Map<string, Slot>;
+  shownSlots: Slot[];
+  drawn: { count: number };
   /** The key of the item Tab reaches. */
   current: string | null;
   open: Entry | null;
@@ -88,7 +116,7 @@ interface Parts {
   barMenu: ContextMenu | null;
   listMenu: ContextMenu | null;
   /** The items as the user arranged them. */
-  layout: MenuLayout;
+  layout: ItemLayout<MenuItem, MenuBarCustomization>;
   customizer: Customizer | null;
   /** Names the bar's items in a main bar. */
   mergeKey: string;
@@ -96,8 +124,12 @@ interface Parts {
   merged: MenuBar[];
   /** As a bar that merges: its main bar while merged. */
   mergedHost: MenuBar | null;
+  /** As a bar that merges: the main bar it merged into last, which keeps its items' parts while it is away. */
+  stashedIn: MenuBar | null;
   /** The name it is the main bar of. */
   hostName: string | null;
+  /** `mergeScope`, the component given. */
+  scope: ComponentBase | null;
   stopWatch: (() => void) | null;
   mergedEvent: Emitter<MenuBarMergedEventArgs>;
   unmergedEvent: Emitter<MenuBarMergedEventArgs>;
@@ -129,16 +161,22 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     const parts = this.parts;
     this.observeProperty<string>('text', (text) => {
       const label = parseAccessKey(text ?? '').text;
-      if (label) parts.bar.setAttribute('aria-label', label);
-      else parts.bar.removeAttribute('aria-label');
+      if (label) put(parts.barPart, 'aria-label', label);
+      else put(parts.barPart, 'aria-label', null);
     });
-    this.observeProperty('items', () => this.followItems());
+    this.observeProperty('items', () => {
+      this.followItems();
+      if (!parts.mergedHost) parts.stashedIn?.dropStash(this);
+    });
     this.observeProperty('customization', () => this.takeCustomization());
     this.observeProperty('mergeHost', () => this.registerHost());
     this.observeProperty('mergeName', () => this.registerHost());
     this.observeProperty('mergeInto', () => this.watchMerge());
     this.observeProperty('mergeWhen', () => this.watchMerge());
-    this.observeProperty('mergeScope', () => this.watchMerge());
+    this.observeProperty<ComponentBase | null | undefined>('mergeScope', (given) => {
+      parts.scope = given ?? null;
+      this.watchMerge();
+    });
     this.observeProperty<boolean>('focusOnF10', (on) => this.renderF10(!!on));
     this.observeProperty<boolean>('openOnHover', (on) => {
       if (parts.list) parts.list.openOnHover = on !== false;
@@ -163,7 +201,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     this.motif.setDisposable(() => {
       parts.stopDrawing?.();
       parts.removeF10?.();
-      for (const release of parts.releases.splice(0)) release();
+      for (const slot of parts.slots.values()) slot.releaseIcon?.();
+      parts.slots.clear();
       parts.itemClick.dispose();
       parts.itemsChanged.dispose();
       parts.customized.dispose();
@@ -171,6 +210,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       listening.dispose();
       parts.stopWatch?.();
       this.unmerge();
+      parts.stashedIn?.dropStash(this);
+      parts.stashedIn = null;
       if (parts.hostName !== null) mergeHosts.remove(parts.hostName, this);
       for (const bar of [...parts.merged]) bar.release();
       parts.mergedEvent.dispose();
@@ -261,10 +302,10 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   set mergeWhen(value: Bind<MenuBarMergeWhen>) {
     this.assignProperty('mergeWhen', value);
   }
-  get mergeScope(): HTMLElement | ComponentBase | null {
-    return this.getProperty<HTMLElement | ComponentBase | null | undefined>('mergeScope') ?? null;
+  get mergeScope(): ComponentBase | null {
+    return this.getProperty<ComponentBase | null | undefined>('mergeScope') ?? null;
   }
-  set mergeScope(value: Bind<HTMLElement | ComponentBase | null>) {
+  set mergeScope(value: Bind<ComponentBase | null>) {
     this.assignProperty('mergeScope', value);
   }
   get hideWhenMerged(): boolean {
@@ -411,9 +452,13 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     }
     mergeHosts.stopWaiting(this);
     this.close();
+    if (parts.stashedIn !== host) {
+      parts.stashedIn?.dropStash(this);
+      parts.stashedIn = host;
+    }
     parts.mergedHost = host;
     host.parts.merged.push(this);
-    if (this.peekProperty('hideWhenMerged') !== false) shown(this.element as HTMLElement, false);
+    if (this.peekProperty('hideWhenMerged') !== false) shown(this, false);
     host.followItems();
     host.parts.mergedEvent.fire({ bar: this, source: host });
     return true;
@@ -430,18 +475,24 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     if (this.leave() && !this.isDisposed) mergeHosts.wait(this);
   }
 
-  private leave(): boolean {
+  /** `show`: the bar is shown in its place again; not while its place is hidden and a main bar may take it back. */
+  private leave(show = true): boolean {
     const parts = this.parts;
     const host = parts.mergedHost;
     if (!host) return false;
     parts.mergedHost = null;
     host.parts.merged = host.parts.merged.filter((bar) => bar !== this);
-    if (!this.isDisposed) shown(this.element as HTMLElement, true);
+    if (!this.isDisposed && show) shown(this, true);
     if (!host.isDisposed) {
       host.followItems();
       host.parts.unmergedEvent.fire({ bar: this, source: host });
     }
     return true;
+  }
+
+  // Merged when built, before it is in the page; mounted, its place is watched in the page too.
+  override onBuilt(): void {
+    this.watchMerge();
   }
 
   override onMounted(): void {
@@ -471,75 +522,108 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     const parts = this.parts;
     parts.stopWatch?.();
     parts.stopWatch = null;
-    if (!this.peekProperty('mergeInto')) {
+    const into = this.peekProperty('mergeInto');
+    const when = this.peekProperty<MenuBarMergeWhen>('mergeWhen') ?? 'shown';
+    // A bar that merges when shown waits hidden from the start, before it is in the page and before its place is
+    // known, so it is never drawn in its place first; any other bar is shown there unless merged.
+    const hides = !!into && when === 'shown' && this.peekProperty('hideWhenMerged') !== false;
+    if (!parts.mergedHost) shown(this, !hides);
+    if (!into) {
       this.unmerge();
       return;
     }
-    const when = this.peekProperty<MenuBarMergeWhen>('mergeWhen') ?? 'shown';
     if (when === 'manual') return;
-    const given = this.peekProperty<HTMLElement | ComponentBase | null>('mergeScope');
-    const scope = given ? (given instanceof HTMLElement ? given : (given.element as HTMLElement)) : this.element.parentElement;
-    // Not in the page yet: onMounted watches.
-    if (!scope) return;
+    const place = this.mergePlace();
+    // No place yet (built and mounted watch again), or it is gone.
+    if (!place || place.isDisposed) return;
     const stops: (() => void)[] = [];
     parts.stopWatch = () => {
       for (const stop of stops.splice(0)) stop();
     };
     // The window the place is in may be another one, and may close: the bar leaves its main bar then.
     let view: Window | null = null;
+    let stopView: (() => void) | null = null;
     const leave = () => untracked(() => this.unmerge());
     const followWindow = () => {
-      const now = scope.ownerDocument.defaultView;
+      const now = windowOf(place);
       if (now === view) return;
-      view?.removeEventListener('pagehide', leave);
+      stopView?.();
       view = now;
-      view?.addEventListener('pagehide', leave);
+      stopView = now ? onWindow(place, 'pagehide', leave) : null;
     };
-    stops.push(() => view?.removeEventListener('pagehide', leave));
+    stops.push(() => stopView?.());
     followWindow();
     if (when === 'shown') {
-      // Its place, not the bar: the bar itself is hidden while merged.
-      const check = () =>
+      // Its place, not the bar: the bar itself is hidden while merged. Read in the window's next frame, then merged or left.
+      // Until then the bar waits hidden (above), so it is never drawn in its place before it merges: it is shown there
+      // only when its place is shown and no main bar takes it. With `hideWhenMerged` off it stays shown all along.
+      const read = () => isInPage(place) && !windowOf(place)?.closed && isRendered(place);
+      const write = (open: boolean) =>
         untracked(() => {
           followWindow();
-          const open = scope.isConnected && !view?.closed && scope.getClientRects().length > 0;
-          if (open) this.merge();
-          else this.unmerge();
+          if (open) {
+            if (!this.merge()) shown(this, true);
+            return;
+          }
+          mergeHosts.stopWaiting(this);
+          this.leave(!hides);
+          if (hides) shown(this, false);
         });
-      if (typeof ResizeObserver === 'function') {
-        const observer = new ResizeObserver(check);
-        observer.observe(scope);
-        stops.push(() => observer.disconnect());
-      }
+      // The tree tells at once whether the place is shown: merged when built, before the bar is in the page; the frame's
+      // read only confirms it (a place hidden by CSS alone, as in a folded dock area, is found out there).
+      if (shownInTree(place)) untracked(() => this.merge());
+      let cancel: (() => void) | null = null;
+      const check = () => {
+        cancel = measure(place, read, write);
+      };
+      stops.push(() => cancel?.());
+      stops.push(onLayout(place, 'size', check, { owner: this }));
+      // Put back, moved or kept aside hidden: its size may not change, so it is checked then too.
+      void place.motif.on('x:activated', check);
+      void place.motif.on('x:deactivated', check);
+      stops.push(() => {
+        void place.motif.off('x:activated', check);
+        void place.motif.off('x:deactivated', check);
+      });
       check();
       return;
     }
-    // Focus in its place merges; focus elsewhere leaves, except in the main bar, its menus and its windows. The place
-    // and the main bar may be in different windows: each one's document is listened to.
-    const docs = new Set<Document>();
+    // Focus in its place merges, and so does focus on a part standing for it (a tab's header); focus elsewhere leaves,
+    // except in the main bar, its menus and its windows. The place and the main bar may be in different windows: each
+    // one's document is listened to.
+    const heard = new Set<Window>();
     const onFocus = (e: FocusEvent) =>
       untracked(() => {
-        const target = e.target as Node;
-        if (scope.contains(target) || parts.mergedHost?.element.contains(target)) return;
-        this.unmerge();
+        // Focus in the place itself is heard by the place.
+        if (place.motif.isEventFrom(e)) return;
+        if (holdsFocus(place, e)) onPlaceFocus();
+        else if (!parts.mergedHost || !holdsFocus(parts.mergedHost, e)) this.unmerge();
       });
-    const listen = (doc: Document | undefined) => {
-      if (!doc || docs.has(doc)) return;
-      docs.add(doc);
-      doc.addEventListener('focusin', onFocus);
-      stops.push(() => doc.removeEventListener('focusin', onFocus));
+    const listen = (part: ComponentBase | null) => {
+      const win = part ? windowOf(part) : null;
+      if (!part || !win || heard.has(win)) return;
+      heard.add(win);
+      stops.push(onDocument(part, 'focusin', onFocus));
     };
     const onPlaceFocus = () =>
       untracked(() => {
         followWindow();
         this.merge();
-        listen(scope.ownerDocument);
-        listen(parts.mergedHost?.element.ownerDocument);
+        listen(place);
+        listen(parts.mergedHost);
       });
-    scope.addEventListener('focusin', onPlaceFocus);
-    stops.push(() => scope.removeEventListener('focusin', onPlaceFocus));
-    if (scope.contains(scope.ownerDocument.activeElement)) onPlaceFocus();
+    // The place hears focus come into it, in whatever window it is moved to; its document hears the parts standing for it.
+    void place.motif.on('focusin', onPlaceFocus);
+    stops.push(() => void place.motif.off('focusin', onPlaceFocus));
+    listen(place);
+    if (holdsFocus(place)) onPlaceFocus();
     else untracked(() => this.unmerge());
+  }
+
+  /** The place `mergeWhen` follows: `mergeScope`, else the component the bar is in (past a fragment, which has no element). */
+  private mergePlace(): ComponentBase | null {
+    if (this.parts.scope) return this.parts.scope;
+    return this.parent ? holderOf(this.parent) : null;
   }
 
   /** Holds the changes by path until `endUpdate()`, which applies them at once. */
@@ -552,8 +636,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   }
 
   /** The top item Tab reaches. */
-  protected override get focusElement(): HTMLElement {
-    return this.stop()?.element ?? this.parts.bar;
+  override get focusPart(): ComponentBase {
+    return this.stop()?.part ?? this.parts.barPart;
   }
 
   protected override applyProperty(name: string, value: unknown): void {
@@ -573,15 +657,25 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   }
 
   private createParts(): Parts {
-    this.element.classList.add('mx-menubar');
-    const bar = document.createElement('div');
-    bar.className = 'mx-menubar__bar';
-    bar.setAttribute('role', 'menubar');
-    this.element.prepend(bar);
-    return {
-      bar,
+    this.class.add('mx-menubar');
+    const barPart = partBefore<HTMLDivElement>(this, this.controls.items[0] ?? null, 'div', 'mx-menubar__bar');
+    barPart.attr.add({ role: 'menubar' });
+    const drawn = reactive({ count: 0 });
+    const self: { parts?: Parts } = {};
+    // Built once: an item's part stays while an item of its key is shown, in the order drawn.
+    barPart.bindings.list(
+      () => {
+        void drawn.count;
+        return untracked(() => self.parts?.shownSlots ?? []);
+      },
+      (slot: Slot) => slot.button,
+    );
+    return (self.parts = {
+      barPart,
       entries: [],
-      releases: [],
+      slots: new Map(),
+      shownSlots: [],
+      drawn,
       current: null,
       open: null,
       popup: null,
@@ -593,23 +687,26 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       custom: {},
       barMenu: null,
       listMenu: null,
-      layout: new MenuLayout(
-        () => givenList(this.peekProperty<readonly MenuItem[]>('items')),
-        () => this.catalog(),
-        () => this.parts.custom,
-      ),
+      layout: new ItemLayout<MenuItem, MenuBarCustomization>({
+        items: () => givenList(this.peekProperty<readonly MenuItem[]>('items')),
+        commands: () => this.catalog(),
+        custom: () => this.parts.custom,
+        childrenField: 'items',
+      }),
       customizer: null,
       mergeKey: `bar${++barCount}`,
       merged: [],
       mergedHost: null,
+      stashedIn: null,
       hostName: null,
+      scope: null,
       stopWatch: null,
       mergedEvent: new Emitter(),
       unmergedEvent: new Emitter(),
       customized: new Emitter(),
       customMenuOpening: new Emitter(),
       tree: new ItemTree<MenuItem>(() => 'items', () => givenList(this.peekProperty<readonly MenuItem[]>('items')), (next) => this.applyItems(next)),
-    };
+    });
   }
 
   private applyItems(next: MenuItem[]): void {
@@ -620,6 +717,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   /** Draws the items again whenever a function in one of them reads something that changes, or on `reState()`. */
   private followItems(): void {
     const parts = this.parts;
+    // Going away: its parts are disposed before its own cleanup lets the merged bars go.
+    if (this.isDisposed || parts.barPart.isDisposed) return;
     parts.stopDrawing?.();
     const items = this.peekProperty<readonly MenuItem[]>('items') ?? [];
     // The items' own functions are tracked; the list and the fields are not.
@@ -642,11 +741,11 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       node,
       merged,
       key,
-      visible: fieldOf(item, 'visible', this.element) !== false,
-      text: fieldOf<string | undefined>(item, 'text', this.element) ?? '',
-      hint: fieldOf<string | undefined>(item, 'hint', this.element),
-      enabled: fieldOf(item, 'enabled', this.element) !== false,
-      submenu: children.some((child) => fieldOf(child, 'visible', this.element) !== false),
+      visible: fieldOf(item, 'visible', this) !== false,
+      text: fieldOf<string | undefined>(item, 'text', this) ?? '',
+      hint: fieldOf<string | undefined>(item, 'hint', this),
+      enabled: fieldOf(item, 'enabled', this) !== false,
+      submenu: children.some((child) => fieldOf(child, 'visible', this) !== false),
     };
   }
 
@@ -659,53 +758,128 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
 
   private draw(looks: readonly ItemLook[]): void {
     const parts = this.parts;
-    const focused = parts.entries.findIndex((entry) => entry.element === document.activeElement);
+    const focused = parts.entries.findIndex((entry) => isFocused(entry.part));
     const openKey = parts.open?.key;
-    for (const release of parts.releases.splice(0)) release();
-    parts.bar.replaceChildren();
     parts.entries = [];
+    const shownSlots: Slot[] = [];
     // A merged bar's item takes another letter when the main bar's items already use its own.
     const used = new Set(looks.filter((l) => l.visible && (l.merged?.owner ?? this) === this).map((l) => parseAccessKey(l.text).key?.toLowerCase()));
     for (const look of looks) {
       if (!look.visible) continue;
       const parsed = (look.merged?.owner ?? this) === this ? parseAccessKey(look.text) : freeAccessKey(parseAccessKey(look.text), used);
-      const element = document.createElement('button');
-      element.type = 'button';
-      element.tabIndex = -1;
-      element.className = 'mx-menubar__item';
-      element.setAttribute('role', 'menuitem');
-      if (look.submenu) {
-        element.setAttribute('aria-haspopup', 'menu');
-        element.setAttribute('aria-expanded', 'false');
+      const slot = this.slotOf(look.key);
+      const button = slot.button;
+      if (slot.stashed) {
+        slot.stashed = false;
+        kept(button, true);
       }
-      if (!look.enabled) element.setAttribute('aria-disabled', 'true');
-      if (look.hint) element.title = look.hint;
-      const source = fieldOf<IconSource | null | undefined>(look.merged?.drawn ?? look.node.drawn, 'icon', this.element);
-      if (source) {
-        const icon = element.appendChild(document.createElement('span'));
-        icon.className = 'mx-menubar__icon';
-        icon.setAttribute('aria-hidden', 'true');
-        const shown = iconNode(source);
-        icon.append(shown.node);
-        parts.releases.push(shown.release);
+      slot.from = look.merged && look.merged.owner !== this ? look.merged.owner : null;
+      const entry: Entry = { item: look.item, node: look.node, merged: look.merged, key: look.key, part: button, enabled: look.enabled, submenu: look.submenu, text: foldText(parsed.text) };
+      slot.entry = entry;
+      put(button, 'aria-haspopup', look.submenu ? 'menu' : null);
+      put(button, 'aria-expanded', look.submenu ? 'false' : null);
+      put(button, 'aria-disabled', look.enabled ? null : 'true');
+      put(button, 'title', look.hint || null);
+      this.drawIcon(slot, fieldOf<IconSource | null | undefined>(look.merged?.drawn ?? look.node.drawn, 'icon', this) ?? null);
+      const drawnLabel = `${parsed.index}:${parsed.text}`;
+      if (slot.drawnLabel !== drawnLabel) {
+        renderAccessKey(slot.label, parsed);
+        slot.drawnLabel = drawnLabel;
       }
-      const label = element.appendChild(document.createElement('span'));
-      label.className = 'mx-menubar__label';
-      renderAccessKey(label, parsed);
-      if (parsed.key) {
-        setAccessKeyAttribute(element, null, accessKeyToken(parsed.key));
-        installKeyboard();
+      // A disabled item takes no key.
+      const token = parsed.key && look.enabled ? accessKeyToken(parsed.key) : null;
+      if (slot.token !== token) {
+        setAccessKeyAttribute(button, slot.token, token, () => this.pressAccessKey(slot.entry!));
+        slot.token = token;
+        if (token) installKeyboard();
       }
-      parts.bar.append(element);
-      parts.entries.push({ item: look.item, node: look.node, merged: look.merged, key: look.key, element, enabled: look.enabled, submenu: look.submenu, text: foldText(parsed.text) });
+      parts.entries.push(entry);
+      shownSlots.push(slot);
     }
+    // The parts of the items no longer shown go with them. Those of a bar that left wait hidden for it to merge again,
+    // and so do the bar's own items a merged bar takes away, until it leaves.
+    const drawn = new Set(shownSlots);
+    const stashed: Slot[] = [];
+    let own: Set<string> | undefined;
+    const away = (slot: Slot) => {
+      if (slot.from) return !slot.from.isDisposed && slot.from.parts.stashedIn === this;
+      if (!parts.merged.length) return false;
+      own ??= new Set(parts.layout.childrenOf(null).filter((n) => !n.hidden).map((n) => n.key));
+      return own.has(slot.key);
+    };
+    for (const slot of parts.slots.values()) {
+      if (drawn.has(slot)) continue;
+      if (away(slot)) {
+        if (!slot.stashed) {
+          slot.stashed = true;
+          // Kept aside the MotifJS way: the item stays a child of the bar and core knows it is hidden.
+          kept(slot.button, false);
+          setAccessKeyAttribute(slot.button, slot.token, null);
+          slot.token = null;
+        }
+        stashed.push(slot);
+        continue;
+      }
+      slot.releaseIcon?.();
+      parts.slots.delete(slot.key);
+    }
+    parts.shownSlots = stashed.length ? [...shownSlots, ...stashed] : shownSlots;
+    parts.drawn.count++;
     this.renderRoving();
-    if (focused >= 0) parts.entries[Math.min(focused, parts.entries.length - 1)]?.element.focus();
+    const refocus = focused >= 0 ? parts.entries[Math.min(focused, parts.entries.length - 1)] : undefined;
+    if (refocus) focusOn(refocus.part);
     if (openKey !== undefined) {
       const entry = parts.entries.find((e) => e.key === openKey);
       if (entry?.submenu && entry.enabled) this.openMenu(entry, null);
       else this.close();
     }
+  }
+
+  /** Lets go of the parts kept for `bar`'s items: the bar is going away, or its items changed while it was away. */
+  private dropStash(bar: MenuBar): void {
+    const parts = this.parts;
+    if (this.isDisposed || parts.barPart.isDisposed) return;
+    const left = parts.shownSlots.filter((slot) => !(slot.stashed && slot.from === bar));
+    if (left.length === parts.shownSlots.length) return;
+    for (const slot of parts.shownSlots) {
+      if (left.includes(slot)) continue;
+      slot.releaseIcon?.();
+      parts.slots.delete(slot.key);
+    }
+    parts.shownSlots = left;
+    parts.drawn.count++;
+  }
+
+  /** The part of the top item of `key`: the one kept, else a new one. */
+  private slotOf(key: string): Slot {
+    const slots = this.parts.slots;
+    let slot = slots.get(key);
+    if (slot) return slot;
+    const button = loose<HTMLButtonElement>('button', 'mx-menubar__item');
+    button.attr.add({ type: 'button', role: 'menuitem' });
+    put(button, 'tabindex', '-1');
+    const label = part<HTMLSpanElement>(button, 'span', 'mx-menubar__label');
+    slot = { key, button, label, icon: null, iconSource: null, releaseIcon: null, drawnLabel: null, token: null, entry: null, from: null, stashed: false };
+    slots.set(key, slot);
+    return slot;
+  }
+
+  /** The item's icon, drawn again only when its source changes. */
+  private drawIcon(slot: Slot, source: IconSource | null): void {
+    if (slot.iconSource === source) return;
+    slot.releaseIcon?.();
+    slot.releaseIcon = null;
+    slot.iconSource = source;
+    if (!source) {
+      removePart(slot.icon);
+      slot.icon = null;
+      return;
+    }
+    if (!slot.icon) {
+      slot.icon = partBefore<HTMLSpanElement>(slot.button, slot.label, 'span', 'mx-menubar__icon');
+      slot.icon.attr.add({ 'aria-hidden': 'true' });
+    }
+    slot.releaseIcon = showIcon(source, slot.icon);
   }
 
   /** The item Tab reaches: the last one focused, else the first. */
@@ -716,7 +890,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
 
   private renderRoving(): void {
     const stop = this.peekProperty('tabStop') === false ? undefined : this.stop();
-    for (const entry of this.parts.entries) entry.element.tabIndex = entry === stop ? 0 : -1;
+    for (const entry of this.parts.entries) put(entry.part, 'tabindex', entry === stop ? '0' : '-1');
   }
 
   private renderF10(on: boolean): void {
@@ -742,15 +916,15 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     const list = parts.list!;
     if (parts.open !== entry) {
       list.closeSubmenu();
-      parts.open?.element.setAttribute('aria-expanded', 'false');
+      if (parts.open) put(parts.open.part, 'aria-expanded', 'false');
       const merged = entry.merged;
       list.setItems(merged ? () => merged.children().map((m) => m.drawn) : this.menuOf(entry.node));
     }
     parts.open = entry;
     parts.current = entry.key;
     this.renderRoving();
-    popup.open(entry.element, { toggle: entry.element });
-    entry.element.setAttribute('aria-expanded', 'true');
+    popup.open(entry.part);
+    put(entry.part, 'aria-expanded', 'true');
     this.setProperty('openItem', entry.item);
     if (focus === 'list') list.focusList();
     else if (focus) list.focusItem(focus);
@@ -772,7 +946,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     parts.listMenu = listMenu;
     this.controls.add(popup);
     popup.onClosed(() => {
-      parts.open?.element.setAttribute('aria-expanded', 'false');
+      if (parts.open) put(parts.open.part, 'aria-expanded', 'false');
       parts.open = null;
       this.setProperty('openItem', null);
     });
@@ -780,7 +954,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     return popup;
   }
 
-  // The user's changes: applied while drawing (MenuLayout); the items given stay as they are.
+  // The user's changes: applied while drawing (ItemLayout); the items given stay as they are.
 
   /** The items of the menu of `node`: as given while the user changed nothing, so that its functions stay followed. */
   /** The commands the user can add: `commands` when given, else those of the app (`commands` registry) with a text. */
@@ -819,7 +993,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   private customMenuOpening(e: ContextMenuOpeningEventArgs, inMenu: boolean): void {
     const parts = this.parts;
     // The open menu has a menu of its own.
-    if (!inMenu && parts.popup?.element.contains(e.target)) {
+    if (!inMenu && parts.popup?.motif.isEventFrom(e.event)) {
       e.cancel = true;
       return;
     }
@@ -828,7 +1002,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     let owner: MenuBar = this;
     if (inMenu) {
       let item: MenuItem | null = null;
-      for (let list = parts.list; list && !item; list = list.submenu) item = list.itemOf(e.target);
+      for (let list = parts.list; list && !item; list = list.submenu) item = list.itemFrom(e.event);
       const merged = item ? mergedOf.get(item) : undefined;
       if (merged && parts.merged.length) {
         node = merged.node;
@@ -837,7 +1011,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         node = item ? parts.layout.nodeOf(item) : null;
       }
     } else {
-      const entry = this.entryOf(e.target);
+      const entry = this.entryOf(e.event);
       node = entry?.node ?? null;
       owner = entry?.merged?.owner ?? this;
     }
@@ -860,7 +1034,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     const layout = this.parts.layout;
     const items: MenuItem[] = [];
     if (node && !node.fixed) {
-      const name = parseAccessKey(String(fieldOf(node.drawn, 'text', this.element) ?? '')).text;
+      const name = parseAccessKey(String(fieldOf(node.drawn, 'text', this) ?? '')).text;
       const move = (step: 1 | -1) => () => this.changeByUser(layout.moved(node, step, false), node);
       items.push({ text: fillTemplate(s.menuBarHide, { name }), click: () => this.changeByUser(layout.shown(node, false), node) });
       if (node.parent) {
@@ -870,8 +1044,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         );
       } else {
         // Left is earlier in a left-to-right page, later in a right-to-left one.
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
-        const left: 1 | -1 = rtl ? 1 : -1;
+        const left: 1 | -1 = isRtl(this) ? 1 : -1;
         items.push(
           { text: s.menuBarMoveLeft, enabled: layout.canMove(node, left, false), click: move(left) },
           { text: s.menuBarMoveRight, enabled: layout.canMove(node, -left as 1 | -1, false), click: move(-left as 1 | -1) },
@@ -904,7 +1077,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       if (!found.parent) {
         const entry = parts.entries.find((e) => e.node.id === found.id && (e.merged?.owner ?? bar) === this);
         if (entry) {
-          entry.element.focus();
+          focusOn(entry.part);
           return;
         }
       }
@@ -912,8 +1085,9 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         if (list.focusWhere((x) => mine(x, found.id))) return;
       }
     }
+    const stop = bar.stop();
     if (parts.popup?.isOpen) parts.list?.focusItem('first');
-    else bar.stop()?.element.focus();
+    else if (stop) focusOn(stop.part);
   }
 
   /** The customizer's view of the bar: its tree, and each change applied as the user's. */
@@ -923,7 +1097,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     const view = (n: MenuNode): CustomizerNode => ({
       id: n.id,
       parent: n.parent,
-      text: parseAccessKey(String(fieldOf(n.drawn, 'text', this.element) ?? '')).text,
+      text: parseAccessKey(String(fieldOf(n.drawn, 'text', this) ?? '')).text,
       shown: !n.hidden,
       fixed: n.fixed,
       holds: n.holds,
@@ -939,7 +1113,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     return {
       nodes: () => untracked(() => layout.childrenOf(null).map(view)),
       commands: () =>
-        untracked(() => layout.commands().map((cmd) => ({ key: String(givenValue(cmd, 'key')), text: parseAccessKey(String(fieldOf(cmd, 'text', this.element) ?? '')).text }))),
+        untracked(() => layout.options.commands().map((cmd) => ({ key: String(givenValue(cmd, 'key')), text: parseAccessKey(String(fieldOf(cmd, 'text', this) ?? '')).text }))),
       targets: (id) =>
         untracked(() => {
           const node = find(id);
@@ -956,7 +1130,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       remove: (id) => untracked(() => apply(find(id) && layout.removed(find(id)!))),
       add: (parent, after, what) =>
         untracked(() => {
-          const added = layout.addedTo(find(parent), what, after ? find(after) : null);
+          const added = layout.addedTo(find(parent), what, { after: after ? find(after) : null });
           if (!added) return null;
           this.remember(added.custom);
           return added.id;
@@ -972,50 +1146,60 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     const owner = merged?.owner ?? this;
     const node = merged?.node ?? owner.parts.layout.drawnNodes.get(e.item);
     const args = { ...e, item: node?.item ?? e.item, source: owner };
-    runItem(args.item, args, owner, e.event, owner.element as Element);
+    runItem(args.item, args, owner, e.event, owner);
     owner.parts.itemClick.fire(args);
   }
 
   // Pointer and keys.
 
-  private entryOf(target: EventTarget | null): Entry | undefined {
-    return isNode(target) ? this.parts.entries.find((e) => e.element.contains(target)) : undefined;
+  /** The top item an event started on. */
+  private entryOf(e: Event): Entry | undefined {
+    return this.parts.entries.find((entry) => entry.part.motif.isEventFrom(e));
   }
 
   private listen(): void {
     const parts = this.parts;
-    parts.bar.addEventListener('click', (e) => untracked(() => this.onClick(e)));
-    parts.bar.addEventListener('focusin', (e) => {
-      const entry = this.entryOf(e.target);
+    parts.barPart.motif.on('click', (_, e) => untracked(() => this.onClick(e)));
+    parts.barPart.motif.on('focusin', (_, e) => {
+      const entry = this.entryOf(e);
       if (!entry || parts.current === entry.key) return;
       parts.current = entry.key;
       this.renderRoving();
     });
-    parts.bar.addEventListener('pointerover', (e) => {
-      const entry = this.entryOf(e.target);
+    parts.barPart.motif.on('pointerover', (_, e) => {
+      const entry = this.entryOf(e);
       if (!entry || !parts.open || parts.open === entry || this.peekProperty('openOnHover') === false) return;
       if (entry.submenu && entry.enabled) this.openMenu(entry, 'list');
       else {
         this.close();
-        entry.element.focus();
+        focusOn(entry.part);
       }
     });
-    this.element.addEventListener('keydown', (e) => untracked(() => this.onKeyDown(e)));
+    this.motif.on('keydown', (_, e) => untracked(() => this.onKeyDown(e)));
+  }
+
+  /** An item's access key: its menu opens at once, focus on its first item; an item without a menu is clicked. */
+  private pressAccessKey(entry: Entry): boolean {
+    focusOn(entry.part);
+    if (!entry.submenu) entry.part.attr.add({ click: true });
+    else if (this.parts.open === entry) this.close();
+    else this.openMenu(entry, 'first');
+    return true;
   }
 
   private onClick(e: MouseEvent): void {
-    const entry = this.entryOf(e.target);
+    const entry = this.entryOf(e);
     if (!entry?.enabled) return;
     if (entry.submenu) {
       if (this.parts.open === entry) this.close();
-      // From the keyboard (Enter, Space, the access key) focus goes to the first item.
+      // From the keyboard (Enter, Space) focus goes to the first item.
       else this.openMenu(entry, e.detail === 0 ? 'first' : 'list');
       return;
     }
     this.close();
     const owner = entry.merged?.owner ?? this;
     const args: MenuItemClickEventArgs = { item: entry.item, source: owner, event: e };
-    runItem(entry.item, args, owner, e, owner.element as Element);
+    runItem(entry.item, args, owner, e, owner);
     owner.parts.itemClick.fire(args);
   }
 
@@ -1023,21 +1207,20 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     const parts = this.parts;
     const entries = parts.entries;
-    const entry = this.entryOf(e.target);
-    const inMenu = !entry && !!parts.open && !!parts.popup?.element.contains(e.target as Node);
+    const entry = this.entryOf(e);
+    const inMenu = !entry && !!parts.open && !!parts.popup?.motif.isEventFrom(e);
     if ((!entry && !inMenu) || !entries.length) return;
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
     switch (e.key) {
       case 'ArrowRight':
       case 'ArrowLeft': {
         const from = entry ?? parts.open!;
-        const step = (e.key === 'ArrowRight') !== rtl ? 1 : -1;
+        const step = (e.key === 'ArrowRight') !== isRtl(this) ? 1 : -1;
         const next = entries[(entries.indexOf(from) + step + entries.length) % entries.length];
         if (inMenu && next.submenu && next.enabled) {
           this.openMenu(next, 'first');
         } else {
           this.close();
-          next.element.focus();
+          focusOn(next.part);
         }
         break;
       }
@@ -1049,7 +1232,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       case 'Home':
       case 'End':
         if (!entry) return;
-        entries[e.key === 'Home' ? 0 : entries.length - 1].element.focus();
+        focusOn(entries[e.key === 'Home' ? 0 : entries.length - 1].part);
         break;
       default: {
         if (!entry || e.key.length !== 1 || e.key === ' ') return;
@@ -1058,7 +1241,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         for (let step = 1; step <= entries.length; step++) {
           const candidate = entries[(at + step) % entries.length];
           if (candidate.text.startsWith(letter)) {
-            candidate.element.focus();
+            focusOn(candidate.part);
             break;
           }
         }
@@ -1066,6 +1249,17 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     }
     e.preventDefault();
   }
+}
+
+/**
+ * Shown as far as the component tree says: neither it nor a component above it is hidden or waiting (core), or marked
+ * hidden (a part some components still hide by its `hidden` attribute).
+ */
+function shownInTree(component: ComponentBase): boolean {
+  for (let c: ComponentBase | null | undefined = component; c; c = c.parent as ComponentBase | null | undefined) {
+    if (!c.isVisible || c.isWait || c.attr.has('hidden')) return false;
+  }
+  return true;
 }
 
 function copyOf(c: MenuBarCustomization): MenuBarCustomization {

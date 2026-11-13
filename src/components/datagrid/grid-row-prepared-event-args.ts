@@ -1,7 +1,8 @@
+import type { ComponentBase } from '@motifx/core';
 import type { GridRowType } from './grid-row-type';
 
 /**
- * Occurs when a row is rendered, so that you can style or extend it. The element is reused for other
+ * Occurs when a row is rendered, so that you can style or extend it. The part is reused for other
  * rows while scrolling, so always set and clear what you change.
  */
 export interface GridRowPreparedEventArgs<T> {
@@ -11,5 +12,6 @@ export interface GridRowPreparedEventArgs<T> {
   readonly rowType: GridRowType;
   readonly groupKey?: readonly unknown[];
   readonly isSelected: boolean;
-  readonly element: HTMLElement;
+  /** The row's part. */
+  readonly part: ComponentBase;
 }

@@ -1,11 +1,13 @@
-import { Component, createSignal, untracked, type Bind, type IBaseProp, type Signal } from '@motifx/core';
+import { Component, createSignal, untracked, type Bind, type ComponentBase, type IBaseProp, type IDisposable, type Signal } from '@motifx/core';
 import { follow } from './follow';
-import { registerControl } from './control-map';
-import { disableSubtree, rescueTarget } from './enable';
-import { deepActiveElement, isFocusable } from './focus';
+import { cover, isHeld } from './cover';
+import { canTakeFocus, focusOn, holdsFocus, isFocused, rescueFocus } from './focus';
 import { installFocusGuard } from './focus-guard';
-import { addShortcut, installKeyboard, type ShortcutHandler, type ShortcutOptions } from './keyboard';
+import { addShortcut, installKeyboard } from './keyboard';
 import { accessKeyToken, setAccessKeyAttribute } from './access-key';
+import { addLiveControl, noteTabIndex } from './live-controls';
+import type { ShortcutHandler } from './shortcut-handler';
+import type { ShortcutOptions } from './shortcut-options';
 
 /** Props every {@link Control} understands. Each one is also a settable property. */
 export interface ControlProps {
@@ -41,9 +43,17 @@ interface Slot {
 /** See `Control.controlState`. */
 interface ControlState {
   slots?: Map<string, Slot>;
-  enableRelease: (() => void) | null;
-  enableCleanupRegistered: boolean;
-  /** The focus element's own `tabindex` while `tabStop` is false (`null`: it had none). */
+  /** The state of `isEnabled` last drawn; unset while nothing was drawn (usable). */
+  drawnEnabled?: boolean;
+  /** Stops swallowing pointer input; set while the control itself is disabled. */
+  unblock: (() => void) | null;
+  /** The components of its area the control covered, each with the hold that gives it back. */
+  covers?: Map<ComponentBase, IDisposable | null>;
+  /** Hears a component added to a covered one; the same function for every covered component. */
+  onAreaAdded?: (sender: ComponentBase, e: { control: ComponentBase }) => void;
+  /** Hears a component taken out of a covered one. */
+  onAreaRemoved?: (sender: ComponentBase, e: { control: ComponentBase }) => void;
+  /** The focus part's own `tabindex` while `tabStop` is false (`null`: it had none). */
   tabindexBeforeStop?: string | null;
   /** The `Alt+…` token this control wrote into `aria-keyshortcuts`. */
   accessKeyToken: string | null;
@@ -52,6 +62,9 @@ interface ControlState {
 const STATE = Symbol('mx.control');
 
 const DEFAULTS: Record<string, unknown> = { text: '', enabled: true, visible: true, tabStop: true, tabIndex: 0 };
+
+/** Pointer input swallowed inside a control that is itself disabled, before any handler sees it. */
+const BLOCKED_EVENTS = ['pointerdown', 'mousedown', 'click', 'dblclick', 'auxclick', 'contextmenu'];
 
 /**
  * The base of every `@motifx-community/ui` control. The shared properties
@@ -88,7 +101,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
    */
   private get controlState(): ControlState {
     const self = this as unknown as { [STATE]?: ControlState };
-    return (self[STATE] ??= { enableRelease: null, enableCleanupRegistered: false, accessKeyToken: null });
+    return (self[STATE] ??= { unblock: null, accessKeyToken: null });
   }
 
   constructor(element: TElement | string, props?: IBaseProp<TProps>);
@@ -98,9 +111,9 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   // overloads apart by how many there are.
   constructor(...args: unknown[]) {
     super(...(args as [IBaseProp<TProps>?, IBaseProp<TProps>?]));
-    registerControl(this.element, this);
+    addLiveControl(this);
     installFocusGuard();
-     
+
     const props = (this.props ?? {}) as ControlProps;
     for (const name of ['text', 'enabled', 'visible', 'tabStop', 'tabIndex'] as const) {
       if (props[name] !== undefined) this.bindProperty(name, props[name]);
@@ -185,45 +198,59 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   }
 
   /**
-   * The nearest ancestor that is a `Control`, without crossing a window (a window
-   * opened inside a disabled control is not disabled by it).
+   * The nearest ancestor that is a `Control`; none for a window (a window opened inside a disabled control is
+   * not disabled by it).
    */
   get parentControl(): Control | null {
-    for (let p = this.parent; p; p = p.parent) {
-      if (p.element instanceof HTMLDialogElement) return null;
-      if (p instanceof Control) return p;
-    }
+    if (this.isWindow) return null;
+    for (let p = this.parent; p; p = p.parent) if (p instanceof Control) return p;
     return null;
+  }
+
+  /**
+   * Indicates whether the control is a window of its own (a form, a panel over the page): what is inside does not take
+   * the enabled state of what is outside, and focus, Tab and the keys stop at it.
+   */
+  get isWindow(): boolean {
+    return false;
   }
 
   // Focus.
 
-  /** The element that takes focus; the root by default. Composite controls override it. */
-  protected get focusElement(): HTMLElement {
-    return this.element;
+  /**
+   * The part that takes focus, as a component: the control itself by default, `null` when it takes none.
+   * Composite controls override it. A child control given here answers `focus`, `canFocus` and `focused`.
+   */
+  get focusPart(): ComponentBase | null {
+    return this;
   }
 
-  /** Indicates whether {@link focus} can succeed now: enabled, on the page, visible and focusable. */
+  /** Indicates whether {@link focus} can succeed now: enabled, built, shown with every component above it, and its part takes focus. */
   get canFocus(): boolean {
-    const el = this.focusElement;
-    return this.isEnabled && el.isConnected && isFocusable(el);
+    const part = this.focusPart;
+    if (!part || !this.isEnabled || !this.isBuilt) return false;
+    if (part !== this && part instanceof Control) return part.canFocus;
+    return shownInTree(part) && canTakeFocus(part);
   }
 
-  /** Indicates whether the control's focus element has focus. This is a DOM query and is not reactive. */
+  /** Indicates whether the control's focus part has focus. This is a DOM query and is not reactive. */
   get focused(): boolean {
-    return deepActiveElement(this.element) === this.focusElement;
+    const part = this.focusPart;
+    if (part !== this && part instanceof Control) return part.focused;
+    return !!part && isFocused(part);
   }
 
-  /** Indicates whether focus is on the control or inside it (CSS `:focus-within`). This is not reactive. */
+  /** Indicates whether focus is on the control or inside it (CSS `:focus-within`), or on a part standing for it. This is not reactive. */
   get focusWithin(): boolean {
-    const active = deepActiveElement(this.element);
-    return !!active && this.element.contains(active);
+    return holdsFocus(this);
   }
 
   /** Sets focus on the control. Returns `false` if it cannot receive focus. */
   focus(): boolean {
     if (!this.canFocus) return false;
-    this.focusElement.focus();
+    const part = this.focusPart!;
+    if (part !== this && part instanceof Control) return part.focus();
+    focusOn(part);
     return this.focused;
   }
 
@@ -254,12 +281,14 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   /**
    * Declares the control's access key (from a parsed `&Text`), or none with
    * `null`: written to `aria-keyshortcuts` on the focus element, next to any
-   * shortcuts the app put there. Subclasses that render `text` call this.
+   * shortcuts the app put there, and pressed through {@link onAccessKey}.
+   * Subclasses that render `text` call this.
    */
   protected setAccessKey(key: string | null): void {
     const token = key ? accessKeyToken(key) : null;
     if (token === this.controlState.accessKeyToken) return;
-    setAccessKeyAttribute(this.focusElement, this.controlState.accessKeyToken, token);
+    const part = this.focusPart;
+    if (part) setAccessKeyAttribute(part, this.controlState.accessKeyToken, token, () => this.onAccessKey());
     this.controlState.accessKeyToken = token;
     if (token) installKeyboard();
   }
@@ -360,15 +389,11 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
    * `this.element` and the property storage.
    */
   protected applyProperty(name: string, value: unknown): void {
-    if (name === 'enabled') this.applyEnabled(value as boolean);
+    if (name === 'enabled') this.enabledChanged(value as boolean);
     else if (name === 'visible') this.applyVisible(value as boolean);
-    else if (name === 'tabStop') this.applyTabStop(value as boolean);
-    else if (name === 'tabIndex') {
-      // Only a non-default index is written: containers look for it to know
-      // whether Tab needs their help at all.
-      if (value) this.element.setAttribute('data-mx-tabindex', String(value));
-      else this.element.removeAttribute('data-mx-tabindex');
-    }
+    else if (name === 'tabStop') this.renderTabStop();
+    // Containers ask for a non-default index to know whether Tab needs their help at all.
+    else if (name === 'tabIndex') noteTabIndex(this, value as number);
   }
 
   /** A property's current value without tracking it. */
@@ -376,18 +401,127 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return this.controlState.slots?.get(name)?.value as T | undefined;
   }
 
-  private applyEnabled(enabled: boolean): void {
-    if (!enabled && !this.controlState.enableRelease) {
-      this.controlState.enableRelease = disableSubtree(this.element);
-      this.element.setAttribute('data-disabled', '');
-      if (!this.controlState.enableCleanupRegistered) {
-        this.controlState.enableCleanupRegistered = true;
-        this.motif.setDisposable(() => this.controlState.enableRelease?.());
-      }
-    } else if (enabled && this.controlState.enableRelease) {
-      this.controlState.enableRelease();
-      this.controlState.enableRelease = null;
-      this.element.removeAttribute('data-disabled');
+  private enabledChanged(enabled: boolean): void {
+    if (enabled) this.attr.remove('data-disabled');
+    else this.attr.add({ 'data-disabled': '' });
+    this.blockPointer(!enabled);
+    // The value given wins over the stored one: a control may draw itself disabled again to cover its area anew.
+    this.drawEnabled(enabled && untracked(() => this.parentControl?.isEnabled ?? true));
+  }
+
+  /** Draws whether the control can be used now ({@link isEnabled}) when that changed: focus inside moves on, and its area is covered or given back. */
+  private drawEnabled(enabled = untracked(() => this.isEnabled)): void {
+    const state = this.controlState;
+    if (enabled === (state.drawnEnabled ?? true)) return;
+    state.drawnEnabled = enabled;
+    if (!enabled && this.focusWithin && !this.focusStays(this)) rescueFocus(this);
+    this.drawArea(this, enabled);
+    this.renderTabStop();
+    const parent = this.parentControl;
+    if (parent) untracked(() => parent.childEnabledChanged(this));
+  }
+
+  /** Called on the nearest parent control when a child control becomes usable or unusable. */
+  protected childEnabledChanged(_child: Control): void {}
+
+  /** Walks the area from `component`: covers or gives back each component; a control met draws itself. */
+  private drawArea(component: ComponentBase, enabled: boolean): void {
+    if (component !== this && component instanceof Control) {
+      component.drawEnabled();
+      return;
+    }
+    if (enabled) this.giveBack(component);
+    else this.coverAt(component);
+    for (const child of component.controls.items) this.drawArea(child, enabled);
+  }
+
+  /** Covers one component and hears what is added to it or taken out of it while the control is disabled. */
+  private coverAt(component: ComponentBase): void {
+    const state = this.controlState;
+    const covers = (state.covers ??= new Map());
+    if (covers.has(component)) return;
+    covers.set(component, cover(component));
+    state.onAreaAdded ??= (_, e) => this.drawArea(e.control, false);
+    state.onAreaRemoved ??= (_, e) => this.leaveArea(e.control);
+    void component.motif.on('controladded', state.onAreaAdded, false);
+    void component.motif.on('controlremoved', state.onAreaRemoved, false);
+  }
+
+  private giveBack(component: ComponentBase): void {
+    const state = this.controlState;
+    if (!state.covers?.has(component)) return;
+    state.covers.get(component)?.dispose();
+    state.covers.delete(component);
+    void component.motif.off('controladded', state.onAreaAdded!);
+    void component.motif.off('controlremoved', state.onAreaRemoved!);
+  }
+
+  /** What left the area is given back; a control in it draws itself once it is in its new place. */
+  private leaveArea(component: ComponentBase): void {
+    if (component instanceof Control) {
+      queueMicrotask(() => {
+        if (!component.isDisposed) component.drawEnabled();
+      });
+      return;
+    }
+    this.giveBack(component);
+    for (const child of component.controls.items) this.leaveArea(child);
+  }
+
+  /** Whether focus sits on a control inside `component` that stays focusable while disabled (a button can ask for that). */
+  private focusStays(component: ComponentBase): boolean {
+    if (component instanceof Control && component.focused) return component.canFocus;
+    return component.controls.items.some((child) => this.focusStays(child));
+  }
+
+  private blockPointer(on: boolean): void {
+    const state = this.controlState;
+    if (on === !!state.unblock) return;
+    if (!on) {
+      state.unblock!();
+      state.unblock = null;
+      return;
+    }
+    const block = (_: ComponentBase, e: Event) => {
+      if (this.windowsAt(this).some((w) => w.motif.isEventFrom(e))) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    };
+    for (const type of BLOCKED_EVENTS) void this.motif.on(`${type}:capture` as 'click', block);
+    state.unblock = () => {
+      for (const type of BLOCKED_EVENTS) void this.motif.off(`${type}:capture` as 'click', block);
+    };
+  }
+
+  /** The windows inside `component`, not looking inside them. */
+  private windowsAt(component: ComponentBase, found: Control[] = []): Control[] {
+    for (const child of component.controls.items) {
+      if (child instanceof Control && child.isWindow) found.push(child);
+      else this.windowsAt(child, found);
+    }
+    return found;
+  }
+
+  /** The focus part when it is the control's own part; a child control given as the focus part draws itself. */
+  private get ownFocusPart(): ComponentBase | null {
+    const part = this.focusPart;
+    return part && (part === this || !(part instanceof Control)) ? part : null;
+  }
+
+  /** Takes the focus part out of the Tab order while `tabStop` is false; waits while a disabled control's cover holds its tabindex. */
+  private renderTabStop(): void {
+    const part = this.ownFocusPart;
+    const state = this.controlState;
+    if (!part || (state.drawnEnabled === false && isHeld(part, 'tabindex'))) return;
+    const tabStop = this.peekProperty<boolean>('tabStop') !== false;
+    if (!tabStop && state.tabindexBeforeStop === undefined) {
+      state.tabindexBeforeStop = part.attr.get('tabindex');
+      part.attr.add({ tabindex: '-1' });
+    } else if (tabStop && state.tabindexBeforeStop !== undefined) {
+      const original = state.tabindexBeforeStop;
+      state.tabindexBeforeStop = undefined;
+      if (original === null) part.attr.remove('tabindex');
+      else part.attr.add({ tabindex: original });
     }
   }
 
@@ -396,20 +530,13 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
       void this.motif.show();
       return;
     }
-    rescueTarget(this.element)?.focus({ preventScroll: true });
+    rescueFocus(this);
     void this.motif.hide();
   }
+}
 
-  private applyTabStop(tabStop: boolean): void {
-    const el = this.focusElement;
-    if (!tabStop && this.controlState.tabindexBeforeStop === undefined) {
-      this.controlState.tabindexBeforeStop = el.getAttribute('tabindex');
-      el.setAttribute('tabindex', '-1');
-    } else if (tabStop && this.controlState.tabindexBeforeStop !== undefined) {
-      const original = this.controlState.tabindexBeforeStop;
-      this.controlState.tabindexBeforeStop = undefined;
-      if (original === null) el.removeAttribute('tabindex');
-      else el.setAttribute('tabindex', original);
-    }
-  }
+/** It and every component above it shown (core's `isVisible`). */
+function shownInTree(component: ComponentBase): boolean {
+  for (let c: ComponentBase | null = component; c; c = c.parent) if (!c.isVisible) return false;
+  return true;
 }

@@ -1,7 +1,10 @@
-import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
-import { css, part, shown, text } from "../../core/draw-parts";
+import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { loose, part } from "../../core/draw-parts";
 import { glyph } from "../../core/glyphs";
+import { measure, onLayout, rectOf, styleOf, type Rect, type Size } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { windowOf } from "../../core/page-documents";
+import { css, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Field } from "../../parts/field/Field";
 import { Button } from "../button/Button";
@@ -37,8 +40,10 @@ export class Signature extends Field<Strokes, SignatureProps> {
     strokeBegan = new Emitter<SignatureStrokeEventArgs>();
     strokeEnded = new Emitter<SignatureStrokeEventArgs>();
     canvas!: HTMLCanvasElement;
+    canvasPart!: Component<HTMLCanvasElement>;
     placeholderPart!: HTMLSpanElement;
-    guide!: HTMLSpanElement;
+    placeholderTextPart!: Component<HTMLSpanElement>;
+    guidePart!: Component<HTMLSpanElement>;
     actions!: Component<HTMLDivElement>;
     undoButton!: Button;
     clearButton!: Button;
@@ -47,51 +52,47 @@ export class Signature extends Field<Strokes, SignatureProps> {
     pointer: number | null = null;
     lastTime = 0;
     lastPressure = 0.5;
-    padSize = { width: 0, height: 0 };
-    observer: ResizeObserver | null = null;
+    /** The pad in pixels of the page, and in pixels of the screen. */
+    padSize: Size = { width: 0, height: 0 };
+    screenSize: Size = { width: 0, height: 0 };
+    /** The size written on the canvas. */
+    canvasSize: Size = { width: 0, height: 0 };
 
     constructor(props?: IBaseProp<SignatureProps>) {
         super(props);
         const own = (this.props ?? {}) as SignatureProps;
-        const pad = this.focusElement;
-        this.element.classList.add('mx-signature');
-        this.canvas = pad.appendChild(document.createElement('canvas'));
-        this.canvas.className = 'mx-signature__canvas';
-        this.guide = pad.appendChild(document.createElement('span'));
-        this.guide.className = 'mx-signature__guide';
-        this.placeholderPart = pad.appendChild(document.createElement('span'));
-        this.placeholderPart.className = 'mx-signature__placeholder';
-        this.actions = part<HTMLDivElement>(this, 'div', 'mx-signature__actions');
+        this.class.add('mx-signature');
+        const padPart = this.controlPart;
+        this.canvasPart = part<HTMLCanvasElement>(padPart, 'canvas', 'mx-signature__canvas');
+        this.canvas = this.canvasPart.element;
+        this.guidePart = part<HTMLSpanElement>(padPart, 'span', 'mx-signature__guide');
+        this.placeholderTextPart = part<HTMLSpanElement>(padPart, 'span', 'mx-signature__placeholder');
+        this.placeholderPart = this.placeholderTextPart.element;
+        // In the corner of the pad: a child of the box.
+        this.actions = part<HTMLDivElement>(this.boxPart, 'div', 'mx-signature__actions');
         this.undoButton = this.actionButton('undo', () => this.undo());
         this.clearButton = this.actionButton('trash', () => this.clear());
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onStrokeBegan) this.onStrokeBegan(own.onStrokeBegan);
         if (own.onStrokeEnded) this.onStrokeEnded(own.onStrokeEnded);
 
-        this.observeProperty<number | null>('height', height => css(pad, 'block-size', height ? `${height}px` : ''));
+        this.observeProperty<number | null>('height', height => css(padPart, 'block-size', height ? `${height}px` : ''));
         for (const name of ['penColor', 'minWidth', 'maxWidth'] as const) this.observeProperty(name, () => this.redraw());
         for (const name of ['placeholder', 'showGuide', 'showClear', 'showUndo'] as const) this.observeProperty(name, () => this.drawParts());
         onLanguage(this, () => this.drawParts());
-        pad.addEventListener('pointerdown', e => this.penDown(e));
-        pad.addEventListener('pointermove', e => this.penMove(e));
-        pad.addEventListener('pointerup', e => this.penUp(e));
-        pad.addEventListener('pointercancel', e => this.penUp(e));
-        pad.addEventListener('keydown', e => this.keyDown(e));
+        padPart.motif.on('pointerdown', (_, e) => this.penDown(e));
+        padPart.motif.on('pointermove', (_, e) => this.penMove(e));
+        padPart.motif.on('pointerup', (_, e) => this.penUp(e));
+        padPart.motif.on('pointercancel', (_, e) => this.penUp(e));
+        padPart.motif.on('keydown', (_, e) => this.keyDown(e));
+        onLayout(this.canvasPart, 'size', size => this.fit(size, this.screenSize), { box: 'content' });
+        onLayout(this.canvasPart, 'size', size => this.fit(this.padSize, size), { box: 'device' });
+        // The ink has the color of the pad, which a theme changes.
+        onLayout(this, 'look', () => this.redraw());
         this.motif.setDisposable(() => {
-            this.observer?.disconnect();
             for (const emitter of [this.strokeBegan, this.strokeEnded]) emitter.dispose();
         });
         this.drawParts();
-    }
-
-    override onMounted(): void {
-        super.onMounted();
-        // Into the corner of the pad: a part goes under the field until the field is in the page.
-        this.focusElement.parentElement!.append(this.actions.element);
-        this.fit();
-        if (typeof ResizeObserver !== 'function') return;
-        this.observer = new ResizeObserver(() => this.fit());
-        this.observer.observe(this.focusElement);
     }
 
     // Properties (see SignatureProps).
@@ -152,8 +153,8 @@ export class Signature extends Field<Strokes, SignatureProps> {
     }
 
     /** The pad, which takes the pen and the keys. */
-    get padElement(): HTMLElement {
-        return this.focusElement;
+    get padPart(): ComponentBase {
+        return this.controlPart;
     }
 
     /** Indicates that nothing has been signed. */
@@ -186,11 +187,10 @@ export class Signature extends Field<Strokes, SignatureProps> {
         return new Promise(resolve => this.exportCanvas(options).toBlob(resolve, type));
     }
 
-    protected createControl(): HTMLElement {
-        const pad = document.createElement('div');
-        pad.className = 'mx-signature__pad';
-        pad.tabIndex = 0;
-        pad.setAttribute('role', 'img');
+    protected createControl(): ComponentBase {
+        const pad = loose<HTMLDivElement>('div', 'mx-signature__pad');
+        put(pad, 'tabindex', '0');
+        pad.attr.add({ role: 'img' });
         return pad;
     }
 
@@ -238,51 +238,58 @@ export class Signature extends Field<Strokes, SignatureProps> {
     }
 
     drawParts(): void {
-        if (!this.placeholderPart) return;
+        if (!this.placeholderTextPart) return;
         const strings = uiLocale.strings;
         const empty = this.isEmpty && !this.drawing;
-        text(this.placeholderPart, this.placeholder);
-        shown(this.placeholderPart, empty && this.placeholder !== '');
-        shown(this.guide, this.showGuide);
+        text(this.placeholderTextPart, this.placeholder);
+        shown(this.placeholderTextPart, empty && this.placeholder !== '');
+        shown(this.guidePart, this.showGuide);
         this.undoButton.hint = strings.signatureUndo;
         this.clearButton.hint = strings.clear;
         const canChange = !this.readOnly;
-        shown(this.undoButton.element, this.showUndo && canChange);
-        shown(this.clearButton.element, this.showClear && canChange);
-        shown(this.actions.element, (this.showUndo || this.showClear) && canChange);
+        shown(this.undoButton, this.showUndo && canChange);
+        shown(this.clearButton, this.showClear && canChange);
+        shown(this.actions, (this.showUndo || this.showClear) && canChange);
         this.undoButton.enabled = !this.isEmpty;
         this.clearButton.enabled = !this.isEmpty;
-        const pad = this.focusElement;
+        const pad = this.controlPart;
         const hint = strings.signatureName;
-        pad.setAttribute('aria-roledescription', hint);
-        pad.setAttribute('aria-description', this.isEmpty ? strings.signatureEmpty : strings.signatureSigned);
+        put(pad, 'aria-roledescription', hint);
+        put(pad, 'aria-description', this.isEmpty ? strings.signatureEmpty : strings.signatureSigned);
     }
 
     /** Sizes the canvas to the pad, in the pixels of the screen. */
-    fit(): void {
-        const box = this.canvas.getBoundingClientRect();
-        if (!box.width || !box.height) return;
-        const ratio = window.devicePixelRatio || 1;
-        this.padSize = { width: box.width, height: box.height };
-        this.canvas.width = Math.round(box.width * ratio);
-        this.canvas.height = Math.round(box.height * ratio);
+    fit(pad: Size, screen: Size): void {
+        // A pad that is not laid out keeps the last size.
+        if (pad.width && pad.height) this.padSize = pad;
+        if (screen.width && screen.height) this.screenSize = screen;
+        if (!this.padSize.width || !this.screenSize.width) return;
+        this.canvasSize = { width: Math.round(this.screenSize.width), height: Math.round(this.screenSize.height) };
+        put(this.canvasPart, 'width', String(this.canvasSize.width));
+        put(this.canvasPart, 'height', String(this.canvasSize.height));
         this.redraw();
     }
 
-    padLook(): InkLook {
-        const color = this.penColor ?? getComputedStyle(this.focusElement).color;
+    padLook(color: string): InkLook {
         return { width: this.padSize.width, height: this.padSize.height, minWidth: this.minWidth, maxWidth: this.maxWidth, color };
     }
 
+    /** Draws the strokes again in the next frame, with the color the pad has then. */
     redraw(): void {
+        measure(this, this.readColor, this.paint);
+    }
+
+    readonly readColor = (): string => this.penColor ?? styleOf(this.controlPart, ['color']).color;
+
+    readonly paint = (color: string): void => {
         const context = this.canvas?.getContext('2d');
-        if (!context || !this.padSize.width) return;
-        const ratio = this.canvas.width / this.padSize.width;
+        if (!context || !this.padSize.width || !this.canvasSize.width) return;
+        const ratio = this.canvasSize.width / this.padSize.width;
         context.setTransform(ratio, 0, 0, ratio, 0, 0);
         context.clearRect(0, 0, this.padSize.width, this.padSize.height);
         const strokes = this.drawing ? [...this.peekValue(), { points: this.drawing }] : this.peekValue();
-        drawInk(context, strokes, this.padLook());
-    }
+        drawInk(context, strokes, this.padLook(color));
+    };
 
     exportLook(options: SignatureExportOptions): InkLook {
         const scale = 2;
@@ -295,7 +302,7 @@ export class Signature extends Field<Strokes, SignatureProps> {
 
     exportCanvas(options: SignatureExportOptions): HTMLCanvasElement {
         const look = this.exportLook(options);
-        const target = document.createElement('canvas');
+        const target = (windowOf(this)?.document ?? document).createElement('canvas');
         target.width = look.width;
         target.height = look.height;
         const context = target.getContext('2d');
@@ -308,8 +315,7 @@ export class Signature extends Field<Strokes, SignatureProps> {
         return target;
     }
 
-    pointOf(e: PointerEvent): SignaturePoint {
-        const box = this.canvas.getBoundingClientRect();
+    pointOf(e: PointerEvent, box: Rect): SignaturePoint {
         const x = Math.min(1, Math.max(0, (e.clientX - box.left) / (box.width || 1)));
         const y = Math.min(1, Math.max(0, (e.clientY - box.top) / (box.height || 1)));
         return { x, y, pressure: this.pressureOf(e, x, y, box) };
@@ -329,11 +335,12 @@ export class Signature extends Field<Strokes, SignatureProps> {
 
     penDown(e: PointerEvent): void {
         if (e.button !== 0 || !this.canChange || this.drawing) return;
+        const box = rectOf(this.canvasPart);
         // The press itself gives the pad focus, without the ring of the keyboard.
-        this.focusElement.setPointerCapture?.(e.pointerId);
+        this.controlPart.attr.add({ setPointerCapture: e.pointerId });
         this.pointer = e.pointerId;
         this.lastPressure = STILL;
-        this.drawing = [this.pointOf(e)];
+        this.drawing = [this.pointOf(e, box)];
         this.lastTime = e.timeStamp;
         this.drawParts();
         this.redraw();
@@ -342,11 +349,12 @@ export class Signature extends Field<Strokes, SignatureProps> {
 
     penMove(e: PointerEvent): void {
         if (!this.drawing || e.pointerId !== this.pointer) return;
-        const box = this.padSize;
+        const box = rectOf(this.canvasPart);
+        const pad = this.padSize;
         for (const step of e.getCoalescedEvents?.() ?? [e]) {
-            const point = this.pointOf(step);
+            const point = this.pointOf(step, box);
             const last = this.drawing[this.drawing.length - 1];
-            if (Math.hypot((point.x - last.x) * box.width, (point.y - last.y) * box.height) < NEAR) continue;
+            if (Math.hypot((point.x - last.x) * pad.width, (point.y - last.y) * pad.height) < NEAR) continue;
             this.drawing.push(point);
             this.lastTime = step.timeStamp;
         }

@@ -1,11 +1,14 @@
-import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, Emitter, createSignal, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { glyphPart, iconPart, mark, part, put, shown, text } from "../../core/draw-parts";
+import { glyphPart, iconPart, part, removePart } from "../../core/draw-parts";
+import { focusOn } from "../../core/focus";
 import { follow } from "../../core/follow";
 import { givenField, givenList, givenValue } from "../../core/given-field";
 import type { IconSource } from "../../core/icon-source";
 import { nextId } from "../../core/next-id";
+import { boxOf, isRtl, measure, onLayout, scrollBy, scrollIntoView, type Box } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { TimelineItem, TimelineTone } from "./timeline-item";
 import type { TimelineItemClickEventArgs } from "./timeline-item-click-event-args";
@@ -30,11 +33,17 @@ interface Look {
 // An event as drawn: its row, dot and texts; the card down the page, or the flag along the line.
 interface Entry {
     item: unknown;
+    // The way it was made: a card or a flag, pressable or not; made again only when this changes.
+    as: TimelineOrientation;
     li: Component<HTMLLIElement>;
     dot: Component<HTMLSpanElement>;
     dotGlyph: Component<HTMLSpanElement>;
     dotIcon: ComponentBase | null;
     face: Component<HTMLElement>;
+    // A button: a flag, or a card that folds.
+    pressable: boolean;
+    // The flag's id, which labels the detail card; a card has none.
+    faceId: string | null;
     date: Component<HTMLTimeElement>;
     title: Component<HTMLSpanElement>;
     description: Component<HTMLDivElement> | null;
@@ -58,15 +67,21 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
     previousButton: Component<HTMLButtonElement>;
     nextButton: Component<HTMLButtonElement>;
     detail: Component<HTMLDivElement>;
+    detailId: string;
     detailDate: Component<HTMLTimeElement>;
     detailTitle: Component<HTMLSpanElement>;
     detailDescription: Component<HTMLDivElement>;
     detailContent: Component<HTMLDivElement>;
     entries: Entry[] = [];
+    // Bumped when the entries change: the list places their rows, makes none and drops the ones gone.
+    placed = createSignal(0);
     looks: Look[] = [];
     expanded = new Set<unknown>();
     stopItems: (() => void) | null = null;
     drawnAs: TimelineOrientation | null = null;
+    // The earlier and later buttons at the ends of the track, as `drawNav` drew them.
+    previousDisabled = false;
+    nextDisabled = false;
     previousIndex = -1;
     byUser = false;
     ready = false;
@@ -74,14 +89,21 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
     constructor(props?: IBaseProp<TimelineProps>) {
         super('div', props);
         const own = (this.props ?? {}) as TimelineProps;
-        const el = this.element;
-        el.classList.add('mx-timeline');
+        this.class.add('mx-timeline');
         this.previousButton = this.makeNav('previous');
         this.track = part<HTMLDivElement>(this, 'div', 'mx-timeline__track');
         this.list = part<HTMLOListElement>(this.track, 'ol', 'mx-timeline__list');
+        this.list.bindings.list(
+            () => {
+                void this.placed.value;
+                return untracked(() => this.entries.map(entry => entry.li));
+            },
+            (li: ComponentBase) => li
+        );
         this.nextButton = this.makeNav('next');
         this.detail = part<HTMLDivElement>(this, 'div', 'mx-timeline__detail');
-        this.detail.element.id = nextId('timeline-detail');
+        this.detailId = nextId('timeline-detail');
+        this.detail.attr.add({ id: this.detailId });
         this.detailDate = part<HTMLTimeElement>(this.detail, 'time', 'mx-timeline__date');
         this.detailTitle = part<HTMLSpanElement>(this.detail, 'span', 'mx-timeline__title');
         this.detailDescription = part<HTMLDivElement>(this.detail, 'div', 'mx-timeline__description');
@@ -92,11 +114,11 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
 
         this.observeProperty('items', () => this.renderItems());
         this.observeProperty<TimelineOrientation>('orientation', o => {
-            put(el, 'data-orientation', o ?? 'vertical');
+            put(this, 'data-orientation', o ?? 'vertical');
             this.drawEntries();
         });
         this.observeProperty<boolean>('alternate', on => {
-            mark(el, 'data-alternate', on === true);
+            mark(this, 'data-alternate', on === true);
             this.drawStates();
         });
         this.observeProperty('collapsible', () => this.drawEntries());
@@ -113,9 +135,10 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
             this.renderName();
             this.drawTexts();
         });
-        this.list.element.addEventListener('click', e => this.click(e));
-        this.list.element.addEventListener('keydown', e => this.keyDown(e));
-        this.track.element.addEventListener('scroll', () => this.drawNav());
+        this.list.motif.on('click', (_, e) => this.click(e));
+        this.list.motif.on('keydown', (_, e) => this.keyDown(e));
+        this.track.motif.on('scroll', () => this.drawNav());
+        onLayout(this.track, 'size', () => this.drawNav());
         this.motif.setDisposable(() => {
             this.stopItems?.();
             this.itemClick.dispose();
@@ -249,9 +272,9 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
     }
 
     renderName(): void {
-        put(this.list.element, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.timeline);
-        put(this.previousButton.element, 'aria-label', uiLocale.strings.timelineEarlier);
-        put(this.nextButton.element, 'aria-label', uiLocale.strings.timelineLater);
+        put(this.list, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.timeline);
+        put(this.previousButton, 'aria-label', uiLocale.strings.timelineEarlier);
+        put(this.nextButton, 'aria-label', uiLocale.strings.timelineLater);
     }
 
     renderItems(): void {
@@ -288,16 +311,27 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         };
     }
 
-    // The rows are recreated when the events are others, or the timeline turned or became collapsible.
+    // An event keeps its row while it stays: a row is made for an event that comes, and again only when the timeline
+    // turned or became collapsible (a card and a flag are other parts); the list drops the rows of the events gone.
     drawEntries(): void {
         const as = this.orientation;
-        const stale = this.drawnAs !== as || this.entries.length !== this.looks.length || this.entries.some((entry, i) => entry.item !== this.looks[i].item) || this.entries.some(entry => (entry.face.element.tagName === 'BUTTON') !== this.pressable());
-        if (stale) {
-            for (const entry of this.entries) void entry.li.dispose();
-            this.detailContent.element.replaceChildren();
-            this.entries = this.looks.map(look => this.makeEntry(look, as));
+        const pressable = this.pressable();
+        const pool = new Map<unknown, Entry[]>();
+        for (const entry of this.entries) {
+            const same = pool.get(entry.item);
+            if (same) same.push(entry);
+            else pool.set(entry.item, [entry]);
+        }
+        const next = this.looks.map(look => {
+            const old = pool.get(look.item)?.shift();
+            return old && old.as === as && old.pressable === pressable ? old : this.makeEntry(look, as);
+        });
+        const changed = next.length !== this.entries.length || next.some((entry, i) => entry !== this.entries[i]);
+        this.entries = next;
+        if (changed) untracked(() => this.placed.value++);
+        if (this.drawnAs !== as) {
             this.drawnAs = as;
-            put(this.list.element, 'role', as === 'horizontal' ? 'tablist' : 'list');
+            put(this.list, 'role', as === 'horizontal' ? 'tablist' : 'list');
         }
         this.drawTexts();
     }
@@ -309,44 +343,50 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
 
     makeEntry(look: Look, as: TimelineOrientation): Entry {
         const li = new Component<HTMLLIElement>('li');
-        li.element.className = 'mx-timeline__item';
-        this.list.controls.add(li);
+        li.class.add('mx-timeline__item');
         const horizontal = as === 'horizontal';
-        const face = part<HTMLElement>(li, this.pressable() ? 'button' : 'div', horizontal ? 'mx-timeline__flag' : 'mx-timeline__card');
-        if (face.element instanceof HTMLButtonElement) face.element.type = 'button';
+        const pressable = this.pressable();
+        const face = part<HTMLElement>(li, pressable ? 'button' : 'div', horizontal ? 'mx-timeline__flag' : 'mx-timeline__card');
+        if (pressable) face.attr.add({ type: 'button' });
         const dot = part<HTMLSpanElement>(horizontal ? face : li, 'span', 'mx-timeline__dot');
-        dot.element.setAttribute('aria-hidden', 'true');
+        dot.attr.add({ 'aria-hidden': 'true' });
         const dotGlyph = glyphPart(dot, look.glyph || 'clock', 'mx-timeline__dot-glyph');
         let dotIcon: ComponentBase | null = null;
         if (look.icon) {
             dotIcon = iconPart(dot, look.icon);
-            dotIcon.element.classList.add('mx-timeline__dot-icon');
+            dotIcon.class.add('mx-timeline__dot-icon');
         }
         const date = part<HTMLTimeElement>(face, 'time', 'mx-timeline__date');
         const title = part<HTMLSpanElement>(face, 'span', 'mx-timeline__title');
         let description: Component<HTMLDivElement> | null = null;
         let content: ComponentBase | null = null;
+        let faceId: string | null = null;
         if (horizontal) {
-            li.element.setAttribute('role', 'presentation');
-            face.element.setAttribute('role', 'tab');
-            face.element.id = nextId('timeline-flag');
-            face.element.setAttribute('aria-controls', this.detail.element.id);
-            face.element.tabIndex = -1;
+            li.attr.add({ role: 'presentation' });
+            faceId = nextId('timeline-flag');
+            face.attr.add({ role: 'tab', id: faceId, 'aria-controls': this.detailId });
+            put(face, 'tabindex', '-1');
             if (look.content) {
-                content = look.content();
-                this.detailContent.controls.add(content);
+                const own = look.content();
+                content = own;
+                this.detailContent.controls.add(own);
+                // The flag's content stands in the detail card: it goes with the flag.
+                li.motif.setDisposable(() => {
+                    if (!this.isDisposed && own.parent === this.detailContent) removePart(own);
+                });
             }
         } else {
             description = part<HTMLDivElement>(face, 'div', 'mx-timeline__description');
-            description.element.id = nextId('timeline-text');
-            if (face.element instanceof HTMLButtonElement) face.element.setAttribute('aria-controls', description.element.id);
+            const textId = nextId('timeline-text');
+            description.attr.add({ id: textId });
+            if (pressable) face.attr.add({ 'aria-controls': textId });
             const host = part<HTMLDivElement>(face, 'div', 'mx-timeline__content');
             if (look.content) {
                 content = look.content();
                 host.controls.add(content);
             }
         }
-        return { item: look.item, li, dot, dotGlyph, dotIcon, face, date, title, description, content };
+        return { item: look.item, as, li, dot, dotGlyph, dotIcon, face, pressable, faceId, date, title, description, content };
     }
 
     // The texts of every event, in the language and the date format of now.
@@ -355,16 +395,16 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
             const entry = this.entries[i];
             if (!entry) return;
             const when = this.formatDate(look.date);
-            text(entry.date.element, when);
-            put(entry.date.element, 'datetime', look.date && !Number.isNaN(look.date.getTime()) ? look.date.toISOString() : null);
-            shown(entry.date.element, when !== '');
-            text(entry.title.element, look.title);
-            put(entry.dotGlyph.element, 'data-icon', look.glyph || 'clock');
-            shown(entry.dotGlyph.element, !look.icon && look.glyph !== '');
-            put(entry.li.element, 'data-tone', look.tone);
-            put(entry.dot.element, 'data-tone', look.tone);
+            text(entry.date, when);
+            put(entry.date, 'datetime', look.date && !Number.isNaN(look.date.getTime()) ? look.date.toISOString() : null);
+            shown(entry.date, when !== '');
+            text(entry.title, look.title);
+            put(entry.dotGlyph, 'data-icon', look.glyph || 'clock');
+            shown(entry.dotGlyph, !look.icon && look.glyph !== '');
+            put(entry.li, 'data-tone', look.tone);
+            put(entry.dot, 'data-tone', look.tone);
             if (entry.description) {
-                text(entry.description.element, look.description);
+                text(entry.description, look.description);
             }
         });
         this.drawStates();
@@ -381,21 +421,21 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
             if (!entry) return;
             if (horizontal) {
                 const on = i === index;
-                put(entry.face.element, 'aria-selected', on ? 'true' : 'false');
-                entry.face.element.tabIndex = on || (index < 0 && i === 0) ? 0 : -1;
-                mark(entry.li.element, 'data-selected', on);
-                if (entry.content) shown(entry.content.element as HTMLElement, on);
+                put(entry.face, 'aria-selected', on ? 'true' : 'false');
+                put(entry.face, 'tabindex', on || (index < 0 && i === 0) ? '0' : '-1');
+                mark(entry.li, 'data-selected', on);
+                if (entry.content) shown(entry.content, on);
             } else {
-                put(entry.li.element, 'data-side', alternate ? (i % 2 === 0 ? 'end' : 'start') : 'end');
+                put(entry.li, 'data-side', alternate ? (i % 2 === 0 ? 'end' : 'start') : 'end');
                 const open = !collapsible || this.expanded.has(look.item);
-                if (entry.description) shown(entry.description.element, open && look.description !== '');
-                if (entry.face.element instanceof HTMLButtonElement) put(entry.face.element, 'aria-expanded', open ? 'true' : 'false');
-                mark(entry.li.element, 'data-expanded', collapsible && open);
+                if (entry.description) shown(entry.description, open && look.description !== '');
+                if (entry.pressable) put(entry.face, 'aria-expanded', open ? 'true' : 'false');
+                mark(entry.li, 'data-expanded', collapsible && open);
             }
         });
-        shown(this.detail.element, horizontal && index >= 0);
-        shown(this.previousButton.element, horizontal && this.looks.length > 0);
-        shown(this.nextButton.element, horizontal && this.looks.length > 0);
+        shown(this.detail, horizontal && index >= 0);
+        shown(this.previousButton, horizontal && this.looks.length > 0);
+        shown(this.nextButton, horizontal && this.looks.length > 0);
         if (horizontal) this.drawDetail(index);
         this.drawNav();
     }
@@ -404,42 +444,42 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         const look = this.looks[index];
         const entry = this.entries[index];
         if (!look || !entry) return;
-        put(this.detail.element, 'role', 'tabpanel');
-        put(this.detail.element, 'aria-labelledby', entry.face.element.id);
+        put(this.detail, 'role', 'tabpanel');
+        put(this.detail, 'aria-labelledby', entry.faceId);
         const when = this.formatDate(look.date);
-        text(this.detailDate.element, when);
-        put(this.detailDate.element, 'datetime', look.date && !Number.isNaN(look.date.getTime()) ? look.date.toISOString() : null);
-        shown(this.detailDate.element, when !== '');
-        text(this.detailTitle.element, look.title);
-        text(this.detailDescription.element, look.description);
-        shown(this.detailDescription.element, look.description !== '');
-        shown(this.detailContent.element, !!look.content);
+        text(this.detailDate, when);
+        put(this.detailDate, 'datetime', look.date && !Number.isNaN(look.date.getTime()) ? look.date.toISOString() : null);
+        shown(this.detailDate, when !== '');
+        text(this.detailTitle, look.title);
+        text(this.detailDescription, look.description);
+        shown(this.detailDescription, look.description !== '');
+        shown(this.detailContent, !!look.content);
     }
 
-    // The earlier and later buttons: disabled at the ends of the track.
+    // The earlier and later buttons: disabled at the ends of the track, as read in the next frame.
     drawNav(): void {
-        if (!this.horizontal) return;
-        const el = this.track.element;
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
-        const at = Math.abs(el.scrollLeft);
-        const most = el.scrollWidth - el.clientWidth;
-        const atStart = at <= 1;
-        const atEnd = at >= most - 1;
-        put(this.previousButton.element, 'aria-disabled', (rtl ? atStart : atStart) ? 'true' : null);
-        put(this.nextButton.element, 'aria-disabled', atEnd ? 'true' : null);
+        if (this.horizontal) measure(this, this.readTrack, this.writeNav);
     }
+
+    readTrack = (): Box => boxOf(this.track);
+
+    writeNav = (track: Box): void => {
+        if (!this.horizontal) return;
+        this.previousDisabled = track.scrollStart <= 1;
+        this.nextDisabled = track.scrollStart >= track.scrollWidth - track.clientWidth - 1;
+        put(this.previousButton, 'aria-disabled', this.previousDisabled ? 'true' : null);
+        put(this.nextButton, 'aria-disabled', this.nextDisabled ? 'true' : null);
+    };
 
     makeNav(direction: 'previous' | 'next'): Component<HTMLButtonElement> {
         const nav = part<HTMLButtonElement>(this, 'button', 'mx-timeline__nav');
-        nav.element.type = 'button';
-        put(nav.element, 'data-direction', direction);
+        nav.attr.add({ type: 'button' });
+        put(nav, 'data-direction', direction);
         glyphPart(nav, direction === 'previous' ? 'chevron-start' : 'chevron-end', 'mx-timeline__nav-glyph');
-        nav.element.addEventListener('click', () => {
-            if (nav.element.getAttribute('aria-disabled') === 'true') return;
-            const el = this.track.element;
-            const rtl = getComputedStyle(this.element).direction === 'rtl';
-            const by = Math.max(80, el.clientWidth * 0.6) * (direction === 'next' ? 1 : -1) * (rtl ? -1 : 1);
-            el.scrollBy({ left: by, behavior: 'smooth' });
+        nav.motif.on('click', () => {
+            if (direction === 'previous' ? this.previousDisabled : this.nextDisabled) return;
+            const by = Math.max(80, boxOf(this.track).clientWidth * 0.6) * (direction === 'next' ? 1 : -1);
+            scrollBy(this.track, { start: by }, 'smooth');
         });
         return nav;
     }
@@ -455,19 +495,30 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
             // `x-model` takes the event back.
             this.bindings.writeModel(value);
         }
-        const flag = this.entries[index]?.face.element;
+        const flag = this.entries[index]?.face;
         if (flag && byUser) {
-            flag.focus({ preventScroll: true });
-            flag.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+            focusOn(flag, { preventScroll: true });
+            scrollIntoView(flag, { block: 'nearest', inline: 'nearest', motion: 'smooth' });
         }
         void event;
         return true;
     }
 
+    // Whether an event started on a flag or a card of a timeline inside `root`. The walk goes on into a timeline too:
+    // across, what its events hold lies below the line, outside its flags.
+    onInnerFace(root: ComponentBase, e: Event): boolean {
+        return root.controls.items.some(child => {
+            if (!child.motif.isEventFrom(e)) return false;
+            if (child instanceof Timeline && child.entries.some(entry => entry.face.motif.isEventFrom(e))) return true;
+            return this.onInnerFace(child, e);
+        });
+    }
+
     click(e: MouseEvent): void {
-        const face = (e.target as Element).closest<HTMLElement>('.mx-timeline__flag, .mx-timeline__card');
-        const index = this.entries.findIndex(entry => entry.face.element === face);
+        const index = this.entries.findIndex(entry => entry.face.motif.isEventFrom(e));
         if (index < 0) return;
+        // A flag or a card of a timeline inside this card is that timeline's.
+        if (this.onInnerFace(this.entries[index].face, e)) return;
         const look = this.looks[index];
         if (this.horizontal) this.select(index, true, e);
         else if (this.collapsible) this.unfold(index, !this.expanded.has(look.item));
@@ -477,9 +528,9 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
     // Horizontal: the arrow keys move along the dates and show the event; Home and End go to the ends.
     keyDown(e: KeyboardEvent): void {
         if (!this.horizontal || e.altKey || e.ctrlKey || e.metaKey) return;
-        const from = this.entries.findIndex(entry => entry.face.element === e.target);
+        const from = this.entries.findIndex(entry => entry.face.motif.isEventFrom(e));
         if (from < 0) return;
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
+        const rtl = isRtl(this);
         const forward = rtl ? 'ArrowLeft' : 'ArrowRight';
         const back = rtl ? 'ArrowRight' : 'ArrowLeft';
         let to = -1;

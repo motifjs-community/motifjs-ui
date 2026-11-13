@@ -1,7 +1,11 @@
-import type { Bind, IBaseProp } from '@motifx/core';
+import type { Bind, Component, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { part } from '../../core/draw-parts';
+import { css, mark, put, text as writeText } from '../../core/part-writes';
+import { svgComponent } from '../../parts/chart/svg-parts';
 import type { ControlSize } from '../../core/control-size';
 import { LanguageLook } from '../../core/language-look';
+import { isInPage } from '../../core/measure';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
 import type { ProgressBarProps } from './progress-bar-props';
@@ -15,8 +19,6 @@ import { onLanguage } from '../../core/on-language';
 const OWN = ['value', 'min', 'max', 'shape', 'labelPosition', 'showValue', 'locale', 'tone', 'size', 'stretch'] as const;
 
 const LOOK = ['shape', 'labelPosition', 'tone', 'size', 'stretch'] as const;
-
-const SVG = 'http://www.w3.org/2000/svg';
 
 const WAVE_NAMES = ['amplitude', 'length', 'speed', 'direction', 'start', 'end', 'grow-duration'] as const;
 
@@ -32,14 +34,18 @@ const WAVE = {
 const PARTS = Symbol('mx.progress');
 
 interface Parts {
-  head: HTMLDivElement;
-  label: HTMLSpanElement;
-  value: HTMLSpanElement;
+  head: Component<HTMLDivElement>;
+  label: Component<HTMLSpanElement>;
+  labelId: string;
+  value: Component<HTMLSpanElement>;
+  /** What the label and the value show now, as written. */
+  hasLabel: boolean;
+  hasValue: boolean;
   /** Carries `--_value`, for the bar and for the rest of the track after it. */
-  track: HTMLDivElement;
-  bar: HTMLDivElement;
+  track: Component<HTMLDivElement>;
+  bar: Component<HTMLDivElement>;
   /** The ring and the arc, once the bar is a circle. */
-  circle: SVGSVGElement | null;
+  circle: Component<SVGSVGElement> | null;
   wave: ProgressWave | null;
   percent: Intl.NumberFormat | null;
   stopName: (() => void) | null;
@@ -67,14 +73,14 @@ function toNumber(value: unknown, fallback: number): number {
  */
 export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
   /** What the design language decides: a wave, and how it swings. */
-  private readonly waveLook = new LanguageLook(this.element, WAVE, () => this.renderWave());
+  private readonly waveLook = new LanguageLook(this, WAVE, () => this.renderWave());
 
   constructor(props?: IBaseProp<ProgressBarProps>) {
     super(props);
     this.motif.setDisposable(this.waveLook.watch());
     const own = (this.props ?? {}) as ProgressBarProps;
-    this.element.classList.add('mx-progress');
-    this.element.setAttribute('role', 'progressbar');
+    this.class.add('mx-progress');
+    this.attr.add({ role: 'progressbar' });
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.label !== undefined) this.bindProperty('text', own.label);
     if (own.valueText) this.setProperty('valueText', own.valueText);
@@ -192,60 +198,70 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
   }
 
   private buildParts(): Parts {
-    const head = document.createElement('div');
-    head.className = 'mx-progress__head';
-    const label = head.appendChild(document.createElement('span'));
-    label.className = 'mx-progress__label';
-    label.id = nextId('progress');
-    const value = head.appendChild(document.createElement('span'));
-    value.className = 'mx-progress__value';
-    const track = document.createElement('div');
-    track.className = 'mx-progress__track';
-    const bar = track.appendChild(document.createElement('div'));
-    bar.className = 'mx-progress__bar';
-    this.element.append(head, track);
-    return { head, label, value, track, bar, circle: null, wave: null, percent: null, stopName: null };
+    const headPart = part<HTMLDivElement>(this, 'div', 'mx-progress__head');
+    const label = part<HTMLSpanElement>(headPart, 'span', 'mx-progress__label');
+    const labelId = nextId('progress');
+    label.attr.add({ id: labelId });
+    const value = part<HTMLSpanElement>(headPart, 'span', 'mx-progress__value');
+    const trackPart = part<HTMLDivElement>(this, 'div', 'mx-progress__track');
+    const bar = part<HTMLDivElement>(trackPart, 'div', 'mx-progress__bar');
+    return {
+      head: headPart,
+      label,
+      labelId,
+      value,
+      hasLabel: false,
+      hasValue: false,
+      track: trackPart,
+      bar,
+      circle: null,
+      wave: null,
+      percent: null,
+      stopName: null,
+    };
   }
 
-  private buildCircle(): SVGSVGElement {
-    const circle = document.createElementNS(SVG, 'svg');
-    circle.classList.add('mx-progress__circle');
-    circle.setAttribute('aria-hidden', 'true');
-    for (const name of ['mx-progress__ring', 'mx-progress__arc']) {
-      const part = circle.appendChild(document.createElementNS(SVG, 'circle'));
-      part.classList.add(name);
-    }
-    this.parts.track.after(circle);
+  /** The ring, right after the track; made the first time it is needed. */
+  private buildCircle(): Component<SVGSVGElement> {
+    const track = this.parts.track;
+    const circle = svgComponent(this, 'svg', 'mx-progress__circle');
+    // After the track, before what follows it.
+    const items = this.controls.items;
+    const next = items[items.indexOf(track) + 1];
+    if (next && next !== circle) this.controls.move(circle, next);
+    circle.attr.add({ 'aria-hidden': 'true' });
+    for (const name of ['mx-progress__ring', 'mx-progress__arc']) svgComponent(circle, 'circle', name);
     return circle;
   }
 
   private renderLabel(text: string): void {
     const parts = this.parts;
-    parts.label.textContent = text ?? '';
-    parts.label.hidden = !text;
+    writeText(parts.label, text ?? '');
+    parts.hasLabel = !!text;
+    mark(parts.label, 'hidden', !text);
     if (text) {
       parts.stopName?.();
       parts.stopName = null;
-      this.element.removeAttribute('aria-label');
-      this.element.setAttribute('aria-labelledby', parts.label.id);
+      put(this, 'aria-label', null);
+      put(this, 'aria-labelledby', parts.labelId);
     } else {
-      this.element.removeAttribute('aria-labelledby');
-      parts.stopName ??= onLanguage(this, () => this.element.setAttribute('aria-label', uiLocale.strings.loading));
+      put(this, 'aria-labelledby', null);
+      parts.stopName ??= onLanguage(this, () => put(this, 'aria-label', uiLocale.strings.loading));
     }
     this.renderHead();
   }
 
   private renderValue(): void {
     const parts = this.parts;
-    const el = this.element;
     const raw = this.peekProperty<number | null>('value');
     const known = raw !== null && raw !== undefined && Number.isFinite(Number(raw));
-    el.dataset.state = known ? 'determinate' : 'indeterminate';
+    put(this, 'data-state', known ? 'determinate' : 'indeterminate');
     if (!known) {
-      for (const name of ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext']) el.removeAttribute(name);
-      el.style.removeProperty('--_fraction');
-      el.removeAttribute('data-complete');
-      parts.value.textContent = '';
+      for (const name of ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext']) put(this, name, null);
+      css(this, '--_fraction', '');
+      mark(this, 'data-complete', false);
+      writeText(parts.value, '');
+      parts.hasValue = false;
       this.renderHead();
       this.renderWave();
       return;
@@ -254,15 +270,17 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
     const max = Math.max(min, toNumber(this.peekProperty('max'), 100));
     const value = Math.min(max, Math.max(min, Number(raw)));
     const fraction = max > min ? (value - min) / (max - min) : 1;
-    el.style.setProperty('--_fraction', String(fraction));
-    el.toggleAttribute('data-complete', fraction >= 1);
+    css(this, '--_fraction', String(fraction));
+    mark(this, 'data-complete', fraction >= 1);
     const describe = this.peekProperty<((value: number, fraction: number) => string) | null>('valueText');
     const text = describe ? describe(value, fraction) : this.formatPercent(fraction);
-    el.setAttribute('aria-valuenow', String(value));
-    el.setAttribute('aria-valuemin', String(min));
-    el.setAttribute('aria-valuemax', String(max));
-    el.setAttribute('aria-valuetext', text);
-    parts.value.textContent = this.peekProperty('showValue') ? text : '';
+    put(this, 'aria-valuenow', String(value));
+    put(this, 'aria-valuemin', String(min));
+    put(this, 'aria-valuemax', String(max));
+    put(this, 'aria-valuetext', text);
+    const shown = this.peekProperty('showValue') ? text : '';
+    writeText(parts.value, shown);
+    parts.hasValue = !!shown;
     this.renderHead();
     this.renderWave();
   }
@@ -283,19 +301,18 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
 
   private renderHead(): void {
     const parts = this.parts;
-    parts.value.hidden = !parts.value.textContent;
-    parts.head.hidden = parts.label.hidden && parts.value.hidden;
+    mark(parts.value, 'hidden', !parts.hasValue);
+    mark(parts.head, 'hidden', !parts.hasLabel && !parts.hasValue);
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
     const shape = this.peekProperty<ProgressShape>('shape') ?? 'line';
     if (shape === 'circle') this.parts.circle ??= this.buildCircle();
-    data.shape = shape;
-    data.labelPosition = this.peekProperty<ProgressLabelPosition>('labelPosition') ?? (shape === 'circle' ? 'bottom' : 'top');
-    data.tone = this.peekProperty<ProgressTone>('tone') ?? 'accent';
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
-    this.element.toggleAttribute('data-stretch', !!this.peekProperty('stretch'));
+    put(this, 'data-shape', shape);
+    put(this, 'data-label-position', this.peekProperty<ProgressLabelPosition>('labelPosition') ?? (shape === 'circle' ? 'bottom' : 'top'));
+    put(this, 'data-tone', this.peekProperty<ProgressTone>('tone') ?? 'accent');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
+    mark(this, 'data-stretch', !!this.peekProperty('stretch'));
     this.renderWave();
   }
 
@@ -306,18 +323,18 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
     const look = this.readWave(shape);
     const raw = this.peekProperty<number | null>('value');
     const known = raw !== null && raw !== undefined && Number.isFinite(Number(raw));
-    if (!known || look.amplitude <= 0 || !this.element.isConnected) {
+    if (!known || look.amplitude <= 0 || !isInPage(this)) {
       parts.wave?.dispose();
       parts.wave = null;
-      this.element.removeAttribute('data-wave');
+      mark(this, 'data-wave', false);
       return;
     }
     if (parts.wave?.shape !== shape) {
       parts.wave?.dispose();
       const holder = shape === 'circle' ? (parts.circle ??= this.buildCircle()) : parts.track;
-      parts.wave = new ProgressWave(this.element, holder, shape, look);
+      parts.wave = new ProgressWave(this, holder, shape, look);
     }
-    this.element.setAttribute('data-wave', '');
+    mark(this, 'data-wave', true);
     parts.wave.update(look, this.fraction ?? 0);
   }
 

@@ -1,6 +1,10 @@
-import { untracked } from '@motifx/core';
+import { untracked, type Component } from '@motifx/core';
+import { clearParts, loose, part } from '../../core/draw-parts';
+import { focusOn } from '../../core/focus';
 import { dismissMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { isRtl } from '../../core/measure';
+import { css, mark, put, text } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import { SwipeTracker } from '../../parts/overlay/swipe-tracker';
 import { Button } from '../button/Button';
 import type { TabDocument } from './TabDocument';
@@ -16,11 +20,12 @@ const SLOP = 8;
  * list of them.
  */
 export class PhoneBar {
-  readonly element: HTMLDivElement;
-  private readonly title: HTMLButtonElement;
-  private readonly label: HTMLSpanElement;
-  private readonly icon: HTMLSpanElement;
-  private readonly unsaved: HTMLSpanElement;
+  /** The bar as a component of the manager: its buttons are its children. */
+  private readonly part: Component<HTMLDivElement>;
+  private readonly title: Component<HTMLButtonElement>;
+  private readonly label: Component<HTMLSpanElement>;
+  private readonly icon: Component<HTMLSpanElement>;
+  private readonly unsaved: Component<HTMLSpanElement>;
   private readonly close: Button;
   private readonly count: Button;
   private releaseIcon: () => void = () => {};
@@ -31,69 +36,61 @@ export class PhoneBar {
     private readonly manager: TabDocumentManager,
     private readonly presenter: TabPresenter,
   ) {
-    const doc = manager.element.ownerDocument;
-    const el = (this.element = doc.createElement('div'));
-    el.className = 'mx-tabdocs__phone-bar';
-    el.setAttribute('role', 'toolbar');
-    const title = (this.title = doc.createElement('button'));
-    title.type = 'button';
-    title.className = 'mx-tabdocs__phone-title';
-    title.setAttribute('aria-haspopup', 'dialog');
-    this.icon = span(doc, 'mx-tabdocs__icon');
-    this.icon.setAttribute('aria-hidden', 'true');
-    this.label = span(doc, 'mx-tabdocs__phone-label');
-    this.unsaved = span(doc, 'mx-tabdocs__phone-dirty');
-    this.unsaved.setAttribute('aria-hidden', 'true');
-    title.append(this.icon, this.label, this.unsaved);
+    this.part = loose<HTMLDivElement>('div', 'mx-tabdocs__phone-bar');
+    this.part.attr.add({ role: 'toolbar' });
+    const titlePart = (this.title = part<HTMLButtonElement>(this.part, 'button', 'mx-tabdocs__phone-title'));
+    titlePart.attr.add({ type: 'button', 'aria-haspopup': 'dialog' });
+    this.icon = part<HTMLSpanElement>(titlePart, 'span', 'mx-tabdocs__icon');
+    this.icon.attr.add({ 'aria-hidden': 'true' });
+    this.label = part<HTMLSpanElement>(titlePart, 'span', 'mx-tabdocs__phone-label');
+    this.unsaved = part<HTMLSpanElement>(titlePart, 'span', 'mx-tabdocs__phone-dirty');
+    this.unsaved.attr.add({ 'aria-hidden': 'true' });
     this.close = new Button({ icon: dismissMark() });
-    this.close.element.classList.add('mx-tabdocs__phone-close');
+    this.close.class.add('mx-tabdocs__phone-close');
     this.count = new Button();
-    this.count.element.classList.add('mx-tabdocs__phone-count');
-    this.count.element.setAttribute('aria-haspopup', 'dialog');
-    // Built here and placed in the bar, not among the manager's children (core would put them back there).
-    this.close.build();
-    this.count.build();
-    el.append(title, this.close.element, this.count.element);
-    manager.element.append(el);
+    this.count.class.add('mx-tabdocs__phone-count');
+    this.count.attr.add({ 'aria-haspopup': 'dialog' });
+    this.part.controls.add(this.close, this.count);
+    manager.controls.add(this.part);
 
-    title.addEventListener('click', () => untracked(() => this.openCommands(false)));
-    title.addEventListener('keydown', (e) => untracked(() => this.key(e)));
+    titlePart.motif.on('click', () => untracked(() => this.openCommands(false)));
+    titlePart.motif.on('keydown', (_, e) => untracked(() => this.key(e)));
     // The touchmove listener is there before a finger lands: only then can a swipe keep the page still.
-    title.addEventListener('touchstart', (e) => this.touchStart(e), { passive: true });
-    title.addEventListener('touchmove', (e) => this.touchMove(e), { passive: false });
-    title.addEventListener('touchend', (e) => this.touchEnd(e));
-    title.addEventListener('touchcancel', (e) => this.touchEnd(e));
-    this.close.element.addEventListener('click', () =>
+    titlePart.motif.on('touchstart:passive', (_, e: TouchEvent | undefined) => e && this.touchStart(e));
+    titlePart.motif.on('touchmove', (_, e: TouchEvent | undefined) => e && this.touchMove(e));
+    titlePart.motif.on('touchend', (_, e: TouchEvent | undefined) => e && this.touchEnd(e));
+    titlePart.motif.on('touchcancel', (_, e: TouchEvent | undefined) => e && this.touchEnd(e));
+    this.close.motif.on('click', () =>
       untracked(() => {
         const group = this.presenter.phoneDocument?.group;
         if (group) this.manager.closeActiveByUser(group);
       }),
     );
-    this.count.element.addEventListener('click', () => untracked(() => this.presenter.showList()));
+    this.count.motif.on('click', () => untracked(() => this.presenter.showList()));
   }
 
   render(): void {
     const m = this.manager;
     const doc = this.presenter.phoneDocument;
     const docs = this.presenter.listDocuments();
-    this.element.setAttribute('aria-label', m.textOf('tabDocsDocuments'));
+    put(this.part, 'aria-label', m.textOf('tabDocsDocuments'));
     if (doc !== this.shown) {
       this.shown = doc;
       this.renderIcon(doc);
     }
-    this.label.textContent = doc ? doc.title : m.textOf('tabDocsEmpty');
-    this.unsaved.hidden = !doc?.dirty;
-    this.title.setAttribute('aria-label', doc ? m.textOf('tabDocsPhoneTitle', { title: doc.title }) : m.textOf('tabDocsEmpty'));
-    this.title.disabled = !doc;
+    text(this.label, doc ? doc.title : m.textOf('tabDocsEmpty'));
+    mark(this.unsaved, 'hidden', !doc?.dirty);
+    put(this.title, 'aria-label', doc ? m.textOf('tabDocsPhoneTitle', { title: doc.title }) : m.textOf('tabDocsEmpty'));
+    mark(this.title, 'disabled', !doc);
     // Not `visible`: the button is built here, outside the component tree, and stays in place.
-    this.close.element.hidden = !doc;
+    mark(this.close, 'hidden', !doc);
     if (doc) {
-      this.close.element.setAttribute('aria-label', m.textOf(doc.closable ? 'tabDocsCloseActive' : 'tabDocsHideActive', { title: doc.title }));
+      put(this.close, 'aria-label', m.textOf(doc.closable ? 'tabDocsCloseActive' : 'tabDocsHideActive', { title: doc.title }));
       this.close.enabled = m.mayCloseOrHide(doc);
     }
     this.count.text = String(docs.length);
-    this.count.element.setAttribute('aria-label', m.textOf('tabDocsPhoneCount', { n: docs.length }));
-    this.count.element.setAttribute('aria-expanded', String(this.presenter.listOpen));
+    put(this.count, 'aria-label', m.textOf('tabDocsPhoneCount', { n: docs.length }));
+    put(this.count, 'aria-expanded', String(this.presenter.listOpen));
     // Outside the component tree the buttons are never mounted: on the page, they read their look from the bar's places.
     this.close.readLook();
     this.count.readLook();
@@ -101,8 +98,9 @@ export class PhoneBar {
 
   dispose(): void {
     this.releaseIcon();
-    for (const button of [this.close, this.count]) if (!button.isDisposed) void button.dispose();
-    this.element.remove();
+    // Its buttons go with it.
+    if (this.part.parent) this.part.parent.controls.remove(this.part);
+    else if (!this.part.isDisposed) void this.part.dispose();
   }
 
   /** The commands of the document shown, as an action sheet. */
@@ -113,7 +111,7 @@ export class PhoneBar {
 
   private key(e: KeyboardEvent): void {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
-    const rtl = this.manager.element.ownerDocument.defaultView?.getComputedStyle(this.title).direction === 'rtl';
+    const rtl = isRtl(this.title);
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
       e.preventDefault();
       this.go((e.key === 'ArrowRight') !== rtl ? 1 : -1);
@@ -130,21 +128,16 @@ export class PhoneBar {
     if (docs.length < 2) return;
     const next = docs[(at + by + docs.length) % docs.length];
     this.manager.activateFromList(next);
-    this.title.focus();
+    focusOn(this.title);
   }
 
   private renderIcon(doc: TabDocument | null): void {
     this.releaseIcon();
     this.releaseIcon = () => {};
     const icon = doc?.icon;
-    this.icon.hidden = !icon;
-    if (!icon) {
-      this.icon.replaceChildren();
-      return;
-    }
-    const shown = iconNode(icon, this.element.ownerDocument);
-    this.icon.replaceChildren(shown.node);
-    this.releaseIcon = shown.release;
+    mark(this.icon, 'hidden', !icon);
+    clearParts(this.icon);
+    if (icon) this.releaseIcon = showIcon(icon, this.icon);
   }
 
   private touchStart(e: TouchEvent): void {
@@ -166,11 +159,11 @@ export class PhoneBar {
       if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
       swipe.decided = true;
       swipe.taken = Math.abs(dx) > Math.abs(dy) && this.presenter.listDocuments().length > 1;
-      if (swipe.taken) this.title.toggleAttribute('data-swiping', true);
+      if (swipe.taken) mark(this.title, 'data-swiping', true);
     }
     if (!swipe.taken) return;
     if (e.cancelable) e.preventDefault();
-    this.label.style.translate = `${Math.round(dx)}px 0`;
+    css(this.label, 'translate', `${Math.round(dx)}px 0`);
   }
 
   private touchEnd(e: TouchEvent): void {
@@ -180,20 +173,14 @@ export class PhoneBar {
     if (!swipe.taken) return;
     // A swipe is not a tap: the click that may follow does nothing.
     e.preventDefault();
-    this.title.removeAttribute('data-swiping');
-    this.label.style.translate = '';
+    mark(this.title, 'data-swiping', false);
+    css(this.label, 'translate', '');
     const t = Array.from(e.changedTouches).find((c) => c.identifier === swipe.id)!;
     const dx = t.clientX - swipe.x;
     const speed = swipe.tracker.velocity('x');
     if (e.type === 'touchcancel' || (Math.abs(dx) < 48 && Math.abs(speed) < 0.4)) return;
-    const rtl = this.manager.element.ownerDocument.defaultView?.getComputedStyle(this.title).direction === 'rtl';
+    const rtl = isRtl(this.title);
     // Swiping to the left brings the next document in, as pages turn.
     untracked(() => this.go((dx < 0) !== rtl ? 1 : -1));
   }
-}
-
-function span(doc: Document, className: string): HTMLSpanElement {
-  const el = doc.createElement('span');
-  el.className = className;
-  return el;
 }

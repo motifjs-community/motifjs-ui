@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { Component } from '@motifx/core';
 import { describe, expect, it } from 'vitest';
 import * as glyphs from '../src/core/glyphs';
 // @ts-expect-error a plain .mjs script, no types
@@ -18,7 +19,8 @@ describe('icons', () => {
     const helpers = Object.entries(glyphs).filter(([name]) => name !== 'glyph');
     expect(helpers.length).toBeGreaterThan(30);
     for (const [name, make] of helpers) {
-      const mark = name === 'dockGuideMark' ? (make as (side: string) => HTMLElement)('left') : (make as () => HTMLElement)();
+      const made = name === 'dockGuideMark' ? (make as (side: string) => Component<HTMLSpanElement>)('left') : (make as () => Component<HTMLSpanElement>)();
+      const mark = made.element;
       expect(mark.className, name).toBe('mx-glyph');
       expect(kit.icons[mark.dataset.icon!], `${name} → ${mark.dataset.icon}`).toBeDefined();
       expect(mark.getAttribute('aria-hidden')).toBe('true');

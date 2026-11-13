@@ -1,4 +1,6 @@
 import { Component, type ComponentBase } from '@motifx/core';
+import { clearParts, loose, part, removePart } from '../../../core/draw-parts';
+import { css, put, text } from '../../../core/part-writes';
 import { Button } from '../../button/Button';
 import { CheckBox } from '../../checkbox/CheckBox';
 import { ListBox } from '../../listbox/ListBox';
@@ -28,7 +30,7 @@ export class HeaderFilter<T> {
   private all: CheckBox | null = null;
   private nodes: FilterTreeNode[] = [];
   private loading: AbortController | null = null;
-  private note: HTMLElement | null = null;
+  private note: ComponentBase | null = null;
   private field = '';
   /** The list leaves out what is not chosen (every value was chosen, then some taken away). */
   private excluding = false;
@@ -57,13 +59,14 @@ export class HeaderFilter<T> {
     return this.opened ? this.field : '';
   }
 
-  open(field: string, anchor: HTMLElement, returnTo: HTMLElement) {
+  /** Opens the window for `field` next to `anchor`; focus goes back to `returnTo` when it closes. */
+  open(field: string, anchor: ComponentBase, returnTo: ComponentBase) {
     const model = this.model;
     const popup = this.popup ?? this.create();
     this.release();
     this.field = field;
     const title = model.columns.title(field);
-    popup.element.setAttribute('aria-label', model.text('gridFilterFor', { title }));
+    put(popup, 'aria-label', model.text('gridFilterFor', { title }));
     const filter = model.filters.get(field);
     this.excluding = filter?.filterType === 'exclude';
     if (model.values.kind(field) === 'tree') this.openTree(field, title);
@@ -122,7 +125,7 @@ export class HeaderFilter<T> {
       valueField: 'value',
       height: Math.max(1, Math.floor(model.settings.get('headerFilterRows'))),
       value: this.excluding ? [] : entries(),
-      itemTemplate: (item, host) => this.drawItem(item, host),
+      itemTemplate: (item, place) => this.drawItem(item, place),
       // Every value chosen: what is taken away next is omitted; none chosen: what is chosen next is kept.
       onValueChanged: (e) => {
         if (!e.byUser) return;
@@ -160,7 +163,7 @@ export class HeaderFilter<T> {
         this.showAll();
       },
     });
-    all.element.classList.add('mx-data-grid__values-all');
+    all.class.add('mx-data-grid__values-all');
     const tree = new TreeView<FilterTreeNode>({
       label,
       items: [],
@@ -170,29 +173,29 @@ export class HeaderFilter<T> {
       showCheckBoxes: true,
       checkRecursive: true,
       size: 'sm',
-      itemTemplate: (item, host) => this.drawItem(item, host),
+      itemTemplate: (item, place) => this.drawItem(item, place),
       onCheckChanged: () => this.showAll(),
     });
-    tree.element.classList.add('mx-data-grid__values-tree');
-    tree.element.style.setProperty('--_rows', String(Math.max(1, Math.floor(model.settings.get('headerFilterRows')))));
-    const note = document.createElement('div');
-    note.className = 'mx-data-grid__values-note';
-    note.setAttribute('role', 'status');
-    note.textContent = model.text('loading');
+    tree.class.add('mx-data-grid__values-tree');
+    css(tree, '--_rows', String(Math.max(1, Math.floor(model.settings.get('headerFilterRows')))));
+    const notePart = loose<HTMLDivElement>('div', 'mx-data-grid__values-note');
+    notePart.attr.add({ role: 'status' });
+    text(notePart, model.text('loading'));
     this.all = all;
     this.treeView = tree;
-    this.note = note;
+    this.note = notePart;
     this.body!.controls.add(all, tree);
     // Turned on once the tree is built, its search box goes above the rows.
     tree.searchEnabled = model.values.searchable(field);
-    this.body!.element.append(note);
+    this.body!.controls.add(notePart);
     const controller = new AbortController();
     this.loading = controller;
     model.values.tree(field, controller.signal).then(
       (nodes) => {
         if (this.treeView !== tree) return;
         this.loading = null;
-        note.remove();
+        removePart(notePart);
+        if (this.note === notePart) this.note = null;
         this.nodes = nodes;
         tree.items = nodes;
         tree.checkedKeys = this.checkedOf(nodes);
@@ -202,7 +205,7 @@ export class HeaderFilter<T> {
       () => {
         if (this.treeView !== tree || controller.signal.aborted) return;
         this.loading = null;
-        note.textContent = model.text('loadFailed');
+        text(notePart, model.text('loadFailed'));
       },
     );
   }
@@ -257,16 +260,13 @@ export class HeaderFilter<T> {
     all.value = every ? true : checked.size ? null : false;
   }
 
-  private drawItem(item: GridFilterValue | FilterTreeNode, host: HTMLElement) {
-    const text = document.createElement('span');
-    text.className = 'mx-data-grid__value-text';
-    text.textContent = item.text ?? '';
-    host.append(text);
-    if (item.count === undefined) return;
-    const count = document.createElement('span');
-    count.className = 'mx-data-grid__value-count';
-    count.textContent = this.model.formatter.count(item.count);
-    host.append(count);
+  private drawItem(item: GridFilterValue | FilterTreeNode, place: ComponentBase) {
+    text(part(place, 'span', 'mx-data-grid__value-text'), item.text ?? '');
+    if (item.count !== undefined) text(part(place, 'span', 'mx-data-grid__value-count'), this.model.formatter.count(item.count));
+    // The parts go when the list lets the row go; a row already disposed took them along.
+    return () => {
+      if (!place.isDisposed) clearParts(place);
+    };
   }
 
   private create(): Popup {
@@ -274,16 +274,16 @@ export class HeaderFilter<T> {
     const popup = new Popup();
     popup.placement = 'bottom-start';
     popup.matchWidth = false;
-    popup.element.classList.add('mx-data-grid__values');
-    popup.element.setAttribute('role', 'dialog');
+    popup.class.add('mx-data-grid__values');
+    popup.attr.add({ role: 'dialog' });
     const body = new Component<HTMLDivElement>('div');
-    body.element.className = 'mx-data-grid__values-list';
+    body.class.add('mx-data-grid__values-list');
     const bar = new Component<HTMLDivElement>('div');
-    bar.element.className = 'mx-data-grid__values-bar';
+    bar.class.add('mx-data-grid__values-bar');
     const apply = new Button({ text: () => model.text('gridApply'), tone: 'accent', onclick: () => void this.apply() });
     const dismiss = new Button({ text: () => model.text('cancel'), onclick: () => this.close() });
-    apply.element.classList.add('mx-data-grid__apply');
-    dismiss.element.classList.add('mx-data-grid__dismiss');
+    apply.class.add('mx-data-grid__apply');
+    dismiss.class.add('mx-data-grid__dismiss');
     bar.controls.add(apply, dismiss);
     popup.controls.add(body, bar);
     this.owner.controls.add(popup);
@@ -301,7 +301,7 @@ export class HeaderFilter<T> {
     const all = this.all;
     this.loading?.abort();
     this.loading = null;
-    this.note?.remove();
+    removePart(this.note);
     this.note = null;
     this.list = null;
     this.values = null;

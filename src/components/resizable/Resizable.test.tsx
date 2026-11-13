@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { Resizable } from './Resizable';
 
@@ -46,7 +47,7 @@ describe('Resizable', () => {
         expect(handles(r).every(h => !h.hidden)).toBe(true);
         expect(r.element.style.inlineSize).toBe('240px');
         expect(r.element.style.blockSize).toBe('10rem');
-        const grip = r.gripElement;
+        const grip = r.grip.element;
         expect(grip.getAttribute('role')).toBe('button');
         expect(grip.tabIndex).toBe(0);
         expect(grip.getAttribute('aria-label')).toBe(enStrings.resize);
@@ -71,18 +72,21 @@ describe('Resizable', () => {
         page(<Resizable ref={(x: Resizable) => (r = x)} minWidth={200} maxHeight={110} step={10} x-model={() => m.size} onResized={e => told.push(`${e.edge} ${e.width}x${e.height}`)} />);
         await settle();
         measured(r, 200, 100);
-        key(r.gripElement, 'ArrowRight');
+        key(r.grip.element, 'ArrowRight');
         expect(r.element.style.inlineSize).toBe('210px');
+        // The size is told once it is laid out: in the next measuring round.
+        measureNow(r);
         expect(m.size).toEqual({ width: 210, height: 100 });
         expect(told).toEqual(['bottom-end 210x100']);
-        key(r.gripElement, 'ArrowLeft');
-        key(r.gripElement, 'ArrowLeft');
+        key(r.grip.element, 'ArrowLeft');
+        key(r.grip.element, 'ArrowLeft');
         expect(r.element.style.inlineSize).toBe('200px');
-        key(r.gripElement, 'ArrowDown');
-        key(r.gripElement, 'ArrowDown');
+        key(r.grip.element, 'ArrowDown');
+        key(r.grip.element, 'ArrowDown');
         expect(r.element.style.blockSize).toBe('110px');
-        key(r.gripElement, 'ArrowUp');
+        key(r.grip.element, 'ArrowUp');
         expect(r.element.style.blockSize).toBe('100px');
+        measureNow(r);
         expect(r.currentSize).toEqual({ width: 200, height: 100 });
         expect(r.element.querySelector('[aria-live]')!.textContent).toBe('Width 200, height 100');
         m.size = { width: 300, height: 150 };
@@ -97,11 +101,11 @@ describe('Resizable', () => {
         page(<Resizable ref={(x: Resizable) => (r = x)} keepAspectRatio minWidth={10} minHeight={10} onResizeStarting={e => (e.cancel = refuse)} />);
         await settle();
         measured(r, 200, 100);
-        key(r.gripElement, 'ArrowDown');
+        key(r.grip.element, 'ArrowDown');
         expect(r.element.style.blockSize).toBe('110px');
         expect(r.element.style.inlineSize).toBe('220px');
         refuse = true;
-        key(r.gripElement, 'ArrowDown');
+        key(r.grip.element, 'ArrowDown');
         expect(r.element.style.blockSize).toBe('110px');
     });
 });

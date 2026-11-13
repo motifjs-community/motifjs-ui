@@ -1,6 +1,8 @@
-import { Component, reactive } from '@motifx/core';
+import { Component, errorHandler, reactive } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
+import { shortcuts } from '../../core/shortcut-registry';
 import { uiLocale } from '../../core/ui-locale';
 import { toast } from './show-toast';
 import { Toast } from './Toast';
@@ -47,14 +49,17 @@ describe('Toast', () => {
     const t = toast.show({ title: 'Saved', text: 'All changes are saved.' });
     const reason = vi.fn();
     void t.closed.then(reason);
-    // In a holder of its own in the page, under a root of the component tree.
-    expect(region().parentElement?.parentElement).toBe(document.body);
+    // In the page, a child of the component standing for the body (the app's layer while an app runs).
+    expect(region().parentElement).toBe(document.body);
     expect(region().tagName).toBe('SECTION');
     expect(region().getAttribute('role')).toBe('region');
     expect(region().getAttribute('aria-label')).toBe('Notifications');
     expect(region().getAttribute('aria-keyshortcuts')).toBe('F8');
     expect(texts('bottom-end')).toEqual(['All changes are saved.']);
     expect(t.element.dataset.tone).toBe('info');
+    // It enters, and shows once its entering style is in effect (the next measuring round; timers are fake here).
+    expect(t.element.dataset.state).toBe('entering');
+    measureNow(t);
     expect(t.element.dataset.state).toBe('shown');
     expect(t.element.getAttribute('role')).toBe('group');
     expect(t.element.tabIndex).toBe(0);
@@ -68,6 +73,8 @@ describe('Toast', () => {
     expect(t.isClosed).toBe(false);
     vi.advanceTimersByTime(1);
     expect(t.isClosed).toBe(true);
+    // It leaves once its transition time is read, in the next measuring round.
+    measureNow(Toaster.default);
     await settle();
     expect(reason).toHaveBeenCalledWith('timeout');
     expect(texts('bottom-end')).toEqual([]);
@@ -88,6 +95,8 @@ describe('Toast', () => {
     expect(tones).toEqual(['success', 'danger', 'info']);
     // The fourth waits, and is read when it shows; a closed one leaves the live area.
     done.close();
+    // It leaves once its transition time is read, in the next measuring round.
+    measureNow(Toaster.default);
     vi.advanceTimersByTime(50);
     expect(status.textContent).toBe('News.');
     expect(alert.textContent).toBe('Failed.Careful.');
@@ -140,11 +149,14 @@ describe('Toast', () => {
     expect(texts('top-start')).toEqual(['b', 'a']);
     expect(toaster.toasts).toHaveLength(4);
     all[0].close();
+    // It leaves once its transition time is read, in the next measuring round.
+    measureNow(toaster);
     expect(texts('top-start')).toEqual(['c', 'b']);
     s.max = 3;
     await settle();
     expect(texts('top-start')).toEqual(['d', 'c', 'b']);
     toaster.closeAll();
+    measureNow(toaster);
     expect(texts('top-start')).toEqual([]);
     expect(toaster.toasts).toHaveLength(0);
   });
@@ -214,6 +226,38 @@ describe('Toast', () => {
     expect(region().hasAttribute('aria-keyshortcuts')).toBe(false);
     key('F8', origin);
     expect(document.activeElement).toBe(origin);
+  });
+
+  it('two toasters on a page share one F8, which goes to the newest toast of either', async () => {
+    const heard = vi.spyOn(errorHandler, 'reportSuppressed');
+    const host = page(new Component<HTMLButtonElement>('button'));
+    const origin = host.element.firstElementChild as HTMLButtonElement;
+    const own = new Toaster({ position: 'top-start' });
+    page(own);
+    const focusKeys = () => shortcuts.list().filter((s) => s.name === 'toaster.focus');
+    origin.focus();
+    const a = toast.info('Default', { duration: 0 });
+    const b = own.info('Own', { duration: 0 });
+    expect(focusKeys().length).toBe(1);
+    expect(heard.mock.calls.filter(([source]) => source === 'Shortcuts')).toEqual([]);
+    key('F8', origin);
+    expect(document.activeElement).toBe(b.element);
+    key('F8');
+    expect(document.activeElement).toBe(origin);
+    // Another key for one toaster takes its own registration back first.
+    own.hotkey = 'F9';
+    expect(focusKeys().map((s) => s.keys)).toEqual([['F8'], ['F9']]);
+    key('F8', origin);
+    expect(document.activeElement).toBe(a.element);
+    key('F8');
+    own.hotkey = 'F8';
+    expect(focusKeys().length).toBe(1);
+    // The key stays with the toaster left.
+    await own.dispose();
+    expect(focusKeys().length).toBe(1);
+    origin.focus();
+    key('F8', origin);
+    expect(document.activeElement).toBe(a.element);
   });
 
   it('follows getter props, in JSX and programmatically', async () => {
@@ -294,21 +338,21 @@ describe('Toast', () => {
     const t = toast.show({ text: 'Bye', onClosed: closed });
     t.close();
     t.close();
+    // It leaves once its transition time is read, in the next measuring round.
+    measureNow(Toaster.default);
     await settle();
     expect(closed).toHaveBeenCalledTimes(1);
     expect(closed).toHaveBeenCalledWith('code');
     expect(t.isDisposed).toBe(true);
   });
-  it('in no component tree, places itself under a root of its own in the page, and takes it away when disposed', async () => {
+  it('in no component tree, places itself in the page as a child of the component of the body, and goes when disposed', async () => {
     const toaster = new Toaster();
     toaster.show({ title: 'Saved', duration: 0 });
-    const holder = toaster.element.parentElement!;
-    expect(holder.parentElement).toBe(document.body);
-    expect(toaster.parent?.element).toBe(holder);
+    expect(toaster.element.parentElement).toBe(document.body);
+    expect(toaster.parent?.element).toBe(document.body);
     const el = toaster.element;
     expect(el.isConnected).toBe(true);
     await toaster.dispose();
     expect(el.isConnected).toBe(false);
-    expect(holder.isConnected).toBe(false);
   });
 });

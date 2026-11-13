@@ -12,8 +12,8 @@ export interface GridEditorPreparedEventArgs<T> {
   readonly isNew: boolean;
   /** The kit's editor, or the column's custom `editor` content when it is a component. */
   readonly editor: ComponentBase | null;
-  /** The element that holds it. */
-  readonly element: HTMLElement;
+  /** The part that holds it. */
+  readonly part: ComponentBase;
   /** `'cell'`, `'form'` for the edit form (`editMode` `'form'` and `'popup'`), or `'adaptive'` for a row's adaptive detail. */
   readonly place: 'cell' | 'form' | 'adaptive';
 }

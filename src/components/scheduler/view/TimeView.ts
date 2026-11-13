@@ -1,8 +1,9 @@
 import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { later } from '../../../core/later';
-import { nextFrame } from '../../../core/next-frame';
+import { boxOf, measure, scrollTo } from '../../../core/measure';
 import { onReState } from '../../../core/on-re-state';
 import type { CellTemplateContext } from '../cell-template-context';
+import type { CellPlace } from '../model/cell-place';
 import type { HeaderCell } from '../model/header-cell';
 import type { ModelChange } from '../model/SchedulerModel';
 import type { SchedulerColumn } from '../model/scheduler-column';
@@ -13,10 +14,12 @@ import { AppointmentBox } from './AppointmentBox';
 import { CellWriter } from './CellWriter';
 import type { CellSpot } from './cell-spot';
 import { cellWords } from './cell-words';
-import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
+import { part } from '../../../core/draw-parts';
+import { css, flag, mark, put, shown, text } from '../../../core/part-writes';
 import { GroupHeads } from './GroupHeads';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
+import type { ShownView } from './shown-view';
 
 /** The cells a big view's window moves on by at least: small steps, so each builds little. */
 const STEP = 2;
@@ -31,15 +34,22 @@ type CellTemplate = ((context: CellTemplateContext) => ComponentBase) | null;
 interface DateDrawn {
   cell: HeaderCell;
   template: unknown;
-  weekday: HTMLElement | null;
-  number: HTMLElement | null;
+  weekday: Component<HTMLElement> | null;
+  number: Component<HTMLElement> | null;
 }
 
 /** An hour of the ruler as last drawn. */
 interface HourDrawn {
   slot: TimeSlot;
   template: unknown;
-  text: HTMLElement | null;
+  text: Component<HTMLElement> | null;
+}
+
+/** What a big view's window is worked out from, as read: the room beside the ruler, how far it is scrolled, the cells' width. */
+interface ViewRead {
+  room: number;
+  start: number;
+  cells: number;
 }
 
 /**
@@ -52,13 +62,9 @@ interface HourDrawn {
  * It follows nothing: it draws what the model says changed (the focus its cells, the window the parts it shows, the
  * clock the layer, anything else all of it), on `reState()` and when an option or a text it shows changes.
  */
-export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
+export class TimeView<T> extends Component<HTMLDivElement, Props<T>> implements ShownView {
   /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
-  private headEl: HTMLElement | null = null;
-  private scroller: HTMLElement | null = null;
-  private cellsEl: HTMLElement | null = null;
-  private stopFollow: (() => void) | null = null;
   /** How many columns are built on each side of the ones in view: none at first, more each frame up to a screen. */
   private side = 0;
   private stopGrow: (() => void) | null = null;
@@ -74,9 +80,11 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
   private parts!: {
     head: Component<HTMLDivElement>;
     heads: GroupHeads<T>;
+    scroll: Component<HTMLDivElement>;
+    ruler: Component<HTMLDivElement>;
     dates: KeyedParts<HeaderCell, Component<HTMLDivElement>>;
     allDay: Component<HTMLDivElement>;
-    allDayLabel: HTMLElement;
+    allDayLabel: Component<HTMLElement>;
     allDayGrid: Component<HTMLDivElement>;
     allDayRow: Component<HTMLDivElement> | null;
     allDayCells: KeyedParts<number, Component<HTMLDivElement>> | null;
@@ -95,9 +103,11 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
   private readonly dateDrawn = new WeakMap<Component<HTMLDivElement>, DateDrawn>();
   private readonly hourDrawn = new WeakMap<Component<HTMLDivElement>, HourDrawn>();
   /** The column each "+N more" button stands for, as last drawn. */
-  private readonly moreOf = new WeakMap<Element, SchedulerColumn>();
-  /** The cell template the cells were created with: another one makes them again. */
+  private readonly moreOf = new WeakMap<Component<HTMLButtonElement>, SchedulerColumn>();
+  /** The cell template the cells are filled with: another one fills the same cells again. */
   private cellTemplate: CellTemplate | undefined = undefined;
+  /** A cell's content made by the cell template. */
+  private readonly contentOf = new WeakMap<Component<HTMLDivElement>, Component<HTMLDivElement>>();
 
   constructor(props: Props<T>) {
     super('div', props);
@@ -128,12 +138,11 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
   }
 
   override onMounted() {
-    this.follow();
+    this.followSoon();
     this.host.viewShown();
   }
 
   override onDisposing() {
-    this.stopFollow?.();
     this.stopGrow?.();
     this.host.setScroller(null);
   }
@@ -148,6 +157,22 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     this.draw();
   }
 
+  /** The cell showing a place, while it is built; slot -1 is the all-day row. */
+  cellAt(place: CellPlace): ComponentBase | null {
+    if (!this.made) return null;
+    const parts = this.parts;
+    const key = String(place.column);
+    if (place.slot < 0) return parts.allDayCells?.get(key) ?? null;
+    const row = parts.rows?.get(String(place.slot));
+    return (row && parts.rowCells.get(row)?.get(key)) ?? null;
+  }
+
+  /** The box of a piece: a timed one, or one in the all-day row. */
+  boxOf(id: string): ComponentBase | null {
+    if (!this.made) return null;
+    return this.parts.boxes.get(id) ?? this.parts.barBoxes.get(id) ?? null;
+  }
+
   /** All of the view, as the model has it now. */
   draw(): void {
     if (this.isDisposed || !this.made) return;
@@ -157,22 +182,23 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     const parts = this.parts;
     const t = host.text.bind(host);
     // A big view lays its rows of cells out by place, not as grids of every column.
-    this.element.toggleAttribute('data-virtual', model.virtual);
+    mark(this, 'data-virtual', model.virtual);
     const columns = String(st.columns.length);
-    flag(parts.head.element, 'data-by-date', model.datesFirst);
-    css(parts.head.element, '--_columns', columns);
-    css(parts.body.element, '--_columns', columns);
-    css(parts.body.element, '--_rows', String(st.slots.length));
-    shown(parts.allDay.element, model.view.allDayPanel);
-    css(parts.allDay.element, '--_lines', String(Math.max(1, Math.min(st.allDay.lanes, host.allDayLines() + 1))));
+    flag(parts.head, 'data-by-date', model.datesFirst);
+    css(parts.head, '--_columns', columns);
+    css(parts.body, '--_columns', columns);
+    css(parts.body, '--_rows', String(st.slots.length));
+    shown(parts.allDay, model.view.allDayPanel);
+    css(parts.allDay, '--_lines', String(Math.max(1, Math.min(st.allDay.lanes, host.allDayLines() + 1))));
     text(parts.allDayLabel, t('schedulerAllDay'));
-    put(parts.allDayGrid.element, 'aria-label', t('schedulerAllDay'));
-    put(parts.bars.element, 'aria-label', `${t('schedulerAllDay')}, ${t('schedulerAppointments')}`);
-    put(parts.cells.element, 'aria-label', t('schedulerTimes'));
-    put(parts.layer.element, 'aria-label', t('schedulerAppointments'));
+    put(parts.allDayGrid, 'aria-label', t('schedulerAllDay'));
+    put(parts.bars, 'aria-label', `${t('schedulerAllDay')}, ${t('schedulerAppointments')}`);
+    put(parts.cells, 'aria-label', t('schedulerTimes'));
+    put(parts.layer, 'aria-label', t('schedulerAppointments'));
     parts.hours.show(st.slots);
+    if (!parts.rows) this.makeRows();
     const template = untracked(() => host.cellTemplate());
-    if (template !== this.cellTemplate) this.makeCells(template);
+    if (template !== this.cellTemplate) this.fillCells(template);
     this.drawCells();
     parts.heads.draw();
     this.drawShown();
@@ -216,28 +242,24 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     return this.places;
   }
 
-  /** The rows' cells, recreated for another cell template. */
-  private makeCells(template: CellTemplate): void {
+  /** The rows of cells, made once: a cell is made when its place comes and kept while it stays. */
+  private makeRows(): void {
     const parts = this.parts;
-    this.cellTemplate = template;
-    parts.allDayRow && parts.allDayGrid.controls.remove(parts.allDayRow);
-    parts.cells.controls.clear();
-    this.writer.clear();
-    const listen = (row: HTMLElement) => {
+    const listen = (row: Component<HTMLDivElement>) => {
       const at = (e: Event) => {
-        const spot = this.writer.placeOf(e, '.mx-scheduler__cell');
+        const spot = this.writer.placeOf(e);
         return spot?.column ? { column: spot.column.index, slot: spot.slot ? spot.slot.index : -1 } : null;
       };
       const host = this.host;
-      row.addEventListener('pointerdown', (e) => {
+      row.motif.on('pointerdown', (_, e) => {
         const place = at(e);
         if (place) host.cellPointerDown(place, e);
       });
-      row.addEventListener('click', (e) => {
+      row.motif.on('click', (_, e) => {
         const place = at(e);
         if (place) host.cellClick(place, e);
       });
-      row.addEventListener('dblclick', (e) => {
+      row.motif.on('dblclick', (_, e) => {
         const place = at(e);
         if (place) host.cellDblClick(place, e);
       });
@@ -246,15 +268,15 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
       new KeyedParts<number, Component<HTMLDivElement>>(
         row,
         (place) => String(place),
-        (place) => this.makeCell(place, slot, template),
+        (place) => this.makeCell(place, slot),
         () => {},
         () => 0,
         (cell, key) => this.writer.delete(this.idOf(Number(key), slot ? slot.index : -1), cell),
       );
     const allDayRow = new Component<HTMLDivElement>('div');
-    allDayRow.element.className = 'mx-scheduler__row';
-    allDayRow.element.setAttribute('role', 'row');
-    listen(allDayRow.element);
+    allDayRow.class.add('mx-scheduler__row');
+    allDayRow.attr.add({ role: 'row' });
+    listen(allDayRow);
     parts.allDayGrid.controls.add(allDayRow);
     parts.allDayRow = allDayRow;
     parts.allDayCells = placesIn(allDayRow, null);
@@ -263,9 +285,9 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
       (slot) => String(slot.index),
       (slot) => {
         const row = new Component<HTMLDivElement>('div');
-        row.element.className = 'mx-scheduler__row';
-        row.element.setAttribute('role', 'row');
-        listen(row.element);
+        row.class.add('mx-scheduler__row');
+        row.attr.add({ role: 'row' });
+        listen(row);
         parts.rowCells.set(row, placesIn(row, slot));
         return row;
       },
@@ -286,20 +308,38 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     for (const slot of st.slots) {
       const row = parts.rows?.get(String(slot.index));
       if (!row) continue;
-      flag(row.element, 'data-hour-start', slot.hourStart);
+      flag(row, 'data-hour-start', slot.hourStart);
       parts.rowCells.get(row)?.show(places);
     }
   }
 
   /** A place's cell; a cell template draws into it once it is created, and follows the column shown there. */
-  private makeCell(place: number, slot: TimeSlot | null, template: CellTemplate): Component<HTMLDivElement> {
+  private makeCell(place: number, slot: TimeSlot | null): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = slot ? 'mx-scheduler__cell' : 'mx-scheduler__cell mx-scheduler__all-day-cell';
-    c.element.setAttribute('role', 'gridcell');
+    c.class.add(slot ? 'mx-scheduler__cell' : 'mx-scheduler__cell mx-scheduler__all-day-cell');
+    c.attr.add({ role: 'gridcell' });
     const spot: CellSpot = { place, column: this.columnAt(place), slot };
     this.writer.add(this.idOf(place, slot ? slot.index : -1), spot, c);
-    if (template) part(c, 'div', 'mx-scheduler__cell-content').controls.add(template(this.cellContext(spot)));
+    this.fillCell(c, spot);
     return c;
+  }
+
+  /** Another cell template: the same cells, each filled again by it. */
+  private fillCells(template: CellTemplate): void {
+    this.cellTemplate = template;
+    this.writer.each((spot, c) => this.fillCell(c as Component<HTMLDivElement>, spot));
+  }
+
+  /** A cell's content: the cell template's, if there is one. */
+  private fillCell(c: Component<HTMLDivElement>, spot: CellSpot): void {
+    const was = this.contentOf.get(c);
+    if (was) c.controls.remove(was);
+    this.contentOf.delete(c);
+    const template = this.cellTemplate;
+    if (!template) return;
+    const content = part<HTMLDivElement>(c, 'div', 'mx-scheduler__cell-content');
+    content.controls.add(template(this.cellContext(spot)));
+    this.contentOf.set(c, content);
   }
 
   private writeLook({ column, slot }: CellSpot, cell: import('./CellAttributes').CellAttributes): void {
@@ -386,30 +426,30 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     return column.work && slot.minutes >= column.workStart * 60 && slot.minutes < column.workEnd * 60;
   }
 
-  /** After a scroll, the window follows at the next frame (once however many scroll events come). */
+  /** The window follows at the next frame (once however many scroll events come). */
   private followSoon(): void {
-    // A scroll can still come after the view is gone (its scroll box is the page's until it is taken away).
-    if (this.isDisposed || this.stopFollow) return;
-    this.stopFollow = nextFrame(() => {
-      this.stopFollow = null;
-      if (!this.isDisposed) this.follow();
-    }, this.element.ownerDocument.defaultView);
+    measure(this, this.readView, this.follow);
   }
+
+  private readonly readView = (): ViewRead | null => {
+    if (!this.made || !this.host.model.virtual) return null;
+    const parts = this.parts;
+    const scroll = boxOf(parts.scroll);
+    return { room: scroll.clientWidth - boxOf(parts.ruler).offsetWidth, start: scroll.scrollStart, cells: boxOf(parts.cells).offsetWidth };
+  };
 
   /**
    * In a big view: builds the columns in view and a screen's worth on each side, and moves on when the view nears their
    * edge. The first frame builds only the columns in view; the ones on each side come in the frames after it.
    */
-  private follow(): void {
+  private readonly follow = (seen: ViewRead | null): void => {
     const model = this.host.model;
-    const scroller = this.scroller;
-    const cells = this.cellsEl;
     const count = model.state.columns.length;
-    if (!scroller || !cells || !count || !untracked(() => model.virtual)) return;
-    const width = cells.offsetWidth / count;
+    if (!seen || !count) return;
+    const width = seen.cells / count;
     if (!(width > 0)) return;
-    const visible = Math.max(1, Math.ceil((scroller.clientWidth - cells.offsetLeft) / width) + 1);
-    const first = Math.floor(Math.abs(scroller.scrollLeft) / width);
+    const visible = Math.max(1, Math.ceil(seen.room / width) + 1);
+    const first = Math.floor(seen.start / width);
     const now = model.state.window;
     const side = Math.min(this.side, visible);
     const want = first - side;
@@ -417,62 +457,59 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     // Until a screen is built on each side, the window keeps up with every column the view moves.
     if (now.count !== built || Math.abs(now.first - Math.max(0, want)) >= (side < visible ? 1 : STEP)) model.setWindow(want, built);
     if (side < visible) this.growSoon(visible);
-  }
+  };
 
   /** After the frame is drawn: half a screen more on each side. */
   private growSoon(visible: number): void {
     if (this.isDisposed || this.stopGrow) return;
-    let stopLater = () => {};
-    const stopFrame = nextFrame(() => {
-      stopLater = later(() => {
-        this.stopGrow = null;
-        if (this.isDisposed) return;
-        this.side += Math.max(1, Math.ceil(visible / 2));
-        this.follow();
-      });
-    }, this.element.ownerDocument.defaultView);
-    this.stopGrow = () => {
-      stopFrame();
-      stopLater();
-    };
+    this.stopGrow = later(() => {
+      this.stopGrow = null;
+      if (this.isDisposed) return;
+      this.side += Math.max(1, Math.ceil(visible / 2));
+      this.followSoon();
+    });
   }
+
+  /** The dates and the all-day row scroll along with the hours. */
+  private readonly readScroll = (): number => boxOf(this.parts.scroll).scrollStart;
+
+  private readonly scrollHead = (start: number): void => {
+    scrollTo(this.parts.head, { start });
+  };
 
   /** The parts that stay for the life of the view; the lists in them are drawn by `draw`. */
   private makeParts(): void {
     const host = this.host;
     const model = host.model;
     const head = part<HTMLDivElement>(this, 'div', 'mx-scheduler__head');
-    this.headEl = head.element;
     const heads = new GroupHeads<T>({ host, ruler: true });
     head.controls.add(heads);
     const dates = part<HTMLDivElement>(head, 'div', 'mx-scheduler__dates');
-    dates.element.setAttribute('aria-hidden', 'true');
+    dates.attr.add({ 'aria-hidden': 'true' });
     part(dates, 'div', 'mx-scheduler__corner');
     const allDay = part<HTMLDivElement>(head, 'div', 'mx-scheduler__all-day');
     const label = part(allDay, 'div', 'mx-scheduler__all-day-label');
-    label.element.setAttribute('aria-hidden', 'true');
+    label.attr.add({ 'aria-hidden': 'true' });
     const area = part(allDay, 'div', 'mx-scheduler__all-day-area');
     const allDayGrid = part<HTMLDivElement>(area, 'div', 'mx-scheduler__all-day-grid');
-    allDayGrid.element.setAttribute('role', 'grid');
-    allDayGrid.element.addEventListener('keydown', (e) => host.gridKey(e));
+    allDayGrid.attr.add({ role: 'grid' });
+    allDayGrid.motif.on('keydown', (_, e) => host.gridKey(e));
     const bars = part<HTMLDivElement>(area, 'div', 'mx-scheduler__bars');
-    bars.element.setAttribute('role', 'group');
+    bars.attr.add({ role: 'group' });
     const scroll = part<HTMLDivElement>(this, 'div', 'mx-scheduler__scroll');
-    this.scroller = scroll.element;
-    host.setScroller(this.scroller);
-    scroll.element.addEventListener('scroll', (e) => {
-      if (this.headEl) this.headEl.scrollLeft = (e.currentTarget as HTMLElement).scrollLeft;
+    host.setScroller(scroll);
+    scroll.motif.on('scroll', () => {
+      measure(this, this.readScroll, this.scrollHead);
       this.followSoon();
     });
     const body = part<HTMLDivElement>(scroll, 'div', 'mx-scheduler__body');
-    const ruler = part(body, 'div', 'mx-scheduler__ruler');
-    ruler.element.setAttribute('aria-hidden', 'true');
+    const ruler = part<HTMLDivElement>(body, 'div', 'mx-scheduler__ruler');
+    ruler.attr.add({ 'aria-hidden': 'true' });
     const cells = part<HTMLDivElement>(body, 'div', 'mx-scheduler__cells');
-    cells.element.setAttribute('role', 'grid');
-    cells.element.addEventListener('keydown', (e) => host.gridKey(e));
-    this.cellsEl = cells.element;
+    cells.attr.add({ role: 'grid' });
+    cells.motif.on('keydown', (_, e) => host.gridKey(e));
     const layer = part<HTMLDivElement>(body, 'div', 'mx-scheduler__layer');
-    layer.element.setAttribute('role', 'group');
+    layer.attr.add({ role: 'group' });
     const box = <P extends TimedPiece<T> | StripPiece<T>>(piece: P) => new AppointmentBox<T>({ host, piece });
     let barBoxes!: KeyedParts<StripPiece<T>, AppointmentBox<T>>;
     barBoxes = new KeyedParts<StripPiece<T>, AppointmentBox<T>>(bars, (piece) => piece.id, box, (b, piece) => b.show(piece));
@@ -481,6 +518,8 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     this.parts = {
       head,
       heads,
+      scroll,
+      ruler,
       dates: new KeyedParts<HeaderCell, Component<HTMLDivElement>>(
         dates,
         (cell) => cell.key,
@@ -489,7 +528,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
         () => 1,
       ),
       allDay,
-      allDayLabel: label.element,
+      allDayLabel: label,
       allDayGrid,
       allDayRow: null,
       allDayCells: null,
@@ -519,14 +558,14 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
         (column) => String(column.index),
         () => {
           const now = new Component<HTMLDivElement>('div');
-          now.element.className = 'mx-scheduler__now';
-          now.element.setAttribute('aria-hidden', 'true');
+          now.class.add('mx-scheduler__now');
+          now.attr.add({ 'aria-hidden': 'true' });
           return now;
         },
         (now, column) => {
-          shown(now.element, host.showCurrentTime() && model.nowAt() !== null);
-          css(now.element, '--_column', String(column.index));
-          css(now.element, 'inset-block-start', `${(model.nowAt() ?? 0) * 100}%`);
+          shown(now, host.showCurrentTime() && model.nowAt() !== null);
+          css(now, '--_column', String(column.index));
+          css(now, 'inset-block-start', `${(model.nowAt() ?? 0) * 100}%`);
         },
         () => boxes.size,
       ),
@@ -535,7 +574,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
 
   private makeDate(cell: HeaderCell): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__date';
+    c.class.add('mx-scheduler__date');
     this.dateDrawn.set(c, { cell, template: undefined, weekday: null, number: null });
     this.fillDate(c);
     this.drawDate(c, cell);
@@ -553,28 +592,27 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
       part(c, 'div', 'mx-scheduler__date-content').controls.add(template(this.dateContext(c)));
       return;
     }
-    drawn.weekday = part(c, 'span', 'mx-scheduler__weekday').element;
-    drawn.number = part(c, 'span', 'mx-scheduler__day-number').element;
+    drawn.weekday = part(c, 'span', 'mx-scheduler__weekday');
+    drawn.number = part(c, 'span', 'mx-scheduler__day-number');
   }
 
   private drawDate(c: Component<HTMLDivElement>, cell: HeaderCell): void {
     const drawn = this.dateDrawn.get(c)!;
     drawn.cell = cell;
     if (drawn.template !== this.host.dateTemplate()) this.fillDate(c);
-    const el = c.element;
     const format = this.host.format;
-    flag(el, 'data-today', cell.day?.today);
-    flag(el, 'data-holiday', cell.day?.holiday);
-    flag(el, 'data-weekend', cell.day?.weekend);
-    put(el, 'data-edge', cell.edge || null);
-    css(el, 'grid-column', `${cell.first + 2} / span ${cell.span}`);
+    flag(c, 'data-today', cell.day?.today);
+    flag(c, 'data-holiday', cell.day?.holiday);
+    flag(c, 'data-weekend', cell.day?.weekend);
+    put(c, 'data-edge', cell.edge || null);
+    css(c, 'grid-column', `${cell.first + 2} / span ${cell.span}`);
     if (drawn.weekday) text(drawn.weekday, cell.day ? format.weekday(cell.day.date) : '');
     if (drawn.number) text(drawn.number, cell.day ? format.dayNumber(cell.day.date) : '');
   }
 
   private makeHour(slot: TimeSlot): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__hour';
+    c.class.add('mx-scheduler__hour');
     this.hourDrawn.set(c, { slot, template: undefined, text: null });
     this.fillHour(c);
     this.drawHour(c, slot);
@@ -590,24 +628,24 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     const span = part(c, 'span', '');
     drawn.text = null;
     if (template) span.controls.add(template(this.timeContext(c)));
-    else drawn.text = span.element;
+    else drawn.text = span;
   }
 
   private drawHour(c: Component<HTMLDivElement>, slot: TimeSlot): void {
     const drawn = this.hourDrawn.get(c)!;
     drawn.slot = slot;
     if (drawn.template !== this.host.timeTemplate()) this.fillHour(c);
-    flag(c.element, 'data-hour-start', slot.hourStart);
+    flag(c, 'data-hour-start', slot.hourStart);
     if (drawn.text) text(drawn.text, slot.hourStart ? this.host.format.hour(slot.minutes) : '');
   }
 
   private makeMore(column: SchedulerColumn): Component<HTMLButtonElement> {
     const button = new Component<HTMLButtonElement>('button');
-    button.element.type = 'button';
-    button.element.className = 'mx-scheduler__more';
-    button.element.addEventListener('click', (e) => {
-      const at = this.moreOf.get(button.element);
-      if (at) this.host.openMore(at.day.date, at.group?.index ?? -1, e.currentTarget as HTMLElement);
+    button.attr.add({ type: 'button' });
+    button.class.add('mx-scheduler__more');
+    button.motif.on('click', () => {
+      const at = this.moreOf.get(button);
+      if (at) this.host.openMore(at.day.date, at.group?.index ?? -1, button);
     });
     this.drawMore(button, column);
     return button;
@@ -616,14 +654,13 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
   private drawMore(button: Component<HTMLButtonElement>, column: SchedulerColumn): void {
     const host = this.host;
     const st = host.model.state;
-    const el = button.element;
-    this.moreOf.set(el, column);
+    this.moreOf.set(button, column);
     const count = st.allDay.more[column.index] ?? 0;
-    shown(el, count > 0);
-    css(el, 'grid-column', String(column.index + 1));
-    css(el, 'grid-row', String((st.allDay.moreAt[column.index] ?? 0) + 1));
-    put(el, 'aria-label', host.text('schedulerMoreLabel', { count, date: `${cellWords(host, column, -1).group}${host.format.fullDate(column.day.date)}` }));
-    text(el, host.text('schedulerMore', { count }));
+    shown(button, count > 0);
+    css(button, 'grid-column', String(column.index + 1));
+    css(button, 'grid-row', String((st.allDay.moreAt[column.index] ?? 0) + 1));
+    put(button, 'aria-label', host.text('schedulerMoreLabel', { count, date: `${cellWords(host, column, -1).group}${host.format.fullDate(column.day.date)}` }));
+    text(button, host.text('schedulerMore', { count }));
   }
 
   /** What a date template is given: each read reads the head as it is now. */

@@ -9,7 +9,7 @@ import type { TooltipTarget } from './tooltip-target';
  * is also a settable, reactive property.
  */
 export interface TooltipProps extends ControlProps {
-  /** The element or component it describes. */
+  /** The component it describes. */
   target?: Bind<TooltipTarget | null | undefined>;
   /** Any content after `text`. Do not include interactive content, because a tooltip never takes focus. */
   content?: Bind<ComponentBase | null | undefined>;

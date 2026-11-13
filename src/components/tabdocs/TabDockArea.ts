@@ -1,5 +1,7 @@
-import { createSignal, read, type Bind } from '@motifx/core';
+import { Component, createSignal, read, type Bind } from '@motifx/core';
+import { isRtl, rectOf } from '../../core/measure';
 import { nextId } from '../../core/next-id';
+import { mark } from '../../core/part-writes';
 import type { LayoutOrientation } from '../layout/layout-orientation';
 import type { AutoHideStrip } from './AutoHideStrip';
 import type { LayoutItem } from './layout-item';
@@ -11,6 +13,7 @@ import type { TabDockSide } from './tab-dock-side';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
+import { dropPart, layoutPart } from './place-node';
 
 /**
  * A dock area of a `TabDocumentManager`: one side around the documents, with its own groups (split
@@ -22,7 +25,10 @@ import type { TabGroup } from './TabGroup';
  * `barButtons`) take precedence.
  */
 export class TabDockArea extends TabBarSettings implements SashOwner {
-  readonly element: HTMLDivElement;
+  /** As a component of the layout. */
+  readonly part: Component<HTMLDivElement>;
+  /** The id written on it: its splitter and its tab titles name it as what they control. */
+  readonly id = nextId('tabdocs-area');
   /** @internal */
   readonly sash: SplitSash;
   /** @internal The top of its layout. */
@@ -41,14 +47,14 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
     size: number | string,
   ) {
     super();
-    const el = (this.element = owner.element.ownerDocument.createElement('div'));
-    el.className = 'mx-tabdocs__area';
-    el.id = nextId('tabdocs-area');
-    el.dataset.side = side;
+    this.part = new Component<HTMLDivElement>('div');
+    layoutPart(this.part);
+    this.part.class.add('mx-tabdocs__area');
+    this.part.attr.add({ id: this.id, 'data-side': side });
     // A group, not a landmark: a page may hold many managers.
-    el.setAttribute('role', 'group');
+    this.part.attr.add({ role: 'group' });
     this.sash = new SplitSash(this, owner);
-    this.sash.element.classList.add('mx-tabdocs__area-sash');
+    this.sash.part.class.add('mx-tabdocs__area-sash');
     this.sizeSignal.value = size;
   }
 
@@ -103,7 +109,8 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
   }
   /** Its box on the screen, which is empty while it is collapsed and not slid out. */
   get rect(): DOMRect {
-    return this.element.getBoundingClientRect();
+    const r = rectOf(this.part);
+    return new DOMRect(r.left, r.top, r.width, r.height);
   }
 
   /** Sets its size, in pixels or as a share of the manager such as `'25%'`. */
@@ -128,8 +135,7 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
     return this.side === 'left' || this.side === 'right' ? 'horizontal' : 'vertical';
   }
   get rtl(): boolean {
-    const view = this.element.ownerDocument.defaultView;
-    return !!view && view.getComputedStyle(this.owner.element).direction === 'rtl';
+    return isRtl(this.owner);
   }
   /** @internal Its size in pixels, as a drag starts from. */
   get sizes(): number[] {
@@ -181,26 +187,29 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
   /** @internal */
   markFolded(on: boolean): void {
     this.folded.value = on;
-    this.element.toggleAttribute('data-auto-hide', on);
+    if (!this.part.isDisposed) mark(this.part, 'data-auto-hide', on);
     if (!on) this.markOpen(false);
   }
 
   /** @internal */
   markOpen(on: boolean): void {
     this.openSignal.value = on;
-    this.element.toggleAttribute('data-open', on);
+    if (!this.part.isDisposed) mark(this.part, 'data-open', on);
   }
 
   /** @internal The length of the manager along which the area's size runs. */
   room(): number {
-    const box = this.owner.element.getBoundingClientRect();
-    return this.orientation === 'horizontal' ? box.width : box.height;
+    // The manager's size as its layout watch measured it, so a dock drawn from that watch reads no layout of its own;
+    // read only before the first measure.
+    const measured = this.owner.measuredSize;
+    const size = measured.width > 0 || measured.height > 0 ? measured : rectOf(this.owner);
+    return this.orientation === 'horizontal' ? size.width : size.height;
   }
 
   /** @internal */
   dispose(): void {
-    this.sash.element.remove();
-    this.element.remove();
+    dropPart(this.sash.part);
+    dropPart(this.part);
   }
 }
 

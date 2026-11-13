@@ -1,9 +1,11 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Component, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { cautionMark, dangerMark, dismissMark, infoMark, successMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { clearParts, glyphPart, part, partBefore } from '../../core/draw-parts';
+import { glyph } from '../../core/glyphs';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
+import { mark, put, text as writeText } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import type { ToastAction } from './toast-action';
@@ -16,20 +18,23 @@ import { onLanguage } from '../../core/on-language';
 
 const OWN = ['title', 'tone', 'icon', 'duration', 'action', 'closeButton', 'position'] as const;
 
-const GLYPHS: Record<ToastTone, () => HTMLSpanElement> = {
-  info: infoMark,
-  success: successMark,
-  caution: cautionMark,
-  danger: dangerMark,
+/** The glyph of each tone. */
+const GLYPHS: Record<ToastTone, string> = {
+  info: 'info',
+  success: 'success',
+  caution: 'caution',
+  danger: 'danger',
 };
 
 /** The parts of a toast. On one object made on first use: the base constructor already renders. */
 interface Parts {
-  icon: HTMLSpanElement;
+  icon: Component<HTMLSpanElement>;
   releaseIcon: () => void;
-  body: HTMLDivElement;
-  title: HTMLDivElement | null;
-  message: HTMLDivElement;
+  body: Component<HTMLDivElement>;
+  title: Component<HTMLDivElement> | null;
+  titleId: string;
+  messagePart: Component<HTMLDivElement>;
+  messageId: string;
   action: Button | null;
   close: Button | null;
   toaster: Toaster | null;
@@ -64,7 +69,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     const own = (this.props ?? {}) as ToastProps;
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     const parts = this.parts;
-    this.observeProperty<string>('text', (text) => (parts.message.textContent = text ?? ''));
+    this.observeProperty<string>('text', (text) => writeText(parts.messagePart, text ?? ''));
     this.observeProperty<string>('title', (title) => this.renderTitle(title));
     this.observeProperty('tone', () => this.renderTone());
     this.observeProperty('icon', () => this.renderTone());
@@ -198,7 +203,8 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     if (parts.timer !== undefined || parts.closing || parts.remaining <= 0 || !parts.toaster?.isShowing(this)) return;
     parts.startedAt = performance.now();
     parts.timer = setTimeout(() => this.close('timeout'), parts.remaining);
-    parts.line ??= this.element.animate?.([{ scale: '1 1' }, { scale: '0 1' }], { duration: parts.remaining, fill: 'forwards', pseudoElement: '::after' });
+    // browser object read: allowed exception
+    parts.line ??=this.element.animate?.([{ scale: '1 1' }, { scale: '0 1' }], { duration: parts.remaining, fill: 'forwards', pseudoElement: '::after' });
     parts.line?.play();
   }
 
@@ -217,21 +223,16 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
   }
 
   private createParts(): Parts {
-    const el = this.element;
-    el.classList.add('mx-toast');
-    el.setAttribute('role', 'group');
-    el.tabIndex = 0;
-    const icon = document.createElement('span');
-    icon.className = 'mx-toast__icon';
-    icon.setAttribute('aria-hidden', 'true');
-    const body = document.createElement('div');
-    body.className = 'mx-toast__body';
-    const message = document.createElement('div');
-    message.className = 'mx-toast__text';
-    message.id = nextId('toast-text');
-    body.append(message);
-    el.append(icon, body);
-    el.setAttribute('aria-labelledby', message.id);
+    this.class.add('mx-toast');
+    this.attr.add({ role: 'group' });
+    put(this, 'tabindex', '0');
+    const icon = part<HTMLSpanElement>(this, 'span', 'mx-toast__icon');
+    icon.attr.add({ 'aria-hidden': 'true' });
+    const body = part<HTMLDivElement>(this, 'div', 'mx-toast__body');
+    const messagePart = part<HTMLDivElement>(body, 'div', 'mx-toast__text');
+    const messageId = nextId('toast-text');
+    messagePart.attr.add({ id: messageId });
+    put(this, 'aria-labelledby', messageId);
     let resolve!: (reason: ToastCloseReason) => void;
     const closed = new Promise<ToastCloseReason>((r) => (resolve = r));
     return {
@@ -239,7 +240,9 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       releaseIcon: () => {},
       body,
       title: null,
-      message,
+      titleId: '',
+      messagePart,
+      messageId,
       action: null,
       close: null,
       toaster: null,
@@ -258,38 +261,32 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     const parts = this.parts;
     if (!parts.title) {
       if (!title) return;
-      parts.title = document.createElement('div');
-      parts.title.className = 'mx-toast__title';
-      parts.title.id = nextId('toast-title');
-      parts.body.prepend(parts.title);
+      // Above the text.
+      parts.title = partBefore<HTMLDivElement>(parts.body, parts.messagePart, 'div', 'mx-toast__title');
+      parts.titleId = nextId('toast-title');
+      parts.title.attr.add({ id: parts.titleId });
     }
-    parts.title.textContent = title ?? '';
-    parts.title.hidden = !title;
-    this.element.setAttribute('aria-labelledby', title ? `${parts.title.id} ${parts.message.id}` : parts.message.id);
+    writeText(parts.title, title ?? '');
+    mark(parts.title, 'hidden', !title);
+    put(this, 'aria-labelledby', title ? `${parts.titleId} ${parts.messageId}` : parts.messageId);
   }
 
   private renderTone(): void {
     const parts = this.parts;
     const tone = this.peekProperty<ToastTone>('tone') ?? 'info';
-    this.element.dataset.tone = tone;
+    put(this, 'data-tone', tone);
     const icon = this.peekProperty<IconSource | null | undefined>('icon');
     parts.releaseIcon();
     parts.releaseIcon = () => {};
-    parts.icon.hidden = icon === null;
-    if (icon === null) {
-      parts.icon.replaceChildren();
-      return;
-    }
+    mark(parts.icon, 'hidden', icon === null);
+    clearParts(parts.icon);
+    if (icon === null) return;
     if (icon === undefined) {
       // The tone's glyph: a design language may draw another one (the toast's tone icon tokens).
-      const mark = GLYPHS[tone]?.() ?? infoMark();
-      mark.classList.add('mx-toast__mark');
-      parts.icon.replaceChildren(mark);
+      glyphPart(parts.icon, GLYPHS[tone] ?? 'info', 'mx-toast__mark');
       return;
     }
-    const shown = iconNode(icon);
-    parts.icon.replaceChildren(shown.node);
-    parts.releaseIcon = shown.release;
+    parts.releaseIcon = showIcon(icon, parts.icon);
   }
 
   private renderAction(): void {
@@ -303,12 +300,13 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     if (!parts.action) {
       // Its variant and size are the toast's action place's.
       const button = new Button();
-      button.element.classList.add('mx-toast__action');
-      button.element.addEventListener('click', () => this.runAction());
-      this.controls.add(button);
-      parts.action = button;
+      button.class.add('mx-toast__action');
+      button.motif.on('click', () => this.runAction());
       // Before the close button.
-      if (parts.close) this.element.insertBefore(button.element, parts.close.element);
+      const at = parts.close ? this.controls.items.indexOf(parts.close) : -1;
+      if (at >= 0) this.controls.insert(at, button);
+      else this.controls.add(button);
+      parts.action = button;
     }
     parts.action.text = action.text;
   }
@@ -328,10 +326,10 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       return;
     }
     if (parts.close) return;
-    const button = new Button({ icon: dismissMark() });
-    button.element.classList.add('mx-toast__close');
-    onLanguage(button, () => button.element.setAttribute('aria-label', uiLocale.strings.close));
-    button.element.addEventListener('click', () => this.close('button'));
+    const button = new Button({ icon: glyph('dismiss') });
+    button.class.add('mx-toast__close');
+    onLanguage(button, () => put(button, 'aria-label', uiLocale.strings.close));
+    button.motif.on('click', () => this.close('button'));
     this.controls.add(button);
     parts.close = button;
   }

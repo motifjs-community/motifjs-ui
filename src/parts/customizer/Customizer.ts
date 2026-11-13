@@ -1,5 +1,6 @@
 import { Component, untracked } from "@motifx/core";
 import { fillTemplate } from "../../core/fill-template";
+import { mediaOf } from "../../core/measure";
 import { uiLocale } from "../../core/ui-locale";
 import { Button } from "../../components/button/Button";
 import { MxForm } from "../../components/form/MxForm";
@@ -55,7 +56,7 @@ export class Customizer extends MxForm {
         const menu = (text: string): ToolbarItem => ({ type: 'menu', text, menu: [] });
         const toolbar = (label: string, items: ToolbarItem[]) => {
             const bar = new Toolbar({ label, size: 'sm', items });
-            bar.element.classList.add('mx-customizer__tools');
+            bar.class.add('mx-customizer__tools');
             return bar;
         };
         // A page's toolbar is the panel's first child, so that it stands against the strip.
@@ -81,7 +82,7 @@ export class Customizer extends MxForm {
             selectionMode: 'single',
             label: names.groups,
         });
-        this.tree.element.classList.add('mx-customizer__tree');
+        this.tree.class.add('mx-customizer__tree');
         this.tree.onCheckChanged(e => {
             if (!e.byUser || !e.item) return;
             // Refused (a fixed item): the box goes back as well.
@@ -92,7 +93,7 @@ export class Customizer extends MxForm {
             this.selected = (e.value as string | null) ?? null;
             this.drawTools();
         });
-        this.tree.element.addEventListener('keydown', e => this.treeKeyDown(e));
+        this.tree.motif.on('keydown', (_, e) => this.treeKeyDown(e));
         const line: ToolbarItem = { type: 'separator' };
         this.groupBar = toolbar(names.groups, [this.newGroup, this.rename, this.remove, line, this.up, this.down, this.moveTo, { ...line }, this.reset]);
         const groupsPage = page('groups', names.groups, this.groupBar, this.tree);
@@ -106,14 +107,14 @@ export class Customizer extends MxForm {
             stretch: true,
             height: '100%',
         });
-        this.commandList.element.classList.add('mx-customizer__commands');
+        this.commandList.class.add('mx-customizer__commands');
         this.commandList.onValueChanged(() => this.drawTools());
         this.addTo = menu(s.customizerAddTo);
         this.commandBar = toolbar(s.customizerCommands, [this.addTo]);
         const commandsPage = page('commands', s.customizerCommands, this.commandBar, this.commandList);
 
         this.pages = new Tabs({ lazy: false, label: s.customizerTitle });
-        this.pages.element.classList.add('mx-customizer__pages');
+        this.pages.class.add('mx-customizer__pages');
         this.pages.add(groupsPage);
         this.commandsPage = this.pages.add(commandsPage);
         if (keyboard) {
@@ -124,11 +125,11 @@ export class Customizer extends MxForm {
         }
 
         const resetAll = new Button({ text: s.customizerResetAll, variant: 'outline' });
-        resetAll.element.addEventListener('click', () => this.change(() => this.source.reset(null)));
+        resetAll.motif.on('click', () => this.change(() => this.source.reset(null)));
         const close = new Button({ text: s.close, tone: 'accent' });
-        close.element.addEventListener('click', () => this.close('ok'));
+        close.motif.on('click', () => this.close('ok'));
         const footer = new Component<HTMLDivElement>('div');
-        footer.element.className = 'mx-customizer__footer';
+        footer.class.add('mx-customizer__footer');
         footer.controls.add(resetAll, close);
 
         this.content = this.pages;
@@ -138,8 +139,7 @@ export class Customizer extends MxForm {
 
     /** Opens over `host`; on a touch screen it takes the whole window. */
     open(host: FormHost): void {
-        const view = this.element.ownerDocument.defaultView;
-        if (view?.matchMedia?.('(pointer: coarse)').matches) this.windowState = 'maximized';
+        if (mediaOf(this, '(pointer: coarse)')) this.windowState = 'maximized';
         this.refresh();
         void this.showDialog(host);
     }

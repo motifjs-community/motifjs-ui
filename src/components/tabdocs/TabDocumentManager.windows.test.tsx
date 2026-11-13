@@ -1,6 +1,7 @@
-import { Application, Component } from '@motifx/core';
+import { Application, Component, type ComponentBase } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { pageDocuments } from '../../core/page-documents';
 import { uiLocale } from '../../core/ui-locale';
 import { TabBrowserWindow } from './TabBrowserWindow';
@@ -116,7 +117,7 @@ describe('TabDocumentManager: new browser windows', () => {
     expect(a.browserWindow).toBe(w);
     expect(m.contentOf(a)).toBe(content);
     expect(content.element.ownerDocument).toBe(m.views[0].document);
-    expect(w.element.ownerDocument).toBe(m.views[0].document);
+    expect(w.part.element.ownerDocument).toBe(m.views[0].document);
     expect(w.groups.map(titles)).toEqual([['A']]);
     expect(titles(m.groups[0])).toEqual(['B']);
     expect(log).toEqual(['opening A', 'opened A']);
@@ -127,6 +128,17 @@ describe('TabDocumentManager: new browser windows', () => {
     await settle();
     expect(m.views[0].document.title).toBe('Renamed');
     expect(live(m)).toBe('A moved into a new window');
+  });
+
+  it('takes the token values the app gave the manager into the new window', async () => {
+    const m = managerWith([['A', 'B']]);
+    m.element.style.setProperty('--mx-tabdocs-tabs-height', '44px');
+    const w = m.moveToNewWindow(m.findDocument('a')!)!;
+    await vi.dynamicImportSettled();
+    await settle();
+    measureNow(m);
+    measureNow(w.part);
+    expect(w.part.element.style.getPropertyValue('--mx-tabdocs-tabs-height')).toBe('44px');
   });
 
   it('asks for a popup at the size of the group, beside it, with newWindowUrl', () => {
@@ -309,7 +321,7 @@ describe('TabDocumentManager: new browser windows', () => {
     await settle();
     // The keys: Ctrl+K Shift+D on the tab in the new window, sent by that window.
     const view = m.views[0];
-    const header = w.element.querySelector<HTMLElement>('[role="tab"]')!;
+    const header = w.part.element.querySelector<HTMLElement>('[role="tab"]')!;
     header.focus();
     expect(view.document.activeElement).toBe(header);
     const press = (key: string, init: KeyboardEventInit = {}) => header.dispatchEvent(new view.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
@@ -330,7 +342,7 @@ describe('TabDocumentManager: new browser windows', () => {
     const w = m.moveToNewWindow(m.findDocument('a')!)!;
     await settle();
     const view = m.views[0];
-    const header = w.element.querySelector<HTMLElement>('[role="tab"]')!;
+    const header = w.part.element.querySelector<HTMLElement>('[role="tab"]')!;
     header.dispatchEvent(new view.MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX: 20, clientY: 20 }));
     const popup = Array.from(view.document.querySelectorAll<HTMLElement>('.mx-popup')).find((p) => !p.hidden)!;
     expect(popup).toBeTruthy();
@@ -438,7 +450,7 @@ describe('TabDocumentManager: new browser windows', () => {
       const link = view.document.createElement('a');
       link.href = '/orders';
       link.rel = 'router';
-      w.element.append(link);
+      w.part.element.append(link);
       const click = new view.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
       link.dispatchEvent(click);
       await settle();
@@ -478,11 +490,15 @@ describe('TabDocumentManager: new browser windows', () => {
 });
 
 describe('TabDocumentManager: dragging in and out of new windows', () => {
+  /** A part in each window of the drag: a frame of each lands between pointer events, as in a browser. */
+  let inWindows: ComponentBase[] = [];
+
   function pointer(type: string, target: EventTarget, x: number, y: number, view: View = window) {
     const e = new view.MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, screenX: x, screenY: y, button: 0 });
     Object.defineProperty(e, 'pointerId', { value: 1 });
     Object.defineProperty(e, 'pointerType', { value: 'mouse' });
     target.dispatchEvent(e);
+    for (const part of inWindows) measureNow(part);
   }
 
   function layGroup(g: TabGroup, b: DOMRect) {
@@ -498,12 +514,13 @@ describe('TabDocumentManager: dragging in and out of new windows', () => {
     const w = m.moveToNewWindow(m.findDocument('c')!)!;
     await settle();
     const view = m.views[0];
+    inWindows = [m, w.groups[0]];
     // The page fills 0…1024 on the screen; the new window's page starts at 1100, 600 × 400.
     for (const [name, value] of Object.entries({ screenX: 1100, screenY: 0, innerWidth: 600, innerHeight: 400, outerWidth: 600, outerHeight: 400 })) Object.defineProperty(view, name, { value, configurable: true });
     const main = m.groups.find((g) => !g.browserWindow)!;
     rects.set(m.element, new DOMRect(0, 0, 800, 400));
     layGroup(main, new DOMRect(0, 0, 800, 400));
-    rects.set(w.element, new DOMRect(0, 0, 600, 400));
+    rects.set(w.part.element, new DOMRect(0, 0, 600, 400));
     layGroup(w.groups[0], new DOMRect(0, 0, 600, 400));
     const tab = Array.from(main.element.querySelectorAll<HTMLElement>('[role="tab"]')).find((h) => h.textContent!.startsWith('A'))!;
     pointer('pointerdown', tab, 40, 15);
@@ -524,7 +541,8 @@ describe('TabDocumentManager: dragging in and out of new windows', () => {
     Object.defineProperty(view, 'innerWidth', { value: 600, configurable: true });
     Object.defineProperty(view, 'innerHeight', { value: 400, configurable: true });
     const g = w.groups[0];
-    rects.set(w.element, new DOMRect(0, 0, 600, 400));
+    inWindows = [m, g];
+    rects.set(w.part.element, new DOMRect(0, 0, 600, 400));
     layGroup(g, new DOMRect(0, 0, 600, 400));
     const tab = (title: string) => Array.from(g.element.querySelectorAll<HTMLElement>('[role="tab"]')).find((h) => h.textContent!.startsWith(title))!;
     pointer('pointerdown', tab('A'), 40, 15, view);

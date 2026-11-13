@@ -1,7 +1,8 @@
 import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { deepActiveElement, rescueStop } from '../../core/focus';
+import { focusAway, holdsFocus } from '../../core/focus';
+import { put } from '../../core/part-writes';
 import type { AccordionChevron } from './accordion-chevron';
 import type { AccordionExpandedEventArgs } from './accordion-expanded-event-args';
 import type { AccordionExpandingEventArgs } from './accordion-expanding-event-args';
@@ -56,7 +57,7 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
     super('div', props);
     const own = (this.props ?? {}) as AccordionProps;
     const parts = this.parts;
-    this.element.classList.add('mx-accordion');
+    this.class.add('mx-accordion');
     for (const name of LOOK) this.observeProperty(name, () => this.renderLook());
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     this.observeProperty('multiple', () => this.settle());
@@ -75,7 +76,6 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
     parts.ready = true;
     if (own.value !== undefined) this.applyValue(this.peekProperty('value'));
     this.settle();
-    this.element.addEventListener('keydown', (e) => untracked(() => this.onKeyDown(e)));
     this.motif.setDisposable(() => {
       parts.expanding.dispose();
       parts.collapsing.dispose();
@@ -202,12 +202,11 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
   /** Removes an item and disposes it. */
   remove(item: AccordionItem): boolean {
     if (!this.itemsNow().includes(item)) return false;
-    const active = deepActiveElement();
-    const hadFocus = !!active && item.element.contains(active);
+    const hadFocus = holdsFocus(item);
     const next = this.neighbour(item);
     this.forget(item);
     this.controls.remove(item);
-    if (hadFocus && !next?.focus()) rescueStop(this.element, this.element.closest('dialog') ?? document.body)?.focus();
+    if (hadFocus && !next?.focus()) focusAway(this);
     this.settle();
     return true;
   }
@@ -252,6 +251,11 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
         this.parts.byUser = false;
       }
     });
+  }
+
+  /** @internal A key pressed on an item's header. */
+  headerKeyDown(item: AccordionItem, e: KeyboardEvent): void {
+    untracked(() => this.onKeyDown(item, e));
   }
 
   /** @internal An item opened or closed. */
@@ -384,10 +388,11 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
 
   // Keys.
 
-  private onKeyDown(e: KeyboardEvent): void {
+  /** Up, Down, Home and End on a header move between the headers. */
+  private onKeyDown(item: AccordionItem, e: KeyboardEvent): void {
     if (e.altKey || e.ctrlKey || e.metaKey || this.peekProperty('arrowKeys') === false) return;
     const usable = this.itemsNow().filter((i) => i.visible && i.isEnabled);
-    const at = usable.findIndex((i) => i.headerElement === e.target);
+    const at = usable.indexOf(item);
     if (at < 0) return;
     let next: AccordionItem | undefined;
     switch (e.key) {
@@ -428,10 +433,9 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
-    data.variant = this.peekProperty<AccordionVariant>('variant') ?? 'list';
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
-    data.chevron = this.peekProperty<AccordionChevron>('chevron') ?? 'end';
+    put(this, 'data-variant', this.peekProperty<AccordionVariant>('variant') ?? 'list');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
+    put(this, 'data-chevron', this.peekProperty<AccordionChevron>('chevron') ?? 'end');
   }
 
   /** Heading levels, region roles and the header of an item that may not close. */

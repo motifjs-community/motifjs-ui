@@ -39,5 +39,12 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
+    // The test document has no element scroll methods, and core's attr keys write through them.
+    setupFiles: ['tests/setup/scroll-methods.ts'],
+    // The docs examples the tree test mounts import the kit by its name: the source, not a build.
+    alias: [
+      { find: /^@motifx-community\/ui$/, replacement: entry('./src/index.ts') },
+      { find: /^@motifx-community\/ui\/(excel|pdf|tokens)$/, replacement: entry('./src/$1/index.ts') },
+    ],
   },
 });

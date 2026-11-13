@@ -1,8 +1,9 @@
-import { Emitter, untracked, type Event as MotifEvent } from '@motifx/core';
-import { accessKeyToken } from './access-key';
-import { givenKeys, parseShortcut, registered, setGivenKeys, shortcutChanges, type Chord, type Registration } from './keyboard';
-import { pageDocuments } from './page-documents';
+import { Emitter, untracked, type Event as MotifEvent, errorHandler } from '@motifx/core';
+import { accessKeyToken, isAccessKeyTaken } from './access-key';
+import type { Chord } from './chord';
+import { givenKeys, parseShortcut, registered, setGivenKeys, shortcutChanges } from './keyboard';
 import { isApplePlatform } from './platform';
+import type { ShortcutRegistration } from './shortcut-registration';
 import type { ShortcutConflict } from './shortcut-conflict';
 import type { ShortcutInfo } from './shortcut-info';
 import type { Keymap } from './keymap';
@@ -70,7 +71,7 @@ export class ShortcutRegistry {
     return registered().map(info);
   }
 
-  /** The shortcuts that get in each other's way now, access keys on the page included. */
+  /** The shortcuts that get in each other's way now, the access keys of the kit's components included. */
   conflicts(): ShortcutConflict[] {
     const regs = registered();
     const out: ShortcutConflict[] = [];
@@ -80,36 +81,39 @@ export class ShortcutRegistry {
         if (found) out.push({ reason: found.reason, keys: found.keys, shortcuts: [info(earlier), info(reg)] });
       }
       for (const { letter, keys } of accessLetters(reg)) {
-        if (pageDocuments().some((doc) => hasAccessKey(doc, accessKeyToken(letter)))) out.push({ reason: 'accessKey', keys, shortcuts: [info(reg)] });
+        if (isAccessKeyTaken(accessKeyToken(letter))) out.push({ reason: 'accessKey', keys, shortcuts: [info(reg)] });
       }
     });
     return out;
   }
 
   /** The shortcuts `keys` would get in the way of, in a place `scope`-wide (`null`: app-wide). */
-  takenBy(keys: string, scope: Registration['scope'] = null): ShortcutInfo[] {
+  takenBy(keys: string, scope: ShortcutRegistration['scope'] = null): ShortcutInfo[] {
     let chords: Chord[];
     try {
       chords = parseShortcut(keys);
     } catch {
       return [];
     }
-    const probe = { keys: [keys], sequences: [chords], scope } as unknown as Registration;
+    const probe = { keys: [keys], sequences: [chords], scope, within: null } as unknown as ShortcutRegistration;
     return registered().filter((reg) => clash(reg, probe)).map(info);
   }
 
-  private check(reg: Registration): void {
+  private check(reg: ShortcutRegistration): void {
     for (const earlier of registered()) {
       if (earlier === reg) break;
       const found = clash(earlier, reg);
       if (!found) continue;
       const conflict: ShortcutConflict = { reason: found.reason, keys: found.keys, shortcuts: [info(earlier), info(reg)] };
       if (this.warnings) {
-        const what = (r: Registration) => `"${found.keys}"${r.name ? ` (${r.name})` : ''}`;
-        console.warn(
-          found.reason === 'same'
-            ? `Shortcuts: ${what(reg)} has the keys of ${what(earlier)} in the same place; the first one added runs.`
-            : `Shortcuts: ${what(reg)} and ${what(earlier)} start with the same keys; the shorter one never runs.`,
+        const what = (r: ShortcutRegistration) => `"${found.keys}"${r.name ? ` (${r.name})` : ''}`;
+        errorHandler.reportSuppressed(
+          'Shortcuts',
+          new Error(
+            found.reason === 'same'
+              ? `Shortcuts: ${what(reg)} has the keys of ${what(earlier)} in the same place; the first one added runs.`
+              : `Shortcuts: ${what(reg)} and ${what(earlier)} start with the same keys; the shorter one never runs.`,
+          ),
         );
       }
       this.conflicted.fire(conflict);
@@ -117,7 +121,7 @@ export class ShortcutRegistry {
   }
 }
 
-function info(reg: Registration): ShortcutInfo {
+function info(reg: ShortcutRegistration): ShortcutInfo {
   return {
     keys: reg.keys,
     defaults: reg.defaults,
@@ -139,8 +143,9 @@ function chordText(c: Chord): string {
 }
 
 /** Two shortcuts in the same place: keys of both the same, or keys of one starting keys of the other. */
-function clash(a: Registration, b: Registration): { reason: 'same' | 'prefix'; keys: string } | null {
-  if (a.scope !== b.scope) return null;
+function clash(a: ShortcutRegistration, b: ShortcutRegistration): { reason: 'same' | 'prefix'; keys: string } | null {
+  // Different places, or different parts of one place, may share keys.
+  if (a.scope !== b.scope || a.within !== b.within) return null;
   for (let i = 0; i < a.sequences.length; i++) {
     const x = a.sequences[i].map(chordText);
     for (const other of b.sequences) {
@@ -155,7 +160,7 @@ function clash(a: Registration, b: Registration): { reason: 'same' | 'prefix'; k
 }
 
 /** The letters of an app-wide shortcut pressed as access keys are (Alt + letter; Control + Option on Apple platforms). */
-function accessLetters(reg: Registration): { letter: string; keys: string }[] {
+function accessLetters(reg: ShortcutRegistration): { letter: string; keys: string }[] {
   if (reg.scope) return [];
   const apple = isApplePlatform();
   const out: { letter: string; keys: string }[] = [];
@@ -166,13 +171,6 @@ function accessLetters(reg: Registration): { letter: string; keys: string }[] {
     if (asAccess && /^\p{L}$|^\p{N}$/u.test(c.key)) out.push({ letter: c.key, keys: reg.keys[i] });
   });
   return out;
-}
-
-function hasAccessKey(doc: Document, token: string): boolean {
-  for (const el of doc.querySelectorAll('[aria-keyshortcuts]')) {
-    if ((el.getAttribute('aria-keyshortcuts') ?? '').split(/\s+/).includes(token)) return true;
-  }
-  return false;
 }
 
 /** Every keyboard shortcut of the app. */

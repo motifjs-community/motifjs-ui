@@ -1,8 +1,10 @@
-import { untracked } from '@motifx/core';
-import { deepActiveElement } from '../../core/focus';
-import { dismissMark, pinMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
-import { isElement } from '../../core/node-kind';
+import { untracked, type Component, type ComponentBase } from '@motifx/core';
+import { glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { focusOn, isFocused } from '../../core/focus';
+import { nextId } from '../../core/next-id';
+import { orderControls } from '../../core/order-controls';
+import { css, flag, kept, mark, put, text as writeText } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import { SwipeTracker } from '../../parts/overlay/swipe-tracker';
 import { BottomSheet } from '../sheet/BottomSheet';
 import { TextBox } from '../textbox/TextBox';
@@ -11,17 +13,32 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 import type { TabPresenter } from './TabPresenter';
 import { foldText } from '../../core/fold-text';
+import { boxOf, measure, reveal, shareAlong, whenMeasured, type Point } from '../../core/measure';
+import { autoScroll } from '../../parts/drag/auto-scroll';
+import { DragBoxes } from '../../parts/drag/drag-boxes';
 
 /** How far, in pixels, a finger moves before it is a swipe or a scroll. */
 const SLOP = 8;
 
 interface Row {
-  element: HTMLLIElement;
-  open: HTMLButtonElement;
-  close: HTMLButtonElement;
+  part: Component<HTMLLIElement>;
+  open: Component<HTMLButtonElement>;
+  close: Component<HTMLButtonElement>;
   release: () => void;
-  /** What it was drawn from, to draw it again only when that changes. */
+  /** What it was written from, to write it again only when that changes. */
   look: string;
+  /** Whether the search shows it. */
+  shown: boolean;
+  /** The parts in the open button, made once (the optional ones the first time they show) and written in place. */
+  text: Component<HTMLSpanElement>;
+  title: Component<HTMLSpanElement>;
+  gap: Component<HTMLSpanElement> | null;
+  description: Component<HTMLSpanElement> | null;
+  iconHolder: Component<HTMLSpanElement> | null;
+  icon: unknown;
+  pin: Component<HTMLSpanElement> | null;
+  dirty: Component<HTMLSpanElement> | null;
+  states: Component<HTMLSpanElement> | null;
 }
 
 /** A finger on a row: a swipe to close it, or, after a long press, a drag to another place. */
@@ -35,7 +52,47 @@ interface Gesture {
   timer: ReturnType<typeof setTimeout> | undefined;
   tracker: SwipeTracker;
   /** Where the dragged row was before, to tell a drag that moved it from one that did not. */
-  from: { list: Element; next: Element | null } | null;
+  from: { list: ComponentBase; next: ComponentBase | null } | null;
+  /** The finger's last point while it drags, `null` before it moves. */
+  point: Point | null;
+  /** The rows and sections the drag aims at, kept while it lasts. */
+  boxes: DragBoxes | null;
+  /** Ends the scrolling near the list's ends. */
+  stopScroll: (() => void) | null;
+}
+
+/** Where the lifted row goes for the finger's point: next to a row, or into a section's list. */
+interface Aim {
+  gesture: Gesture;
+  row: Row | null;
+  after: boolean;
+  list: Component<HTMLUListElement> | null;
+}
+
+/** A group's section: its heading and the list of its rows. */
+interface Section {
+  section: Component<HTMLElement>;
+  head: Component<HTMLDivElement>;
+  list: Component<HTMLUListElement>;
+  /** Whether it shows: the search shows a row of it. */
+  shown: boolean;
+}
+
+/** The part after `c` among its parent's, `null` at the end. */
+function nextOf(c: ComponentBase): ComponentBase | null {
+  const items = c.parent?.controls.items ?? [];
+  return items[items.indexOf(c) + 1] ?? null;
+}
+
+/** Puts `c` into `list` before `before` (at the end for `null`), moving it alive. */
+function placeBefore(list: ComponentBase, c: ComponentBase, before: ComponentBase | null): void {
+  if (c.parent === list) {
+    list.controls.move(c, before);
+    return;
+  }
+  const at = before ? list.controls.items.indexOf(before) : -1;
+  if (at >= 0) list.controls.insert(at, c);
+  else list.controls.add(c);
 }
 
 /**
@@ -48,20 +105,21 @@ interface Gesture {
 export class PhoneList {
   private readonly sheet: BottomSheet;
   private readonly search: TextBox;
-  private readonly sections: HTMLDivElement;
-  private readonly empty: HTMLDivElement;
+  private readonly sectionsPart: Component<HTMLDivElement>;
+  private readonly empty: Component<HTMLDivElement>;
   private readonly rows = new Map<TabDocument, Row>();
-  private readonly lists = new Map<TabGroup, { section: HTMLElement; head: HTMLElement; list: HTMLUListElement }>();
+  private readonly lists = new Map<TabGroup, Section>();
   private query = '';
   private gesture: Gesture | null = null;
+  /** The lifted row's gesture, from the lift until it is let go and dropped. */
+  private dragged: Gesture | null = null;
 
   constructor(
     private readonly manager: TabDocumentManager,
     private readonly presenter: TabPresenter,
   ) {
-    const doc = manager.element.ownerDocument;
     this.sheet = new BottomSheet({
-      container: manager.element,
+      container: manager,
       title: () => manager.textOf('tabDocsPhoneList'),
       showClose: true,
       detents: ['full'],
@@ -72,28 +130,28 @@ export class PhoneList {
         manager.listShown(true);
         presenter.render();
       }),
-      onClosed: () => untracked(() => {
+      onClosed: (e) => untracked(() => {
+        // Closed as it is disposed: the manager is going away with it.
+        if (e.reason === 'owner') return;
         manager.listShown(false);
         presenter.render();
       }),
     });
-    this.sheet.element.classList.add('mx-tabdocs__phone-list');
+    this.sheet.class.add('mx-tabdocs__phone-list');
     const search = (this.search = new TextBox({ type: 'search', stretch: true, autocomplete: 'off' }));
     search.label = () => manager.textOf('tabDocsPhoneSearch');
     search.placeholder = () => manager.textOf('tabDocsPhoneSearch');
-    search.element.classList.add('mx-tabdocs__list-search');
+    search.class.add('mx-tabdocs__list-search');
     search.onValueChanged((e) => {
       this.query = foldText((e.value ?? '').trim());
       this.filter();
     });
-    this.sections = doc.createElement('div');
-    this.sections.className = 'mx-tabdocs__list-sections';
-    this.empty = doc.createElement('div');
-    this.empty.className = 'mx-tabdocs__list-empty';
-    this.empty.hidden = true;
-    // Built here and placed above the rows (among the sheet's children core would put it after them).
-    search.build();
-    this.sheet.contentElement.append(search.element, this.sections, this.empty);
+    const sections = (this.sectionsPart = loose<HTMLDivElement>('div', 'mx-tabdocs__list-sections'));
+    const empty = loose<HTMLDivElement>('div', 'mx-tabdocs__list-empty');
+    this.empty = empty;
+    mark(this.empty, 'hidden', true);
+    // The sheet's children, in this order, go to its content area.
+    this.sheet.controls.add(search, sections, empty);
     manager.controls.add(this.sheet);
     this.listen();
   }
@@ -109,8 +167,10 @@ export class PhoneList {
     if (!this.sheet.open()) return false;
     const active = this.presenter.phoneDocument;
     const row = (active && this.rows.get(active)) ?? [...this.rows.values()][0];
-    row?.open.focus({ preventScroll: true });
-    row?.element.scrollIntoView?.({ block: 'nearest' });
+    if (row) {
+      focusOn(row.open, { preventScroll: true });
+      reveal(this.sheet.contentPart, row.part, { axis: 'y' });
+    }
     return true;
   }
 
@@ -120,6 +180,8 @@ export class PhoneList {
 
   dispose(): void {
     this.endGesture();
+    this.dragged?.boxes?.stop();
+    this.dragged = null;
     for (const row of this.rows.values()) row.release();
     this.rows.clear();
     if (!this.search.isDisposed) void this.search.dispose();
@@ -128,129 +190,142 @@ export class PhoneList {
 
   /** Draws the sections and rows again for the documents open now. */
   render(): void {
-    if (this.gesture?.mode === 'drag') return;
+    if (this.dragged) return;
     const m = this.manager;
     const groups = this.presenter.listGroups();
     const active = this.presenter.phoneDocument;
     const single = groups.length < 2;
     const seen = new Set<TabDocument>();
-    groups.forEach((group, i) => {
+    const sections = groups.map((group, i) => {
       const part = this.listOf(group);
-      part.head.textContent = group.window ? m.textOf('tabDocsWindow', { n: group.window.index + 1 }) : m.textOf('tabDocsGroup', { n: i + 1 });
-      part.head.hidden = single;
-      if (this.sections.children[i] !== part.section) this.sections.insertBefore(part.section, this.sections.children[i] ?? null);
-      group.documents.forEach((doc, j) => {
+      writeText(part.head, group.window ? m.textOf('tabDocsWindow', { n: group.window.index + 1 }) : m.textOf('tabDocsGroup', { n: i + 1 }));
+      mark(part.head, 'hidden', single);
+      const rows = group.documents.map((doc) => {
         seen.add(doc);
         const row = this.rowOf(doc);
-        if (doc === active) row.element.setAttribute('aria-current', 'true');
-        else row.element.removeAttribute('aria-current');
-        if (part.list.children[j] !== row.element) part.list.insertBefore(row.element, part.list.children[j] ?? null);
+        flag(row.part, 'aria-current', doc === active);
+        return row.part;
       });
-      while (part.list.children.length > group.documents.length) part.list.lastElementChild!.remove();
+      // A row no longer in this group is taken out alive: it goes into its new group's list, or away below.
+      for (const c of [...part.list.controls.items]) if (!rows.includes(c as Component<HTMLLIElement>)) part.list.controls.silentDetach(c);
+      orderControls(part.list, rows);
+      return part.section;
     });
+    orderControls(this.sectionsPart, sections);
     for (const [group, part] of this.lists) {
       if (groups.includes(group)) continue;
-      part.section.remove();
+      removePart(part.section);
       this.lists.delete(group);
     }
     for (const [doc, row] of this.rows) {
       if (seen.has(doc)) continue;
       row.release();
-      row.element.remove();
+      removePart(row.part);
       this.rows.delete(doc);
     }
-    this.empty.textContent = m.textOf('noItems');
+    writeText(this.empty, m.textOf('noItems'));
     this.filter();
     this.renderRoving();
   }
 
-  private listOf(group: TabGroup): { section: HTMLElement; head: HTMLElement; list: HTMLUListElement } {
-    let part = this.lists.get(group);
-    if (part) return part;
-    const doc = this.manager.element.ownerDocument;
-    const section = doc.createElement('section');
-    section.className = 'mx-tabdocs__list-section';
-    const head = doc.createElement('div');
-    head.className = 'mx-tabdocs__list-head';
-    head.setAttribute('role', 'heading');
-    head.setAttribute('aria-level', '3');
-    head.id = `${group.element.id}-list`;
-    const list = doc.createElement('ul');
-    list.className = 'mx-tabdocs__list-rows';
-    list.setAttribute('aria-labelledby', head.id);
-    section.append(head, list);
-    part = { section, head, list };
-    this.lists.set(group, part);
-    return part;
+  /** A group's section, made the first time (and placed by `render`). */
+  private listOf(group: TabGroup): Section {
+    const known = this.lists.get(group);
+    if (known) return known;
+    const section = loose<HTMLElement>('section', 'mx-tabdocs__list-section');
+    const head = part<HTMLDivElement>(section, 'div', 'mx-tabdocs__list-head');
+    const id = nextId('tabdocs-list');
+    head.attr.add({ role: 'heading', 'aria-level': '3', id });
+    const list = part<HTMLUListElement>(section, 'ul', 'mx-tabdocs__list-rows');
+    list.attr.add({ 'aria-labelledby': id });
+    const made: Section = { section, head, list, shown: true };
+    this.lists.set(group, made);
+    return made;
   }
 
+  /** A document's row, made the first time (and placed by `render`); its parts written in place when the document changes. */
   private rowOf(doc: TabDocument): Row {
     const m = this.manager;
     const look = [doc.title, doc.description, doc.dirty, doc.pinned, doc.preview, doc.closable, String(doc.icon ?? '')].join('|');
-    const known = this.rows.get(doc);
-    if (known && known.look === look) return known;
-    const owner = m.element.ownerDocument;
-    const element = known?.element ?? owner.createElement('li');
-    known?.release();
-    element.className = 'mx-tabdocs__list-row';
-    element.toggleAttribute('data-pinned', doc.pinned);
-    element.toggleAttribute('data-preview', doc.preview);
-    const open = owner.createElement('button');
-    open.type = 'button';
-    open.className = 'mx-tabdocs__list-open';
-    let release = () => {};
-    if (doc.icon) {
-      const icon = owner.createElement('span');
-      icon.className = 'mx-tabdocs__icon';
-      icon.setAttribute('aria-hidden', 'true');
-      const shown = iconNode(doc.icon, owner);
-      icon.append(shown.node);
-      release = shown.release;
-      open.append(icon);
+    const row = this.rows.get(doc) ?? this.makeRow(doc);
+    if (row.look === look) return row;
+    row.look = look;
+    mark(row.part, 'data-pinned', doc.pinned);
+    mark(row.part, 'data-preview', doc.preview);
+    // The icon is shown again only when it is another one.
+    if (row.icon !== doc.icon) {
+      row.release();
+      row.release = () => {};
+      if (doc.icon && !row.iconHolder) {
+        row.iconHolder = partBefore<HTMLSpanElement>(row.open, row.text, 'span', 'mx-tabdocs__icon');
+        row.iconHolder.attr.add({ 'aria-hidden': 'true' });
+      }
+      if (doc.icon && row.iconHolder) row.release = showIcon(doc.icon, row.iconHolder);
+      row.icon = doc.icon;
     }
-    const text = owner.createElement('span');
-    text.className = 'mx-tabdocs__list-text';
-    const title = owner.createElement('span');
-    title.className = 'mx-tabdocs__list-title';
-    title.textContent = doc.title;
-    text.append(title);
-    if (doc.description) {
-      const description = owner.createElement('span');
-      description.className = 'mx-tabdocs__list-description';
-      description.textContent = doc.description;
-      text.append(' ', description);
+    if (row.iconHolder) kept(row.iconHolder, !!doc.icon);
+    writeText(row.title, doc.title);
+    if (doc.description && !row.description) {
+      row.gap = part<HTMLSpanElement>(row.text, 'span', '');
+      writeText(row.gap, ' ');
+      row.description = part<HTMLSpanElement>(row.text, 'span', 'mx-tabdocs__list-description');
     }
-    open.append(text);
+    if (row.description && row.gap) {
+      if (doc.description) writeText(row.description, doc.description);
+      kept(row.gap, !!doc.description);
+      kept(row.description, !!doc.description);
+    }
     const states: string[] = [];
-    if (doc.pinned) {
-      const pin = owner.createElement('span');
-      pin.className = 'mx-tabdocs__list-pin';
-      pin.setAttribute('aria-hidden', 'true');
-      pin.append(pinMark());
-      open.append(pin);
-      states.push(m.textOf('tabDocsPinState'));
+    if (doc.pinned && !row.pin) {
+      row.pin = partBefore<HTMLSpanElement>(row.open, row.dirty ?? row.states, 'span', 'mx-tabdocs__list-pin');
+      row.pin.attr.add({ 'aria-hidden': 'true' });
+      glyphPart(row.pin, 'pin');
     }
-    if (doc.dirty) {
-      const dirty = owner.createElement('span');
-      dirty.className = 'mx-tabdocs__list-dirty';
-      dirty.setAttribute('aria-hidden', 'true');
-      open.append(dirty);
-      states.push(m.textOf('tabDocsUnsaved'));
+    if (row.pin) kept(row.pin, doc.pinned);
+    if (doc.pinned) states.push(m.textOf('tabDocsPinState'));
+    if (doc.dirty && !row.dirty) {
+      row.dirty = partBefore<HTMLSpanElement>(row.open, row.states, 'span', 'mx-tabdocs__list-dirty');
+      row.dirty.attr.add({ 'aria-hidden': 'true' });
     }
-    if (states.length) {
-      const said = owner.createElement('span');
-      said.className = 'mx-tabdocs__hidden';
-      said.textContent = `, ${states.join(', ')}`;
-      open.append(said);
+    if (row.dirty) kept(row.dirty, doc.dirty);
+    if (doc.dirty) states.push(m.textOf('tabDocsUnsaved'));
+    if (states.length && !row.states) row.states = part<HTMLSpanElement>(row.open, 'span', 'mx-tabdocs__hidden');
+    if (row.states) {
+      if (states.length) writeText(row.states, `, ${states.join(', ')}`);
+      kept(row.states, states.length > 0);
     }
-    const close = owner.createElement('button');
-    close.type = 'button';
-    close.className = 'mx-tabdocs__list-close';
-    close.setAttribute('aria-label', m.textOf(doc.closable ? 'tabDocsCloseActive' : 'tabDocsHideActive', { title: doc.title }));
-    close.disabled = !m.mayCloseOrHide(doc);
-    close.append(dismissMark());
-    element.replaceChildren(open, close);
-    const row: Row = { element, open, close, release, look };
+    put(row.close, 'aria-label', m.textOf(doc.closable ? 'tabDocsCloseActive' : 'tabDocsHideActive', { title: doc.title }));
+    mark(row.close, 'disabled', !m.mayCloseOrHide(doc));
+    return row;
+  }
+
+  /** A document's row with the parts every row has; `rowOf` writes them. */
+  private makeRow(doc: TabDocument): Row {
+    const rowPart = loose<HTMLLIElement>('li', 'mx-tabdocs__list-row');
+    const openPart = part<HTMLButtonElement>(rowPart, 'button', 'mx-tabdocs__list-open');
+    openPart.attr.add({ type: 'button' });
+    const text = part<HTMLSpanElement>(openPart, 'span', 'mx-tabdocs__list-text');
+    const title = part<HTMLSpanElement>(text, 'span', 'mx-tabdocs__list-title');
+    const closePart = part<HTMLButtonElement>(rowPart, 'button', 'mx-tabdocs__list-close');
+    closePart.attr.add({ type: 'button' });
+    glyphPart(closePart, 'dismiss');
+    const row: Row = {
+      part: rowPart,
+      open: openPart,
+      close: closePart,
+      release: () => {},
+      look: '',
+      shown: true,
+      text,
+      title,
+      gap: null,
+      description: null,
+      iconHolder: null,
+      icon: undefined,
+      pin: null,
+      dirty: null,
+      states: null,
+    };
     this.rows.set(doc, row);
     return row;
   }
@@ -264,61 +339,69 @@ export class PhoneList {
         const row = this.rows.get(doc);
         if (!row) continue;
         const hit = !q || foldText(doc.title).includes(q) || foldText(doc.description ?? '').includes(q);
-        row.element.hidden = !hit;
+        row.shown = hit;
+        mark(row.part, 'hidden', !hit);
         if (hit) shown++;
       }
-      part.section.hidden = !shown;
-      any ||= shown > 0;
+      part.shown = shown > 0;
+      mark(part.section, 'hidden', !part.shown);
+      any ||= part.shown;
     }
-    this.empty.hidden = any;
+    mark(this.empty, 'hidden', any);
   }
 
   /** One row is a Tab stop: the active document's, else the first shown. */
   private renderRoving(): void {
-    const opens = this.visibleRows().map((r) => r.open);
-    const focus = deepActiveElement(this.sections);
+    const rows = this.visibleRows();
     const active = this.presenter.phoneDocument;
-    const stop = opens.find((b) => b === focus) ?? (active && this.rows.get(active)?.open) ?? opens[0];
-    for (const row of this.rows.values()) row.open.tabIndex = row.open === stop ? 0 : -1;
+    const stop = rows.find((row) => isFocused(row.open)) ?? (active && this.rows.get(active)) ?? rows[0];
+    for (const row of this.rows.values()) put(row.open, 'tabindex', row === stop ? '0' : '-1');
   }
 
+  /** The rows the search shows, in their order on the screen. */
   private visibleRows(): Row[] {
-    return [...this.sections.querySelectorAll<HTMLLIElement>('.mx-tabdocs__list-row')].filter((el) => !el.hidden && !el.closest('[hidden]')).map((el) => this.rowByElement(el)!).filter(Boolean);
+    const sections = [...this.lists.values()];
+    const rows = [...this.rows.values()];
+    const visible: Row[] = [];
+    for (const c of this.sectionsPart.controls.items) {
+      const section = sections.find((s) => s.section === c);
+      if (!section?.shown) continue;
+      for (const item of section.list.controls.items) {
+        const row = rows.find((r) => r.part === item);
+        if (row?.shown) visible.push(row);
+      }
+    }
+    return visible;
   }
 
-  private rowByElement(el: Element | null): Row | undefined {
-    for (const row of this.rows.values()) if (row.element === el) return row;
-    return undefined;
-  }
-
-  private docOf(target: EventTarget | null): TabDocument | null {
-    const el = isElement(target) ? target.closest('.mx-tabdocs__list-row') : null;
-    for (const [doc, row] of this.rows) if (row.element === el) return doc;
+  /** The document whose row an event started in, `null` when none. */
+  private docOf(e: Event): TabDocument | null {
+    for (const [doc, row] of this.rows) if (row.part.motif.isEventFrom(e)) return doc;
     return null;
   }
 
   private listen(): void {
-    const s = this.sections;
-    s.addEventListener('click', (e) => {
-      const doc = this.docOf(e.target);
+    const s = this.sectionsPart;
+    s.motif.on('click', (_, e) => {
+      const doc = this.docOf(e);
       if (!doc) return;
-      if ((e.target as Element).closest('.mx-tabdocs__list-close')) untracked(() => void this.closeDocument(doc));
+      if (this.rows.get(doc)?.close.motif.isEventFrom(e)) untracked(() => void this.closeDocument(doc));
       else untracked(() => this.choose(doc));
     });
-    s.addEventListener('keydown', (e) => untracked(() => this.key(e)));
-    s.addEventListener('contextmenu', (e) => {
-      const doc = this.docOf(e.target);
+    s.motif.on('keydown', (_, e) => untracked(() => this.key(e)));
+    s.motif.on('contextmenu', (_, e) => {
+      const doc = this.docOf(e);
       if (!doc || !doc.group) return;
       e.preventDefault();
       // A finger's long press: the lift and its drop handle it.
-      if (this.gesture) return;
+      if (this.gesture || this.dragged) return;
       untracked(() => this.manager.openDocumentSheet(doc, doc.group!, e.button !== 2 && e.clientX === 0 && e.clientY === 0, this.rows.get(doc)?.open ?? null));
     });
     // The touchmove listener is there before a finger lands: only then can a swipe or a drag keep the list still.
-    s.addEventListener('touchstart', (e) => this.touchStart(e), { passive: true });
-    s.addEventListener('touchmove', (e) => this.touchMove(e), { passive: false });
-    s.addEventListener('touchend', (e) => this.touchEnd(e));
-    s.addEventListener('touchcancel', (e) => this.touchEnd(e));
+    s.motif.on('touchstart:passive', (_, e: TouchEvent | undefined) => e && this.touchStart(e));
+    s.motif.on('touchmove', (_, e: TouchEvent | undefined) => e && this.touchMove(e));
+    s.motif.on('touchend', (_, e: TouchEvent | undefined) => e && this.touchEnd(e));
+    s.motif.on('touchcancel', (_, e: TouchEvent | undefined) => e && this.touchEnd(e));
   }
 
   /** A document chosen: the list closes and the phone shows it. */
@@ -331,8 +414,8 @@ export class PhoneList {
     const row = this.rows.get(doc);
     const next = row ? this.neighbour(row, 1) ?? this.neighbour(row, -1) : null;
     const closed = await this.manager.closeOrHideFromList(doc);
-    if (!closed && row) row.element.style.translate = '';
-    if (closed && next) next.open.focus({ preventScroll: true });
+    if (!closed && row) css(row.part, 'translate', '');
+    if (closed && next) focusOn(next.open, { preventScroll: true });
   }
 
   private neighbour(row: Row, by: 1 | -1): Row | null {
@@ -341,7 +424,7 @@ export class PhoneList {
   }
 
   private key(e: KeyboardEvent): void {
-    const doc = this.docOf(e.target);
+    const doc = this.docOf(e);
     const row = doc ? this.rows.get(doc) : undefined;
     if (!doc || !row || e.ctrlKey || e.metaKey) return;
     const rows = this.visibleRows();
@@ -349,14 +432,15 @@ export class PhoneList {
     const go = (i: number) => {
       const next = rows[Math.max(0, Math.min(rows.length - 1, i))];
       if (!next) return;
-      for (const r of this.rows.values()) r.open.tabIndex = -1;
-      next.open.tabIndex = 0;
-      next.open.focus();
+      for (const r of this.rows.values()) put(r.open, 'tabindex', '-1');
+      put(next.open, 'tabindex', '0');
+      focusOn(next.open);
     };
     if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       this.moveBy(doc, e.key === 'ArrowUp' ? -1 : 1);
-      this.rows.get(doc)?.open.focus();
+      const moved = this.rows.get(doc);
+      if (moved) focusOn(moved.open);
       return;
     }
     if (e.altKey) return;
@@ -407,14 +491,14 @@ export class PhoneList {
   // The finger.
 
   private touchStart(e: TouchEvent): void {
-    if (e.touches.length !== 1 || this.gesture) return;
-    const doc = this.docOf(e.target);
+    if (e.touches.length !== 1 || this.gesture || this.dragged) return;
+    const doc = this.docOf(e);
     const row = doc ? this.rows.get(doc) : undefined;
-    if (!doc || !row || (e.target as Element).closest('.mx-tabdocs__list-close')) return;
+    if (!doc || !row || row.close.motif.isEventFrom(e)) return;
     const t = e.touches[0];
     const tracker = new SwipeTracker();
     tracker.start(t.clientX, t.clientY);
-    const gesture: Gesture = { id: t.identifier, doc, row, x: t.clientX, y: t.clientY, mode: 'wait', timer: undefined, tracker, from: null };
+    const gesture: Gesture = { id: t.identifier, doc, row, x: t.clientX, y: t.clientY, mode: 'wait', timer: undefined, tracker, from: null, point: null, boxes: null, stopScroll: null };
     gesture.timer = setTimeout(() => untracked(() => this.lift(gesture)), this.manager.longPressDelay);
     this.gesture = gesture;
   }
@@ -429,10 +513,18 @@ export class PhoneList {
       return;
     }
     gesture.mode = 'drag';
-    const el = gesture.row.element;
-    gesture.from = { list: el.parentElement!, next: el.nextElementSibling };
-    el.toggleAttribute('data-lifted', true);
-    this.sections.toggleAttribute('data-dragging', true);
+    gesture.from = { list: gesture.row.part.parent!, next: nextOf(gesture.row.part) };
+    this.dragged = gesture;
+    const owner = this.sectionsPart;
+    gesture.boxes = new DragBoxes(owner, () => this.aimParts(gesture));
+    // Near an end of the list, it scrolls; the row under the finger may change then.
+    const moved = () => {
+      gesture.boxes?.moved();
+      measure(owner, this.readAim, this.drawAim);
+    };
+    gesture.stopScroll = autoScroll(owner, this.sheet.contentPart, () => (this.dragged === gesture ? gesture.point : null), moved, { axis: 'y', zone: 48, speed: 12 });
+    if (!gesture.row.part.isDisposed) mark(gesture.row.part, 'data-lifted', true);
+    if (!this.sectionsPart.isDisposed) mark(this.sectionsPart, 'data-dragging', true);
   }
 
   private touchMove(e: TouchEvent): void {
@@ -446,64 +538,75 @@ export class PhoneList {
       if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
       clearTimeout(g.timer);
       g.mode = Math.abs(dx) > Math.abs(dy) && this.manager.mayCloseOrHide(g.doc) ? 'swipe' : 'scroll';
-      if (g.mode === 'swipe') g.row.element.toggleAttribute('data-swiping', true);
+      if (g.mode === 'swipe' && !g.row.part.isDisposed) mark(g.row.part, 'data-swiping', true);
     }
     if (g.mode === 'scroll') return;
     if (e.cancelable) e.preventDefault();
     if (g.mode === 'swipe') {
-      g.row.element.style.translate = `${Math.round(dx)}px 0`;
+      css(g.row.part, 'translate', `${Math.round(dx)}px 0`);
       return;
     }
-    this.dragTo(g, t.clientX, t.clientY);
+    g.point = { x: t.clientX, y: t.clientY };
+    measure(this.sectionsPart, this.readAim, this.drawAim);
   }
 
-  /** The lifted row goes where the finger is: before or after the row under it, or into an empty section. */
-  private dragTo(g: Gesture, x: number, y: number): void {
-    const el = g.row.element;
-    el.style.translate = '';
-    const doc = this.sections.ownerDocument;
-    const under = doc.elementsFromPoint(x, y).find((n) => n !== el && !el.contains(n) && this.sections.contains(n));
-    const row = under?.closest('.mx-tabdocs__list-row');
-    if (row && row !== el) {
-      const box = row.getBoundingClientRect();
-      const after = y > box.top + box.height / 2;
-      row.parentElement!.insertBefore(el, after ? row.nextElementSibling : row);
-    } else {
-      const section = under?.closest('.mx-tabdocs__list-section');
-      const list = section?.querySelector('.mx-tabdocs__list-rows');
-      if (list && !list.contains(el)) list.append(el);
-    }
-    // Near an end of the list, it scrolls.
-    const scroller = this.sheet.contentElement;
-    const box = scroller.getBoundingClientRect();
-    if (y < box.top + 48) scroller.scrollTop -= 12;
-    else if (y > box.bottom - 48) scroller.scrollTop += 12;
+  /** What a drag can aim at, front first: the other rows the search shows, then the sections. */
+  private aimParts(g: Gesture): ComponentBase[] {
+    const rows = [...this.rows.values()].filter((row) => row !== g.row && row.shown).map((row) => row.part);
+    const sections = [...this.lists.values()].filter((s) => s.shown).map((s) => s.section);
+    return [...rows, ...sections];
   }
+
+  /** The row or the section under the finger: the lifted row goes before or after that row, or into that section. */
+  private readonly readAim = (): Aim | null => {
+    const g = this.dragged;
+    if (!g?.point || !g.boxes) return null;
+    const hit = g.boxes.at(g.point);
+    const row = [...this.rows.values()].find((r) => r.part === hit) ?? null;
+    if (row) return { gesture: g, row, after: shareAlong(row.part, g.point, 'y') > 0.5, list: null };
+    const list = [...this.lists.values()].find((s) => s.section === hit)?.list ?? null;
+    return { gesture: g, row: null, after: false, list };
+  };
+
+  private readonly drawAim = (aim: Aim | null): void => {
+    const g = this.dragged;
+    if (!aim || aim.gesture !== g || g.row.part.isDisposed) return;
+    const lifted = g.row.part;
+    css(lifted, 'translate', '');
+    const list = lifted.parent;
+    const next = nextOf(lifted);
+    const target = aim.row?.part;
+    if (target?.parent) placeBefore(target.parent, lifted, aim.after ? nextOf(target) : target);
+    else if (aim.list && list !== aim.list) aim.list.controls.add(lifted);
+    if (lifted.parent !== list || nextOf(lifted) !== next) g.boxes?.moved();
+  };
 
   private touchEnd(e: TouchEvent): void {
     const g = this.gesture;
     const t = g && Array.from(e.changedTouches).find((c) => c.identifier === g.id);
     if (!g || !t) return;
     const canceled = e.type === 'touchcancel';
+    // Read before anything is written.
+    const width = g.mode === 'swipe' ? boxOf(g.row.part).width : 0;
     this.endGesture();
     if (g.mode === 'swipe') {
       e.preventDefault();
-      const el = g.row.element;
-      el.removeAttribute('data-swiping');
+      if (!g.row.part.isDisposed) mark(g.row.part, 'data-swiping', false);
       const dx = t.clientX - g.x;
       const speed = g.tracker.velocity('x');
-      const far = Math.abs(dx) > el.getBoundingClientRect().width * 0.35 || Math.abs(speed) > 0.5;
+      const far = Math.abs(dx) > width * 0.35 || Math.abs(speed) > 0.5;
       if (!canceled && far) {
-        el.style.translate = `${dx < 0 ? -100 : 100}% 0`;
+        css(g.row.part, 'translate', `${dx < 0 ? -100 : 100}% 0`);
         untracked(() => void this.closeDocument(g.doc));
       } else {
-        el.style.translate = '';
+        css(g.row.part, 'translate', '');
       }
       return;
     }
     if (g.mode === 'drag') {
       e.preventDefault();
-      untracked(() => this.drop(g, canceled));
+      // The finger's last move is placed first.
+      void whenMeasured(this.sectionsPart).then(() => untracked(() => this.drop(g, canceled)));
     }
     // Let go before the long press: a tap, which the click that follows handles.
   }
@@ -513,27 +616,31 @@ export class PhoneList {
     if (!g) return;
     clearTimeout(g.timer);
     this.gesture = null;
-    g.row.element.removeAttribute('data-lifted');
-    this.sections.removeAttribute('data-dragging');
+    g.stopScroll?.();
+    if (!g.row.part.isDisposed) mark(g.row.part, 'data-lifted', false);
+    if (!this.sectionsPart.isDisposed) mark(this.sectionsPart, 'data-dragging', false);
   }
 
   /** The lifted row let go: where it is now is where the document goes; not moved, its commands open. */
   private drop(g: Gesture, canceled: boolean): void {
-    const el = g.row.element;
+    if (this.dragged !== g) return;
+    this.dragged = null;
+    g.boxes?.stop();
+    const row = g.row.part;
     const from = g.from;
-    const moved = !!from && (el.parentElement !== from.list || el.nextElementSibling !== from.next);
+    const moved = !!from && (row.parent !== from.list || nextOf(row) !== from.next);
     if (canceled || !moved) {
-      if (from && moved) from.list.insertBefore(el, from.next);
+      if (from && moved) placeBefore(from.list, row, from.next);
       this.render();
       if (!canceled && g.doc.group) this.manager.openDocumentSheet(g.doc, g.doc.group, false, g.row.open);
       return;
     }
-    const list = el.parentElement;
-    const group = [...this.lists].find(([, part]) => part.list === list)?.[0];
-    const rows = [...(list?.children ?? [])].filter((r) => r !== el);
-    const index = rows.indexOf(el.previousElementSibling as Element) + 1;
+    const list = row.parent;
+    const group = [...this.lists].find(([, section]) => section.list === list)?.[0];
+    const index = list ? list.controls.items.indexOf(row) : -1;
     if (group) this.manager.moveFromList(g.doc, group, index);
     this.render();
-    this.rows.get(g.doc)?.open.focus({ preventScroll: true });
+    const dropped = this.rows.get(g.doc);
+    if (dropped) focusOn(dropped.open, { preventScroll: true });
   }
 }

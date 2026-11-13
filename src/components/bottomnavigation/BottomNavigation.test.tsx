@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost } from '../../../tests/helpers';
+import { measureNow, whenMeasured } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { BottomNavigation } from './BottomNavigation';
 import type { BottomNavigationItem } from './bottom-navigation-item';
@@ -46,6 +47,24 @@ describe('BottomNavigation', () => {
         expect(inbox.getAttribute('aria-current')).toBe('page');
         expect(home.hasAttribute('aria-current')).toBe(false);
         expect(bar.selectedItem).toBe(ITEMS[1]);
+    });
+
+    it('keeps its items when the value or the item list changes', async () => {
+        const bar = new BottomNavigation({ items: ITEMS, value: 'home' });
+        page(bar);
+        await tick();
+        const before = items(bar);
+        bar.value = 'me';
+        await tick();
+        expect(items(bar).every((el, i) => el === before[i])).toBe(true);
+        expect(before[3].getAttribute('aria-current')).toBe('page');
+        expect(before[3].getAttribute('tabindex')).toBe('0');
+        bar.items = [...ITEMS.slice(0, 2), { value: 'new', text: 'New' }, ...ITEMS.slice(2)];
+        await tick();
+        const after = items(bar);
+        expect(after).toHaveLength(5);
+        expect([after[0], after[1], after[3], after[4]].every((el, i) => el === before[i])).toBe(true);
+        expect(after[2].textContent).toBe('New');
     });
 
     it('takes its position as the value of an item without one', async () => {
@@ -187,16 +206,19 @@ describe('BottomNavigation', () => {
     });
 
     it('leaves while scrolling down and comes back for focus', async () => {
-        const box = document.createElement('div');
-        document.body.append(box);
+        const box = new Component<HTMLDivElement>('div');
+        page(box);
         let top = 0;
-        Object.defineProperty(box, 'scrollTop', { get: () => top });
+        Object.defineProperty(box.element, 'scrollTop', { get: () => top });
         const bar = new BottomNavigation({ items: ITEMS, hideOnScroll: true, scrollTarget: box });
         page(bar);
         await tick();
+        // The first read is where the scroll starts from.
+        await whenMeasured(bar);
         const scroll = (to: number) => {
             top = to;
-            box.dispatchEvent(new Event('scroll'));
+            box.element.dispatchEvent(new Event('scroll'));
+            measureNow(bar);
         };
         scroll(200);
         expect(bar.element.hasAttribute('data-hidden')).toBe(true);

@@ -1,19 +1,17 @@
-import type { Bind, IBaseProp } from "@motifx/core";
+import type { Bind, Component, IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
 import { functionValue } from "../../core/function-value";
-import { css, mark, put, shown, text } from "../../core/draw-parts";
+import { part, removePart } from "../../core/draw-parts";
 import { givenList } from "../../core/given-field";
-import { onLookChanged } from "../../core/look-watch";
+import { boxOf, lengthOf, measure, onLayout, probeLengths, rectOf, styleOf, textWidths } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { ResizeWatch } from "../../core/resize-watch";
-import { onFontsLoaded } from "../../core/fonts-loaded";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { Place } from "../../parts/chart/chart-paths";
-import { formatNumber, textWidth, type ChartFormat } from "../../parts/chart/chart-text";
+import { DrawnTexts, formatNumber, type ChartFormat } from "../../parts/chart/chart-text";
 import { niceTicks } from "../../parts/chart/nice-ticks";
-import { svgPart, svgPut, TextPool } from "../../parts/chart/svg-parts";
-import { TokenLengths } from "../../core/token-lengths";
+import { svgComponent, TextPool } from "../../parts/chart/svg-parts";
 import { ValueMotion } from "../../parts/chart/value-motion";
 import type { GaugeMark } from "./gauge-mark";
 import type { GaugeMarker } from "./gauge-marker";
@@ -34,6 +32,8 @@ const DEGREE = Math.PI / 180;
 const SERIES = 8;
 /** Sizes for where nothing is laid out, as in a test without a browser. */
 const UNMEASURED = { size: 160, length: 200, thickness: 12, band: 4, tick: 6, marker: 12, spacing: 4, width: 240 };
+const LENGTHS = ['--_gauge-size', '--_gauge-length', '--_gauge-thickness', '--_gauge-range-width', '--_gauge-tick-length', '--_gauge-marker-size', '--_gauge-spacing'];
+const FONT = ['font', 'font-size', 'font-family', 'line-height'] as const;
 
 interface Look {
     size: number;
@@ -54,8 +54,23 @@ interface Drawn {
     bandOut: number;
     markFrom: number;
     lineHeight: number;
-    measure: (text: string) => number;
+    widthOf: (text: string) => number;
     box: { x: number; y: number; width: number; height: number };
+}
+
+/** What a draw reads of the page before it writes. */
+interface Measured {
+    look: Look;
+    font: Record<(typeof FONT)[number], string>;
+    width: number;
+    valueHeight: number;
+}
+
+/** The parts of a mark of the scale: its shape, and the text of a callout. */
+interface MarkParts {
+    group: Component<SVGGElement>;
+    path: Component<SVGPathElement>;
+    label: Component<SVGTextElement>;
 }
 
 /**
@@ -70,85 +85,78 @@ interface Drawn {
  *        ranges={[{ from: 0, to: 70, tone: 'good' }, { from: 70, to: 90, tone: 'warning' }, { from: 90, to: 100, tone: 'danger' }]} />
  */
 export class Gauge extends Control<HTMLDivElement, GaugeProps> {
-    svg: SVGSVGElement;
-    track: SVGPathElement;
-    bands: SVGGElement;
-    fillPath: SVGPathElement;
-    minorPath: SVGPathElement;
-    tickPath: SVGPathElement;
-    tickLabels: SVGGElement;
-    probe: SVGTextElement;
+    svg: Component<SVGSVGElement>;
+    track: Component<SVGPathElement>;
+    bands: Component<SVGGElement>;
+    bandPaths: Component<SVGPathElement>[] = [];
+    fillPath: Component<SVGPathElement>;
+    minorPath: Component<SVGPathElement>;
+    tickPath: Component<SVGPathElement>;
+    tickLabels: Component<SVGGElement>;
+    /** The texts of the scale, measured in its font and numbers. */
+    texts: DrawnTexts;
     labelPool: TextPool;
-    markGroup: SVGGElement;
-    markerPath: SVGPathElement;
-    calloutGroup: SVGGElement;
-    calloutPath: SVGPathElement;
-    calloutText: SVGTextElement;
-    needlePath: SVGPathElement;
-    needleTip: SVGPathElement;
-    valueText: HTMLDivElement;
-    valueProbe: HTMLSpanElement;
-    labelText: HTMLDivElement;
-    tip: HTMLSpanElement;
+    markGroup: Component<SVGGElement>;
+    markParts: MarkParts[] = [];
+    markerPath: Component<SVGPathElement>;
+    calloutGroup: Component<SVGGElement>;
+    calloutPath: Component<SVGPathElement>;
+    calloutText: Component<SVGTextElement>;
+    needlePath: Component<SVGPathElement>;
+    needleTip: Component<SVGPathElement>;
+    valueText: Component<HTMLDivElement>;
+    labelText: Component<HTMLDivElement>;
+    tip: Component<HTMLSpanElement>;
     shape = new GaugeShape();
     motion: ValueMotion;
-    tokens: TokenLengths;
     drawn: Drawn | null = null;
     placed = false;
-    queued = false;
-    watch: ResizeWatch | null = null;
-    stopLook: (() => void) | null = null;
-    stopFonts: (() => void) | null = null;
+    stopRoom: (() => void) | null = null;
+
+    readDraw = (): Measured => ({
+        look: this.lengths(),
+        font: styleOf(this.tickLabels, FONT),
+        width: boxOf(this).clientWidth,
+        valueHeight: rectOf(this.valueText).height
+    });
+    drawMeasured = (measured: Measured) => this.draw(measured);
 
     constructor(props?: IBaseProp<GaugeProps>) {
         super('div', props);
         const own = (this.props ?? {}) as GaugeProps;
-        const el = this.element;
-        el.classList.add('mx-gauge');
-        el.setAttribute('role', 'meter');
-        const doc = el.ownerDocument;
-        const svg = svgPart(el, 'svg', 'mx-gauge__svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
+        this.class.add('mx-gauge');
+        this.attr.add({ role: 'meter' });
+        const svg = svgComponent(this, 'svg', 'mx-gauge__svg');
+        svg.attr.add({ 'aria-hidden': 'true', focusable: 'false' });
         this.svg = svg;
-        this.track = svgPart(svg, 'path', 'mx-gauge__track');
-        this.bands = svgPart(svg, 'g', 'mx-gauge__bands');
-        this.fillPath = svgPart(svg, 'path', 'mx-gauge__fill');
-        this.minorPath = svgPart(svg, 'path', 'mx-gauge__minor');
-        this.tickPath = svgPart(svg, 'path', 'mx-gauge__ticks');
-        this.tickLabels = svgPart(svg, 'g', 'mx-gauge__scale');
+        this.track = svgComponent(svg, 'path', 'mx-gauge__track');
+        this.bands = svgComponent(svg, 'g', 'mx-gauge__bands');
+        this.fillPath = svgComponent(svg, 'path', 'mx-gauge__fill');
+        this.minorPath = svgComponent(svg, 'path', 'mx-gauge__minor');
+        this.tickPath = svgComponent(svg, 'path', 'mx-gauge__ticks');
+        this.tickLabels = svgComponent(svg, 'g', 'mx-gauge__scale');
         this.labelPool = new TextPool(this.tickLabels);
-        // Texts are measured as they are drawn, with the same font and numbers.
-        this.probe = svgPart(svgPart(svg, 'g', 'mx-gauge__probe'), 'text');
-        this.markGroup = svgPart(svg, 'g', 'mx-gauge__marks');
-        this.markerPath = svgPart(svg, 'path', 'mx-gauge__marker');
-        this.calloutGroup = svgPart(svg, 'g', 'mx-gauge__callout');
-        this.calloutPath = svgPart(this.calloutGroup, 'path');
-        this.calloutText = svgPart(this.calloutGroup, 'text');
-        this.calloutText.setAttribute('text-anchor', 'middle');
-        this.calloutText.setAttribute('dominant-baseline', 'central');
-        this.needlePath = svgPart(svg, 'path', 'mx-gauge__needle');
-        this.needleTip = svgPart(svg, 'path', 'mx-gauge__needle-tip');
-        const part = (className: string) => {
-            const div = doc.createElement('div');
-            div.className = className;
-            div.setAttribute('aria-hidden', 'true');
-            el.append(div);
-            return div;
+        // Texts are measured in the font and numbers of the scale; one that comes out another size draws again.
+        this.texts = new DrawnTexts(this, () => this.again(), 'mx-gauge__probe');
+        this.markGroup = svgComponent(svg, 'g', 'mx-gauge__marks');
+        this.markerPath = svgComponent(svg, 'path', 'mx-gauge__marker');
+        this.calloutGroup = svgComponent(svg, 'g', 'mx-gauge__callout');
+        this.calloutPath = svgComponent(this.calloutGroup, 'path');
+        this.calloutText = svgComponent(this.calloutGroup, 'text');
+        this.calloutText.attr.add({ 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+        this.needlePath = svgComponent(svg, 'path', 'mx-gauge__needle');
+        this.needleTip = svgComponent(svg, 'path', 'mx-gauge__needle-tip');
+        const hidden = <E extends HTMLElement>(tag: string, className: string) => {
+            const made = part<E>(this, tag, className);
+            made.attr.add({ 'aria-hidden': 'true' });
+            return made;
         };
-        this.valueText = part('mx-gauge__value');
-        this.valueProbe = doc.createElement('span');
-        this.valueProbe.className = 'mx-gauge__value-probe';
-        this.valueProbe.setAttribute('aria-hidden', 'true');
-        el.append(this.valueProbe);
-        this.labelText = part('mx-gauge__label');
-        this.tip = doc.createElement('span');
-        this.tip.className = 'mx-gauge__tip';
-        this.tip.setAttribute('aria-hidden', 'true');
-        el.append(this.tip);
+        this.valueText = hidden<HTMLDivElement>('div', 'mx-gauge__value');
+        this.labelText = hidden<HTMLDivElement>('div', 'mx-gauge__label');
+        this.tip = hidden<HTMLSpanElement>('span', 'mx-gauge__tip');
         shown(this.tip, false);
-        this.motion = new ValueMotion(el, values => this.drawValue(values[0] ?? null));
-        this.tokens = new TokenLengths(el, ['--_gauge-size', '--_gauge-length', '--_gauge-thickness', '--_gauge-range-width', '--_gauge-tick-length', '--_gauge-marker-size', '--_gauge-spacing'], () => this.again());
+        this.motion = new ValueMotion(this, values => this.drawValue(values[0] ?? null));
+        probeLengths(this, LENGTHS);
 
         // A function that takes a value is the value itself, not a live one.
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, FUNCTIONS.includes(name) ? functionValue(own[name]) : own[name]);
@@ -158,15 +166,14 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         }
         onLanguage(this, () => this.again());
         onReState(this, () => this.again());
-        el.addEventListener('pointermove', e => this.pointAt(e));
-        el.addEventListener('pointerleave', () => shown(this.tip, false));
+        onLayout(this, 'size', () => this.again());
+        onLayout(this, 'look', () => this.again());
+        this.motif.on('pointermove', (_, e) => this.pointAt(e));
+        this.motif.on('pointerleave', () => shown(this.tip, false));
         this.motion.set([null]);
         this.motif.setDisposable(() => {
             this.motion.stop();
-            this.tokens.dispose();
-            this.watch?.disconnect();
-            this.stopLook?.();
-            this.stopFonts?.();
+            this.stopRoom?.();
         });
     }
 
@@ -174,12 +181,8 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
     override onMounted(): void {
         if (this.placed) return;
         this.placed = true;
-        this.watch = new ResizeWatch(() => this.again());
-        this.watch.observe(this.element);
-        this.stopLook = onLookChanged(() => this.again());
-        this.stopFonts = onFontsLoaded(this.element, () => this.again());
         this.motion.set([this.value]);
-        this.draw();
+        this.again();
     }
 
     // Properties (see GaugeProps).
@@ -348,13 +351,26 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         return formatNumber(value, this.format ?? undefined, uiLocale.locale);
     }
 
+    /**
+     * Writes what the drawing is measured with now, and draws with the next reads of the window. A straight gauge first
+     * measures the room its value keeps.
+     */
     again(): void {
-        if (this.queued || !this.placed) return;
-        this.queued = true;
-        queueMicrotask(() => {
-            this.queued = false;
-            if (!this.isDisposed) this.draw();
-        });
+        if (!this.placed || this.isDisposed) return;
+        this.drawText();
+        this.stopRoom?.();
+        this.stopRoom = null;
+        if (this.type !== 'linear') {
+            css(this, '--_value-room', '');
+            measure(this, this.readDraw, this.drawMeasured);
+            return;
+        }
+        // A straight gauge lays its value out beside or under the bar: it keeps the room of the widest value of the
+        // scale, so the gauge keeps its size while the value changes.
+        this.stopRoom = textWidths(this, this.roomValues(), widths => {
+            css(this, '--_value-room', `${Math.ceil(Math.max(0, ...widths))}px`);
+            measure(this, this.readDraw, this.drawMeasured);
+        }, 'mx-gauge__value-probe');
     }
 
     moveTo(): void {
@@ -364,15 +380,14 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
     }
 
     lengths(): Look {
-        const t = this.tokens;
         return {
-            size: this.size ?? t.get('--_gauge-size', UNMEASURED.size),
-            length: this.size ?? t.get('--_gauge-length', UNMEASURED.length),
-            thickness: t.get('--_gauge-thickness', UNMEASURED.thickness),
-            band: t.get('--_gauge-range-width', UNMEASURED.band),
-            tick: t.get('--_gauge-tick-length', UNMEASURED.tick),
-            marker: t.get('--_gauge-marker-size', UNMEASURED.marker),
-            spacing: t.get('--_gauge-spacing', UNMEASURED.spacing)
+            size: this.size ?? lengthOf(this, '--_gauge-size', UNMEASURED.size),
+            length: this.size ?? lengthOf(this, '--_gauge-length', UNMEASURED.length),
+            thickness: lengthOf(this, '--_gauge-thickness', UNMEASURED.thickness),
+            band: lengthOf(this, '--_gauge-range-width', UNMEASURED.band),
+            tick: lengthOf(this, '--_gauge-tick-length', UNMEASURED.tick),
+            marker: lengthOf(this, '--_gauge-marker-size', UNMEASURED.marker),
+            spacing: lengthOf(this, '--_gauge-spacing', UNMEASURED.spacing)
         };
     }
 
@@ -402,34 +417,40 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         return { majors, minors };
     }
 
-    draw(): void {
-        const el = this.element;
+    /** The type, the name, the value and the label: what the drawing is laid out and measured with. */
+    drawText(): void {
+        const type = this.type;
+        const straight = type === 'linear';
+        const marker = this.markerKind();
+        const value = this.value;
+        put(this, 'data-type', type);
+        put(this, 'data-orientation', straight ? this.orientation : null);
+        mark(this, 'data-needle', marker === 'needle');
+        this.drawName(value);
+        text(this.valueText, value === null ? '' : this.number(value));
+        text(this.labelText, this.label);
+        shown(this.valueText, this.showValue && value !== null && marker !== 'text');
+        shown(this.labelText, !!this.label);
+    }
+
+    draw(measured: Measured): void {
         const type = this.type;
         const straight = type === 'linear';
         const vertical = straight && this.orientation === 'vertical';
         const marker = this.markerKind();
-        put(el, 'data-type', type);
-        put(el, 'data-orientation', straight ? this.orientation : null);
-        mark(el, 'data-needle', marker === 'needle');
         const min = this.min;
         const max = this.max === min ? min + 1 : this.max;
         const value = this.value;
-        this.drawName(value);
-        text(this.valueText, value === null ? '' : this.number(value));
-        // A straight gauge lays its value out beside or under the bar: it keeps the room of the widest value of the
-        // scale, so the gauge keeps its size while the value changes.
-        css(el, '--_value-room', straight ? `${this.valueRoom(min, max, value)}px` : '');
-        text(this.labelText, this.label);
-        shown(this.valueText, this.showValue && value !== null && marker !== 'text');
-        shown(this.labelText, !!this.label);
 
-        const look = this.lengths();
-        const view = el.ownerDocument.defaultView;
-        const style = view?.getComputedStyle(this.tickLabels);
-        const font = style?.font || `${style?.fontSize || '12px'} ${style?.fontFamily || 'sans-serif'}`;
-        const fontSize = parseFloat(style?.fontSize ?? '') || 12;
-        const lineHeight = Math.max(parseFloat(style?.lineHeight ?? '') || 0, this.textBox('0', font, fontSize * 1.35).height);
-        const measure = (t: string) => this.textBox(t, font, lineHeight).width;
+        const look = measured.look;
+        const style = measured.font;
+        const font = style.font || `${style['font-size'] || '12px'} ${style['font-family'] || 'sans-serif'}`;
+        const fontSize = parseFloat(style['font-size']) || 12;
+        const texts = this.texts;
+        const lineHeight = Math.max(parseFloat(style['line-height']) || 0, texts.height('0', fontSize * 1.35));
+        const widthOf = (t: string) => texts.width(t, font);
+        // The value on its way to a new one is drawn with the widths known: it asks for none.
+        const movingWidth = (t: string) => texts.peek(t, font);
         const share = (v: number) => Math.max(0, Math.min(1, (v - min) / (max - min)));
         const ranges = givenList(this.ranges);
         const marks = givenList(this.marks);
@@ -441,7 +462,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         const bandIn = half + (ranges.length ? Math.max(2, look.band / 2) : 0);
         const bandOut = ranges.length ? bandIn + look.band : half;
         const dot = Math.max(half + 2, look.marker / 2);
-        const callout = (t: string) => ({ width: measure(t) + gap * 2, height: lineHeight + gap });
+        const callout = (t: string) => ({ width: widthOf(t) + gap * 2, height: lineHeight + gap });
         const shapes = [...marks.map(m => this.shapeOf(m)), marker];
         const calloutTexts = [...marks.filter(m => this.shapeOf(m) === 'text').map(m => this.number(m.value)), ...(marker === 'text' && value !== null ? [this.number(value)] : [])];
         const widest = Math.max(0, ...calloutTexts.map(t => callout(t).width));
@@ -451,9 +472,8 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         const lined = shapes.includes('line');
         const near = Math.max(half, dotted ? dot : 0, lined ? half + 2 : 0);
 
-        const { majors, minors } = this.tickValues(min, max, straight ? (vertical ? look.length : el.clientWidth || UNMEASURED.width) : look.size * 1.6);
-        const labels = majors.map(v => ({ v, text: this.number(v), width: measure(this.number(v)), height: lineHeight }));
-        this.probe.textContent = '';
+        const { majors, minors } = this.tickValues(min, max, straight ? (vertical ? look.length : measured.width || UNMEASURED.width) : look.size * 1.6);
+        const labels = majors.map(v => ({ v, text: this.number(v), width: widthOf(this.number(v)), height: lineHeight }));
         if (type === 'circle' && labels.length > 1 && share(labels.at(-1)!.v) - share(labels[0].v) >= 1) labels.pop();
         const ticked = scale === 'ticks';
         const reach = (n: Place, l: { width: number; height: number }) => Math.abs(n[0]) * l.width + Math.abs(n[1]) * l.height;
@@ -484,8 +504,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             }
             // The value is written over the middle: the drawing leaves room for it.
             if (marker !== 'needle' && this.showValue && value !== null) {
-                const valueBox = this.valueText.getBoundingClientRect();
-                const room = (valueBox.height || lineHeight * 2) / 2;
+                const room = (measured.valueHeight || lineHeight * 2) / 2;
                 points.push([shape.cx, shape.cy + room]);
             }
             if (marker === 'needle') {
@@ -515,9 +534,9 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             box.height = Math.ceil(Math.max(...ys)) - box.y + 1;
             this.drawTicks(majors, minors, share, tickIn, look.tick, 1, ticked);
             this.drawLabels(placed);
-            css(el, '--_center-x', `${(shape.cx - box.x).toFixed(1)}px`);
-            css(el, '--_center-y', `${(shape.cy - box.y).toFixed(1)}px`);
-            this.drawn = { min, max, look, straight, bandOut, markFrom: bandOut, lineHeight, measure, box };
+            css(this, '--_center-x', `${(shape.cx - box.x).toFixed(1)}px`);
+            css(this, '--_center-y', `${(shape.cy - box.y).toFixed(1)}px`);
+            this.drawn = { min, max, look, straight, bandOut, markFrom: bandOut, lineHeight, widthOf: movingWidth, box };
         } else {
             const n: Place = vertical ? [1, 0] : [0, -1];
             const outward = Math.max(bandOut + markRoom(n), near);
@@ -531,7 +550,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             const endLabel = labels.length && !ends ? Math.max(...labels.map(l => (vertical ? l.height : l.width) / 2)) : 0;
             const endShape = Math.max(dotted ? dot : 0, shapes.includes('triangle') ? look.marker * 0.6 : 0, calloutTexts.length ? (vertical ? lineHeight : widest) / 2 + gap : 0);
             const inset = Math.max(endLabel, endShape);
-            const length = vertical ? look.length : el.clientWidth || UNMEASURED.width;
+            const length = vertical ? look.length : measured.width || UNMEASURED.width;
             const across = Math.ceil(outward + inward);
             shape.kind = vertical ? 'vertical' : 'horizontal';
             if (vertical) {
@@ -556,43 +575,33 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             });
             this.drawTicks(majors, minors, share, tickIn, look.tick, -1, ticked);
             this.drawLabels(placed);
-            this.drawn = { min, max, look, straight, bandOut, markFrom: bandOut, lineHeight, measure, box };
+            this.drawn = { min, max, look, straight, bandOut, markFrom: bandOut, lineHeight, widthOf: movingWidth, box };
         }
 
-        svgPut(this.svg, 'viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
-        svgPut(this.svg, 'width', box.width);
-        svgPut(this.svg, 'height', box.height);
-        css(el, '--_drawn-width', straight && !vertical ? '' : `${box.width}px`);
-        svgPut(this.track, 'd', shape.strip(0, 1, -half, half, straight) || null);
-        while (this.bands.children.length > ranges.length) this.bands.lastElementChild!.remove();
+        put(this.svg, 'viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+        put(this.svg, 'width', String(box.width));
+        put(this.svg, 'height', String(box.height));
+        css(this, '--_drawn-width', straight && !vertical ? '' : `${box.width}px`);
+        put(this.track, 'd', shape.strip(0, 1, -half, half, straight) || null);
+        for (const extra of this.bandPaths.splice(ranges.length)) removePart(extra);
         ranges.forEach((r, i) => {
-            const path = (this.bands.children[i] as SVGPathElement | undefined) ?? svgPart(this.bands, 'path', 'mx-gauge__band');
-            path.style.setProperty('--_band', this.toneOf(r));
-            svgPut(path, 'd', shape.strip(share(r.from), share(r.to), bandIn, bandOut) || null);
+            const path = (this.bandPaths[i] ??= svgComponent(this.bands, 'path', 'mx-gauge__band'));
+            css(path, '--_band', this.toneOf(r));
+            put(path, 'd', shape.strip(share(r.from), share(r.to), bandIn, bandOut) || null);
         });
         this.drawMarks(marks, share);
         this.drawValue(this.motion.shown[0] ?? value);
+        texts.ask();
     }
 
-    /** The size of a text as the scale draws it; an estimate where nothing is laid out. */
-    textBox(value: string, font: string, height: number): { width: number; height: number } {
-        this.probe.textContent = value;
-        const width = typeof this.probe.getComputedTextLength === 'function' ? this.probe.getComputedTextLength() : 0;
-        if (!width) return { width: textWidth(value, font, this.element.ownerDocument), height };
-        return { width, height: Math.max(height, this.probe.getBBox().height) };
-    }
-
-    /** The width of the widest value the gauge can show: the ends of the scale, or a value past them. */
-    valueRoom(min: number, max: number, value: number | null): number {
+    /** The values the gauge keeps room for: the ends of the scale, or a value past them. */
+    roomValues(): string[] {
+        const min = this.min;
+        const max = this.max === min ? min + 1 : this.max;
+        const value = this.value;
         const values = [min, max];
         if (value !== null && (value < Math.min(min, max) || value > Math.max(min, max))) values.push(value);
-        let widest = 0;
-        for (const v of values) {
-            this.valueProbe.textContent = this.number(v);
-            widest = Math.max(widest, this.valueProbe.getBoundingClientRect().width);
-        }
-        this.valueProbe.textContent = '';
-        return Math.ceil(widest);
+        return values.map(v => this.number(v));
     }
 
     markerKind(): GaugeMarker | null {
@@ -612,37 +621,36 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             const [x2, y2] = this.shape.point(spot, (from + to) * side);
             return `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
         };
-        svgPut(this.tickPath, 'd', on && majors.length ? majors.map(v => segment(v, length)).join('') : null);
-        svgPut(this.minorPath, 'd', on && minors.length ? minors.map(v => segment(v, length / 2)).join('') : null);
+        put(this.tickPath, 'd', on && majors.length ? majors.map(v => segment(v, length)).join('') : null);
+        put(this.minorPath, 'd', on && minors.length ? minors.map(v => segment(v, length / 2)).join('') : null);
     }
 
     drawLabels(labels: readonly { text: string; at: Place; anchor: 'start' | 'middle' | 'end' }[]): void {
-        for (const l of labels) this.labelPool.add(l.text, l.at[0], l.at[1], l.anchor).setAttribute('dominant-baseline', 'central');
+        for (const l of labels) put(this.labelPool.add(l.text, l.at[0], l.at[1], l.anchor), 'dominant-baseline', 'central');
         this.labelPool.done();
     }
 
     drawMarks(marks: readonly GaugeMark[], share: (v: number) => number): void {
         const drawn = this.drawn!;
-        while (this.markGroup.children.length > marks.length) this.markGroup.lastElementChild!.remove();
+        for (const extra of this.markParts.splice(marks.length)) removePart(extra.group);
         marks.forEach((m, i) => {
-            let g = this.markGroup.children[i] as SVGGElement | undefined;
-            if (!g) {
-                g = svgPart(this.markGroup, 'g', 'mx-gauge__mark');
-                svgPart(g, 'path');
-                const t = svgPart(g, 'text');
-                t.setAttribute('text-anchor', 'middle');
-                t.setAttribute('dominant-baseline', 'central');
-            }
-            const path = g.children[0] as SVGPathElement;
-            const label = g.children[1] as SVGTextElement;
+            const parts = (this.markParts[i] ??= this.makeMark());
             const kind = this.shapeOf(m);
-            svgPut(g, 'data-shape', kind);
+            put(parts.group, 'data-shape', kind);
             const drawnShape = this.shapePath(kind, share(m.value), drawn, this.number(m.value));
-            svgPut(path, 'd', drawnShape.d || null);
-            if (label.textContent !== drawnShape.text) label.textContent = drawnShape.text;
-            svgPut(label, 'x', drawnShape.at ? drawnShape.at[0].toFixed(1) : null);
-            svgPut(label, 'y', drawnShape.at ? drawnShape.at[1].toFixed(1) : null);
+            put(parts.path, 'd', drawnShape.d || null);
+            text(parts.label, drawnShape.text);
+            put(parts.label, 'x', drawnShape.at ? drawnShape.at[0].toFixed(1) : null);
+            put(parts.label, 'y', drawnShape.at ? drawnShape.at[1].toFixed(1) : null);
         });
+    }
+
+    makeMark(): MarkParts {
+        const group = svgComponent(this.markGroup, 'g', 'mx-gauge__mark');
+        const path = svgComponent(group, 'path');
+        const label = svgComponent(group, 'text');
+        label.attr.add({ 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+        return { group, path, label };
     }
 
     /** The path of a marker or a mark, and its text for a callout. */
@@ -663,7 +671,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
                 const gap = drawn.look.spacing;
                 // On an arc a callout sits inside, so it does not push the scale away from the track.
                 const inward = !drawn.straight;
-                const box = shape.callout(at, inward ? half : drawn.markFrom, drawn.measure(value) + gap * 2, drawn.lineHeight + gap, marker / 2, gap, inward);
+                const box = shape.callout(at, inward ? half : drawn.markFrom, drawn.widthOf(value) + gap * 2, drawn.lineHeight + gap, marker / 2, gap, inward);
                 return { d: box.d, text: value, at: box.text };
             }
             case 'needle': {
@@ -682,9 +690,9 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         const half = look.thickness / 2;
         const shape = this.shape;
         const base = this.baseValue ?? min;
-        svgPut(this.fillPath, 'd', this.fill && shownValue !== null ? shape.strip(share(base), share(shownValue), -half, half, straight) || null : null);
+        put(this.fillPath, 'd', this.fill && shownValue !== null ? shape.strip(share(base), share(shownValue), -half, half, straight) || null : null);
         // The color goes with the fill, so it changes where the fill crosses into a range.
-        css(this.element, '--_tone', this.toneOf(this.rangeOf(shownValue)));
+        css(this, '--_tone', this.toneOf(this.rangeOf(shownValue)));
 
         const marker = this.markerKind();
         const at = shownValue === null ? null : share(shownValue);
@@ -705,13 +713,13 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             }
         } else if (at !== null && marker === 'text') callout = this.shapePath('text', at, drawn, this.number(this.value ?? shownValue!));
         else if (at !== null && marker) markerD = this.shapePath(marker, at, drawn, '').d;
-        svgPut(this.markerPath, 'd', markerD);
-        svgPut(this.needlePath, 'd', needleD);
-        svgPut(this.needleTip, 'd', tipD);
-        svgPut(this.calloutPath, 'd', callout?.d ?? null);
-        if (this.calloutText.textContent !== (callout?.text ?? '')) this.calloutText.textContent = callout?.text ?? '';
-        svgPut(this.calloutText, 'x', callout?.at ? callout.at[0].toFixed(1) : null);
-        svgPut(this.calloutText, 'y', callout?.at ? callout.at[1].toFixed(1) : null);
+        put(this.markerPath, 'd', markerD);
+        put(this.needlePath, 'd', needleD);
+        put(this.needleTip, 'd', tipD);
+        put(this.calloutPath, 'd', callout?.d ?? null);
+        text(this.calloutText, callout?.text ?? '');
+        put(this.calloutText, 'x', callout?.at ? callout.at[0].toFixed(1) : null);
+        put(this.calloutText, 'y', callout?.at ? callout.at[1].toFixed(1) : null);
     }
 
     hubPath(radius: number): string {
@@ -721,19 +729,18 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
     }
 
     drawName(value: number | null): void {
-        const el = this.element;
-        el.setAttribute('aria-label', this.label || uiLocale.strings.gaugeName);
-        put(el, 'aria-valuemin', String(Math.min(this.min, this.max)));
-        put(el, 'aria-valuemax', String(Math.max(this.min, this.max)));
-        put(el, 'aria-valuenow', value === null ? null : String(value));
+        put(this, 'aria-label', this.label || uiLocale.strings.gaugeName);
+        put(this, 'aria-valuemin', String(Math.min(this.min, this.max)));
+        put(this, 'aria-valuemax', String(Math.max(this.min, this.max)));
+        put(this, 'aria-valuenow', value === null ? null : String(value));
         if (value === null) {
-            put(el, 'aria-valuetext', null);
+            put(this, 'aria-valuetext', null);
             return;
         }
         const range = this.rangeOf(value);
         const parts = [range?.label ? uiLocale.text('gaugeValueIn', { value: this.number(value), range: range.label }) : this.number(value)];
         for (const m of givenList(this.marks)) parts.push(this.markText(m));
-        put(el, 'aria-valuetext', parts.join('; '));
+        put(this, 'aria-valuetext', parts.join('; '));
     }
 
     markText(m: GaugeMark): string {
@@ -745,7 +752,8 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         const drawn = this.drawn;
         const value = this.value;
         if (!this.tooltip || !drawn) return;
-        const rect = this.svg.getBoundingClientRect();
+        const rect = rectOf(this.svg);
+        const host = rectOf(this);
         if (!rect.width || !rect.height) return;
         const scale = drawn.box.width / rect.width;
         const x = drawn.box.x + (e.clientX - rect.left) * scale;
@@ -770,7 +778,6 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             return;
         }
         const [px, py] = this.shape.spot(best.at).c;
-        const host = this.element.getBoundingClientRect();
         text(this.tip, best.text);
         shown(this.tip, true);
         css(this.tip, 'left', `${(rect.left - host.left + (px - drawn.box.x) / scale).toFixed(1)}px`);

@@ -1,7 +1,8 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { ResizeWatch } from '../../core/resize-watch';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { part, partBefore } from '../../core/draw-parts';
+import { boxOf, lengthOf, measure, onLayout, pageOf, probeLengths, readAgain, rectOf, scrollerUnder, viewportOf } from '../../core/measure';
+import { css, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
-import { cssLength } from '../../parts/overlay/css-length';
 import { OverlayPanel } from '../../parts/overlay/OverlayPanel';
 import { SwipeTracker } from '../../parts/overlay/swipe-tracker';
 import type { BottomSheetDetent } from './bottom-sheet-detent';
@@ -17,10 +18,23 @@ const DEFAULT_DETENTS: readonly BottomSheetDetent[] = ['half', 'full'];
 /** How far, in pixels, a finger moves before the sheet decides it is a drag and which way. */
 const SLOP = 6;
 
+const TOP_GAP = '--mx-sheet-top-gap';
+const PEEK = '--mx-sheet-peek-height';
+
 /** One of the heights, as it measures now. */
 interface Stop {
   detent: BottomSheetDetent;
   px: number;
+}
+
+/** What the heights are made of, as it measures now. */
+interface Room {
+  /** The height of what it opens over, less the on-screen keyboard over the page. */
+  height: number;
+  /** How much of the page the on-screen keyboard covers; 0 over a container. */
+  keyboard: number;
+  gap: number;
+  peek: number;
 }
 
 /** A drag of the sheet that is going on. */
@@ -31,17 +45,29 @@ interface Drag {
   /** The pointer or touch it follows. */
   id: number;
   moved: boolean;
+  /** The heights and the room as they measured when it began. */
+  stops: Stop[];
+  room: number;
 }
 
 interface Parts {
-  handle: HTMLDivElement;
-  grip: HTMLSpanElement;
+  handlePart: Component<HTMLDivElement>;
+  grip: Component<HTMLSpanElement>;
   /** The height it is at now, in pixels. */
   size: number;
+  /** The height as written on the panel, `''` until it is first placed: measuring the content puts it back. */
+  sizeValue: string;
+  /** How far it is pulled below its lowest height now, in whole pixels. */
+  drop: number;
   drag: Drag | null;
   /** A touch on the content that may become a drag. */
   touch: { id: number; x: number; y: number; decided: boolean; take: boolean } | null;
-  watch: ResizeWatch | null;
+  /** The heights as last placed, the lowest first. */
+  stops: Stop[];
+  /** The height of its content as last measured, for a `fit` height. */
+  fit: number;
+  readRoom: () => Room;
+  place: (room: Room) => void;
   /** Stops following the on-screen keyboard. */
   stopKeyboard: (() => void) | null;
   stopTexts: (() => void) | null;
@@ -76,16 +102,23 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onDetentChanging) this.onDetentChanging(own.onDetentChanging);
     if (own.onDetentChanged) this.onDetentChanged(own.onDetentChanged);
-    this.observeProperty<boolean | undefined>('showHandle', (on) => (parts.handle.hidden = on === false));
+    this.observeProperty<boolean | undefined>('showHandle', (on) => mark(parts.handlePart, 'hidden', on === false));
     this.observeProperty('detents', () => this.isOpen && this.placePanel());
-    this.observeProperty('topGap', () => this.isOpen && this.placePanel());
+    this.observeProperty('topGap', () => {
+      this.probeGap();
+      if (this.isOpen) this.placePanel();
+    });
+    this.probeGap();
     parts.stopTexts = onLanguage(this, () => this.renderHandle());
     this.listenDrag();
+    // It covers what it opens over: a change of its size, or of the look its lengths come from, places it again.
+    const follow = () => this.isOpen && !parts.drag && this.placePanel();
+    onLayout(this, 'size', follow);
+    onLayout(this, 'look', follow);
     // Whether the content scrolls is known once a change of height has run.
-    this.panelElement.addEventListener('transitionend', (e) => e.target === this.panelElement && e.propertyName === 'block-size' && this.updateBodyFocus());
+    this.panelPart.motif.on('transitionend:self', (_, e: TransitionEvent | undefined) => e?.propertyName === 'block-size' && this.updateBodyFocus());
     this.motif.setDisposable(() => {
       parts.stopTexts?.();
-      parts.watch?.disconnect();
       parts.detentChanging.dispose();
       parts.detentChanged.dispose();
     });
@@ -181,39 +214,36 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     if (name === 'detent' && sheet && this.isOpen && !sheet.drag) this.placePanel();
   }
 
+  /** Measures what it opens over with the next frame of its window and places the panel at its height then. */
   protected override placePanel(): void {
     const parts = this.sheet;
-    const stops = this.stops();
+    measure(this, parts.readRoom, parts.place);
+    if (!parts.stopKeyboard) {
+      parts.stopKeyboard = onLayout(this, 'viewport', () => this.isOpen && !parts.drag && this.placePanel());
+    }
+  }
+
+  private place(room: Room): void {
+    const parts = this.sheet;
+    if (!this.isOpen || parts.drag) return;
+    if (this.detents.includes('fit')) parts.fit = this.fitHeight();
+    const stops = this.stopsIn(room);
     const at = stops.find((s) => sameDetent(s.detent, this.peekProperty<BottomSheetDetent>('detent') ?? this.detents[0])) ?? stops[0];
     if (!at) return;
-    this.setSize(at.px, 0);
+    parts.stops = stops;
+    this.setSize(at.px, 0, room.height);
     this.renderHandle();
     this.updateBodyFocus();
     // Over the page it stands on the on-screen keyboard, so a field in it stays in sight.
-    const over = this.overElement === this.element.ownerDocument.documentElement;
-    const lift = over ? this.keyboard() : 0;
-    if (lift) this.element.style.setProperty('--_keyboard', `${lift}px`);
-    else this.element.style.removeProperty('--_keyboard');
-    if (!parts.watch) {
-      parts.watch = new ResizeWatch(() => {
-        if (this.isOpen && !parts.drag) this.placePanel();
-      });
-      parts.watch.observe(this.overElement);
-      const visual = this.element.ownerDocument.defaultView?.visualViewport;
-      const follow = () => this.isOpen && !parts.drag && this.placePanel();
-      visual?.addEventListener('resize', follow);
-      parts.stopKeyboard = () => visual?.removeEventListener('resize', follow);
-    }
+    css(this, '--_keyboard', room.keyboard ? `${room.keyboard}px` : '');
   }
 
   protected override panelClosed(): void {
     const parts = this.sheet;
-    parts.watch?.disconnect();
-    parts.watch = null;
     parts.stopKeyboard?.();
     parts.stopKeyboard = null;
     parts.drag = null;
-    this.element.removeAttribute('data-dragging');
+    mark(this, 'data-dragging', false);
   }
 
   private get sheet(): Parts {
@@ -222,26 +252,25 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
   }
 
   private createSheet(): Parts {
-    const doc = this.element.ownerDocument;
-    const handle = doc.createElement('div');
-    handle.className = 'mx-bottom-sheet__handle';
-    handle.tabIndex = 0;
-    handle.setAttribute('role', 'slider');
-    handle.setAttribute('aria-orientation', 'vertical');
-    handle.setAttribute('aria-valuemin', '0');
-    handle.setAttribute('aria-valuemax', '100');
-    const grip = doc.createElement('span');
-    grip.className = 'mx-bottom-sheet__grip';
-    grip.setAttribute('aria-hidden', 'true');
-    handle.append(grip);
-    this.panelElement.prepend(handle);
+    // First in the panel, above its header.
+    const panel = this.panelPart;
+    const handlePart = partBefore<HTMLDivElement>(panel, panel.controls.items[0] ?? null, 'div', 'mx-bottom-sheet__handle');
+    put(handlePart, 'tabindex', '0');
+    handlePart.attr.add({ role: 'slider', 'aria-orientation': 'vertical', 'aria-valuemin': '0', 'aria-valuemax': '100' });
+    const grip = part<HTMLSpanElement>(handlePart, 'span', 'mx-bottom-sheet__grip');
+    grip.attr.add({ 'aria-hidden': 'true' });
     return {
-      handle,
+      handlePart,
       grip,
       size: 0,
+      sizeValue: '',
+      drop: 0,
       drag: null,
       touch: null,
-      watch: null,
+      stops: [],
+      fit: 0,
+      readRoom: () => this.readRoom(),
+      place: (room) => this.place(room),
       stopKeyboard: null,
       stopTexts: null,
       detentChanging: new Emitter(),
@@ -249,83 +278,94 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     };
   }
 
-  /** The heights as they measure now, the lowest first; none taller than full. */
+  /** The heights as they measure now, read at the start of a key or a gesture; a `fit` height as last placed. */
   private stops(): Stop[] {
-    const room = this.room();
-    const gap = this.peekProperty<number | string | null>('topGap');
-    const full = Math.max(0, room - cssLength(this.overElement, gap === null || gap === undefined || gap === '' ? 'var(--mx-sheet-top-gap)' : gap));
+    return this.stopsIn(this.readRoom());
+  }
+
+  /** The heights in `room`, the lowest first; none taller than full. */
+  private stopsIn(room: Room): Stop[] {
+    const full = Math.max(0, room.height - room.gap);
     const out: Stop[] = [];
     for (const detent of this.detents) {
-      const px = Math.min(full, Math.max(0, this.measure(detent, room, full)));
+      const px = Math.min(full, Math.max(0, this.heightOf(detent, room, full)));
       if (!out.some((s) => Math.abs(s.px - px) < 1)) out.push({ detent, px });
     }
     return out.sort((a, b) => a.px - b.px);
   }
 
-  private measure(detent: BottomSheetDetent, room: number, full: number): number {
+  private heightOf(detent: BottomSheetDetent, room: Room, full: number): number {
     if (typeof detent === 'number') return detent;
     if (detent === 'full') return full;
-    if (detent === 'half') return room / 2;
-    if (detent === 'peek') return cssLength(this.overElement, 'var(--mx-sheet-peek-height)');
-    if (detent === 'fit') return this.fitHeight();
+    if (detent === 'half') return room.height / 2;
+    if (detent === 'peek') return room.peek;
+    if (detent === 'fit') return this.sheet.fit;
     const share = parseFloat(detent);
-    return share >= 0 ? (room * share) / 100 : room / 2;
+    return share >= 0 ? (room.height * share) / 100 : room.height / 2;
   }
 
-  /** As tall as the content needs, measured with no height of its own. */
+  /** As tall as the content needs, measured with no height of its own: a fit, in the write of a placement. */
   private fitHeight(): number {
-    const panel = this.panelElement;
-    const before = panel.style.getPropertyValue('--_size');
-    panel.style.setProperty('--_size', 'auto');
-    const height = panel.getBoundingClientRect().height;
-    if (before) panel.style.setProperty('--_size', before);
-    else panel.style.removeProperty('--_size');
+    css(this.panelPart, '--_size', 'auto');
+    const height = readAgain(() => rectOf(this.panelPart).height);
+    css(this.panelPart, '--_size', this.sheet.sizeValue);
     return height;
   }
 
-  /** The height of what it opens over. */
-  private room(): number {
-    const over = this.overElement;
-    if (over !== this.element.ownerDocument.documentElement) return over.clientHeight;
+  /** What it opens over and the lengths its heights read there. */
+  private readRoom(): Room {
+    const over = this.overPage ? null : this.containerPart;
+    const keyboard = over ? 0 : this.keyboard();
     // Over the page: what the on-screen keyboard leaves of it.
-    return (over.clientHeight || this.element.ownerDocument.defaultView?.innerHeight || 0) - this.keyboard();
+    const height = over ? boxOf(over).clientHeight : pageOf(this).height - keyboard;
+    const gap = this.peekProperty<number | string | null>('topGap');
+    return {
+      height,
+      keyboard,
+      gap: typeof gap === 'number' ? gap : lengthOf(this, gap || TOP_GAP, 0, 'block'),
+      peek: lengthOf(this, PEEK, 0, 'block'),
+    };
+  }
+
+  /** Makes the probes of the lengths its heights read, the top gap given now included. */
+  private probeGap(): void {
+    const gap = this.peekProperty<number | string | null>('topGap');
+    probeLengths(this, typeof gap === 'string' && gap ? [TOP_GAP, PEEK, gap] : [TOP_GAP, PEEK], 'block');
   }
 
   /** How much of the page the on-screen keyboard covers now, in pixels (0 without one). */
   private keyboard(): number {
-    const view = this.element.ownerDocument.defaultView;
-    const visual = view?.visualViewport;
-    if (!view || !visual) return 0;
-    return Math.max(0, Math.round(view.innerHeight - visual.height - visual.offsetTop));
+    const seen = viewportOf(this);
+    return Math.max(0, Math.round(seen.windowHeight - seen.bottom));
   }
 
   /** Its height and how far below it is pulled (a drag past its lowest height). */
-  private setSize(px: number, drop: number): void {
+  private setSize(px: number, drop: number, room: number): void {
     const parts = this.sheet;
     parts.size = px;
-    const style = this.panelElement.style;
-    style.setProperty('--_size', `${Math.round(px)}px`);
-    this.element.toggleAttribute('data-full', px >= this.room() - 1);
-    if (drop > 0) style.setProperty('--_drop', `${Math.round(drop)}px`);
-    else style.removeProperty('--_drop');
+    parts.sizeValue = `${Math.round(px)}px`;
+    parts.drop = drop > 0 ? Math.round(drop) : 0;
+    css(this.panelPart, '--_size', parts.sizeValue);
+    mark(this, 'data-full', px >= room - 1);
+    css(this.panelPart, '--_drop', drop > 0 ? `${parts.drop}px` : '');
   }
 
   private renderHandle(): void {
     const parts = this.sheet;
     const strings = uiLocale.strings;
-    const handle = parts.handle;
-    handle.setAttribute('aria-label', strings.sheetHandle);
-    const full = this.stops().reduce((m, s) => Math.max(m, s.px), 0);
+    const handle = parts.handlePart;
+    put(handle, 'aria-label', strings.sheetHandle);
+    const full = parts.stops.reduce((m, s) => Math.max(m, s.px), 0);
     const detent = this.peekProperty<BottomSheetDetent>('detent') ?? this.detents[0];
-    handle.setAttribute('aria-valuenow', String(full > 0 ? Math.round((parts.size / full) * 100) : 0));
-    handle.setAttribute('aria-valuetext', detentText(detent));
-    if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', strings.sheetLabel);
+    put(handle, 'aria-valuenow', String(full > 0 ? Math.round((parts.size / full) * 100) : 0));
+    put(handle, 'aria-valuetext', detentText(detent));
+    if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) put(this.panelPart, 'aria-label', strings.sheetLabel);
   }
 
-  /** Goes `by` heights up (1) or down (-1). */
-  private step(by: 1 | -1, byUser: boolean): boolean {
-    const stops = this.stops();
-    const at = this.nearest(stops, this.sheet.size);
+  /** Goes `by` heights up (1) or down (-1) from the height it is at, also when that is not placed yet. */
+  private step(by: 1 | -1, byUser: boolean, stops = this.stops()): boolean {
+    const detent = this.peekProperty<BottomSheetDetent>('detent') ?? this.detents[0];
+    const at = stops.find((s) => sameDetent(s.detent, detent)) ?? this.nearest(stops, this.sheet.size);
     const next = stops[stops.indexOf(at) + by];
     return !!next && this.changeDetent(next.detent, byUser);
   }
@@ -359,51 +399,52 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
 
   private listenDrag(): void {
     const parts = this.sheet;
-    const panel = this.panelElement;
-    const grab = (e: PointerEvent) => {
-      const target = e.target as Element;
-      if (!this.isOpen || !this.draggable || e.button !== 0 || !target.closest) return;
-      if (!target.closest('.mx-bottom-sheet__handle, .mx-bottom-sheet__header') || target.closest('button, a, input')) return;
+    // Pressed on the handle or the header: the pointer is followed on that part until it is let go. A press on a
+    // button, a link or a field there is theirs.
+    const grab = (on: ComponentBase, e: PointerEvent) => {
+      if (!this.isOpen || !this.draggable || e.button !== 0) return;
+      if (on.$('button, a, input').fromComponent().some((c) => c.motif.isEventFrom(e))) return;
       e.preventDefault();
-      this.startDrag(e.clientY, e.pointerId);
-      const el = e.currentTarget as HTMLElement;
-      el.setPointerCapture?.(e.pointerId);
-      const move = (m: PointerEvent) => m.pointerId === e.pointerId && this.moveDrag(m.clientY);
-      const up = (u: PointerEvent) => {
+      this.startDrag(e.clientY, e.pointerId, this.readRoom());
+      on.attr.add({ setPointerCapture: e.pointerId });
+      const move = (_: ComponentBase, m: PointerEvent) => m.pointerId === e.pointerId && this.moveDrag(m.clientY);
+      const up = (_: ComponentBase, u: PointerEvent) => {
         if (u.pointerId !== e.pointerId) return;
-        el.removeEventListener('pointermove', move);
-        el.removeEventListener('pointerup', up);
-        el.removeEventListener('pointercancel', up);
+        void on.motif.off('pointermove', move);
+        void on.motif.off('pointerup', up);
+        void on.motif.off('pointercancel', up);
         const tapped = !parts.drag?.moved;
+        const stops = parts.drag?.stops ?? [];
         this.endDrag(u.type === 'pointercancel');
         // A tap on the handle goes to the next height, round to the lowest.
-        if (tapped && u.type === 'pointerup' && target.closest('.mx-bottom-sheet__handle')) {
-          if (!this.step(1, true)) this.changeDetent(this.stops()[0]?.detent ?? this.detent, true);
+        if (tapped && u.type === 'pointerup' && on === parts.handlePart && stops.length) {
+          if (!this.step(1, true, stops)) this.changeDetent(stops[0].detent, true);
         }
       };
-      el.addEventListener('pointermove', move);
-      el.addEventListener('pointerup', up);
-      el.addEventListener('pointercancel', up);
+      void on.motif.on('pointermove', move);
+      void on.motif.on('pointerup', up);
+      void on.motif.on('pointercancel', up);
     };
-    parts.handle.addEventListener('pointerdown', grab);
-    this.headerElement.addEventListener('pointerdown', grab);
-    parts.handle.addEventListener('keydown', (e) => this.handleKey(e));
+    parts.handlePart.motif.on('pointerdown', grab);
+    this.headerPart.motif.on('pointerdown', grab);
+    parts.handlePart.motif.on('keydown', (_, e) => this.handleKey(e));
     // A phone decides when the finger lands whether the page may scroll: the content holds a
     // touchmove listener from the start, so a drag of the sheet can stop the scroll.
-    const body = this.contentElement;
-    body.addEventListener('touchstart', (e) => this.touchStart(e), { passive: true });
-    body.addEventListener('touchmove', (e) => this.touchMove(e), { passive: false });
-    body.addEventListener('touchend', (e) => this.touchEnd(e));
-    body.addEventListener('touchcancel', (e) => this.touchEnd(e));
-    panel.addEventListener('touchmove', (e) => parts.drag && e.cancelable && e.preventDefault(), { passive: false });
+    const body = this.contentPart;
+    body.motif.on('touchstart:passive', (_, e: TouchEvent | undefined) => e && this.touchStart(e));
+    body.motif.on('touchmove', (_, e: TouchEvent | undefined) => e && this.touchMove(e));
+    body.motif.on('touchend', (_, e: TouchEvent | undefined) => e && this.touchEnd(e));
+    body.motif.on('touchcancel', (_, e: TouchEvent | undefined) => e && this.touchEnd(e));
+    this.panelPart.motif.on('touchmove', (_, e: TouchEvent | undefined) => parts.drag && e?.cancelable && e.preventDefault());
   }
 
-  private startDrag(y: number, id: number): void {
+  /** Begins a drag in `room`, read when it was pressed: the moves only write. */
+  private startDrag(y: number, id: number, room: Room): void {
     const parts = this.sheet;
     const tracker = new SwipeTracker();
     tracker.start(0, y);
-    parts.drag = { startY: y, startSize: parts.size, tracker, id, moved: false };
-    this.element.toggleAttribute('data-dragging', true);
+    parts.drag = { startY: y, startSize: parts.size, tracker, id, moved: false, stops: this.stopsIn(room), room: room.height };
+    mark(this, 'data-dragging', true);
   }
 
   private moveDrag(y: number): void {
@@ -412,7 +453,7 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     drag.tracker.move(0, y);
     const dy = drag.startY - y;
     if (Math.abs(dy) > 2) drag.moved = true;
-    const stops = this.stops();
+    const stops = drag.stops;
     if (!stops.length) return;
     const lowest = stops[0].px;
     const highest = stops[stops.length - 1].px;
@@ -421,9 +462,9 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     if (size > highest) size = highest + (size - highest) / 4;
     if (size < lowest) {
       const drop = this.swipeToClose ? lowest - size : (lowest - size) / 4;
-      this.setSize(lowest, drop);
+      this.setSize(lowest, drop, drag.room);
     } else {
-      this.setSize(size, 0);
+      this.setSize(size, 0, drag.room);
     }
   }
 
@@ -432,15 +473,14 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     const drag = parts.drag;
     if (!drag) return;
     parts.drag = null;
-    this.element.removeAttribute('data-dragging');
+    mark(this, 'data-dragging', false);
     if (!drag.moved || canceled) {
       this.placePanel();
       return;
     }
-    const stops = this.stops();
+    const stops = drag.stops;
     const speed = -drag.tracker.velocity('y');
-    const drop = parseFloat(this.panelElement.style.getPropertyValue('--_drop')) || 0;
-    const size = parts.size - drop;
+    const size = parts.size - parts.drop;
     const lowest = stops[0];
     const flick = this.flickSpeed;
     if (this.swipeToClose && (size < lowest.px / 2 || (speed < -flick && size <= lowest.px + 1))) {
@@ -479,13 +519,14 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
       if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
       touch.decided = true;
       if (Math.abs(dy) <= Math.abs(dx)) return;
-      const scroller = scrollerAt(e.target as Element, this.contentElement);
-      const stops = this.stops();
+      const scroller = scrollerUnder(e, this.contentPart, 'y');
+      const room = this.readRoom();
+      const stops = this.stopsIn(room);
       const tallest = stops[stops.length - 1]?.px ?? 0;
       // Down from the top of what scrolls, or up while it is not at its tallest: the sheet moves.
-      touch.take = dy > 0 ? !scroller || scroller.scrollTop <= 0 : parts.size < tallest - 1;
+      touch.take = dy > 0 ? !scroller || boxOf(scroller).scrollTop <= 0 : parts.size < tallest - 1;
       if (!touch.take) return;
-      this.startDrag(touch.y, touch.id);
+      this.startDrag(touch.y, touch.id, room);
     }
     if (!touch.take) return;
     if (e.cancelable) e.preventDefault();
@@ -508,12 +549,12 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
       case 'ArrowUp':
       case 'ArrowRight':
       case 'PageUp':
-        this.step(1, true);
+        this.step(1, true, stops);
         break;
       case 'ArrowDown':
       case 'ArrowLeft':
       case 'PageDown':
-        this.step(-1, true);
+        this.step(-1, true, stops);
         break;
       case 'Home':
         if (stops[0]) this.changeDetent(stops[0].detent, true);
@@ -543,15 +584,4 @@ function detentText(detent: BottomSheetDetent): string {
   if (detent === 'full') return strings.sheetFull;
   if (detent === 'fit') return strings.sheetFit;
   return strings.sheetHeight.replace('{height}', String(detent).endsWith('%') ? String(detent) : `${detent}px`);
-}
-
-/** The element under the finger that scrolls up and down, up to the content area. */
-function scrollerAt(target: Element | null, content: HTMLElement): HTMLElement | null {
-  const view = content.ownerDocument.defaultView;
-  for (let el = target; el; el = el.parentElement) {
-    const html = el as HTMLElement;
-    if (html.scrollHeight > html.clientHeight + 1 && view && /auto|scroll/.test(view.getComputedStyle(html).overflowY)) return html;
-    if (el === content) break;
-  }
-  return null;
 }

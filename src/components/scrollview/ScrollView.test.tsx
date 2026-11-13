@@ -53,9 +53,12 @@ describe('ScrollView', () => {
         expect(view.pullPanel.element.hidden).toBe(true);
         const to = vi.fn();
         view.element.scrollTo = to;
+        // A scroll written through the layer lands a moment later.
         view.scrollTo(120);
+        await settle();
         expect(to).toHaveBeenCalledWith({ top: 120, left: undefined, behavior: 'auto' });
         view.scrollTo({ left: 5 }, true);
+        await settle();
         expect(to).toHaveBeenLastCalledWith({ top: undefined, left: 5, behavior: 'smooth' });
     });
 

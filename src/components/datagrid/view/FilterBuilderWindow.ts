@@ -1,5 +1,6 @@
 import { Component, read, untracked } from '@motifx/core';
-import { put } from '../../../core/draw-parts';
+import { rememberFocus } from '../../../core/focus';
+import { put } from '../../../core/part-writes';
 import { Button } from '../../button/Button';
 import { FilterBuilder } from '../../filterbuilder/FilterBuilder';
 import type { FilterBuilderCustomOperation } from '../../filterbuilder/filter-builder-custom-operation';
@@ -51,20 +52,20 @@ export class FilterBuilderWindow<T> {
     const given: Record<string, unknown> = { ...options };
     delete given.texts;
     const builder = new FilterBuilder({ ...given, value } as FilterBuilderProps);
-    builder.element.classList.add('mx-data-grid__filter-builder');
+    builder.class.add('mx-data-grid__filter-builder');
     const ok = new Button({ tone: 'accent' });
     const cancel = new Button({});
-    ok.element.classList.add('mx-data-grid__apply');
-    cancel.element.classList.add('mx-data-grid__dismiss');
-    ok.element.addEventListener('click', () => untracked(() => this.close(true)));
-    cancel.element.addEventListener('click', () => untracked(() => this.close(false)));
+    ok.class.add('mx-data-grid__apply');
+    cancel.class.add('mx-data-grid__dismiss');
+    ok.motif.on('click', () => untracked(() => this.close(true)));
+    cancel.motif.on('click', () => untracked(() => this.close(false)));
     const footer = new Component<HTMLDivElement>('div');
-    footer.element.className = 'mx-data-grid__filter-builder-buttons';
+    footer.class.add('mx-data-grid__filter-builder-buttons');
     footer.controls.add(ok, cancel);
     const p = host.popup;
     const title = () => p.get('title') ?? model.text('gridFilterBuilderTitle');
     const win = new MxForm({ content: builder, footer, cancelButton: cancel });
-    win.element.classList.add('mx-data-grid__filter-window');
+    win.class.add('mx-data-grid__filter-window');
     let fields: unknown[] = [];
     let texts = '';
     const draw = () =>
@@ -101,7 +102,7 @@ export class FilterBuilderWindow<T> {
         win.showMaximize = p.get('showMaximize');
         win.windowState = p.get('fullScreen') ? 'maximized' : 'normal';
         // Without the title shown, the window still has its name.
-        put(win.element as HTMLElement, 'aria-label', showTitle ? null : title());
+        put(win, 'aria-label', showTitle ? null : title());
       });
     draw();
     this.drawOpen = draw;
@@ -137,9 +138,9 @@ export class FilterBuilderWindow<T> {
     if (!closing) win.close(apply ? 'ok' : 'cancel');
     if (apply) model.filters.setFilterValue(value);
     ev.tell(ev.filterBuilderClosed, () => ({ applied: apply, value }));
+    // Nothing has focus after the window: it goes back to the grid.
     queueMicrotask(() => {
-      const active = document.activeElement;
-      if (!active || active === document.body) this.host.returnFocus();
+      if (!rememberFocus()) this.host.returnFocus();
     });
     return true;
   }

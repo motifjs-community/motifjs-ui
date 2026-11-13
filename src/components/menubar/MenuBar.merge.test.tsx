@@ -1,6 +1,7 @@
-import { Component } from '@motifx/core';
+import { Component, type ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { MenuBar } from './MenuBar';
@@ -22,7 +23,14 @@ async function settle() {
   for (let i = 0; i < 5; i++) await tick();
 }
 
-const tops = (bar: MenuBar) => Array.from(bar.element.querySelectorAll<HTMLButtonElement>(':scope > .mx-menubar__bar > .mx-menubar__item'));
+// The items shown: the parts of a merged bar's items wait hidden in the main bar while that bar is away.
+const tops = (bar: MenuBar) => Array.from(bar.element.querySelectorAll<HTMLButtonElement>(':scope > .mx-menubar__bar > .mx-menubar__item:not([hidden])'));
+// Kept aside the MotifJS way: out of the page, a hidden child of the bar's part.
+const kept = (bar: MenuBar) => {
+  const items = (c: ComponentBase): ComponentBase[] =>
+    (c.controls.items as ComponentBase[]).flatMap((child) => (child.class.has('mx-menubar__item') ? [child] : items(child)));
+  return items((bar as unknown as { parts: { barPart: ComponentBase } }).parts.barPart).filter((c) => !c.isVisible).length;
+};
 const names = (els: Element[]) => els.map((e) => e.querySelector('[class$=__label]')!.textContent);
 const menuItems = (bar: MenuBar) => Array.from(bar.element.querySelector(':scope > .mx-popup')!.querySelectorAll<HTMLButtonElement>(':scope > .mx-menu > .mx-menu__item'));
 
@@ -209,5 +217,96 @@ describe('MenuBar merging', () => {
     await settle();
     expect(names(tops(host()))).toEqual(['File', 'Edit', 'View', 'Help']);
     expect(host().mergedBars).toEqual([]);
+  });
+
+  it('keeps its items’ parts through a change, a merge and an unmerge', async () => {
+    const { host, child } = bars();
+    await settle();
+    const [file, edit, view, help] = tops(host());
+    host().items = MAIN().map((item) => (item.key === 'edit' ? { ...item, text: '&Edit!', enabled: false } : item));
+    await settle();
+    const changed = tops(host());
+    expect(changed).toEqual([file, edit, view, help]);
+    expect(changed.every((el, i) => el === [file, edit, view, help][i])).toBe(true);
+    expect(edit.getAttribute('aria-disabled')).toBe('true');
+    expect(names([edit])).toEqual(['Edit!']);
+    child().merge();
+    await settle();
+    const merged = tops(host());
+    expect(merged.includes(file) && merged.includes(edit) && merged.includes(help) && !merged.includes(view)).toBe(true);
+    child().unmerge();
+    await settle();
+    const back = tops(host());
+    expect(back[0] === file && back[1] === edit && back[3] === help).toBe(true);
+    expect(names(back)).toEqual(['File', 'Edit!', 'View', 'Help']);
+  });
+
+  it('keeps a merged bar’s item parts while it is away, and lets them go when it goes or its items change', async () => {
+    const { host, child } = bars();
+    await settle();
+    const view = tops(host())[2];
+    child().merge();
+    await settle();
+    // The main bar's own View, taken away while merged, waits hidden too.
+    expect(kept(host())).toBe(1);
+    const format = tops(host()).find((el) => names([el])[0] === 'Format')!;
+    child().unmerge();
+    await settle();
+    expect(names(tops(host()))).toEqual(['File', 'Edit', 'View', 'Help']);
+    expect(tops(host())[2]).toBe(view);
+    expect(kept(host())).toBe(1);
+    child().merge();
+    await settle();
+    expect(tops(host()).find((el) => names([el])[0] === 'Format')).toBe(format);
+    // View again, while merged.
+    expect(kept(host())).toBe(1);
+    child().unmerge();
+    await settle();
+    child().items = DOC();
+    await settle();
+    expect(kept(host())).toBe(0);
+    child().merge();
+    await settle();
+    expect(tops(host()).find((el) => names([el])[0] === 'Format')).not.toBe(format);
+    child().unmerge();
+    await settle();
+    expect(kept(host())).toBe(1);
+    await child().dispose();
+    await settle();
+    expect(kept(host())).toBe(0);
+    expect(format.isConnected).toBe(false);
+  });
+
+  it('when shown: is never drawn in its place before it merges, and is shown there when no main bar takes it', async () => {
+    const { host, child } = bars(MAIN(), DOC(), { mergeWhen: 'shown' });
+    await settle();
+    // jsdom does not tell components they are in the page. Mounted, its place shown in the tree: merged at once, before
+    // any frame, and never shown in its place.
+    child().onMounted();
+    expect(child().mergedInto).toBe(host());
+    expect(child().element.hidden).toBe(true);
+    // The place is read in the window's next frame.
+    const read = async () => {
+      await settle();
+      measureNow(child());
+      await settle();
+    };
+    await read();
+    expect(child().mergedInto).toBe(host());
+    expect(child().element.hidden).toBe(true);
+    child().mergeInto = null;
+    await read();
+    expect(child().mergedInto).toBe(null);
+    expect(child().element.hidden).toBe(false);
+    child().mergeInto = 'none';
+    await settle();
+    expect(child().element.hidden).toBe(true);
+    await read();
+    expect(child().mergedInto).toBe(null);
+    expect(child().element.hidden).toBe(false);
+    child().mergeInto = 'main';
+    await read();
+    expect(child().mergedInto).toBe(host());
+    expect(child().element.hidden).toBe(true);
   });
 });

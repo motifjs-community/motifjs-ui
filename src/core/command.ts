@@ -14,7 +14,7 @@ export interface Command {
   text?: Bind<string>;
   /** A longer description, shown as a tooltip. */
   hint?: Bind<string>;
-  /** An image, an element or a component. */
+  /** An image address or a component; a component as a function, so a menu copy gets its own (see `IconSource`). */
   icon?: Bind<IconSource | null | undefined>;
   /** The name of a glyph, for the items that take one. */
   glyph?: Bind<string>;

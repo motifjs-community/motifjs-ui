@@ -1,15 +1,19 @@
-import { Application, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Application, Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { orderControls } from '../../core/order-controls';
 import { parseAccessKey } from '../../core/access-key';
 import { FocusContainer } from '../../core/container';
 import type { Control } from '../../core/control';
-import { controlOf } from '../../core/control-map';
-import { deepActiveElement, focusableIn, isFocusable, keepsKeys } from '../../core/focus';
+import { focusFirstIn, focusInLineField, focusOn, focusedWindow, holdsFocus, isFocused, rememberFocus } from '../../core/focus';
+import type { FocusMark } from '../../core/focus-mark';
+import { clearParts, loose, part } from '../../core/draw-parts';
+import { css, flag, mark, put, text } from '../../core/part-writes';
+import { isInPage, isRtl, measure, onLayout, pageOf, rectOf, styleOf, whenMeasured, type Page } from '../../core/measure';
 import { dismissMark, maximizeMark, minimizeMark, restoreMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
-import { isHtmlElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
+import { windowOf } from '../../core/page-documents';
 import { windowStack, type StackedWindow } from '../../core/window-stack';
 import { followPointer } from '../../parts/window/follow-pointer';
 import { resizeBox } from '../../parts/window/resize-box';
@@ -81,33 +85,29 @@ const CONTAINED = [
   'paste',
 ];
 
-/** Elements in which Enter presses the accept button: one-line fields, not buttons or multi-line text. */
-const ENTER_FIELDS =
-  'input:not([type=button],[type=submit],[type=reset],[type=image],[type=file]), select, [role=textbox]:not([aria-multiline=true]), [role=combobox], [role=spinbutton]';
-
-/** What the form focuses first when it opens, before trying a button. */
-const FIELDS = `${ENTER_FIELDS}, textarea, [contenteditable]:not([contenteditable=false]), [role=slider], [role=switch], [role=checkbox], [role=radio], [role=listbox]`;
-
 /** The parts and the running state of a form. On one object made on first use: the base constructor already renders. */
 interface Parts {
-  /** The window it keeps in view of while it is open. */
-  view: Window | null;
-  bar: HTMLDivElement;
-  icon: HTMLSpanElement;
+  /** The size of its window's page when last told: the form keeps in view when it changes. */
+  page: Page | null;
+  iconPart: Component<HTMLSpanElement>;
   releaseIcon: () => void;
-  title: HTMLDivElement;
-  tools: HTMLDivElement;
-  content: HTMLDivElement;
-  footer: HTMLDivElement;
-  frame: HTMLDivElement;
+  titlePart: Component<HTMLDivElement>;
+  /** The title's id, for `aria-labelledby`. */
+  titleId: string;
   minimize: Button | null;
   maximize: Button | null;
   close: Button | null;
   stopLabels: (() => void) | null;
-  /** Controls placed somewhere else than the content area. */
-  slots: Map<ComponentBase, HTMLElement>;
+  /** The areas as components, children of the form in this order; the tools are a child of the bar. */
+  barPart: Component<HTMLDivElement>;
+  toolsPart: Component<HTMLDivElement>;
+  contentPart: Component<HTMLDivElement>;
+  footerPart: Component<HTMLDivElement>;
+  framePart: Component<HTMLDivElement>;
   contentControl: ComponentBase | null;
   footerControl: ComponentBase | null;
+  /** Where a minimized form leaves its chip: `minimizeTarget`. */
+  target: ComponentBase | null;
   entry: StackedWindow;
   open: boolean;
   modal: boolean;
@@ -117,7 +117,12 @@ interface Parts {
   attached: boolean;
   /** An open waiting for the form to reach the page: modal or not. */
   pending: boolean | null;
-  opener: HTMLElement | null;
+  /** Where focus was when it opened, outside it. */
+  opener: FocusMark | null;
+  /** Counts the opens: what waits for one to be shown runs for the last only. */
+  opens: number;
+  /** What waits for the browser to close the dialog: focus back, `onClosed`, the waiters. */
+  afterClose: (() => void) | null;
   waiters: ((result: FormResult) => void)[];
   closing: boolean;
   /** The open state is being written back to `value`: not a request. */
@@ -126,8 +131,14 @@ interface Parts {
   chip: Button | null;
   /** The state a minimized form goes back to. */
   unminimized: 'normal' | 'maximized';
-  lastInside: HTMLElement | null;
-  observer: MutationObserver | null;
+  /** The window state drawn last (`data-state`). */
+  state: FormWindowState;
+  /** Placed by a move or by `left` and `top` (`data-placed`), else centered. */
+  placed: boolean;
+  /** The width and the height written last (`--_mx-w`, `--_mx-h`), '' where the content decides. */
+  size: { width: string; height: string };
+  /** Where focus was last inside it. */
+  lastInside: FocusMark | null;
   lives: WeakSet<ComponentBase>;
   load: Emitter<FormEventArgs>;
   shown: Emitter<FormEventArgs>;
@@ -142,13 +153,6 @@ const PARTS = Symbol('mx.form');
 function lengthOf(value: number | string | null | undefined): string | null {
   if (value === null || value === undefined || value === '') return null;
   return typeof value === 'number' ? `${value}px` : value;
-}
-
-/** The viewport of the window `el` is in (a window the app opened has its own). */
-function viewport(el: Element): { w: number; h: number } {
-  const root = el.ownerDocument.documentElement;
-  const view = el.ownerDocument.defaultView;
-  return { w: root.clientWidth || view?.innerWidth || 0, h: root.clientHeight || view?.innerHeight || 0 };
 }
 
 /**
@@ -185,10 +189,11 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     this.observeProperty('resizable', () => this.renderFrame());
     this.observeProperty('movable', () => this.renderFrame());
     this.observeProperty('alert', () => this.renderMode());
-    this.observeProperty<number | string>('width', (width) => this.renderLength('--_mx-w', width));
-    this.observeProperty<number | string>('height', (height) => this.renderLength('--_mx-h', height));
+    this.observeProperty<number | string>('width', (width) => this.renderSize('width', lengthOf(width) ?? ''));
+    this.observeProperty<number | string>('height', (height) => this.renderSize('height', lengthOf(height) ?? ''));
     this.observeProperty('content', () => this.placeContent());
     this.observeProperty('footer', () => this.placeFooter());
+    this.observeProperty<ComponentBase | null>('minimizeTarget', (given) => this.takeTarget(given));
 
     if (own.onLoaded) this.onLoaded(own.onLoaded);
     if (own.onShown) this.onShown(own.onShown);
@@ -205,7 +210,6 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       if (parts.open) this.closeWith(undefined, 'owner');
       parts.pending = null;
       for (const resolve of parts.waiters.splice(0)) resolve('cancel');
-      parts.observer?.disconnect();
       parts.releaseIcon();
       parts.stopLabels?.();
       this.removeChip();
@@ -301,10 +305,10 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   set cancelButton(value: Bind<Control | null>) {
     this.assignProperty('cancelButton', value);
   }
-  get minimizeTarget(): HTMLElement | ComponentBase | null {
-    return this.getProperty<HTMLElement | ComponentBase | null | undefined>('minimizeTarget') ?? null;
+  get minimizeTarget(): ComponentBase | null {
+    return this.getProperty<ComponentBase | null | undefined>('minimizeTarget') ?? null;
   }
-  set minimizeTarget(value: Bind<HTMLElement | ComponentBase | null>) {
+  set minimizeTarget(value: Bind<ComponentBase | null>) {
     this.assignProperty('minimizeTarget', value);
   }
   get windowState(): FormWindowState {
@@ -381,9 +385,9 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     return !!this.getProperty<boolean>('active');
   }
 
-  /** The content area, for code that places elements itself. */
-  get contentElement(): HTMLDivElement {
-    return this.parts.content;
+  /** The content area as a component, for code that places components itself: they are added to its controls. */
+  get contentPart(): Component<HTMLDivElement> {
+    return this.parts.contentPart;
   }
 
   /** Occurs before the form is first shown, and is where to populate it. */
@@ -412,6 +416,8 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
    * Shows the form as modeless, so the page and other windows stay usable. It is added to `host`
    * (a component or the application) unless it is already placed, and it is disposed with
    * `disposeRef`, or with the host, even while open. If it is already shown, it moves to the front.
+   * The browser shows it after this call returns: code that needs it on screen, such as moving focus into
+   * it, belongs in `onShown`, which occurs in the window's next frame.
    */
   show(host: FormHost, disposeRef?: ComponentBase): void {
     this.request(host, disposeRef, false);
@@ -419,7 +425,8 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
 
   /**
    * Shows the form as modal, so nothing else on the page can be used until it closes. Resolves with
-   * its result (`'ok'`, `'cancel'` or a custom word) when it closes.
+   * its result (`'ok'`, `'cancel'` or a custom word) when it closes. As with `show`, the browser shows
+   * it after this call returns, and `onShown` occurs in the window's next frame.
    */
   showDialog(host: FormHost, disposeRef?: ComponentBase): Promise<FormResult> {
     const done = new Promise<FormResult>((resolve) => this.parts.waiters.push(resolve));
@@ -430,6 +437,9 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   /**
    * Closes the form with `result`, or with its current `result`. A form that `show` or `showDialog` added to
    * its host is disposed, and one declared in JSX is hidden. Returns `false` if an `onClosing` listener kept it open.
+   * The browser closes it after this call returns; once it has (its `close` event, at the latest the window's next
+   * frame), focus goes back, `onClosed` occurs and `showDialog` resolves. Until then a modal form still blocks the
+   * page, so focus moved elsewhere after closing belongs in `onClosed`.
    */
   close(result?: FormResult): boolean {
     return this.closeWith(result, 'code');
@@ -462,18 +472,17 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
 
   /** Centers the form in the viewport. */
   center(): void {
-    this.element.removeAttribute('data-placed');
+    this.renderPlaced(false);
   }
 
   override restoreFocus(): boolean {
-    const parts = this.parts;
-    if (!parts.lastInside || !this.element.contains(parts.lastInside)) return this.focusFirst();
+    if (!this.parts.lastInside?.isIn(this)) return this.focusFirst();
     return super.restoreFocus() || this.focusFirst();
   }
 
   /** A window is a root: the controls around it do not disable it, and it handles Tab itself. */
-  override get parentControl(): Control | null {
-    return null;
+  override get isWindow(): boolean {
+    return true;
   }
 
   protected override get cyclesTab(): boolean {
@@ -503,9 +512,6 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       case 'startPosition':
         if (parts.open && this.startPosition === 'manual') this.placeAtProps();
         break;
-      case 'minimizeTarget':
-        if (parts.open && this.windowState === 'minimized') this.renderState(false);
-        break;
     }
   }
 
@@ -515,55 +521,49 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   }
 
   private createParts(): Parts {
-    const el = this.element;
-    el.classList.add('mx-form');
-    el.setAttribute('role', 'dialog');
-    el.tabIndex = -1;
-    el.dataset.state = 'normal';
+    this.class.add('mx-form');
+    put(this, 'role', 'dialog');
+    put(this, 'tabindex', '-1');
+    put(this, 'data-state', 'normal');
 
-    const bar = document.createElement('div');
-    bar.className = 'mx-form__bar';
-    const icon = document.createElement('span');
-    icon.className = 'mx-form__icon';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.hidden = true;
+    const barPart = loose<HTMLDivElement>('div', 'mx-form__bar');
+    const iconPart = part<HTMLSpanElement>(barPart, 'span', 'mx-form__icon');
+    iconPart.attr.add({ 'aria-hidden': 'true' });
+    mark(iconPart, 'hidden', true);
     // A heading by role, not an <h2>: the page's own heading styles stay out of the title bar.
-    const title = document.createElement('div');
-    title.className = 'mx-form__title';
-    title.setAttribute('role', 'heading');
-    title.setAttribute('aria-level', '2');
-    title.id = nextId('form-title');
-    const tools = document.createElement('div');
-    tools.className = 'mx-form__tools';
-    bar.append(icon, title, tools);
+    const titlePart = part<HTMLDivElement>(barPart, 'div', 'mx-form__title');
+    const titleId = nextId('form-title');
+    titlePart.attr.add({ role: 'heading', 'aria-level': '2', id: titleId });
+    const toolsPart = part<HTMLDivElement>(barPart, 'div', 'mx-form__tools');
 
-    const content = document.createElement('div');
-    content.className = 'mx-form__content';
-    const footer = document.createElement('div');
-    footer.className = 'mx-form__footer';
-    footer.hidden = true;
-    const frame = resizeFrame(document, 'mx-form__frame', 'mx-form__resize');
-    el.append(bar, content, footer, frame);
+    const contentPart = loose<HTMLDivElement>('div', 'mx-form__content');
+    const footerPart = loose<HTMLDivElement>('div', 'mx-form__footer');
+    mark(footerPart, 'hidden', true);
+    const { frame: framePart, handles } = resizeFrame('mx-form__frame', 'mx-form__resize');
+    // A press on a handle resizes the form from that side or corner.
+    for (const [edge, handle] of handles) handle.motif.on('pointerdown', (_, e) => this.resizePointerDown(handle, edge, e));
+    this.controls.add(barPart, contentPart, footerPart, framePart);
 
     const self = this;
     const parts: Parts = {
-      bar,
-      icon,
+      iconPart,
       releaseIcon: () => {},
-      title,
-      tools,
-      content,
-      footer,
-      frame,
+      titlePart,
+      titleId,
       minimize: null,
       maximize: null,
       close: null,
       stopLabels: null,
-      slots: new Map(),
+      barPart,
+      toolsPart,
+      contentPart,
+      footerPart,
+      framePart,
       contentControl: null,
       footerControl: null,
+      target: null,
       entry: {
-        element: el,
+        part: this,
         get modal() {
           return self.parts.modal;
         },
@@ -576,21 +576,25 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       attached: false,
       pending: null,
       opener: null,
+      opens: 0,
+      afterClose: null,
       waiters: [],
       closing: false,
       syncing: false,
       ready: false,
       chip: null,
       unminimized: 'normal',
+      state: 'normal',
+      placed: false,
+      size: { width: '', height: '' },
       lastInside: null,
-      observer: null,
       lives: new WeakSet(),
       load: new Emitter(),
       shown: new Emitter(),
       activate: new Emitter(),
       deactivate: new Emitter(),
       closingEmitter: new Emitter(),
-      view: null,
+      page: null,
       closed: new Emitter(),
     };
     return parts;
@@ -599,66 +603,63 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   private listen(): void {
     const el = this.element;
     const parts = this.parts;
-    el.addEventListener('keydown', (e) => this.keyDown(e));
-    el.addEventListener('pointerdown', () => parts.open && windowStack.bringToFront(parts.entry), true);
-    el.addEventListener('focusin', (e) => this.focusIn(e.target as HTMLElement));
-    el.addEventListener('cancel', (e) => {
+    this.motif.on('keydown', (_, e) => this.keyDown(e));
+    this.motif.on('pointerdown:capture', () => parts.open && windowStack.bringToFront(parts.entry));
+    this.motif.on('focusin', (_, e) => this.focusIn(e));
+    this.motif.on('cancel', (_, e) => {
       e.preventDefault();
       if (parts.open) this.escape();
     });
-    el.addEventListener('close', () => {
-      // Closed by the browser, not by close(): follow it.
-      if (parts.open) this.finishClose(el.returnValue || 'cancel', 'user');
+    this.motif.on('close', () => {
+      // Closed by the browser, not by close(): follow it. Closed by close(): what waited for it runs now.
+      // browser object read: allowed exception
+      if (parts.open) this.finishClose(el.returnValue || 'cancel', 'user', true);
+      else this.closeDone();
     });
-    parts.bar.addEventListener('pointerdown', (e) => this.barPointerDown(e));
+    // The page of its window changes size: an open form stays in view.
+    onLayout(this, 'page', () => measure(this, this.readPlace, this.keepInView));
+    parts.barPart.motif.on('pointerdown', (_, e) => this.barPointerDown(e));
     // A click on the title bar keeps focus where it is (barPointerDown gives it back).
-    parts.bar.addEventListener('mousedown', (e) => !(e.target as Element).closest('button') && e.preventDefault());
-    parts.bar.addEventListener('dblclick', (e) => {
-      if ((e.target as Element).closest('button') || !this.showMaximize) return;
+    parts.barPart.motif.on('mousedown', (_, e) => {
+      if (!this.fromTool(e)) e.preventDefault();
+    });
+    parts.barPart.motif.on('dblclick', (_, e) => {
+      if (this.fromTool(e) || !this.showMaximize) return;
       this.windowState = this.windowState === 'maximized' ? 'normal' : 'maximized';
     });
-    parts.frame.addEventListener('pointerdown', (e) => this.resizePointerDown(e));
-    for (const type of CONTAINED) el.addEventListener(type, (e) => e.stopPropagation());
-    parts.observer = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => this.placeStrays());
-    parts.observer?.observe(el, { childList: true });
+    for (const type of CONTAINED) this.motif.on(type as 'click', (_, e) => e.stopPropagation());
+    // A control added later goes to the content area once core is done adding it: core would undo a move made sooner.
+    this.motif.on('controladded', () => queueMicrotask(() => !this.isDisposed && this.placeStrays()), false);
   }
 
   /** Children core put at the root (JSX children, `view()`, `controls.add`) go to their area. */
   private placeStrays(): void {
     const parts = this.parts;
-    const own = new Set<Node>([parts.bar, parts.content, parts.footer, parts.frame]);
-    const strays = Array.from(this.element.childNodes).filter((n) => !own.has(n));
+    const own: ComponentBase[] = [parts.barPart, parts.contentPart, parts.footerPart, parts.framePart];
+    const strays = this.controls.items.filter((c) => !own.includes(c));
     if (!strays.length) return;
-    const focus = deepActiveElement();
-    const items = this.controls.items;
-    for (const node of strays) {
-      const control = items.find((c) => c.element === node);
-      const slot = control ? parts.slots.get(control) : undefined;
-      if (slot) {
-        slot.append(node);
-        continue;
-      }
-      // Keep the order of the controls.
-      const index = control ? items.indexOf(control) : -1;
-      const next = index < 0 ? undefined : items.slice(index + 1).find((c) => (c.element as Node | null)?.parentNode === parts.content);
-      parts.content.insertBefore(node, (next?.element as Node | undefined) ?? null);
-    }
-    this.orderTools();
-    if (focus && !focus.isConnected) return;
-    if (focus && deepActiveElement() !== focus && this.element.contains(focus)) focus.focus({ preventScroll: true });
+    const focus = rememberFocus();
+    // A control moves to the content area as its child; core places it there.
+    for (const control of strays) parts.contentPart.controls.add(control);
+    if (focus?.isIn(this)) focus.restore({ preventScroll: true });
+  }
+
+  /** Whether an event started on one of the title bar's buttons. */
+  private fromTool(e: Event): boolean {
+    const parts = this.parts;
+    return [parts.minimize, parts.maximize, parts.close].some((button) => !!button?.motif.isEventFrom(e));
   }
 
   /** Adds a control of the form's own to an area. */
-  private placeIn(control: ComponentBase, area: HTMLElement): void {
-    this.parts.slots.set(control, area);
-    this.controls.add(control);
-    if (control.element && (control.element as Node).parentNode === this.element) area.append(control.element as Node);
+  private placeIn(control: ComponentBase, area: ComponentBase): void {
+    area.controls.add(control);
   }
 
   private unplace(control: ComponentBase | null): void {
-    if (!control) return;
-    this.parts.slots.delete(control);
-    if (control.parent === this) this.controls.remove(control);
+    const parent = control?.parent;
+    if (!control || !parent) return;
+    const parts = this.parts;
+    if (parent === this || [parts.toolsPart, parts.contentPart, parts.footerPart].includes(parent as Component<HTMLDivElement>)) parent.controls.remove(control);
   }
 
   private placeContent(): void {
@@ -667,7 +668,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     if (control === parts.contentControl) return;
     this.unplace(parts.contentControl);
     parts.contentControl = control;
-    if (control) this.placeIn(control, parts.content);
+    if (control) this.placeIn(control, parts.contentPart);
   }
 
   private placeFooter(): void {
@@ -676,17 +677,16 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     if (control === parts.footerControl) return;
     this.unplace(parts.footerControl);
     parts.footerControl = control;
-    parts.footer.hidden = !control;
-    if (control) this.placeIn(control, parts.footer);
+    mark(parts.footerPart, 'hidden', !control);
+    if (control) this.placeIn(control, parts.footerPart);
   }
 
-  private renderTitle(text: string): void {
+  private renderTitle(title: string): void {
     const parts = this.parts;
-    const plain = parseAccessKey(text ?? '').text;
-    parts.title.textContent = plain;
-    if (plain) this.element.setAttribute('aria-labelledby', parts.title.id);
-    else this.element.removeAttribute('aria-labelledby');
-    parts.title.hidden = !plain;
+    const plain = parseAccessKey(title ?? '').text;
+    text(parts.titlePart, plain);
+    put(this, 'aria-labelledby', plain ? parts.titleId : null);
+    mark(parts.titlePart, 'hidden', !plain);
   }
 
   private renderIcon(): void {
@@ -694,14 +694,9 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const icon = this.peekProperty<IconSource | null>('icon');
     parts.releaseIcon();
     parts.releaseIcon = () => {};
-    parts.icon.hidden = !icon;
-    if (!icon) {
-      parts.icon.replaceChildren();
-      return;
-    }
-    const shown = iconNode(icon);
-    parts.icon.replaceChildren(shown.node);
-    parts.releaseIcon = shown.release;
+    mark(parts.iconPart, 'hidden', !icon);
+    clearParts(parts.iconPart);
+    if (icon) parts.releaseIcon = showIcon(icon, parts.iconPart);
   }
 
   /** The title bar buttons: minimize (modeless only), maximize, close. */
@@ -713,7 +708,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     parts.minimize = this.tool(parts.minimize, minimize, () => this.toggleMinimized());
     parts.maximize = this.tool(parts.maximize, maximize, () => (this.windowState = this.windowState === 'maximized' ? 'normal' : 'maximized'));
     parts.close = this.tool(parts.close, close, () => this.closeWith('cancel', 'user'));
-    parts.close?.element.classList.add('mx-form__close');
+    parts.close?.class.add('mx-form__close');
     this.orderTools();
     this.renderToolLook();
     if (!parts.stopLabels && (parts.minimize || parts.maximize || parts.close)) {
@@ -735,23 +730,23 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     if (current) return current;
     // Variant and size come from the title bar's places (tool-button, close-button).
     const button = new Button();
-    button.element.classList.add('mx-form__tool');
-    button.element.addEventListener('click', click);
-    this.placeIn(button, this.parts.tools);
+    button.class.add('mx-form__tool');
+    button.motif.on('click', () => click());
+    this.placeIn(button, this.parts.toolsPart);
     return button;
   }
 
   private orderTools(): void {
     const parts = this.parts;
-    for (const button of [parts.minimize, parts.maximize, parts.close]) if (button) parts.tools.append(button.element);
+    orderControls(parts.toolsPart, [parts.minimize, parts.maximize, parts.close].filter((b): b is Button => !!b));
   }
 
   private labelTools(minimize: string, maximize: string, restore: string, close: string): void {
     const parts = this.parts;
     const state = this.peekProperty<FormWindowState>('windowState') ?? 'normal';
-    parts.minimize?.element.setAttribute('aria-label', state === 'minimized' ? restore : minimize);
-    parts.maximize?.element.setAttribute('aria-label', state === 'maximized' ? restore : maximize);
-    parts.close?.element.setAttribute('aria-label', close);
+    if (parts.minimize) put(parts.minimize, 'aria-label', state === 'minimized' ? restore : minimize);
+    if (parts.maximize) put(parts.maximize, 'aria-label', state === 'maximized' ? restore : maximize);
+    if (parts.close) put(parts.close, 'aria-label', close);
   }
 
   private renderToolLook(): void {
@@ -765,23 +760,21 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   }
 
   private renderFrame(): void {
-    this.element.toggleAttribute('data-resizable', this.peekProperty<boolean>('resizable') ?? true);
-    this.element.toggleAttribute('data-movable', this.peekProperty<boolean>('movable') ?? true);
+    mark(this, 'data-resizable', this.peekProperty<boolean>('resizable') ?? true);
+    mark(this, 'data-movable', this.peekProperty<boolean>('movable') ?? true);
   }
 
   private renderMode(): void {
-    const el = this.element;
     const parts = this.parts;
-    el.setAttribute('role', this.peekProperty('alert') ? 'alertdialog' : 'dialog');
-    el.toggleAttribute('data-modal', parts.modal);
-    if (parts.modal) el.setAttribute('aria-modal', 'true');
-    else el.removeAttribute('aria-modal');
+    put(this, 'role', this.peekProperty('alert') ? 'alertdialog' : 'dialog');
+    mark(this, 'data-modal', parts.modal);
+    flag(this, 'aria-modal', parts.modal);
   }
 
-  private renderLength(name: string, value: number | string | null | undefined): void {
-    const length = lengthOf(value);
-    if (length) this.element.style.setProperty(name, length);
-    else this.element.style.removeProperty(name);
+  /** Writes the width or the height (`--_mx-w`, `--_mx-h`) and keeps it; '' leaves it to the content. */
+  private renderSize(side: 'width' | 'height', length: string): void {
+    css(this, side === 'width' ? '--_mx-w' : '--_mx-h', length);
+    this.parts.size[side] = length;
   }
 
   /** Draws `windowState`; `opening`: the form is just being shown and focuses itself. */
@@ -793,14 +786,14 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       state = parts.unminimized;
       this.syncProperty('windowState', state);
     }
-    const before = this.element.dataset.state as FormWindowState;
+    const before = parts.state;
     if (state !== 'minimized') parts.unminimized = state;
-    const active = deepActiveElement();
-    const hadFocus = !!active && this.element.contains(active);
-    const bodyFocus = !!active && (parts.content.contains(active) || parts.footer.contains(active));
+    const hadFocus = holdsFocus(this);
+    const bodyFocus = holdsFocus(parts.contentPart) || holdsFocus(parts.footerPart);
     const docked = state === 'minimized' && !!this.minimizeTarget && parts.open;
-    this.element.dataset.state = state;
-    this.element.toggleAttribute('data-docked', docked);
+    parts.state = state;
+    put(this, 'data-state', state);
+    mark(this, 'data-docked', docked);
     if (docked) this.dock();
     else this.removeChip();
     this.renderToolLook();
@@ -813,7 +806,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     windowStack.bringToFront(parts.entry);
     if (opening) return;
     if (state === 'minimized') {
-      if (bodyFocus && !parts.minimize?.focus()) this.element.focus();
+      if (bodyFocus && !parts.minimize?.focus()) focusOn(this);
     } else if (before === 'minimized') {
       this.restoreFocus();
     }
@@ -828,7 +821,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   private dock(): void {
     const parts = this.parts;
     if (parts.chip) return;
-    const target = this.minimizeTarget;
+    const target = parts.target;
     if (!target) return;
     // Its variant and size come from its place (window.chip).
     const chip = new Button({
@@ -839,15 +832,17 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
         return typeof icon === 'string' ? icon : null;
       },
     });
-    chip.element.classList.add('mx-form-chip');
-    chip.element.addEventListener('click', () => this.restore());
-    if (isHtmlElement(target)) {
-      chip.build();
-      target.append(chip.element);
-    } else {
-      target.controls.add(chip);
-    }
+    chip.class.add('mx-form-chip');
+    chip.motif.on('click', () => this.restore());
+    target.controls.add(chip);
     parts.chip = chip;
+  }
+
+  /** Keeps `minimizeTarget`, the component a minimized form leaves its chip in. */
+  private takeTarget(given: ComponentBase | null | undefined): void {
+    const parts = this.parts;
+    parts.target = given ?? null;
+    if (parts.open && this.windowState === 'minimized') this.renderState(false);
   }
 
   private removeChip(): void {
@@ -855,11 +850,9 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const chip = parts.chip;
     if (!chip) return;
     parts.chip = null;
-    const element = chip.element;
     const parent = chip.parent;
     if (parent) parent.controls.remove(chip);
     else void chip.dispose();
-    element.remove();
   }
 
   private request(host: FormHost, disposeRef: ComponentBase | undefined, modal: boolean): void {
@@ -885,7 +878,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   }
 
   private openWhenReady(modal: boolean): void {
-    if (this.element.isConnected) this.openNow(modal);
+    if (isInPage(this)) this.openNow(modal);
     else this.parts.pending = modal;
   }
 
@@ -897,55 +890,48 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       parts.load.fire({ source: this });
       if (parts.open || this.isDisposed) return;
     }
-    const el = this.element;
     // A form shown from a form moves into its content area first: moving a shown dialog would undo showModal().
-    const holder = el.parentElement ? controlOf(el.parentElement) : null;
+    let holder = this.parent;
+    while (holder && !(holder instanceof MxForm)) holder = holder.parent;
     if (holder instanceof MxForm) holder.placeStrays();
-    const focus = deepActiveElement();
-    parts.opener = focus && !el.contains(focus) ? focus : null;
+    const focus = rememberFocus();
+    parts.opener = focus && !focus.isIn(this) ? focus : null;
     parts.modal = modal;
     parts.open = true;
     parts.lastInside = null;
+    // A close still waiting for the browser ends first; the form stays, being open again.
+    this.closeDone();
     this.setProperty('result', 'cancel');
     this.renderMode();
     this.renderTools();
-    if (modal) el.showModal();
-    else el.show();
+    // Core calls the dialog's method later: what needs it open waits for the window's next frame (afterOpen).
+    this.attr.add(modal ? { showModal: true } : { show: true });
     this.setProperty('isModal', modal);
     this.setProperty('open', true);
     if (!this.peekProperty('value')) this.bindings.writeModel(true);
     this.syncProperty('value', true);
     if (this.startPosition === 'manual') this.placeAtProps();
     else this.center();
-    parts.view = el.ownerDocument.defaultView;
-    parts.view?.addEventListener('resize', this.keepInView);
+    const open = ++parts.opens;
+    void whenMeasured(this).then(() => open === parts.opens && this.afterOpen());
+  }
+
+  /** The dialog is open: its state is drawn, focus goes in and the app hears it. */
+  private afterOpen(): void {
+    if (this.isDisposed || !this.parts.open) return;
     this.renderState(true);
     if (this.windowState !== 'minimized' || !this.minimizeTarget) this.focusFirst();
-    parts.shown.fire({ source: this });
+    this.parts.shown.fire({ source: this });
   }
 
   /** Focus on open: `[autofocus]`, the first field, the accept button, the first control, the form itself. */
   private focusFirst(): boolean {
     const parts = this.parts;
-    const areas = [parts.content, parts.footer];
-    for (const area of areas) {
-      const auto = area.querySelector<HTMLElement>('[autofocus]');
-      if (auto && isFocusable(auto) && this.tryFocus(auto)) return true;
-    }
-    const field = focusableIn(parts.content).find((el) => el.matches(FIELDS));
-    if (field && this.tryFocus(field)) return true;
-    if (this.acceptButton?.focus()) return true;
-    for (const area of areas) {
-      const first = focusableIn(area).find((el) => el.tabIndex >= 0 && keepsKeys(el));
-      if (first && this.tryFocus(first)) return true;
-    }
-    this.element.focus();
-    return deepActiveElement() === this.element;
-  }
-
-  private tryFocus(el: HTMLElement): boolean {
-    el.focus();
-    return deepActiveElement() === el;
+    if (focusFirstIn(parts.contentPart, 'autofocus') || focusFirstIn(parts.footerPart, 'autofocus')) return true;
+    if (focusFirstIn(parts.contentPart, 'field') || this.acceptButton?.focus()) return true;
+    if (focusFirstIn(parts.contentPart, 'stop') || focusFirstIn(parts.footerPart, 'stop')) return true;
+    focusOn(this);
+    return isFocused(this);
   }
 
   private closeWith(result: FormResult | undefined, reason: FormCloseReason): boolean {
@@ -974,37 +960,52 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     return true;
   }
 
-  private finishClose(result: FormResult, reason: FormCloseReason): void {
+  /** `closed`: the browser closed the dialog itself already. */
+  private finishClose(result: FormResult, reason: FormCloseReason, closed = false): void {
     const parts = this.parts;
-    const active = deepActiveElement(this.element);
-    const focusInside = !active || this.element.contains(active) || !!parts.chip?.element.contains(active);
+    const opener = parts.opener;
+    const waiters = parts.waiters.splice(0);
+    parts.opener = null;
     parts.open = false;
     this.removeChip();
     windowStack.remove(parts.entry);
-    parts.view?.removeEventListener('resize', this.keepInView);
-    parts.view = null;
-    if (this.element.open) this.element.close(result);
+    this.attr.add({ close: result || true });
     this.setProperty('result', result);
     this.setProperty('open', false);
     this.setProperty('isModal', false);
     this.syncProperty('value', false);
     if (reason !== 'owner') this.bindings.writeModel(false);
-    if (focusInside) this.returnFocus();
-    parts.closed.fire({ result, reason, source: this });
-    for (const resolve of parts.waiters.splice(0)) resolve(result);
-    if (reason !== 'owner' && this.disposeOnClose && !this.isDisposed) void this.dispose();
+    const done = () => {
+      // Focus still in the form, or nowhere, goes back to where it was.
+      const focus = rememberFocus();
+      if (!focus || focus.isIn(this)) this.returnFocus(opener);
+      parts.closed.fire({ result, reason, source: this });
+      for (const resolve of waiters) resolve(result);
+      if (reason !== 'owner' && !parts.open && this.disposeOnClose && !this.isDisposed) void this.dispose();
+    };
+    // One being disposed is out of the page already; one the browser closed has no close left to wait for.
+    if (reason === 'owner' || closed) {
+      done();
+      return;
+    }
+    // Core closes the dialog later, and focus leaves a modal one only then: the rest waits for its close event, or for
+    // the window's next frame, after core's calls, where the browser fired none (a dialog it never showed).
+    parts.afterClose = done;
+    void whenMeasured(this).then(() => parts.afterClose === done && this.closeDone());
+  }
+
+  /** Runs what waited for the browser to close the dialog, once. */
+  private closeDone(): void {
+    const parts = this.parts;
+    const done = parts.afterClose;
+    parts.afterClose = null;
+    done?.();
   }
 
   /** Back to where focus was when the form opened, else to the window now on top. */
-  private returnFocus(): void {
-    const opener = this.parts.opener;
-    this.parts.opener = null;
-    if (opener?.isConnected && isFocusable(opener) && !opener.closest('[inert]')) {
-      opener.focus();
-      if (deepActiveElement() === opener) return;
-    }
-    const top = windowStack.top(this.element.ownerDocument);
-    const below = top ? controlOf(top.element) : null;
+  private returnFocus(opener: FocusMark | null): void {
+    if (opener?.restore()) return;
+    const below = windowStack.top(windowOf(this))?.part;
     if (below instanceof FocusContainer) below.restoreFocus();
   }
 
@@ -1029,37 +1030,38 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const parts = this.parts;
     if (parts.active === active) return;
     parts.active = active;
-    this.element.toggleAttribute('data-active', active);
+    mark(this, 'data-active', active);
     this.setProperty('active', active);
     (active ? parts.activate : parts.deactivate).fire({ source: this });
   }
 
-  private focusIn(target: HTMLElement): void {
+  private focusIn(e: FocusEvent): void {
     const parts = this.parts;
     if (!parts.open) return;
-    if (target.closest('dialog') !== this.element) return;
+    // Focus in a window opened inside it is that window's.
+    if (focusedWindow(e) !== this) return;
     windowStack.bringToFront(parts.entry);
-    if (target !== this.element) {
-      parts.lastInside = target;
+    if (!isFocused(this)) {
+      parts.lastInside = rememberFocus(e);
       return;
     }
     // A click on an empty spot: focus stays with the control that had it.
     const last = parts.lastInside;
-    if (last && this.element.contains(last) && isFocusable(last)) last.focus({ preventScroll: true });
+    if (last?.isIn(this)) last.restore({ preventScroll: true });
   }
 
   private keyDown(e: KeyboardEvent): void {
     const parts = this.parts;
     if (!parts.open || e.defaultPrevented || e.isComposing) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('dialog') !== this.element) return;
+    if (focusedWindow(e) !== this) return;
     if (e.key === 'Escape' && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
       // Also keeps the browser from closing a modal dialog by itself.
       if (parts.modal) e.preventDefault();
       if (this.escape()) e.preventDefault();
     } else if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
+      // Enter in a one-line field of the content area, not on a button or in multi-line text.
       const accept = this.acceptButton;
-      if (accept && target.matches(ENTER_FIELDS) && parts.content.contains(target) && press(accept)) e.preventDefault();
+      if (accept && focusInLineField(e) && holdsFocus(parts.contentPart, e) && press(accept)) e.preventDefault();
     }
   }
 
@@ -1072,100 +1074,116 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     return true;
   }
 
-  private get rtl(): boolean {
-    return getComputedStyle(this.element).direction === 'rtl';
-  }
-
-  /** Where the form is, from the start edge of the viewport. */
-  private box(): WindowBox {
-    const r = this.element.getBoundingClientRect();
-    const x = this.rtl ? viewport(this.element).w - r.right : r.left;
+  /** Where the form is, from the start edge of the viewport of its window, whose page is `page`. */
+  private box(page: Page): WindowBox {
+    const r = rectOf(this);
+    const x = isRtl(this) ? page.width - r.right : r.left;
     return { x, y: r.top, w: r.width, h: r.height };
   }
 
-  private placeAt(x: number, y: number, w?: number, h?: number): void {
-    const view = viewport(this.element);
-    const size = this.box();
-    const width = w ?? size.w;
-    const height = h ?? size.h;
-    const style = this.element.style;
-    style.setProperty('--_mx-x', `${Math.round(Math.min(Math.max(0, x), Math.max(0, view.w - width)))}px`);
-    style.setProperty('--_mx-y', `${Math.round(Math.min(Math.max(0, y), Math.max(0, view.h - height)))}px`);
-    this.element.setAttribute('data-placed', '');
+  /** Where the form is, with the page of its window. */
+  private readonly readPlace = (): { box: WindowBox; page: Page } => {
+    const page = pageOf(this);
+    return { box: this.box(page), page };
+  };
+
+  private readonly readBox = (): WindowBox => this.box(pageOf(this));
+
+  /** Puts the form, `w` by `h`, at `x` and `y`, inside `page`. */
+  private placeAt(x: number, y: number, w: number, h: number, page: Page): void {
+    css(this, '--_mx-x', `${Math.round(Math.min(Math.max(0, x), Math.max(0, page.width - w)))}px`);
+    css(this, '--_mx-y', `${Math.round(Math.min(Math.max(0, y), Math.max(0, page.height - h)))}px`);
+    this.renderPlaced(true);
   }
 
   private placeAtProps(): void {
-    const style = this.element.style;
-    style.setProperty('--_mx-x', lengthOf(this.peekProperty<number | string>('left')) ?? '0px');
-    style.setProperty('--_mx-y', lengthOf(this.peekProperty<number | string>('top')) ?? '0px');
-    this.element.setAttribute('data-placed', '');
+    css(this, '--_mx-x', lengthOf(this.peekProperty<number | string>('left')) ?? '0px');
+    css(this, '--_mx-y', lengthOf(this.peekProperty<number | string>('top')) ?? '0px');
+    this.renderPlaced(true);
   }
 
-  private readonly keepInView = (): void => {
-    if (!this.element.hasAttribute('data-placed') || this.windowState === 'maximized') return;
-    const b = this.box();
-    this.placeAt(b.x, b.y);
+  /** Placed by a move or by `left` and `top` (`data-placed`), else centered. */
+  private renderPlaced(placed: boolean): void {
+    this.parts.placed = placed;
+    mark(this, 'data-placed', placed);
+  }
+
+  private readonly keepInView = ({ box, page }: { box: WindowBox; page: Page }): void => {
+    const parts = this.parts;
+    const last = parts.page;
+    parts.page = page;
+    // The first page told is the one it came into: only a change of its size moves the form.
+    if (!last || (last.width === page.width && last.height === page.height)) return;
+    if (!parts.open || !parts.placed || this.windowState === 'maximized') return;
+    this.placeAt(box.x, box.y, box.w, box.h, page);
   };
 
   private barPointerDown(e: PointerEvent): void {
     const parts = this.parts;
-    if (e.button !== 0 || !parts.open || (e.target as Element).closest('button')) return;
+    if (e.button !== 0 || !parts.open || this.fromTool(e)) return;
+    // Read before anything is written: where the form is when the move starts.
+    const start = this.movable && this.windowState !== 'maximized' ? this.readPlace() : null;
+    const sign = start && isRtl(this) ? -1 : 1;
     // No text selection while dragging, and focus goes back to the last active control.
     e.preventDefault();
     windowStack.bringToFront(parts.entry);
-    if (!this.focusWithin || deepActiveElement() === this.element) this.restoreFocus();
-    if (!this.movable || this.windowState === 'maximized') return;
-    const start = this.box();
-    const sign = this.rtl ? -1 : 1;
-    this.drag(parts.bar, e, (dx, dy) => this.placeAt(start.x + sign * dx, start.y + dy));
+    if (!this.focusWithin || isFocused(this)) this.restoreFocus();
+    if (!start) return;
+    const { box, page } = start;
+    this.drag(parts.barPart, e, (dx, dy) => this.placeAt(box.x + sign * dx, box.y + dy, box.w, box.h, page));
   }
 
-  private resizePointerDown(e: PointerEvent): void {
-    const handle = (e.target as HTMLElement).closest<HTMLElement>('.mx-form__resize');
-    if (e.button !== 0 || !handle || !this.parts.open || !this.resizable || this.windowState !== 'normal') return;
+  /** A press on the handle of `edge`: the form follows the pointer from that side or corner. */
+  private resizePointerDown(handle: ComponentBase, edge: WindowEdge, e: PointerEvent): void {
+    if (e.button !== 0 || !this.parts.open || !this.resizable || this.windowState !== 'normal') return;
+    // Read before anything is written: where the form is, how small it may get, which way it reads.
+    const { box: start, page } = this.readPlace();
+    const style = styleOf(this, ['min-inline-size', 'min-width', 'min-block-size', 'min-height']);
+    const min = { w: parseFloat(style['min-inline-size'] || style['min-width']) || 0, h: parseFloat(style['min-block-size'] || style['min-height']) || 0 };
+    const room = { w: page.width, h: page.height };
+    const sign = isRtl(this) ? -1 : 1;
     e.preventDefault();
     windowStack.bringToFront(this.parts.entry);
-    const edge = handle.dataset.edge as WindowEdge;
-    const start = this.box();
-    const css = getComputedStyle(this.element);
-    const minW = parseFloat(css.minInlineSize || css.minWidth) || 0;
-    const minH = parseFloat(css.minBlockSize || css.minHeight) || 0;
-    const sign = this.rtl ? -1 : 1;
-    this.placeAt(start.x, start.y);
+    this.placeAt(start.x, start.y, start.w, start.h, page);
     this.drag(handle, e, (dx, dy) => {
-      const { x, y, w, h } = resizeBox(edge, start, sign * dx, dy, { w: minW, h: minH }, viewport(this.element));
-      const style = this.element.style;
-      style.setProperty('--_mx-w', `${Math.round(w)}px`);
-      style.setProperty('--_mx-h', `${Math.round(h)}px`);
-      this.placeAt(x, y, w, h);
+      const { x, y, w, h } = resizeBox(edge, start, sign * dx, dy, min, room);
+      this.renderSize('width', `${Math.round(w)}px`);
+      this.renderSize('height', `${Math.round(h)}px`);
+      this.placeAt(x, y, w, h, page);
     });
   }
 
   /** Follows the pointer from `e` until it is released, then keeps the new place and size. */
-  private drag(on: HTMLElement, e: PointerEvent, move: (dx: number, dy: number) => void): void {
-    this.element.setAttribute('data-dragging', '');
+  private drag(on: ComponentBase, e: PointerEvent, move: (dx: number, dy: number) => void): void {
+    mark(this, 'data-dragging', true);
     followPointer(on, e, move, () => {
-      this.element.removeAttribute('data-dragging');
-      this.keepGeometry();
+      mark(this, 'data-dragging', false);
+      measure(this, this.readBox, this.keepGeometry);
     });
   }
 
   /** After a move or a resize, the props say where the form is and how big. */
-  private keepGeometry(): void {
-    const b = this.box();
-    const style = this.element.style;
+  private readonly keepGeometry = (b: WindowBox): void => {
+    const size = this.parts.size;
     this.syncProperty('left', Math.round(b.x));
     this.syncProperty('top', Math.round(b.y));
-    if (style.getPropertyValue('--_mx-w').endsWith('px')) this.syncProperty('width', Math.round(b.w));
-    if (style.getPropertyValue('--_mx-h').endsWith('px')) this.syncProperty('height', Math.round(b.h));
-  }
+    if (size.width.endsWith('px')) this.syncProperty('width', Math.round(b.w));
+    if (size.height.endsWith('px')) this.syncProperty('height', Math.round(b.h));
+  };
 }
 
-/** Clicks a button the way the user would, without moving focus. */
+/** Clicks a button the way the user would, without moving focus (core clicks it after this call). */
 function press(control: Control): boolean {
-  if (!control.isEnabled || !control.element.isConnected) return false;
-  const el = control.element;
-  const face = el.matches('button') ? el : (el.querySelector<HTMLElement>('button') ?? el);
-  face.click();
+  if (!control.isEnabled || !inPlace(control)) return false;
+  // A button with a menu is pressed on its main part.
+  const face = control instanceof Button ? control.faceComponent : control;
+  face.attr.add({ click: true });
+  return true;
+}
+
+/** Built and not taken out, and it and every component above it shown (core's `isVisible`). */
+function inPlace(component: ComponentBase): boolean {
+  if (!component.isBuilt || component.isDisposed) return false;
+  for (let c: ComponentBase | null = component; c; c = c.parent) if (!c.isVisible) return false;
   return true;
 }

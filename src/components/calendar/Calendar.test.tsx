@@ -151,6 +151,29 @@ describe('Calendar', () => {
     expect(c.value!.toDateString()).toBe(new Date().toDateString());
   });
 
+  it('keeps its cells when the month, the value or the focus changes; another view builds its own', async () => {
+    const c = new Calendar({ locale: 'en-GB', value: day(2024, 2, 10), showOtherMonths: false });
+    page(c);
+    await settle();
+    const all = () => Array.from(c.element.querySelectorAll<HTMLElement>('tbody td'));
+    const before = all();
+    expect(before.length).toBe(42);
+    c.value = day(2024, 2, 12);
+    c.goTo(day(2024, 5, 1));
+    await settle();
+    expect(title(c)).toBe('May 2024');
+    expect(all()).toEqual(before);
+    expect(cells(c).map((x) => x.textContent)[0]).toBe('1');
+    expect(cells(c).length).toBe(31);
+    c.currentView = 'year';
+    await settle();
+    expect(all().length).toBe(12);
+    const months = all();
+    c.goTo(day(2030, 1, 1));
+    await settle();
+    expect(all()).toEqual(months);
+  });
+
   it('works programmatically', async () => {
     const c = new Calendar({ locale: 'en-GB' });
     page(c);

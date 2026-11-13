@@ -1,4 +1,3 @@
-import { isElement } from '../../core/node-kind';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { ContextMenu } from './ContextMenu';
 import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-args';
@@ -6,11 +5,11 @@ import type { ContextMenuTarget } from './context-menu-target';
 
 /**
  * Attaches a context menu to `target`: fixed items, or a function that builds them each time the menu
- * opens (from `e.target`, the element clicked). Returns a function that removes the menu. For a
- * component, the menu is also removed with the component.
+ * opens (each of your parts tells whether the menu opened on it: `part.motif.isEventFrom(e.event)`).
+ * Returns a function that removes the menu. The menu is also removed with the component.
  *
  * @example
- * attachContextMenu(this.list, (e) => this.itemsFor(e.target.closest('li')));
+ * attachContextMenu(this.list, (e) => this.itemsFor(this.rows.find((row) => row.motif.isEventFrom(e.event))));
  */
 export function attachContextMenu(
   target: ContextMenuTarget,
@@ -23,6 +22,6 @@ export function attachContextMenu(
     menu.target = null;
     void menu.dispose();
   };
-  if (!isElement(target)) target.motif.setDisposable(remove);
+  target.motif.setDisposable(remove);
   return remove;
 }

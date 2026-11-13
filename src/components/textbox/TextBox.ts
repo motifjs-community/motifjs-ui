@@ -1,6 +1,5 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp, type ComponentBase, type Component } from '@motifx/core';
 import type { InputMode } from '../../core/input-mode';
-import { eyeClosed, eyeOpen } from '../../core/glyphs';
 import { uiLocale } from '../../core/ui-locale';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import { Field } from '../../parts/field/Field';
@@ -10,6 +9,8 @@ import type { ValidationRule } from '../../parts/validation/validation-rule';
 import type { TextBoxProps } from './text-box-props';
 import type { TextBoxType } from './text-box-type';
 import { onLanguage } from '../../core/on-language';
+import { clearParts, glyphPart, loose, part, removePart } from '../../core/draw-parts';
+import { mark, put } from '../../core/part-writes';
 
 const OWN = [
   'type',
@@ -43,7 +44,7 @@ const PARTS = Symbol('mx.textbox');
 
 interface Parts {
   mask: InputMask | null;
-  reveal: HTMLButtonElement | null;
+  reveal: Component<HTMLButtonElement> | null;
   stopRevealLabel: (() => void) | null;
   revealed: boolean;
   /** The text was selected on focus: the mouseup of the same click must not undo it. */
@@ -67,7 +68,7 @@ export class TextBox extends Field<string, TextBoxProps> {
   constructor(props?: IBaseProp<TextBoxProps>) {
     super(props);
     const own = (this.props ?? {}) as TextBoxProps;
-    this.element.classList.add('mx-text-box');
+    this.class.add('mx-text-box');
 
     this.observeProperty('type', () => this.renderType());
     this.observeProperty('passwordReveal', () => this.renderType());
@@ -75,7 +76,7 @@ export class TextBox extends Field<string, TextBoxProps> {
     this.observeProperty('maxLength', () => this.renderMaxLength());
     this.observeProperty('showCounter', () => this.renderCounter());
     this.observeProperty('clearButton', () => this.renderClear());
-    this.observeProperty<string>('align', (align) => (this.element.dataset.align = align ?? 'start'));
+    this.observeProperty<string>('align', (align) => put(this, 'data-align', align ?? 'start'));
     this.observeProperty<string>('inputMode', (mode) => this.setAttribute('inputmode', mode));
     this.observeProperty<string>('autocomplete', (value) => this.setAttribute('autocomplete', value));
     this.observeProperty<boolean>('spellcheck', (on) => this.setAttribute('spellcheck', on === undefined ? undefined : String(on)));
@@ -215,17 +216,18 @@ export class TextBox extends Field<string, TextBoxProps> {
     return this.textParts.mask?.complete ?? true;
   }
 
-  get inputElement(): HTMLInputElement {
-    return this.focusElement as HTMLInputElement;
+  /** The text input as a component: write its attributes with `put` and call its methods through `attr`. */
+  get inputPart(): ComponentBase<HTMLInputElement> {
+    return this.controlPart as ComponentBase<HTMLInputElement>;
   }
 
   get onEnter(): MotifEvent<EnterKeyEventArgs<string>> {
     return this.textParts.enter.event;
   }
 
-  /** Selects all text. */
+  /** Selects all text. The selection is made a moment later, not before the call returns. */
   select(): void {
-    this.inputElement.select();
+    this.controlPart.attr.add({ select: true });
   }
 
   /** Clears the field, as the clear button does. */
@@ -233,10 +235,26 @@ export class TextBox extends Field<string, TextBoxProps> {
     this.commit('');
   }
 
-  protected createControl(): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'mx-field__input';
+  /**
+   * Puts `text` in the field as if the user typed it in place of what was there: the input shows it (in the shape of the
+   * mask, if there is one), the caret goes to its end, and the value follows as typing commits it (`updateOn`).
+   */
+  typeText(text: string): void {
+    if (this.peekProperty('readOnly')) return;
+    const mask = this.textParts.mask;
+    // A mask shows the text and puts the caret after what was typed itself.
+    if (mask) mask.setFormatted(text);
+    else this.inputPart.attr.add({ value: text, setSelectionRange: [text.length, text.length] });
+    this.inputChanged();
+  }
+
+  protected override get controlTag(): string {
+    return 'input';
+  }
+
+  protected createControl(): ComponentBase {
+    const input = loose<HTMLInputElement>('input', 'mx-field__input');
+    input.attr.add({ type: 'text' });
     return input;
   }
 
@@ -254,7 +272,8 @@ export class TextBox extends Field<string, TextBoxProps> {
     const mask = this.textParts.mask;
     if (mask && this.peekProperty('maskValue') === 'formatted') mask.setFormatted(value);
     else if (mask) mask.setRaw(value);
-    else if (this.inputElement.value !== value) this.inputElement.value = value;
+    // browser object read: allowed exception
+    else if (this.inputPart.element.value !== value) this.controlPart.attr.add({ value });
     this.renderCounter();
   }
 
@@ -285,21 +304,24 @@ export class TextBox extends Field<string, TextBoxProps> {
   /** What the input holds, as the value. */
   private readInput(): string {
     const mask = this.textParts.mask;
-    if (!mask) return this.inputElement.value;
+    // browser object read: allowed exception
+    if (!mask) return this.inputPart.element.value;
     return this.peekProperty('maskValue') === 'formatted' ? mask.formatted : mask.raw;
   }
 
+  /** What the user typed is in the input: the counter follows, and the value too unless it waits for `change`. */
+  private inputChanged(e?: Event): void {
+    this.renderCounter();
+    if (this.peekProperty('updateOn') !== 'change') this.commit(this.readInput(), e);
+  }
+
   private listen(): void {
-    const input = this.inputElement;
-    input.addEventListener('input', (e) => {
-      this.renderCounter();
-      if (this.peekProperty('updateOn') !== 'change') this.commit(this.readInput(), e);
-    });
-    input.addEventListener('change', (e) => this.commit(this.readInput(), e));
-    input.addEventListener('keydown', (e) => this.keyDown(e));
-    input.addEventListener('focus', () => this.gotFocus());
-    input.addEventListener('blur', () => (this.textParts.keepSelection = false));
-    input.addEventListener('mouseup', (e) => {
+    this.controlPart.motif.on('input', (_, e) => this.inputChanged(e));
+    this.controlPart.motif.on('change', (_, e) => this.commit(this.readInput(), e));
+    this.controlPart.motif.on('keydown', (_, e) => this.keyDown(e));
+    this.controlPart.motif.on('focus', () => this.gotFocus());
+    this.controlPart.motif.on('blur', () => (this.textParts.keepSelection = false));
+    this.controlPart.motif.on('mouseup', (_, e) => {
       if (!this.textParts.keepSelection) return;
       this.textParts.keepSelection = false;
       e.preventDefault();
@@ -320,18 +342,17 @@ export class TextBox extends Field<string, TextBoxProps> {
 
   private gotFocus(): void {
     if (!this.peekProperty('selectOnFocus')) return;
-    this.inputElement.select();
+    this.controlPart.attr.add({ select: true });
     this.textParts.keepSelection = true;
   }
 
   private setAttribute(name: string, value: string | undefined): void {
-    if (value === undefined || value === null || value === '') this.inputElement.removeAttribute(name);
-    else this.inputElement.setAttribute(name, value);
+    put(this.controlPart, name, value);
   }
 
   private renderPlaceholder(text: string | undefined): void {
     this.setAttribute('placeholder', text);
-    this.element.toggleAttribute('data-placeholder', !!text);
+    mark(this, 'data-placeholder', !!text);
   }
 
   private renderMaxLength(): void {
@@ -358,7 +379,7 @@ export class TextBox extends Field<string, TextBoxProps> {
     if (!reveal) parts.revealed = false;
     let shown: string = password && parts.revealed ? 'text' : type;
     if (parts.mask && !CARET_TYPES.includes(shown)) shown = 'text';
-    this.inputElement.type = shown;
+    put(this.controlPart, 'type', shown);
     this.renderReveal(reveal);
   }
 
@@ -366,30 +387,29 @@ export class TextBox extends Field<string, TextBoxProps> {
     const parts = this.textParts;
     if (!on) {
       parts.stopRevealLabel?.();
-      parts.reveal?.remove();
+      removePart(parts.reveal);
       parts.reveal = parts.stopRevealLabel = null;
       return;
     }
     if (!parts.reveal) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'mx-field__button mx-text-box__reveal';
-      button.addEventListener('click', () => this.toggleReveal());
-      parts.stopRevealLabel = onLanguage(this, () => button.setAttribute('aria-label', uiLocale.strings.showPassword));
-      this.area('tools').append(button);
-      parts.reveal = button;
+      const reveal = part<HTMLButtonElement>(this.area('tools'), 'button', 'mx-field__button mx-text-box__reveal');
+      reveal.attr.add({ type: 'button' });
+      reveal.motif.on('click', () => this.toggleReveal());
+      parts.stopRevealLabel = onLanguage(this, () => put(reveal, 'aria-label', uiLocale.strings.showPassword));
+      parts.reveal = reveal;
     }
-    parts.reveal.setAttribute('aria-pressed', String(parts.revealed));
-    parts.reveal.replaceChildren(parts.revealed ? eyeClosed() : eyeOpen());
+    put(parts.reveal, 'aria-pressed', String(parts.revealed));
+    clearParts(parts.reveal);
+    glyphPart(parts.reveal, parts.revealed ? 'eye-closed' : 'eye-open');
   }
 
   private toggleReveal(): void {
     const parts = this.textParts;
-    const input = this.inputElement;
-    const { selectionStart, selectionEnd } = input;
+    // browser object read: allowed exception
+    const { selectionStart, selectionEnd } = this.inputPart.element;
     parts.revealed = !parts.revealed;
     this.renderType();
-    if (selectionStart !== null) input.setSelectionRange(selectionStart, selectionEnd);
+    if (selectionStart !== null) this.controlPart.attr.add({ setSelectionRange: [selectionStart, selectionEnd] });
   }
 
   private renderClear(): void {
@@ -403,7 +423,7 @@ export class TextBox extends Field<string, TextBoxProps> {
       if (!parts.mask) return;
       parts.mask.destroy();
       parts.mask = null;
-      this.inputElement.value = this.peekValue();
+      this.controlPart.attr.add({ value: this.peekValue() });
     } else {
       const options = {
         mask: pattern,
@@ -412,7 +432,7 @@ export class TextBox extends Field<string, TextBoxProps> {
         showMask: this.peekProperty<'always' | 'focus'>('showMask'),
       };
       if (parts.mask) parts.mask.update(options);
-      else parts.mask = new InputMask(this.inputElement, options);
+      else parts.mask = new InputMask(this.inputPart, options);
       this.renderValue(this.peekValue());
     }
     this.renderType();

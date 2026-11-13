@@ -1,8 +1,11 @@
-import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
+import { Component, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
+import { part } from '../../core/draw-parts';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { deepActiveElement, focusInitial, isFocusable } from '../../core/focus';
+import { focusFirstIn, focusOn, rememberFocus } from '../../core/focus';
 import { nextId } from '../../core/next-id';
+import { isElement } from '../../core/node-kind';
+import { mark, put, text as writeText } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { ProgressTone } from './progress-tone';
 import type { SpinnerLabelPosition } from './spinner-label-position';
@@ -16,9 +19,23 @@ const LOOK = ['labelPosition', 'size', 'tone', 'contained'] as const;
 const PARTS = Symbol('mx.spinner');
 
 interface Parts {
-  label: HTMLSpanElement;
+  label: Component<HTMLSpanElement>;
+  labelId: string;
   timer: ReturnType<typeof setTimeout> | null;
+  /** Still within its delay (`data-waiting`). */
+  waiting: boolean;
   stopName: (() => void) | null;
+}
+
+/** What a cover makes inert: the components in `host` that are elements. */
+function coveredIn(host: ComponentBase): ComponentBase[] {
+  const found: ComponentBase[] = [];
+  for (const child of host.controls.items) {
+    if (isElement(child.element)) found.push(child);
+    // A list or a branch has no element of its own: what it holds stands in the container.
+    else if (child.element?.nodeType !== Node.TEXT_NODE) found.push(...coveredIn(child));
+  }
+  return found;
 }
 
 /**
@@ -36,58 +53,45 @@ interface Parts {
  */
 export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
   /**
-   * Covers a container with a spinner until the returned function is called. The covered area
-   * cannot be clicked or focused (it is `inert`), the container is `aria-busy`, and focus that was
-   * inside moves to the spinner and returns afterward. A static container becomes
+   * Covers a container with a spinner until the returned function is called. The components the
+   * container holds cannot be clicked or focused (they are `inert`), the container is `aria-busy`, and
+   * focus that was inside moves to the spinner and returns afterward. A static container becomes
    * `position: relative` in the meantime.
    */
-  static cover(target: ComponentBase | HTMLElement, props: SpinnerProps = {}): () => void {
-    const host = target instanceof HTMLElement ? target : (target.element as HTMLElement);
+  static cover(host: ComponentBase, props: SpinnerProps = {}): () => void {
     const spinner = new Spinner({ size: 'lg', labelPosition: 'bottom', ...props });
-    spinner.element.setAttribute('data-cover', '');
-    const covered = Array.from(host.children).filter((child) => !child.hasAttribute('inert'));
-    const active = deepActiveElement();
-    const hadFocus = !!active && host.contains(active);
-    const busy = host.getAttribute('aria-busy');
-    host.setAttribute('aria-busy', 'true');
-    host.setAttribute('data-mx-covered', '');
-    if (target instanceof HTMLElement) {
-      spinner.build();
-      host.append(spinner.element);
-    } else {
-      target.controls.add(spinner);
-    }
+    spinner.attr.add({ 'data-cover': '' });
+    const covered = coveredIn(host);
+    const focus = rememberFocus();
+    const hadFocus = !!focus?.isIn(host);
+    // Held, not written: each attribute gets its own value back when the cover goes.
+    const holds = [host.attr.hold({ 'aria-busy': 'true', 'data-mx-covered': '' })];
+    host.controls.add(spinner);
     // Focus moves to the spinner before what held it turns inert, so it is never dropped.
     if (hadFocus) {
-      spinner.element.tabIndex = -1;
-      spinner.element.focus({ preventScroll: true });
+      put(spinner, 'tabindex', '-1');
+      focusOn(spinner, { preventScroll: true });
     }
-    for (const child of covered) child.setAttribute('inert', '');
+    for (const child of covered) holds.push(child.attr.hold({ inert: '' }));
 
     let removed = false;
     return () => {
       if (removed) return;
       removed = true;
-      for (const child of covered) child.removeAttribute('inert');
-      if (busy === null) host.removeAttribute('aria-busy');
-      else host.setAttribute('aria-busy', busy);
-      host.removeAttribute('data-mx-covered');
-      if (spinner.focused) {
-        if (active?.isConnected && isFocusable(active)) active.focus({ preventScroll: true });
-        else focusInitial(host);
-      }
-      spinner.element.remove();
-      void spinner.dispose();
+      for (const hold of holds.reverse()) hold.dispose();
+      if (spinner.focused && !focus?.restore({ preventScroll: true })) focusFirstIn(host);
+      if (spinner.parent) spinner.parent.controls.remove(spinner);
+      else void spinner.dispose();
     };
   }
 
   constructor(props?: IBaseProp<SpinnerProps>) {
     super(props);
     const own = (this.props ?? {}) as SpinnerProps;
-    this.element.classList.add('mx-spinner');
+    this.class.add('mx-spinner');
     // An indeterminate progress bar rather than a live region: it is named and found like any
     // widget, and it does not interrupt the reader each time one appears.
-    this.element.setAttribute('role', 'progressbar');
+    this.attr.add({ role: 'progressbar' });
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.label !== undefined) this.bindProperty('text', own.label);
 
@@ -142,7 +146,7 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
 
   /** Indicates that it is still within its delay and not yet visible. Not reactive. */
   get waiting(): boolean {
-    return this.element.hasAttribute('data-waiting');
+    return this.parts.waiting;
   }
 
   protected override applyProperty(name: string, value: unknown): void {
@@ -158,42 +162,36 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
 
   private buildParts(): Parts {
     // A box holding what turns: a ring and a shape; the language shows one of them, the box is the container.
-    const box = document.createElement('span');
-    box.className = 'mx-spinner__box';
-    box.setAttribute('aria-hidden', 'true');
-    const ring = document.createElement('span');
-    ring.className = 'mx-spinner__ring';
-    const shape = document.createElement('span');
-    shape.className = 'mx-spinner__shape';
-    box.append(ring, shape);
-    const label = document.createElement('span');
-    label.className = 'mx-spinner__label';
-    label.id = nextId('spinner');
-    this.element.append(box, label);
-    return { label, timer: null, stopName: null };
+    const box = part<HTMLSpanElement>(this, 'span', 'mx-spinner__box');
+    box.attr.add({ 'aria-hidden': 'true' });
+    part(box, 'span', 'mx-spinner__ring');
+    part(box, 'span', 'mx-spinner__shape');
+    const label = part<HTMLSpanElement>(this, 'span', 'mx-spinner__label');
+    const labelId = nextId('spinner');
+    label.attr.add({ id: labelId });
+    return { label, labelId, timer: null, waiting: false, stopName: null };
   }
 
   private renderLabel(text: string): void {
     const parts = this.parts;
-    parts.label.textContent = text ?? '';
-    parts.label.hidden = !text;
+    writeText(parts.label, text ?? '');
+    mark(parts.label, 'hidden', !text);
     if (text) {
       parts.stopName?.();
       parts.stopName = null;
-      this.element.removeAttribute('aria-label');
-      this.element.setAttribute('aria-labelledby', parts.label.id);
+      put(this, 'aria-label', null);
+      put(this, 'aria-labelledby', parts.labelId);
     } else {
-      this.element.removeAttribute('aria-labelledby');
-      parts.stopName ??= onLanguage(this, () => this.element.setAttribute('aria-label', uiLocale.strings.loading));
+      put(this, 'aria-labelledby', null);
+      parts.stopName ??= onLanguage(this, () => put(this, 'aria-label', uiLocale.strings.loading));
     }
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
-    data.labelPosition = this.peekProperty<SpinnerLabelPosition>('labelPosition') ?? 'side';
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
-    data.tone = this.peekProperty<ProgressTone>('tone') ?? 'accent';
-    this.element.toggleAttribute('data-contained', !!this.peekProperty('contained'));
+    put(this, 'data-label-position', this.peekProperty<SpinnerLabelPosition>('labelPosition') ?? 'side');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
+    put(this, 'data-tone', this.peekProperty<ProgressTone>('tone') ?? 'accent');
+    mark(this, 'data-contained', !!this.peekProperty('contained'));
   }
 
   /** Stays unseen for `delay` milliseconds from now. */
@@ -202,11 +200,13 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
     if (parts.timer) clearTimeout(parts.timer);
     parts.timer = null;
     const delay = Math.max(0, Number(this.peekProperty('delay')) || 0);
-    this.element.toggleAttribute('data-waiting', delay > 0);
+    parts.waiting = delay > 0;
+    mark(this, 'data-waiting', parts.waiting);
     if (delay > 0) {
       parts.timer = setTimeout(() => {
         parts.timer = null;
-        this.element.removeAttribute('data-waiting');
+        parts.waiting = false;
+        mark(this, 'data-waiting', false);
       }, delay);
     }
   }

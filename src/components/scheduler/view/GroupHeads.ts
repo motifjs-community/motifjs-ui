@@ -3,7 +3,8 @@ import { onReState } from '../../../core/on-re-state';
 import type { HeaderCell } from '../model/header-cell';
 import type { HeaderRow } from '../model/header-row';
 import type { ResourceHeaderContext } from '../resource-header-context';
-import { css, part, put, shown, text } from '../../../core/draw-parts';
+import { part } from '../../../core/draw-parts';
+import { css, put, shown, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -18,8 +19,8 @@ interface Drawn {
   cell: HeaderCell;
   row: HeaderRow;
   template: unknown;
-  swatch: HTMLElement | null;
-  text: HTMLElement | null;
+  swatch: Component<HTMLElement> | null;
+  text: Component<HTMLElement> | null;
 }
 
 /**
@@ -40,8 +41,8 @@ export class GroupHeads<T> extends Component<HTMLDivElement, Props<T>> {
   }
 
   override onConfigured(): void {
-    this.element.className = 'mx-scheduler__group-rows';
-    this.element.setAttribute('aria-hidden', 'true');
+    this.class.add('mx-scheduler__group-rows');
+    this.attr.add({ 'aria-hidden': 'true' });
     this.rows = new KeyedParts<HeaderRow, Component<HTMLDivElement>>(
       this,
       (row) => String(row.level),
@@ -61,7 +62,7 @@ export class GroupHeads<T> extends Component<HTMLDivElement, Props<T>> {
 
   private makeRow(row: HeaderRow): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__groups';
+    c.class.add('mx-scheduler__groups');
     const ruler = this.props.ruler;
     if (ruler) part(c, 'div', 'mx-scheduler__corner');
     this.cellsOf.set(
@@ -79,13 +80,13 @@ export class GroupHeads<T> extends Component<HTMLDivElement, Props<T>> {
   }
 
   private drawRow(c: Component<HTMLDivElement>, row: HeaderRow): void {
-    put(c.element, 'data-level', String(row.level));
+    put(c, 'data-level', String(row.level));
     this.cellsOf.get(c)?.show(this.props.host.model.shownHeads(row.cells));
   }
 
   private makeHead(cell: HeaderCell, row: HeaderRow): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__group-head';
+    c.class.add('mx-scheduler__group-head');
     this.drawn.set(c, { cell, row, template: undefined, swatch: null, text: null });
     this.fill(c);
     this.drawHead(c, cell, row);
@@ -105,8 +106,8 @@ export class GroupHeads<T> extends Component<HTMLDivElement, Props<T>> {
       content.controls.add(template(this.headerContext(c)));
       return;
     }
-    drawn.swatch = part(content, 'span', 'mx-scheduler__group-swatch').element;
-    drawn.text = part(content, 'span', 'mx-scheduler__group-text').element;
+    drawn.swatch = part(content, 'span', 'mx-scheduler__group-swatch');
+    drawn.text = part(content, 'span', 'mx-scheduler__group-text');
   }
 
   private drawHead(c: Component<HTMLDivElement>, cell: HeaderCell, row: HeaderRow): void {
@@ -114,10 +115,9 @@ export class GroupHeads<T> extends Component<HTMLDivElement, Props<T>> {
     drawn.cell = cell;
     drawn.row = row;
     if (drawn.template !== this.props.host.headerTemplate()) this.fill(c);
-    const el = c.element;
-    put(el, 'data-level', String(cell.level));
-    put(el, 'data-edge', cell.edge || null);
-    css(el, 'grid-column', `${cell.first + (this.props.ruler ? 2 : 1)} / span ${cell.span}`);
+    put(c, 'data-level', String(cell.level));
+    put(c, 'data-edge', cell.edge || null);
+    css(c, 'grid-column', `${cell.first + (this.props.ruler ? 2 : 1)} / span ${cell.span}`);
     if (drawn.swatch) {
       shown(drawn.swatch, !!cell.resource?.color);
       css(drawn.swatch, '--_color', cell.resource?.color ?? '');

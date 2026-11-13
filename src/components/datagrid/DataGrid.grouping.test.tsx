@@ -397,6 +397,8 @@ describe('the group panel and the column menu', () => {
     ['id', 'name', 'city', 'status', 'qty'].forEach((f, i) => rect(header(f), { left: i * 100, top: 40, width: 100, height: 30 }));
     pointer(header('status'), 'pointerdown', 350, 55);
     pointer(header('status'), 'pointermove', 560, 20);
+    // The drag draws with the window's next measuring round.
+    (grid as any).measure();
     expect(bar.hasAttribute('data-drop')).toBe(true);
     expect(bar.hasAttribute('data-drop-ready')).toBe(true);
     expect(grid.element.querySelector('.mx-data-grid__ghost')!.getAttribute('data-target')).toBe('group');
@@ -412,6 +414,7 @@ describe('the group panel and the column menu', () => {
     rect(chip, { left: 10, top: 5, width: 80, height: 20 });
     pointer(chip, 'pointerdown', 20, 15);
     pointer(chip, 'pointermove', 120, 50);
+    (grid as any).measure();
     expect(head.hasAttribute('data-drop')).toBe(true);
     pointer(chip, 'pointerup', 120, 50);
     await settle();
@@ -420,12 +423,50 @@ describe('the group panel and the column menu', () => {
     await grid.dispose();
   });
 
+  it('asks once for a chip dropped on the headers, and moves focus off the chip before it goes', async () => {
+    const drops: string[] = [];
+    const grid = await make({
+      settings: { groupPanel: true },
+      columns: columns().map((c) => (c.field === 'status' ? { ...c, groupIndex: 0 } : c.field === 'city' ? { ...c, groupIndex: 1 } : c)),
+      onGroupDropping: (e) => {
+        drops.push(`${e.field} ${e.from}→${e.to} ${e.index}`);
+        e.cancel = drops.length === 1;
+      },
+    });
+    const panel = panelOf(grid);
+    Object.defineProperty(panel, 'offsetParent', { configurable: true, get: () => document.body });
+    rect(grid.element.querySelector('.mx-data-grid__toolbar')!, { left: 0, top: 0, width: 600, height: 30 });
+    rect(grid.element.querySelector('.mx-data-grid__row--header')!, { left: 0, top: 40, width: 600, height: 30 });
+    headers(grid).forEach((f, i) => rect(grid.element.querySelector(`.mx-data-grid__header-cell[data-field="${f}"]`)!, { left: i * 100, top: 40, width: 100, height: 30 }));
+    const chipOf = (f: string) => panel.querySelector<HTMLElement>(`.mx-data-grid__chip[data-group="${f}"]`)!;
+    const drag = () => {
+      const chip = chipOf('status');
+      rect(chip, { left: 10, top: 5, width: 80, height: 20 });
+      chip.focus();
+      pointer(chip, 'pointerdown', 20, 15);
+      pointer(chip, 'pointermove', 120, 50);
+      pointer(chip, 'pointerup', 120, 50);
+    };
+    // Cancelled: the chip stays, and keeps focus.
+    drag();
+    await settle();
+    expect(grid.group.map((g) => g.field)).toEqual(['status', 'city']);
+    expect(document.activeElement).toBe(chipOf('status'));
+    drag();
+    expect(document.activeElement).toBe(chipOf('city'));
+    await settle();
+    expect(drops).toEqual(['status chip→headers 1', 'status chip→headers 1']);
+    expect(grid.group.map((g) => g.field)).toEqual(['city']);
+    expect(document.activeElement).toBe(chipOf('city'));
+    await grid.dispose();
+  });
+
   it('groups and ungroups from the column menu, which shows them with groupMenu or a panel that takes headers', async () => {
     const grid = await make();
     const menu = (grid as any).menu;
     const texts = () => [...menu.list.element.querySelectorAll('[role^="menuitem"]')].map((el: Element) => el.textContent);
     const item = (text: string) => [...menu.popup.element.querySelectorAll('[role^="menuitem"]')].find((el: Element) => el.textContent === text) as HTMLElement;
-    const open = (field: string) => (grid as any).openMenu(field, grid.element.querySelector(`.mx-data-grid__header-cell[data-field="${field}"]`));
+    const open = (field: string) => (grid as any).openMenu(field, (grid as any).headerAnchor(field));
     open('city');
     expect(texts()).not.toContain('Group by this column');
     menu.close();

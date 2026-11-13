@@ -1,4 +1,6 @@
 import type { Bind, IBaseProp } from '@motifx/core';
+import { part } from '../../core/draw-parts';
+import { put, text as writeText } from '../../core/part-writes';
 import { ToggleField } from '../checkbox/ToggleField';
 import type { SwitchProps } from './switch-props';
 import type { SwitchStateText } from './switch-state-text';
@@ -21,38 +23,36 @@ export class Switch extends ToggleField<boolean, SwitchProps> {
   constructor(props?: IBaseProp<SwitchProps>) {
     super(props);
     const own = (this.props ?? {}) as SwitchProps;
-    const input = this.inputElement;
-    this.element.classList.add('mx-switch');
-    input.classList.add('mx-switch__input');
-    input.setAttribute('role', 'switch');
+    this.class.add('mx-switch');
+    this.controlPart.class.add('mx-switch__input');
+    this.controlPart.attr.add({ role: 'switch' });
 
     const thumb = this.area('tools');
-    thumb.classList.add('mx-switch__thumb');
-    thumb.setAttribute('aria-hidden', 'true');
+    thumb.class.add('mx-switch__thumb');
+    thumb.attr.add({ 'aria-hidden': 'true' });
     // Both texts stay in place, one of them unseen, so the width does not jump when it flips.
     const text = this.area('actions');
-    text.classList.add('mx-switch__text');
-    text.setAttribute('aria-hidden', 'true');
-    const on = text.appendChild(document.createElement('span'));
-    on.className = 'mx-switch__on';
-    const off = text.appendChild(document.createElement('span'));
-    off.className = 'mx-switch__off';
+    text.class.add('mx-switch__text');
+    text.attr.add({ 'aria-hidden': 'true' });
+    const on = part<HTMLSpanElement>(text, 'span', 'mx-switch__on');
+    const off = part<HTMLSpanElement>(text, 'span', 'mx-switch__off');
 
     this.observeProperty<string>('onText', (value) => {
-      on.textContent = value ?? '';
+      writeText(on, value ?? '');
       this.renderStateText();
     });
     this.observeProperty<string>('offText', (value) => {
-      off.textContent = value ?? '';
+      writeText(off, value ?? '');
       this.renderStateText();
     });
     this.observeProperty('showStateText', () => this.renderStateText());
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
 
-    input.addEventListener('keydown', (e) => {
+    // Enter flips it as Space does; read-only keeps the value.
+    this.controlPart.motif.on('keydown', (_, e) => {
       if (e.key !== 'Enter' || e.altKey || e.ctrlKey || e.metaKey) return;
       e.preventDefault();
-      input.click();
+      if (!this.peekProperty('readOnly')) this.commit(this.nextValue(), e);
     });
   }
 
@@ -89,8 +89,8 @@ export class Switch extends ToggleField<boolean, SwitchProps> {
   }
 
   protected renderValue(value: boolean): void {
-    this.inputElement.checked = value;
-    this.element.dataset.state = value ? 'checked' : 'unchecked';
+    this.controlPart.attr.add({ checked: value });
+    put(this, 'data-state', value ? 'checked' : 'unchecked');
   }
 
   protected nextValue(): boolean {
@@ -99,6 +99,6 @@ export class Switch extends ToggleField<boolean, SwitchProps> {
 
   private renderStateText(): void {
     const any = !!this.peekProperty('onText') || !!this.peekProperty('offText');
-    this.element.dataset.stateText = any ? (this.peekProperty<SwitchStateText>('showStateText') ?? 'inside') : 'none';
+    put(this, 'data-state-text', any ? (this.peekProperty<SwitchStateText>('showStateText') ?? 'inside') : 'none');
   }
 }

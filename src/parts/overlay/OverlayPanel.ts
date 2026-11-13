@@ -1,13 +1,17 @@
-import { Application, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Application, Component, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
 import { holdBackButton } from '../../core/back-button';
+import { isWithin } from '../../core/component-tree';
 import { FocusContainer } from '../../core/container';
-import type { Control } from '../../core/control';
-import { controlOf } from '../../core/control-map';
-import { deepActiveElement, focusableIn, isFocusable, keepsKeys } from '../../core/focus';
+import { part } from '../../core/draw-parts';
+import { callNow, css, flag, mark, put, text } from '../../core/part-writes';
+import { windowOf } from '../../core/page-documents';
+import { appRootOf, placeOnPage } from '../../core/page-layer';
+import { focusFirstIn, focusOn, hasFocusableIn, holdsFocus, isFocused, rememberFocus } from '../../core/focus';
+import type { FocusMark } from '../../core/focus-mark';
 import { dismissMark } from '../../core/glyphs';
+import { afterStyle, boxOf, isInPage, measure, mediaOf, styleOf, transitionTime } from '../../core/measure';
 import { nextId } from '../../core/next-id';
-import { isHtmlElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack, type StackedWindow } from '../../core/window-stack';
 import { Button } from '../../components/button/Button';
@@ -37,23 +41,26 @@ const OWN = [
   'disposeOnClose',
 ] as const;
 
-/** What the panel focuses first when it opens, before any other control. */
-const FIELDS =
-  'input:not([type=button],[type=submit],[type=reset],[type=image],[type=file],[type=checkbox],[type=radio]), select, textarea, [role=textbox], [role=combobox], [role=spinbutton], [contenteditable]:not([contenteditable=false])';
-
 const hasPopover = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
 
 interface Parts {
-  scrim: HTMLDivElement;
-  panel: HTMLDivElement;
-  header: HTMLDivElement;
-  title: HTMLDivElement;
-  tools: HTMLDivElement;
-  body: HTMLDivElement;
-  footer: HTMLDivElement;
+  /**
+   * The areas as components: the scrim and the panel are children of the overlay, the header, body and footer of the
+   * panel, the title and the tools of the header.
+   */
+  scrimPart: Component<HTMLDivElement>;
+  panelPart: Component<HTMLDivElement>;
+  headerPart: Component<HTMLDivElement>;
+  titlePart: Component<HTMLDivElement>;
+  toolsPart: Component<HTMLDivElement>;
+  bodyPart: Component<HTMLDivElement>;
+  footerPart: Component<HTMLDivElement>;
+  /** The id of the title, which names the panel. */
+  titleId: string;
+  /** The title shows a text. */
+  hasTitle: boolean;
   close: Button | null;
   stopLabel: (() => void) | null;
-  slots: Map<ComponentBase, HTMLElement>;
   contentControl: ComponentBase | null;
   footerControl: ComponentBase | null;
   open: boolean;
@@ -65,23 +72,29 @@ interface Parts {
   pending: boolean;
   closing: boolean;
   /** Where focus was when it opened. */
-  opener: HTMLElement | null;
+  opener: FocusMark | null;
   uninert: (() => void) | null;
   releaseBack: (() => void) | null;
   /** Puts back the container's own `position` when the panel made it relative. */
   unposition: (() => void) | null;
-  /** The element it opened over while open, `null` for the page. */
-  over: HTMLElement | null;
+  /** What it opened over while open; `null` for the page. */
+  over: ComponentBase | null;
+  /** `popover="manual"` is written: it opens in the page's top layer. */
+  popover: boolean;
+  /** It is shown in the top layer now. */
+  inTopLayer: boolean;
   /** A slide in or out that has not finished. */
   slide: { stop: () => void } | null;
   entry: StackedWindow;
   modal: boolean;
-  observer: MutationObserver | null;
   lives: WeakSet<ComponentBase>;
   opening: Emitter<OverlayOpeningEventArgs>;
   opened: Emitter<OverlayEventArgs>;
   closingEmitter: Emitter<OverlayClosingEventArgs>;
   closed: Emitter<OverlayClosedEventArgs>;
+  /** Whether the body's content scrolls, read in a measuring round; then whether the body takes focus itself. */
+  readScrolls: () => boolean;
+  writeBodyFocus: (scrolls: boolean) => void;
 }
 
 const PARTS = Symbol('mx.overlay');
@@ -127,7 +140,6 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     this.motif.setDisposable(() => {
       if (parts.open) this.closeBy('owner');
       parts.slide?.stop();
-      parts.observer?.disconnect();
       parts.stopLabel?.();
       for (const emitter of [parts.opening, parts.opened, parts.closingEmitter, parts.closed]) emitter.dispose();
     });
@@ -237,13 +249,14 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     return !!this.getProperty<boolean>('open');
   }
 
-  /** The surface that slides in: the element with `role="dialog"`. */
-  get panelElement(): HTMLDivElement {
-    return this.parts.panel;
+  /** The surface that slides in (`role="dialog"`) as a component: a control of an area of a derived panel is added to it. */
+  get panelPart(): ComponentBase {
+    return this.parts.panelPart;
   }
-  /** The content area, for code that places elements itself. */
-  get contentElement(): HTMLDivElement {
-    return this.parts.body;
+
+  /** The content area as a component, for code that places components itself: they are added to its controls. */
+  get contentPart(): ComponentBase {
+    return this.parts.bodyPart;
   }
 
   get onOpening(): MotifEvent<OverlayOpeningEventArgs> {
@@ -286,18 +299,23 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       else host.controls.add(this);
     }
     const life = disposeRef ?? (host instanceof Application ? null : host);
-    if (life && life !== this.parent && !parts.lives.has(life)) {
-      parts.lives.add(life);
-      life.motif.setDisposable(() => {
-        if (!this.isDisposed) void this.dispose();
-      });
-    }
+    if (life && life !== this.parent) this.liveWith(life);
     return this.openBy();
   }
 
+  /** Goes when `life` goes, though it is not its child. */
+  private liveWith(life: ComponentBase): void {
+    const parts = this.parts;
+    if (parts.lives.has(life)) return;
+    parts.lives.add(life);
+    life.motif.setDisposable(() => {
+      if (!this.isDisposed) void this.dispose();
+    });
+  }
+
   /** A panel is a root: the controls around it do not disable it, and it handles Tab itself while modal. */
-  override get parentControl(): Control | null {
-    return null;
+  override get isWindow(): boolean {
+    return true;
   }
 
   override restoreFocus(): boolean {
@@ -317,14 +335,24 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
 
   // For subclasses.
 
-  /** The panel's header (title and close button), for a subclass that adds to it. */
-  protected get headerElement(): HTMLDivElement {
-    return this.parts.header;
+  /** The panel's header (title and close button) as a component, for a subclass that adds to it. */
+  protected get headerPart(): ComponentBase {
+    return this.parts.headerPart;
   }
 
-  /** The element it opens over now (its container, else the page's root element). */
-  protected get overElement(): HTMLElement {
-    return this.parts.over ?? this.element.ownerDocument.documentElement;
+  /** What it opens over now, as a component: its container, else the root of the app in its window. */
+  protected overPart(): ComponentBase | null {
+    return this.parts.over ?? appRootOf(this);
+  }
+
+  /** Indicates whether it opens over the page now, not over a container. */
+  protected get overPage(): boolean {
+    return this.parts.over === null;
+  }
+
+  /** The container, also before it opens: the one given; `null` for the page. */
+  protected get containerPart(): ComponentBase | null {
+    return untracked(() => this.container);
   }
 
   /** Before it slides in: the subclass places and sizes its panel. */
@@ -335,10 +363,8 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
 
   /** Content that scrolls with nothing to focus in it takes focus itself, so the keys can scroll it. */
   protected updateBodyFocus(): void {
-    const body = this.parts.body;
-    const scrolls = body.scrollHeight > body.clientHeight + 1 || body.scrollWidth > body.clientWidth + 1;
-    if (scrolls && !focusableIn(body).some((el) => el !== body)) body.tabIndex = 0;
-    else body.removeAttribute('tabindex');
+    const parts = this.parts;
+    measure(this, parts.readScrolls, parts.writeBodyFocus);
   }
 
   /** Opens it as the user did (a swipe from the edge, a tap). */
@@ -347,12 +373,12 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     if (parts.open) {
       parts.slide?.stop();
       parts.slide = null;
-      this.element.toggleAttribute('data-open', true);
+      mark(this, 'data-open', true);
       return true;
     }
     if (this.isDisposed) return false;
     // Placed in a component that is not on the page yet: it opens when it gets there (core puts it in place first).
-    if (this.parent && !this.element.isConnected) {
+    if (this.parent && !isInPage(this)) {
       parts.pending = true;
       return true;
     }
@@ -368,24 +394,24 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     parts.slide?.stop();
     parts.slide = null;
     this.host();
-    const el = this.element;
-    const focus = deepActiveElement(el);
-    parts.opener = focus && !el.contains(focus) ? focus : null;
+    const focus = rememberFocus();
+    parts.opener = focus && !focus.isIn(this) ? focus : null;
     parts.open = true;
     parts.modal = this.modal;
     this.renderMode();
-    el.hidden = false;
-    if (hasPopover && el.popover && !el.matches(':popover-open')) el.showPopover();
+    mark(this, 'hidden', false);
+    this.showInTopLayer();
     this.placePanel();
     this.updateBodyFocus();
-    // Laid out closed first, so it slides in from there.
-    void parts.panel.offsetHeight;
-    el.toggleAttribute('data-open', true);
+    // Styled closed first, so it slides in from there.
+    afterStyle(parts.panelPart, () => {
+      if (parts.open) mark(this, 'data-open', true);
+    });
     if (parts.modal) {
-      parts.uninert = inertAround(el, parts.over ?? el.ownerDocument.body);
+      parts.uninert = inertAround(this, parts.over);
       windowStack.bringToFront(parts.entry);
     }
-    if (this.closeOnBack) parts.releaseBack = holdBackButton(el.ownerDocument.defaultView, () => this.closeFromBack(), 1);
+    if (this.closeOnBack) parts.releaseBack = holdBackButton(windowOf(this), () => this.closeFromBack(), 1);
     this.setProperty('open', true);
     if (!this.peekProperty('value')) this.bindings.writeModel(true);
     this.syncProperty('value', true);
@@ -415,20 +441,18 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       this.syncProperty('value', true);
       // A swipe or the back button that did not close it: it goes back where it was.
       this.placePanel();
-      if (reason === 'back' && this.closeOnBack) parts.releaseBack = holdBackButton(this.element.ownerDocument.defaultView, () => this.closeFromBack(), 1);
+      if (reason === 'back' && this.closeOnBack) parts.releaseBack = holdBackButton(windowOf(this), () => this.closeFromBack(), 1);
       return false;
     }
     if (!parts.open) return true;
-    const el = this.element;
-    const active = deepActiveElement(el);
-    const focusInside = !!active && el.contains(active);
+    const focusInside = holdsFocus(this);
     parts.open = false;
     parts.uninert?.();
     parts.uninert = null;
     windowStack.remove(parts.entry);
     parts.releaseBack?.();
     parts.releaseBack = null;
-    el.removeAttribute('data-open');
+    mark(this, 'data-open', false);
     this.setProperty('open', false);
     this.syncProperty('value', false);
     if (reason !== 'owner') this.bindings.writeModel(false);
@@ -436,8 +460,8 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     const finish = () => {
       parts.slide = null;
       if (parts.open) return;
-      if (hasPopover && el.popover && el.matches(':popover-open')) el.hidePopover();
-      el.hidden = true;
+      this.hideFromTopLayer();
+      mark(this, 'hidden', true);
       parts.unposition?.();
       parts.unposition = null;
       this.panelClosed();
@@ -453,26 +477,25 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   protected afterSlide(done: () => void): void {
     const parts = this.parts;
     parts.slide?.stop();
-    const panel = parts.panel;
-    const view = panel.ownerDocument.defaultView;
-    const ms = view ? longestTransition(view.getComputedStyle(panel)) : 0;
+    const ms = transitionTime(parts.panelPart);
     if (!(ms > 0)) {
       parts.slide = null;
       done();
       return;
     }
     let over = false;
-    const end = (e?: Event) => {
-      if (over || (e && e.target !== panel)) return;
+    const end = () => {
+      if (over) return;
       over = true;
       stop();
       done();
     };
     const timer = setTimeout(end, ms + 50);
-    panel.addEventListener('transitionend', end);
+    // The panel's own transitions only: one of a part inside it comes up as well.
+    void parts.panelPart.motif.on('transitionend:self', end);
     const stop = () => {
       clearTimeout(timer);
-      panel.removeEventListener('transitionend', end);
+      void parts.panelPart.motif.off('transitionend:self', end);
     };
     parts.slide = {
       stop: () => {
@@ -501,47 +524,38 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   }
 
   private createParts(): Parts {
-    const el = this.element;
-    const doc = el.ownerDocument;
     const name = (this.constructor as typeof OverlayPanel).overlayClass;
-    el.classList.add(name);
-    el.hidden = true;
-    const part = (tag: string, suffix: string) => {
-      const node = doc.createElement(tag) as HTMLDivElement;
-      node.className = `${name}__${suffix}`;
-      return node;
-    };
-    const scrim = part('div', 'scrim');
-    scrim.setAttribute('aria-hidden', 'true');
-    const panel = part('div', 'panel');
-    panel.setAttribute('role', 'dialog');
-    panel.tabIndex = -1;
-    const header = part('div', 'header');
-    header.hidden = true;
-    const title = part('div', 'title');
+    this.class.add(name);
+    mark(this, 'hidden', true);
+    const div = (parent: ComponentBase, suffix: string) => part<HTMLDivElement>(parent, 'div', `${name}__${suffix}`);
+    const scrimPart = div(this, 'scrim');
+    scrimPart.attr.add({ 'aria-hidden': 'true' });
+    const panelPart = div(this, 'panel');
+    panelPart.attr.add({ role: 'dialog' });
+    put(panelPart, 'tabindex', '-1');
+    const headerPart = div(panelPart, 'header');
+    mark(headerPart, 'hidden', true);
+    const titlePart = div(headerPart, 'title');
+    const titleId = nextId('overlay-title');
     // A heading by role: the page's own heading styles stay out.
-    title.setAttribute('role', 'heading');
-    title.setAttribute('aria-level', '2');
-    title.id = nextId('overlay-title');
-    const tools = part('div', 'tools');
-    header.append(title, tools);
-    const body = part('div', 'body');
-    const footer = part('div', 'footer');
-    footer.hidden = true;
-    panel.append(header, body, footer);
-    el.append(scrim, panel);
+    titlePart.attr.add({ role: 'heading', 'aria-level': '2', id: titleId });
+    const toolsPart = div(headerPart, 'tools');
+    const bodyPart = div(panelPart, 'body');
+    const footerPart = div(panelPart, 'footer');
+    mark(footerPart, 'hidden', true);
     const self = this;
     return {
-      scrim,
-      panel,
-      header,
-      title,
-      tools,
-      body,
-      footer,
+      scrimPart,
+      panelPart,
+      headerPart,
+      titlePart,
+      toolsPart,
+      bodyPart,
+      footerPart,
+      titleId,
+      hasTitle: false,
       close: null,
       stopLabel: null,
-      slots: new Map(),
       contentControl: null,
       footerControl: null,
       open: false,
@@ -555,42 +569,46 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       releaseBack: null,
       unposition: null,
       over: null,
+      popover: false,
+      inTopLayer: false,
       slide: null,
       entry: {
-        element: el,
+        part: this,
         get modal() {
           return self.parts.modal;
         },
         setActive: () => {},
       },
       modal: false,
-      observer: null,
       lives: new WeakSet(),
       opening: new Emitter(),
       opened: new Emitter(),
       closingEmitter: new Emitter(),
       closed: new Emitter(),
+      readScrolls: () => {
+        const box = boxOf(bodyPart);
+        return box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1;
+      },
+      writeBodyFocus: (scrolls) => put(bodyPart, 'tabindex', scrolls && !hasFocusableIn(bodyPart) ? '0' : null),
     };
   }
 
   private listen(): void {
     const parts = this.parts;
-    const el = this.element;
-    el.addEventListener('keydown', (e) => {
+    this.motif.on('keydown', (_, e) => {
       if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
       if (!parts.open || !this.closeOnEscape) return;
       e.preventDefault();
       e.stopPropagation();
       this.closeBy('escape');
     });
-    parts.scrim.addEventListener('click', () => {
+    parts.scrimPart.motif.on('click', () => {
       if (parts.open && this.closeOnScrim) this.closeBy('scrim');
     });
     // Presses on the scrim do not take focus away from the panel.
-    parts.scrim.addEventListener('mousedown', (e) => e.preventDefault());
-    const view = el.ownerDocument.defaultView;
-    parts.observer = view && typeof view.MutationObserver === 'function' ? new view.MutationObserver(() => this.placeStrays()) : null;
-    parts.observer?.observe(el, { childList: true });
+    parts.scrimPart.motif.on('mousedown', (_, e) => e.preventDefault());
+    // One added at the root later goes into the content area too, once core has placed it.
+    void this.motif.on('controladded', () => queueMicrotask(() => !this.isDisposed && this.placeStrays()), false);
   }
 
   /** The browser's back took its entry away: it closes, unless a listener keeps it open. */
@@ -602,64 +620,80 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   /** Puts it where it opens: in its container (positioned), or in the page's top layer. */
   private host(): void {
     const parts = this.parts;
-    const el = this.element;
     if (!this.isBuilt) this.build();
-    const given = untracked(() => this.container);
-    const over = given ? (isHtmlElement(given) ? given : (given.element as HTMLElement)) : null;
+    const over = this.containerPart;
     if (over !== parts.over) {
       parts.unposition?.();
       parts.unposition = null;
     }
     parts.over = over;
-    el.toggleAttribute('data-contained', !!over);
+    mark(this, 'data-contained', !!over);
     if (over) {
-      if (hasPopover && el.popover) {
-        if (el.matches(':popover-open')) el.hidePopover();
-        el.popover = null;
+      this.hideFromTopLayer();
+      if (parts.popover) {
+        parts.popover = false;
+        put(this, 'popover', null);
       }
-      if (!over.contains(el)) over.append(el);
-      const view = over.ownerDocument.defaultView;
-      if (!parts.unposition && view?.getComputedStyle(over).position === 'static') {
-        const before = over.style.position;
-        over.style.position = 'relative';
-        parts.unposition = () => (over.style.position = before);
+      // A child of the container's component; it still goes with its owner.
+      if (!isWithin(this, over)) {
+        const owner = this.parent;
+        over.controls.add(this);
+        if (owner && owner !== over) this.liveWith(owner);
+      }
+      // Read once as it opens, before anything of it is written.
+      if (!parts.unposition && styleOf(over, ['position']).position === 'static') {
+        css(over, 'position', 'relative');
+        parts.unposition = () => css(over, 'position', '');
       }
       return;
     }
-    if (!el.isConnected) el.ownerDocument.body.append(el);
-    if (hasPopover && !el.popover) el.popover = 'manual';
+    // Not placed by an owner: it goes above the page.
+    if (!this.parent) placeOnPage(this, this);
+    if (hasPopover && !parts.popover) {
+      parts.popover = true;
+      put(this, 'popover', 'manual');
+    }
+  }
+
+  /** Into the page's top layer when it opens there. The browser's own call, made at once: what follows measures and focuses it there. */
+  private showInTopLayer(): void {
+    const parts = this.parts;
+    if (!parts.popover || parts.inTopLayer) return;
+    callNow(this, 'showPopover');
+    parts.inTopLayer = true;
+  }
+
+  /** Out of the page's top layer when it is there. */
+  private hideFromTopLayer(): void {
+    const parts = this.parts;
+    if (!parts.inTopLayer) return;
+    callNow(this, 'hidePopover');
+    parts.inTopLayer = false;
   }
 
   private renderMode(): void {
     const parts = this.parts;
-    const el = this.element;
     const modal = parts.open ? parts.modal : this.modal;
-    el.toggleAttribute('data-modal', modal);
-    el.toggleAttribute('data-scrim', this.scrim);
-    if (modal) parts.panel.setAttribute('aria-modal', 'true');
-    else parts.panel.removeAttribute('aria-modal');
+    mark(this, 'data-modal', modal);
+    mark(this, 'data-scrim', this.scrim);
+    flag(parts.panelPart, 'aria-modal', modal);
   }
 
   private renderTitle(): void {
     const parts = this.parts;
     const plain = parseAccessKey(this.peekProperty<string>('text') ?? '').text;
     const label = this.peekProperty<string>('label') ?? '';
-    parts.title.textContent = plain;
-    parts.title.hidden = !plain;
-    if (plain) {
-      parts.panel.setAttribute('aria-labelledby', parts.title.id);
-      parts.panel.removeAttribute('aria-label');
-    } else {
-      parts.panel.removeAttribute('aria-labelledby');
-      if (label) parts.panel.setAttribute('aria-label', label);
-      else parts.panel.removeAttribute('aria-label');
-    }
+    parts.hasTitle = !!plain;
+    text(parts.titlePart, plain);
+    mark(parts.titlePart, 'hidden', !plain);
+    put(parts.panelPart, 'aria-labelledby', plain ? parts.titleId : null);
+    put(parts.panelPart, 'aria-label', plain ? null : label);
     this.renderHeader();
   }
 
   private renderHeader(): void {
     const parts = this.parts;
-    parts.header.hidden = parts.title.hidden && !parts.close;
+    mark(parts.headerPart, 'hidden', !parts.hasTitle && !parts.close);
   }
 
   private renderClose(): void {
@@ -673,11 +707,11 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     } else if (wanted && !parts.close) {
       // Its variant and size come from its place in the header.
       const button = new Button({ icon: dismissMark() });
-      button.element.classList.add(`${(this.constructor as typeof OverlayPanel).overlayClass}__close`);
-      button.element.addEventListener('click', () => this.closeBy('button'));
-      this.placeIn(button, parts.tools);
+      button.class.add(`${(this.constructor as typeof OverlayPanel).overlayClass}__close`);
+      button.motif.on('click', () => this.closeBy('button'));
+      this.placeIn(button, parts.toolsPart);
       parts.close = button;
-      parts.stopLabel = onLanguage(this, () => button.element.setAttribute('aria-label', uiLocale.strings.close));
+      parts.stopLabel = onLanguage(this, () => put(button, 'aria-label', uiLocale.strings.close));
     }
     this.renderHeader();
   }
@@ -685,29 +719,22 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   /** Children core put at the root (JSX children, `controls.add`) go into the content area. */
   private placeStrays(): void {
     const parts = this.parts;
-    const own = new Set<Node>([parts.scrim, parts.panel]);
-    const strays = Array.from(this.element.childNodes).filter((n) => !own.has(n));
-    if (!strays.length) return;
-    const items = this.controls.items;
-    for (const node of strays) {
-      const control = items.find((c) => c.element === node);
-      const slot = control ? parts.slots.get(control) : undefined;
-      if (slot) slot.append(node);
-      else parts.body.append(node);
+    for (const control of [...this.controls.items]) {
+      // A control moves to the content area as its child; core places it there.
+      if (control !== parts.scrimPart && control !== parts.panelPart) parts.bodyPart.controls.add(control);
     }
   }
 
-  /** Adds a control of its own to one of its areas, where it stays. */
-  protected placeIn(control: ComponentBase, area: HTMLElement): void {
-    this.parts.slots.set(control, area);
-    this.controls.add(control);
-    if (control.element && (control.element as Node).parentNode !== area) area.append(control.element as Node);
+  /** Adds a control of its own to one of its areas (a component), where core places it. */
+  protected placeIn(control: ComponentBase, area: ComponentBase): void {
+    area.controls.add(control);
   }
 
   private unplace(control: ComponentBase | null): void {
-    if (!control) return;
-    this.parts.slots.delete(control);
-    if (control.parent === this) this.controls.remove(control);
+    const parent = control?.parent;
+    if (!control || !parent) return;
+    const parts = this.parts;
+    if (parent === this || [parts.toolsPart, parts.bodyPart, parts.footerPart].includes(parent as Component<HTMLDivElement>)) parent.controls.remove(control);
   }
 
   private placeContent(): void {
@@ -716,7 +743,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     if (control === parts.contentControl) return;
     this.unplace(parts.contentControl);
     parts.contentControl = control;
-    if (control) this.placeIn(control, parts.body);
+    if (control) this.placeIn(control, parts.bodyPart);
   }
 
   private placeFooter(): void {
@@ -725,38 +752,28 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     if (control === parts.footerControl) return;
     this.unplace(parts.footerControl);
     parts.footerControl = control;
-    parts.footer.hidden = !control;
-    if (control) this.placeIn(control, parts.footer);
+    mark(parts.footerPart, 'hidden', !control);
+    if (control) this.placeIn(control, parts.footerPart);
   }
 
   /** Focus on open: `[autofocus]`, the first field, the first control, the panel itself. */
   private focusFirst(): boolean {
     const parts = this.parts;
-    const areas = [parts.body, parts.footer, parts.panel];
-    for (const area of areas) {
-      const auto = area.querySelector<HTMLElement>('[autofocus]');
-      if (auto && isFocusable(auto) && tryFocus(auto)) return true;
-    }
+    const noScroll = { preventScroll: true };
+    if (focusFirstIn(parts.bodyPart, 'autofocus', noScroll) || focusFirstIn(parts.footerPart, 'autofocus', noScroll) || focusFirstIn(parts.panelPart, 'autofocus', noScroll)) return true;
     // A finger opening it does not want the on-screen keyboard to come up at once: no field first there.
-    const coarse = !!this.element.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)').matches;
-    const field = coarse ? null : focusableIn(parts.body).find((el) => el.matches(FIELDS));
-    if (field && tryFocus(field)) return true;
-    if (coarse) return tryFocus(parts.panel);
-    const first = focusableIn(parts.body).find((el) => el.tabIndex >= 0 && keepsKeys(el));
-    if (first && tryFocus(first)) return true;
-    return tryFocus(parts.panel);
+    const coarse = mediaOf(this, '(pointer: coarse)');
+    if (!coarse && (focusFirstIn(parts.bodyPart, 'text', noScroll) || focusFirstIn(parts.bodyPart, 'stop', noScroll))) return true;
+    focusOn(parts.panelPart, noScroll);
+    return isFocused(parts.panelPart);
   }
 
   /** Back to where focus was when it opened, else to the window now on top. */
   private giveFocusBack(): void {
     const opener = this.parts.opener;
     this.parts.opener = null;
-    if (opener?.isConnected && isFocusable(opener) && !opener.closest('[inert]')) {
-      opener.focus({ preventScroll: true });
-      if (deepActiveElement(opener) === opener) return;
-    }
-    const top = windowStack.top(this.element.ownerDocument);
-    const below = top ? controlOf(top.element) : null;
+    if (opener?.restore({ preventScroll: true })) return;
+    const below = windowStack.top(windowOf(this))?.part;
     if (below instanceof FocusContainer) below.restoreFocus();
   }
 
@@ -769,17 +786,4 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       parts.syncing = false;
     }
   }
-}
-
-function tryFocus(el: HTMLElement): boolean {
-  el.focus({ preventScroll: true });
-  return deepActiveElement(el) === el;
-}
-
-/** The longest transition of a style, delay included, in milliseconds. */
-function longestTransition(style: CSSStyleDeclaration): number {
-  const times = (text: string) => text.split(',').map((t) => (t.trim().endsWith('ms') ? parseFloat(t) : parseFloat(t) * 1000) || 0);
-  const durations = times(style.transitionDuration || '0s');
-  const delays = times(style.transitionDelay || '0s');
-  return Math.max(0, ...durations.map((d, i) => d + (delays[i % delays.length] ?? 0)));
 }

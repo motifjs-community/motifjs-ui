@@ -33,7 +33,7 @@ describe('FileUploader', () => {
         let up!: FileUploader;
         page(<FileUploader ref={(u: FileUploader) => (up = u)} label="Attachments" accept=".pdf,image/*" maxFileSize={1000} maxFiles={2} x-model={() => s.files} />);
         await settle();
-        expect(up.uploadParts.select.textContent).toContain(enStrings.fileSelect);
+        expect(up.uploadParts.selectPart.element.textContent).toContain(enStrings.fileSelect);
         const notes = file('notes.txt', 10);
         const big = file('big.pdf', 5000, 'application/pdf');
         const a = file('a.pdf', 100, 'application/pdf');
@@ -103,18 +103,18 @@ describe('FileUploader', () => {
         const up = new FileUploader({ multiple: false, uploadUrl: '/files', uploadMode: 'button' });
         page(up);
         await settle();
-        expect(up.uploadParts.select.textContent).toContain(enStrings.fileSelectOne);
-        expect(up.uploadParts.uploadButton.hidden).toBe(false);
-        expect(up.uploadParts.uploadButton.textContent).toBe(enStrings.fileUpload);
+        expect(up.uploadParts.selectPart.element.textContent).toContain(enStrings.fileSelectOne);
+        expect(up.uploadParts.uploadPart.element.hidden).toBe(false);
+        expect(up.uploadParts.uploadPart.element.textContent).toBe(enStrings.fileUpload);
         up.addFiles([file('one.txt', 1)]);
         up.addFiles([file('two.txt', 1)]);
         await settle();
         expect(up.value.map(f => f.name)).toEqual(['two.txt']);
         expect(up.items[0].status).toBe('ready');
         await uiLocale.use('tr');
-        expect(up.uploadParts.uploadButton.textContent).not.toBe(enStrings.fileUpload);
+        expect(up.uploadParts.uploadPart.element.textContent).not.toBe(enStrings.fileUpload);
         up.uploadMode = 'manual';
-        expect(up.uploadParts.uploadButton.hidden).toBe(true);
+        expect(up.uploadParts.uploadPart.element.hidden).toBe(true);
     });
 
     it('is required like any field, and takes files given as a value', async () => {

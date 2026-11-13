@@ -7,7 +7,7 @@ import type { PopoverShowOn } from './popover-show-on';
 
 /** Props of `Popover`. Each prop is also a settable property, and a function is tracked. */
 export interface PopoverProps extends ControlProps {
-    /** The element or component it opens next to. */
+    /** The component it opens next to. */
     target?: Bind<TooltipTarget | null | undefined>;
     /** A title in the header. This is the same property as `text`. */
     title?: Bind<string>;

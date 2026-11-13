@@ -24,7 +24,7 @@ export interface RibbonCommand {
     text?: Bind<string>;
     /** The name of a glyph. */
     glyph?: Bind<string>;
-    /** An image, an element or a component, used instead of `glyph`. */
+    /** An image address or a component, used instead of `glyph`; a component as a function, so the "more" menu gets its own (see `IconSource`). */
     icon?: Bind<IconSource | null | undefined>;
     /** A longer description, shown as a tooltip. */
     hint?: Bind<string>;
@@ -36,7 +36,10 @@ export interface RibbonCommand {
     enabled?: Bind<boolean>;
     /** `false` leaves it out of the simplified layout's row; it waits in the "more" menu. The default is `true`. */
     simple?: Bind<boolean>;
-    /** The letters that press it while key hints are shown. The default comes from its access key or its text. */
+    /**
+     * The letters that press it while key hints are shown. The default comes from its access key or its text; for a
+     * `content` command with no text, from its hint.
+     */
     keyHint?: Bind<string>;
     /** `true` keeps the user from hiding or moving it. The default is `false`. */
     fixed?: Bind<boolean>;

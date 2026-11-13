@@ -1,10 +1,10 @@
-import { dragDots } from '../../../core/glyphs';
+import type { Component } from '@motifx/core';
+import { glyphPart, loose } from '../../../core/draw-parts';
 
-/** The drag icon of a row (`rowDragging.showDragIcons`): plain DOM, the cell holds focus and the name. */
-export function createDragHandle(): HTMLSpanElement {
-  const handle = document.createElement('span');
-  handle.className = 'mx-data-grid__drag-handle';
-  handle.setAttribute('aria-hidden', 'true');
-  handle.append(dragDots());
+/** The drag icon of a row (`rowDragging.showDragIcons`): the cell holds focus and the name. */
+export function createDragHandle(): Component<HTMLSpanElement> {
+  const handle = loose<HTMLSpanElement>('span', 'mx-data-grid__drag-handle');
+  handle.attr.add({ 'aria-hidden': 'true' });
+  glyphPart(handle, 'drag-dots');
   return handle;
 }

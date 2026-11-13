@@ -21,7 +21,7 @@ export interface ProgressBarProps extends ControlProps {
   labelPosition?: Bind<ProgressLabelPosition>;
   /** Shows the percentage next to the label. */
   showValue?: Bind<boolean>;
-  /** The default is the page's `lang`. */
+  /** The default is the kit's language (`uiLocale.locale`). */
   locale?: Bind<string>;
   /** The default is `'accent'`. */
   tone?: Bind<ProgressTone>;

@@ -43,36 +43,36 @@ describe('DateRangeBox', () => {
         let box!: DateRangeBox;
         page(<DateRangeBox ref={(b: DateRangeBox) => (box = b)} label="Stay" locale="en-US" x-model={() => s.stay} clearButton />);
         await settle();
-        expect(box.inputElement.getAttribute('aria-label')).toBe(`Stay, ${enStrings.rangeStart}`);
-        expect(box.endInputElement.getAttribute('aria-label')).toBe(`Stay, ${enStrings.rangeEnd}`);
-        expect(box.inputElement.value).toBe('03/10/2026');
-        expect(box.endInputElement.value).toBe('03/14/2026');
+        expect(box.inputPart.element.getAttribute('aria-label')).toBe(`Stay, ${enStrings.rangeStart}`);
+        expect(box.endInputPart.element.getAttribute('aria-label')).toBe(`Stay, ${enStrings.rangeEnd}`);
+        expect(box.inputPart.element.value).toBe('03/10/2026');
+        expect(box.endInputPart.element.value).toBe('03/14/2026');
         expect(box.startDate).toEqual(day(2026, 2, 10));
         box.clear();
         await settle();
         expect(s.stay).toEqual([null, null]);
-        expect(box.inputElement.value).toBe('');
+        expect(box.inputPart.element.value).toBe('');
         await uiLocale.use('tr');
-        expect(box.endInputElement.getAttribute('aria-label')).not.toContain(enStrings.rangeEnd);
+        expect(box.endInputPart.element.getAttribute('aria-label')).not.toContain(enStrings.rangeEnd);
     });
 
     it('takes dates typed on either side, and validates the order and the span', async () => {
         const box = new DateRangeBox({ locale: 'en-US', minDays: 2, maxDays: 10 });
         page(box);
         await settle();
-        typeDigits(box.inputElement, '03102026');
+        typeDigits(box.inputPart.element, '03102026');
         expect(box.value).toEqual([day(2026, 2, 10), null]);
-        typeDigits(box.endInputElement, '03112026');
+        typeDigits(box.endInputPart.element, '03112026');
         expect(box.value).toEqual([day(2026, 2, 10), day(2026, 2, 11)]);
         expect(await box.validate()).toBe(false);
         expect(box.validationMessage).toBe('Choose at least 2 days.');
-        typeDigits(box.endInputElement, '03302026');
+        typeDigits(box.endInputPart.element, '03302026');
         expect(await box.validate()).toBe(false);
         expect(box.validationMessage).toBe('Choose at most 10 days.');
-        typeDigits(box.endInputElement, '03052026');
+        typeDigits(box.endInputPart.element, '03052026');
         expect(await box.validate()).toBe(false);
         expect(box.validationMessage).toBe(enStrings.rangeOrder);
-        typeDigits(box.endInputElement, '03152026');
+        typeDigits(box.endInputPart.element, '03152026');
         expect(await box.validate()).toBe(true);
     });
 

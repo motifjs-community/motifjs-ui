@@ -56,6 +56,8 @@ function layout(grid: DataGrid<any>, viewport = 360) {
     scrollTo(px: number) {
       vp.scrollTop = px;
       vp.dispatchEvent(new Event('scroll'));
+      // The rows follow the scroll with the window's next measuring round.
+      (grid as any).measure();
     },
   };
 }
@@ -122,6 +124,23 @@ describe('DataGrid', () => {
     expect(rowEls(grid)).toHaveLength(5);
     expect(cellText(rowEls(grid)[0], 'name')).toBe('Name 5');
     expect(grid.element.querySelector('.mx-data-grid__count')!.textContent).toBe('5 records');
+    await grid.dispose();
+  });
+
+  it('shows rows that have no key without a `rowKey`: a row is known by itself', async () => {
+    const rows = [
+      { code: 'A', total: 5 },
+      { code: 'B', total: 7 },
+    ];
+    const cols: GridColumn<(typeof rows)[number]>[] = [
+      { field: 'code', title: 'Code' },
+      { field: 'total', title: 'Total' },
+    ];
+    const grid = mount(new DataGrid<(typeof rows)[number]>({ columns: cols, rows }));
+    layout(grid);
+    await settle();
+    expect(rowEls(grid)).toHaveLength(2);
+    expect(cellText(rowEls(grid)[1], 'code')).toBe('B');
     await grid.dispose();
   });
 
@@ -418,7 +437,7 @@ describe('DataGrid', () => {
     await settle();
     const menu = (grid as any).menu;
     const texts = () => [...menu.list.element.querySelectorAll('[role^="menuitem"]')].map((el: Element) => el.textContent);
-    (grid as any).openMenu('name', grid.element.querySelector('[data-field="name"] .mx-data-grid__menu-button'));
+    (grid as any).openMenu('name', (grid as any).headerAnchor('name'));
     expect(menu.opened).toBe(true);
     expect(texts()).not.toContain('Pin to start');
     expect(texts()).not.toContain('Reset layout');
@@ -451,7 +470,7 @@ describe('DataGrid', () => {
     expect(menu.opened).toBe(false);
     expect(grid.sort).toEqual([{ field: 'name', dir: 'desc' }]);
     expect(document.activeElement).toBe(header(grid, 'name'));
-    (grid as any).openMenu('amount', header(grid, 'amount'));
+    (grid as any).openMenu('amount', (grid as any).headerAnchor('amount'));
     item('Columns').click();
     const idItem = item('Id');
     expect(idItem.getAttribute('aria-checked')).toBe('true');
@@ -531,5 +550,22 @@ describe('DataGrid', () => {
     } finally {
       tracker.stop();
     }
+  });
+
+  it('writes no scroll back to the top when the rows already start there', async () => {
+    const grid = mount(new DataGrid<Row>({ rowKey: 'id', columns, rows: makeRows(1000), rowHeight: 36 }));
+    const { vp, scrollTo } = layout(grid);
+    const writes: unknown[] = [];
+    // A scroll written right after the rows makes the browser lay the page out there and then.
+    vp.scrollTo = ((to: unknown) => writes.push(to)) as typeof vp.scrollTo;
+    await settle();
+    grid.groupBy('amount');
+    await settle();
+    expect(writes).toEqual([]);
+    scrollTo(36 * 100);
+    grid.clearGrouping();
+    await settle();
+    expect(writes).toEqual([expect.objectContaining({ top: 0 })]);
+    await grid.dispose();
   });
 });

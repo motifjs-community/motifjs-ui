@@ -1,3 +1,5 @@
+import type { ComponentBase } from "@motifx/core";
+
 /** What a slide track asks of the component it moves: the panes, the one in view, and where a swipe lands. */
 export interface SlideTrackHost {
     /** How many panes stand in the track. */
@@ -8,8 +10,8 @@ export interface SlideTrackHost {
     perView(): number;
     /** After the last pane comes the first. */
     loop(): boolean;
-    /** The element of the pane at `index`. */
-    pane(index: number): HTMLElement | null;
+    /** The component of the pane at `index`. */
+    panePart(index: number): ComponentBase | null;
     /** A finger or a pointer may drag the track now. */
     canDrag(): boolean;
     /** A swipe asks for a pane: the host selects it, or not, and the track is laid out again either way. */

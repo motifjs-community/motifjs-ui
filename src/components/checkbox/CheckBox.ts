@@ -1,6 +1,7 @@
 import type { Bind, Event as MotifEvent, IBaseProp } from '@motifx/core';
-import { checkMark, dashMark } from '../../core/glyphs';
+import { glyphPart } from '../../core/draw-parts';
 import { LanguageLook } from '../../core/language-look';
+import { put } from '../../core/part-writes';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import type { CheckBoxProps } from './check-box-props';
 import { ToggleField } from './ToggleField';
@@ -27,24 +28,21 @@ interface Drawn {
  */
 export class CheckBox extends ToggleField<boolean | null, CheckBoxProps> {
   /** Where the design language puts the focus ring: around the box, or around the box and its caption. */
-  private readonly focusLook = new LanguageLook(this.element, { scope: '--_checkbox-focus-scope' }, () => {
-    this.element.dataset.focusScope = this.focusLook.get('scope') ?? 'box';
+  private readonly focusLook = new LanguageLook(this, { scope: '--_checkbox-focus-scope' }, () => {
+    put(this, 'data-focus-scope', this.focusLook.get('scope') ?? 'box');
   });
 
   constructor(props?: IBaseProp<CheckBoxProps>) {
     super(props);
     this.motif.setDisposable(this.focusLook.watch());
     const own = (this.props ?? {}) as CheckBoxProps;
-    this.element.classList.add('mx-check-box');
-    this.inputElement.classList.add('mx-check-box__input');
+    this.class.add('mx-check-box');
+    this.controlPart.class.add('mx-check-box__input');
     const mark = this.area('tools');
-    mark.classList.add('mx-check-box__mark');
-    mark.setAttribute('aria-hidden', 'true');
-    const check = checkMark();
-    check.classList.add('mx-check-box__check');
-    const dash = dashMark();
-    dash.classList.add('mx-check-box__dash');
-    mark.append(check, dash);
+    mark.class.add('mx-check-box__mark');
+    mark.attr.add({ 'aria-hidden': 'true' });
+    glyphPart(mark, 'check', 'mx-check-box__check');
+    glyphPart(mark, 'dash', 'mx-check-box__dash');
     if (own.threeState !== undefined) this.bindProperty('threeState', own.threeState);
   }
 
@@ -102,10 +100,8 @@ export class CheckBox extends ToggleField<boolean | null, CheckBoxProps> {
     const drawn = this.drawn;
     drawn.previous = drawn.current;
     drawn.current = value;
-    const input = this.inputElement;
-    input.indeterminate = value === null;
-    input.checked = value === true;
-    this.element.dataset.state = value === null ? 'mixed' : value ? 'checked' : 'unchecked';
+    this.controlPart.attr.add({ indeterminate: value === null, checked: value === true });
+    put(this, 'data-state', value === null ? 'mixed' : value ? 'checked' : 'unchecked');
   }
 
   protected nextValue(): boolean | null {

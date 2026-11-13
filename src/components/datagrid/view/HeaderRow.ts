@@ -1,40 +1,48 @@
 import { Component, ComponentBase, untracked } from '@motifx/core';
-import { put, text } from '../../../core/draw-parts';
-import { chevronDown, chevronUp, filterMark, moreMark } from '../../../core/glyphs';
-import { isNode } from '../../../core/node-kind';
+import { glyphPart, loose, part, textPart } from '../../../core/draw-parts';
+import { css, mark, put, text } from '../../../core/part-writes';
+import { isInPage, measure, rectOf } from '../../../core/measure';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import { HEADER_ROW, type GridModel } from '../model/GridModel';
-import { createCheck, setCheck } from './check-mark';
+import { createCheck, drawCheck } from './check-mark';
 import { dropPlace } from './drop-place';
 import type { HeaderHost } from './header-host';
 import type { GhostTarget } from './ghost-target';
-import { placeInOrder } from './place-in-order';
+import type { GroupDrop } from './group-drop';
+import { orderControls } from '../../../core/order-controls';
 
 /**
- * Puts the parts that are wanted in `cell`, in their order, after its other children, and takes out the others.
+ * Puts the parts that are wanted in `cell`, in their order, after `first`, and takes out the others; they stay
+ * alive to come back.
  */
-function present(cell: HTMLElement, parts: HTMLElement[], wanted: boolean[]) {
+/** No drop on the group panel. */
+const NO_DROP: GroupDrop = Object.freeze({ index: -1, offset: 0 });
+
+function present(cell: ComponentBase, first: ComponentBase[], parts: ComponentBase[], wanted: boolean[]) {
+  const desired = [...first];
   parts.forEach((part, i) => {
-    if (!wanted[i]) {
-      if (part.parentNode === cell) part.remove();
-      return;
-    }
-    if (part.parentNode === cell) return;
-    const next = parts.slice(i + 1).find((later) => later.parentNode === cell) ?? null;
-    cell.insertBefore(part, next);
+    if (wanted[i]) desired.push(part);
+    else if (part.parent === cell) cell.controls.silentDetach(part);
   });
+  orderControls(cell, desired);
+}
+
+/** Disposes the buttons and the handle of a header that are taken out of it now. */
+function dropTakenOut(parts: HeaderParts) {
+  for (const part of [parts.filter, parts.menu, parts.resize]) if (!part.parent && !part.isDisposed) void part.dispose();
 }
 
 /** What a header keeps of its parts to draw them again. */
 interface HeaderParts {
   col: GridColumn<unknown>;
-  title: HTMLElement;
-  mark: HTMLElement;
-  filter: HTMLButtonElement;
-  menu: HTMLButtonElement;
-  resize: HTMLElement;
+  title: Component<HTMLSpanElement>;
+  sort: Component<HTMLSpanElement>;
+  mark: ComponentBase;
+  filter: Component<HTMLButtonElement>;
+  menu: Component<HTMLButtonElement>;
+  resize: Component<HTMLSpanElement>;
 }
 
 /**
@@ -48,12 +56,14 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   readonly cells = new Map<string, ComponentBase>();
   /** The columns' own header contents (`headerCell`) that are components, by field. */
   private readonly titles = new Map<string, ComponentBase>();
+  /** The title of each header, a component: a column's own `headerCell` content is added to it. */
+  private readonly titleParts = new Map<string, Component<HTMLSpanElement>>();
   private indicator!: ComponentBase;
   private suppressClick = false;
   /** The parts of each header that show what changes, by field. */
   private readonly drawn = new Map<string, HeaderParts>();
   /** The "select all" check box and its header, while the grid has a selection column. */
-  private select: { cell: HTMLElement; check: HTMLSpanElement } | null = null;
+  private select: { cell: Component<HTMLDivElement>; check: Component<HTMLSpanElement> } | null = null;
 
   constructor(
     private readonly grid: GridModel<T>,
@@ -63,9 +73,13 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   }
 
   override onConfigured() {
-    this.element.className = 'mx-data-grid__row mx-data-grid__row--header';
-    this.element.setAttribute('role', 'row');
+    this.class.add('mx-data-grid__row mx-data-grid__row--header');
+    this.attr.add({ role: 'row' });
     this.motif.setDisposable(this.grid.notices.on(() => this.draw()));
+    // Buttons taken out of their header go with the row too.
+    this.motif.setDisposable(() => {
+      for (const parts of this.drawn.values()) dropTakenOut(parts);
+    });
   }
 
   // Headers are direct children of the row (no fragment in between), so `arrange` can move them.
@@ -74,9 +88,9 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     // While columns are virtual a header is created when its column is first drawn.
     for (const field of this.grid.columns.state.order) if (this.grid.columnWindow.has(field)) cells.push(this.cell(this.grid.columns.get(field)));
     const indicator = new Component<HTMLDivElement>('div');
-    indicator.element.className = 'mx-data-grid__drop';
-    indicator.element.setAttribute('aria-hidden', 'true');
-    indicator.element.hidden = true;
+    indicator.class.add('mx-data-grid__drop');
+    indicator.attr.add({ 'aria-hidden': 'true' });
+    mark(indicator, 'hidden', true);
     this.indicator = indicator;
     this.controls.add(...cells, this.indicator);
     this.draw();
@@ -87,12 +101,9 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     if (this.isDisposed) return;
     untracked(() => {
       const { grid } = this;
-      const el = this.element;
       // Under the bands' rows.
-      put(el, 'aria-rowindex', String(grid.columns.bandDepth() + 1));
-      if (grid.state.activeRow === HEADER_ROW && !grid.columns.isBand(grid.state.activeField)) {
-        if (!el.hasAttribute('data-active')) el.setAttribute('data-active', '');
-      } else if (el.hasAttribute('data-active')) el.removeAttribute('data-active');
+      put(this, 'aria-rowindex', String(grid.columns.bandDepth() + 1));
+      mark(this, 'data-active', grid.state.activeRow === HEADER_ROW && !grid.columns.isBand(grid.state.activeField));
       for (const field of this.drawn.keys()) this.drawCell(field);
       this.drawSelect();
     });
@@ -102,8 +113,8 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   override onBuilt() {
     for (const field of this.grid.columns.state.order) {
       const col = this.grid.columns.get(field);
-      const span = col.headerCell ? this.cellElement(field)?.querySelector<HTMLElement>('.mx-data-grid__title') : null;
-      if (span) this.ownTitle(col, span);
+      const title = col.headerCell ? this.titleParts.get(field) : undefined;
+      if (title) this.ownTitle(col, title);
     }
   }
 
@@ -112,27 +123,26 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     if (!this.indicator) return;
     const drawn = this.grid.columnWindow;
     const shown = new Set(visible);
-    const desired: Element[] = [];
+    const desired: ComponentBase[] = [];
     visible.forEach((field, i) => {
       if (!drawn.has(field)) return;
       if (!this.cells.has(field)) this.addColumn(field);
-      const el = this.cellElement(field);
-      if (!el) return;
-      desired.push(el);
-      el.setAttribute('aria-colindex', String(i + 1));
+      const cell = this.cells.get(field);
+      if (!cell) return;
+      desired.push(cell);
+      put(cell, 'aria-colindex', String(i + 1));
     });
-    for (const [field] of this.cells) {
+    for (const [field, cell] of this.cells) {
       if (shown.has(field) && drawn.has(field)) continue;
-      const el = this.cellElement(field)!;
-      el.removeAttribute('aria-colindex');
-      if (drawn.all) desired.push(el);
-      else el.remove();
+      put(cell, 'aria-colindex', null);
+      if (drawn.all) desired.push(cell);
+      else if (cell.parent === this) this.controls.silentDetach(cell);
     }
-    placeInOrder(this.element, [...desired, this.indicator.element as Element]);
+    orderControls(this, [...desired, this.indicator]);
   }
 
   /** A column's own `headerCell` content in place of the title text. */
-  private ownTitle(col: GridColumn<T>, span: HTMLElement) {
+  private ownTitle(col: GridColumn<T>, title: Component<HTMLSpanElement>) {
     const { grid } = this;
     const ctx: HeaderCellContext<T> = {
       column: col,
@@ -144,17 +154,27 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       },
     };
     const content = col.headerCell!(ctx);
-    span.textContent = '';
+    text(title, '');
     if (content instanceof ComponentBase) {
-      this.controls.add(content);
-      span.append(content.element as Node);
+      title.controls.add(content);
       this.titles.set(col.field, content);
-    } else if (isNode(content)) span.append(content);
-    else if (content !== undefined && content !== null) span.append(String(content));
+    } else if (content !== undefined && content !== null) textPart(title, String(content));
   }
 
-  cellElement(field: string): HTMLElement | undefined {
-    return this.cells.get(field)?.element as HTMLElement | undefined;
+  /** The header of a column, while it has one. */
+  cellPart(field: string): ComponentBase | undefined {
+    return this.cells.get(field);
+  }
+
+  /** The title of a column's header, which holds its own header content; the selection column's header has none. */
+  titlePart(field: string): Component<HTMLSpanElement> | undefined {
+    return this.titleParts.get(field);
+  }
+
+  /** The text a column's header title shows; `undefined` when the column has header content of its own, or a title only assistive technology reads. */
+  titleText(field: string): string | undefined {
+    const drawn = this.drawn.get(field);
+    return drawn && !drawn.col.headerCell && !this.grid.columns.isInternal(field) ? this.titleOf(field) : undefined;
   }
 
   /** A column added at run time gets its header (placed by the next `arrange`). */
@@ -162,10 +182,10 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     if (this.cells.has(field) || !this.indicator || !this.grid.columnWindow.has(field)) return;
     const col = this.grid.columns.get(field);
     const cell = this.cell(col);
-    this.controls.add(cell);
-    this.element.insertBefore(cell.element as Node, this.indicator.element as Node);
-    const span = col.headerCell ? (cell.element as HTMLElement).querySelector<HTMLElement>('.mx-data-grid__title') : null;
-    if (span) this.ownTitle(col, span);
+    // Before the drop indicator.
+    this.controls.insert(this.controls.items.indexOf(this.indicator), cell);
+    const title = col.headerCell ? this.titleParts.get(field) : undefined;
+    if (title) this.ownTitle(col, title);
     untracked(() => (field === SELECT_FIELD ? this.drawSelect() : this.drawCell(field)));
   }
 
@@ -173,98 +193,84 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   removeColumn(field: string) {
     const cell = this.cells.get(field);
     this.cells.delete(field);
+    const drawn = this.drawn.get(field);
+    if (drawn) dropTakenOut(drawn);
     this.drawn.delete(field);
     if (field === SELECT_FIELD) this.select = null;
-    const own = this.titles.get(field);
     this.titles.delete(field);
-    if (own && !own.isDisposed) void own.dispose({ skipLeaveTransition: true });
-    if (cell && !cell.isDisposed) void cell.dispose({ skipLeaveTransition: true });
+    this.titleParts.delete(field);
+    // Its own header content goes with it.
+    if (cell?.parent) cell.parent.controls.remove(cell);
+    else if (cell && !cell.isDisposed) void cell.dispose({ skipLeaveTransition: true });
   }
 
   private cell(col: GridColumn<T>): ComponentBase {
     const field = col.field;
     if (field === SELECT_FIELD) return this.selectCell();
     const internal = this.grid.columns.isInternal(field);
-    const cell = new Component<HTMLDivElement>('div');
-    const el = cell.element;
-    el.className = 'mx-data-grid__header-cell';
-    el.setAttribute('role', 'columnheader');
-    el.setAttribute('tabindex', '-1');
-    el.dataset.field = field;
-    el.addEventListener('pointerdown', (e) => this.pressHeader(col, e));
-    el.addEventListener('click', (e) => this.clickHeader(col, e));
-    const title = el.appendChild(document.createElement('span'));
-    title.className = internal ? 'mx-data-grid__title mx-data-grid__hidden-text' : 'mx-data-grid__title';
-    const sort = el.appendChild(document.createElement('span'));
-    sort.className = 'mx-data-grid__sort';
-    sort.setAttribute('aria-hidden', 'true');
-    const up = chevronUp();
-    up.classList.add('mx-data-grid__sort-up');
-    const down = chevronDown();
-    down.classList.add('mx-data-grid__sort-down');
+    const cell = loose<HTMLDivElement>('div', 'mx-data-grid__header-cell');
+    cell.attr.add({ role: 'columnheader', tabindex: '-1', 'data-field': field });
+    cell.motif.on('pointerdown', (_, e) => this.pressHeader(col, e));
+    cell.motif.on('click', (_, e) => this.clickHeader(col, e));
+    // The parts are components in their order: the title holds a column's own header content.
+    const title = part<HTMLSpanElement>(cell, 'span', internal ? 'mx-data-grid__title mx-data-grid__hidden-text' : 'mx-data-grid__title');
+    const sort = part<HTMLSpanElement>(cell, 'span', 'mx-data-grid__sort');
+    sort.attr.add({ 'aria-hidden': 'true' });
+    glyphPart(sort, 'chevron-up', 'mx-data-grid__sort-up');
+    glyphPart(sort, 'chevron-down', 'mx-data-grid__sort-down');
     // The position of the sort comes after the arrows, as a text of its own.
-    const mark = document.createTextNode('');
-    sort.append(up, down, mark);
-    const button = (className: string, popup: string, glyph: Element, open: (anchor: HTMLElement) => void) => {
-      const b = el.appendChild(document.createElement('button'));
-      b.type = 'button';
-      b.className = className;
-      b.setAttribute('tabindex', '-1');
-      b.setAttribute('aria-haspopup', popup);
-      b.append(glyph);
-      b.addEventListener('pointerdown', (e) => e.stopPropagation());
-      b.addEventListener('click', (e) => {
+    const mark = textPart(sort, '');
+    const button = (className: string, popup: string, glyph: string, open: (anchor: ComponentBase) => void) => {
+      const b = part<HTMLButtonElement>(cell, 'button', className);
+      b.attr.add({ type: 'button', tabindex: '-1', 'aria-haspopup': popup });
+      glyphPart(b, glyph);
+      b.motif.on('pointerdown', (_, e) => e.stopPropagation());
+      b.motif.on('click', (_, e) => {
         e.stopPropagation();
         open(b);
       });
       return b;
     };
-    const filter = button('mx-data-grid__filter-button', 'dialog', filterMark(), (anchor) => this.host.openHeaderFilter(field, anchor));
-    const menu = button('mx-data-grid__menu-button', 'menu', moreMark(), (anchor) => this.host.openMenu(field, anchor));
-    const resize = el.appendChild(document.createElement('span'));
-    resize.className = 'mx-data-grid__resize';
-    resize.setAttribute('aria-hidden', 'true');
-    resize.addEventListener('pointerdown', (e) => this.pressHandle(col, e));
-    resize.addEventListener('dblclick', (e) => {
+    const filter = button('mx-data-grid__filter-button', 'dialog', 'filter', (anchor) => this.host.openHeaderFilter(field, anchor));
+    const menu = button('mx-data-grid__menu-button', 'menu', 'more', (anchor) => this.host.openMenu(field, anchor));
+    const resize = part<HTMLSpanElement>(cell, 'span', 'mx-data-grid__resize');
+    resize.attr.add({ 'aria-hidden': 'true' });
+    resize.motif.on('pointerdown', (_, e) => this.pressHandle(col, resize, e));
+    resize.motif.on('dblclick', (_, e) => {
       e.stopPropagation();
       if (!this.grid.columns.can(field, 'resizable')) return;
       this.host.autoSize(field);
       this.grid.layoutChanged();
     });
     this.cells.set(field, cell);
-    this.drawn.set(field, { col: col as GridColumn<unknown>, title, mark: mark as unknown as HTMLElement, filter, menu, resize });
+    this.titleParts.set(field, title);
+    this.drawn.set(field, { col: col as GridColumn<unknown>, title, sort, mark, filter, menu, resize });
     return cell;
   }
 
   /** A header as the grid is now: its title, sort, buttons and handle. */
   private drawCell(field: string) {
     const parts = this.drawn.get(field);
-    const el = this.cellElement(field);
-    if (!parts || !el) return;
+    const cell = this.cells.get(field);
+    if (!parts || !cell) return;
     const { grid } = this;
     const cols = grid.columns;
     const { col } = parts;
     const name = this.titleOf(field);
     const sort = grid.sortOf(field);
-    put(el, 'data-sort', sort?.dir ?? null);
-    if (cols.can(field, 'sortable')) {
-      if (!el.hasAttribute('data-sortable')) el.setAttribute('data-sortable', '');
-    } else if (el.hasAttribute('data-sortable')) el.removeAttribute('data-sortable');
-    put(el, 'aria-sort', sort && sort.position === 1 ? (sort.dir === 'asc' ? 'ascending' : 'descending') : null);
-    put(el, 'aria-label', col.headerCell ? name : null);
+    put(cell, 'data-sort', sort?.dir ?? null);
+    mark(cell, 'data-sortable', cols.can(field, 'sortable'));
+    put(cell, 'aria-sort', sort && sort.position === 1 ? (sort.dir === 'asc' ? 'ascending' : 'descending') : null);
+    put(cell, 'aria-label', col.headerCell ? name : null);
     // A column's own header content stands in the title's place.
     if (!col.headerCell) text(parts.title, name);
-    const position = this.sortMark(field);
-    const mark = parts.mark as unknown as Text;
-    if (mark.data !== position) mark.data = position;
+    text(parts.mark, this.sortMark(field));
     const title = cols.title(field);
     put(parts.filter, 'aria-label', grid.text('gridFilterFor', { title }));
-    if (grid.filters.isActive(field)) {
-      if (!parts.filter.hasAttribute('data-active')) parts.filter.setAttribute('data-active', '');
-    } else if (parts.filter.hasAttribute('data-active')) parts.filter.removeAttribute('data-active');
+    mark(parts.filter, 'data-active', grid.filters.isActive(field));
     put(parts.menu, 'aria-label', grid.text('gridColumnMenu', { title }));
     // A button or handle that does nothing is not there at all; one that comes back takes its place again.
-    present(el, [parts.filter, parts.menu, parts.resize], [grid.hasHeaderFilter(field), this.host.hasMenu(field), cols.can(field, 'resizable')]);
+    present(cell, [parts.title, parts.sort], [parts.filter, parts.menu, parts.resize], [grid.hasHeaderFilter(field), this.host.hasMenu(field), cols.can(field, 'resizable')]);
   }
 
   /** What a header says: a column's title, or the name of one of the grid's own columns. */
@@ -282,17 +288,13 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   private selectCell(): ComponentBase {
     const grid = this.grid;
     const check = createCheck(grid.text('gridSelectAll'));
-    const cell = new Component<HTMLDivElement>('div');
-    const el = cell.element;
-    el.className = 'mx-data-grid__header-cell mx-data-grid__select';
-    el.setAttribute('role', 'columnheader');
-    el.setAttribute('tabindex', '-1');
-    el.dataset.field = SELECT_FIELD;
-    el.addEventListener('click', () => {
+    const cell = loose<HTMLDivElement>('div', 'mx-data-grid__header-cell mx-data-grid__select');
+    cell.attr.add({ role: 'columnheader', tabindex: '-1', 'data-field': SELECT_FIELD });
+    cell.motif.on('click', () => {
       if (grid.settings.get('selectAll')) this.host.toggleAll();
     });
-    el.append(check);
-    this.select = { cell: el, check };
+    cell.controls.add(check);
+    this.select = { cell, check };
     this.cells.set(SELECT_FIELD, cell);
     return cell;
   }
@@ -302,8 +304,8 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     if (!select) return;
     const grid = this.grid;
     const on = grid.settings.get('selectAll');
-    select.check.hidden = !on;
-    if (on) setCheck(select.check, this.host.allState(), grid.text('gridSelectAll'));
+    mark(select.check, 'hidden', !on);
+    if (on) drawCheck(select.check, this.host.allState(), grid.text('gridSelectAll'));
     put(select.cell, 'aria-label', grid.text('gridSelectAll'));
   }
 
@@ -318,8 +320,14 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       this.suppressClick = false;
       return;
     }
-    if ((e.target as HTMLElement).closest('.mx-data-grid__resize, .mx-data-grid__menu-button, .mx-data-grid__filter-button')) return;
+    if (this.fromButton(col.field, e)) return;
     this.grid.toggleSort(col.field, e.shiftKey);
+  }
+
+  /** Whether an event started on a header's filter or menu button, or on its resize handle. */
+  private fromButton(field: string, e: Event): boolean {
+    const parts = this.drawn.get(field);
+    return !!parts && [parts.filter, parts.menu, parts.resize].some((part) => part.motif.isEventFrom(e));
   }
 
   /**
@@ -331,64 +339,74 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const cols = grid.columns;
     const field = col.field;
     if (e.button !== 0) return;
-    if ((e.target as HTMLElement).closest('.mx-data-grid__resize, .mx-data-grid__menu-button, .mx-data-grid__filter-button')) return;
+    if (this.fromButton(field, e)) return;
     const panel = grid.canGroupNow(field) ? this.host.groupTarget() : null;
     const [lo, hi] = cols.moveRange(field);
     const movable = cols.can(field, 'movable') && lo !== hi;
     if (!movable && !panel) return;
-    const source = this.cellElement(field)!;
+    const sourcePart = this.cells.get(field)!;
     const startX = e.clientX;
     const startY = e.clientY;
     const units = cols.siblings(field);
     // Captured at once: the pointer may leave the header before the drag threshold is reached.
-    source.setPointerCapture?.(e.pointerId);
+    sourcePart.attr.add({ setPointerCapture: e.pointerId });
     let dragging = false;
     const from = units.indexOf(field);
     let target = from;
     let place = -1;
-    const indicator = this.indicator.element as HTMLElement;
+    const indicator = this.indicator;
     const rtl = this.host.isRtl();
 
     const ghost = this.host.ghost;
-    const move = (ev: PointerEvent) => {
+    let point = { x: startX, y: startY };
+    let stopAim = () => {};
+    /** Where a drop at the pointer lands: on the group panel, or the column's new place and the boundary it lands on (from the row's start). */
+    const readAim = () => {
+      // The panel's drop is read here with its mark's place, so the write measures nothing.
+      const onPanel = panel ? panel.dropAt(point.x, point.y) : NO_DROP;
+      if (onPanel.index >= 0 || !movable) return { place: onPanel.index, panelDrop: onPanel, target: from, x: null };
+      const drop = dropPlace(units.map((u) => this.unitRect(u)), from, lo, hi, point.x, rtl);
+      return { place: onPanel.index, panelDrop: onPanel, target: drop.target, x: drop.x === null ? null : drop.x - rectOf(this).left };
+    };
+    /** Marks where the drop lands, and the ghost says what it would do. */
+    const drawAim = (aim: ReturnType<typeof readAim>) => {
+      place = aim.place;
+      target = aim.target;
+      panel?.showDropAt(aim.panelDrop);
+      // The mark sits on the boundary the column would land on.
+      if (aim.x !== null) css(indicator, 'left', `${aim.x}px`);
+      mark(indicator, 'hidden', aim.x === null);
+      const says: GhostTarget = place >= 0 ? 'group' : aim.x === null ? 'none' : 'move';
+      ghost.move(point.x, point.y, says);
+    };
+    const move = (_: ComponentBase, ev: PointerEvent) => {
       if (!dragging) {
         if (Math.max(Math.abs(ev.clientX - startX), panel ? Math.abs(ev.clientY - startY) : 0) < grid.settings.get('dragThreshold')) return;
         dragging = true;
-        source.toggleAttribute('data-dragging', true);
+        // The ghost copies the header cell's size before anything is written for the drag.
+        ghost.show(sourcePart, ev.clientX, ev.clientY, 'header');
+        mark(sourcePart, 'data-dragging', true);
         panel?.showReady(true);
-        ghost.show(source, ev.clientX, ev.clientY, 'header');
       }
-      ghost.move(ev.clientX, ev.clientY, aim(ev));
+      point = { x: ev.clientX, y: ev.clientY };
+      stopAim = measure(this, readAim, drawAim);
     };
-    /** Marks where a drop at the pointer lands, and says what it would do. */
-    const aim = (ev: PointerEvent): GhostTarget => {
-      place = panel ? panel.dropIndexAt(ev.clientX, ev.clientY) : -1;
-      panel?.showDrop(place);
-      if (place >= 0 || !movable) {
-        target = from;
-        indicator.hidden = true;
-        return place >= 0 ? 'group' : 'none';
+    const up = (_: ComponentBase, ev: PointerEvent) => {
+      stopAim();
+      // The drop lands where the last move pointed, measured or not yet.
+      if (dragging) {
+        const last = readAim();
+        place = last.place;
+        target = last.target;
       }
-      const drop = dropPlace(units.map((u) => this.unitRect(u)), from, lo, hi, ev.clientX, rtl);
-      target = drop.target;
-      if (drop.x === null) {
-        indicator.hidden = true;
-        return 'none';
-      }
-      // The mark sits on the boundary the column would land on.
-      indicator.style.left = `${drop.x - this.element.getBoundingClientRect().left}px`;
-      indicator.hidden = false;
-      return 'move';
-    };
-    const up = (ev: PointerEvent) => {
-      source.removeEventListener('pointermove', move);
-      source.removeEventListener('pointerup', up);
-      source.removeEventListener('pointercancel', up);
-      indicator.hidden = true;
-      panel?.showDrop(-1);
+      void sourcePart.motif.off('pointermove', move);
+      void sourcePart.motif.off('pointerup', up);
+      void sourcePart.motif.off('pointercancel', up);
+      mark(indicator, 'hidden', true);
+      panel?.showDropAt(NO_DROP);
       panel?.showReady(false);
       ghost.hide();
-      source.toggleAttribute('data-dragging', false);
+      mark(sourcePart, 'data-dragging', false);
       if (!dragging) return;
       this.suppressClick = true;
       if (place >= 0 && ev.type !== 'pointercancel') {
@@ -401,9 +419,9 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
         this.grid.layoutChanged();
       }
     };
-    source.addEventListener('pointermove', move);
-    source.addEventListener('pointerup', up);
-    source.addEventListener('pointercancel', up);
+    void sourcePart.motif.on('pointermove', move);
+    void sourcePart.motif.on('pointerup', up);
+    void sourcePart.motif.on('pointercancel', up);
   }
 
   /**
@@ -412,7 +430,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
    */
   chipDropIndex(field: string, x: number, y?: number): number {
     if (Number.isNaN(x)) return -1;
-    const box = this.element.getBoundingClientRect();
+    const box = rectOf(this);
     if (y !== undefined && (y < box.top || y > box.bottom || x < box.left || x > box.right)) return -1;
     const rtl = this.host.isRtl();
     let n = 0;
@@ -440,76 +458,79 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
 
   /** Where a column's header sits on the screen; a column without cells (virtual, out of view) by the widths. */
   private placeOf(field: string): { left: number; right: number } | null {
-    const el = this.cellElement(field);
-    if (el?.isConnected) return el.getBoundingClientRect();
+    const cell = this.cellPart(field);
+    if (cell && isInPage(cell)) return rectOf(cell);
     const cols = this.grid.columns;
     const visible = cols.visible();
     if (!visible.includes(field)) return null;
-    const row = this.element.getBoundingClientRect();
+    const row = rectOf(this);
     const start = this.grid.columnWindow.offsetOf(field, visible);
     const width = cols.width(field);
     return this.host.isRtl() ? { left: row.right - start - width, right: row.right - start } : { left: row.left + start, right: row.left + start + width };
   }
 
-  /** Marks where a grouped column dragged over the headers lands; whether the point is over them (NaN hides the mark). */
-  showChipDrop(field: string, x: number, y: number): boolean {
-    const indicator = this.indicator.element as HTMLElement;
+  /**
+   * Where a grouped column dragged over the headers lands, and where its mark goes (from the row's left); reads
+   * only, -1 when the point is not over them (NaN). Read it first in a handler, then write it with `showChipDrop`.
+   */
+  chipDropAt(field: string, x: number, y: number): GroupDrop {
     const at = this.chipDropIndex(field, x, y);
-    if (at < 0) {
-      indicator.hidden = true;
-      this.element.toggleAttribute('data-drop', false);
-      return false;
-    }
+    if (at < 0) return NO_DROP;
     const units = this.grid.columns.siblings(field);
     const rtl = this.host.isRtl();
-    const base = this.element.getBoundingClientRect();
+    const base = rectOf(this);
     const before = units[at] !== undefined ? this.unitRect(units[at]) : undefined;
     const after = units[at - 1] !== undefined ? this.unitRect(units[at - 1]) : undefined;
     const edge = before ? (rtl ? before.right : before.left) : after ? (rtl ? after.left : after.right) : base.left;
-    indicator.style.left = `${edge - base.left}px`;
-    indicator.hidden = false;
-    this.element.toggleAttribute('data-drop', true);
-    return true;
+    return { index: at, offset: edge - base.left };
+  }
+
+  /** Marks where a drop read with `chipDropAt` lands; one at -1 hides the mark. */
+  showChipDrop(drop: GroupDrop) {
+    const indicator = this.indicator;
+    mark(this, 'data-drop', drop.index >= 0);
+    if (drop.index >= 0) css(indicator, 'left', `${drop.offset}px`);
+    mark(indicator, 'hidden', drop.index < 0);
   }
 
   /** Width the column takes on screen; more than its setting while it flexes. */
   shownWidth(field: string): number {
-    const w = this.cellElement(field)?.getBoundingClientRect().width;
+    const cell = this.cellPart(field);
+    const w = cell ? rectOf(cell).width : 0;
     return w ? Math.round(w) : this.grid.columns.width(field);
   }
 
   /** Drag the edge to resize: the column alone, or against the next one. */
-  private pressHandle(col: GridColumn<T>, e: PointerEvent) {
+  private pressHandle(col: GridColumn<T>, handlePart: ComponentBase, e: PointerEvent) {
     const cols = this.grid.columns;
     if (e.button !== 0 || !cols.can(col.field, 'resizable')) return;
     e.stopPropagation();
     e.preventDefault();
-    const handle = e.currentTarget as HTMLElement;
-    handle.setPointerCapture?.(e.pointerId);
+    handlePart.attr.add({ setPointerCapture: e.pointerId });
     const startX = e.clientX;
     const next = cols.partnerOf(col.field);
     // From the width on screen: a flexing column is wider than its setting.
     const startWidth = this.shownWidth(col.field);
     const total = next ? startWidth + this.shownWidth(next) : 0;
     const sign = this.host.isRtl() ? -1 : 1;
-    const cell = this.cellElement(col.field)!;
-    cell.toggleAttribute('data-resizing', true);
-    const move = (ev: PointerEvent) => {
+    const cell = this.cells.get(col.field)!;
+    mark(cell, 'data-resizing', true);
+    const move = (_: ComponentBase, ev: PointerEvent) => {
       const px = startWidth + sign * (ev.clientX - startX);
       if (next) cols.resizeWithNext(col.field, next, total, px);
       else cols.resize(col.field, px);
     };
     const up = () => {
-      handle.removeEventListener('pointermove', move);
-      handle.removeEventListener('pointerup', up);
-      handle.removeEventListener('pointercancel', up);
-      cell.toggleAttribute('data-resizing', false);
+      void handlePart.motif.off('pointermove', move);
+      void handlePart.motif.off('pointerup', up);
+      void handlePart.motif.off('pointercancel', up);
+      mark(cell, 'data-resizing', false);
       this.suppressClick = true;
       setTimeout(() => (this.suppressClick = false));
       if (cols.width(col.field) !== startWidth) this.grid.layoutChanged();
     };
-    handle.addEventListener('pointermove', move);
-    handle.addEventListener('pointerup', up);
-    handle.addEventListener('pointercancel', up);
+    void handlePart.motif.on('pointermove', move);
+    void handlePart.motif.on('pointerup', up);
+    void handlePart.motif.on('pointercancel', up);
   }
 }

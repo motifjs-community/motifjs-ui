@@ -4,7 +4,7 @@ import { mountHost, tick } from '../../tests/helpers';
 import { TestButton, TestWindow } from '../../tests/controls';
 import { Control } from './control';
 import { addShortcut, parseChord, parseShortcut } from './keyboard';
-import { parseAccessKey } from './access-key';
+import { accessKeyToken, parseAccessKey, setAccessKeyAttribute } from './access-key';
 
 beforeAll(() => {
   const proto = HTMLDialogElement.prototype as HTMLDialogElement & Record<string, unknown>;
@@ -235,9 +235,11 @@ describe('access keys (&Text)', () => {
     expect(clicks).toBe(0);
   });
 
-  it('ignores disabled controls and works for plain elements with aria-keyshortcuts', async () => {
+  it('ignores disabled controls and works for any part given a key', async () => {
     const off = new TestButton({ text: '&Name', enabled: false });
-    page(off, <input name="n" aria-keyshortcuts="Alt+N" />);
+    const field = <input name="n" />;
+    page(off, field);
+    setAccessKeyAttribute(field, null, accessKeyToken('N'));
     await settle();
     press('n', { altKey: true });
     expect(document.activeElement).toBe(document.querySelector('[name=n]'));
@@ -248,8 +250,10 @@ describe('access keys (&Text)', () => {
     const pageButton = new TestButton({ text: '&Print' });
     pageButton.motif.on('click', () => pageClicks++);
     const host = page(pageButton);
-    const win = new TestWindow({ childs: [<input name="p" aria-keyshortcuts="Alt+P" />] });
+    const field = <input name="p" />;
+    const win = new TestWindow({ childs: [field] });
     win.open(host);
+    setAccessKeyAttribute(field, null, accessKeyToken('P'));
     await settle();
     press('p', { altKey: true });
     expect(pageClicks).toBe(0);
@@ -258,9 +262,10 @@ describe('access keys (&Text)', () => {
   });
 
   it('shows the access keys while Alt is held, and after a tap until the next action', async () => {
-    page(new TestButton({ text: '&Save' }));
+    const save = new TestButton({ text: '&Save' });
+    page(save);
     await settle();
-    const shown = () => document.documentElement.hasAttribute('data-mx-alt');
+    const shown = () => save.element.hasAttribute('data-mx-alt');
     const altDown = () => press('Alt', { altKey: true });
     const altUp = () => {
       const e = new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true });
@@ -318,11 +323,11 @@ describe('access keys (&Text)', () => {
       expect(clicks).toBe(0);
       // Control+Option+S: the key reports ß too, the physical key is S.
       press('Control', { ctrlKey: true, altKey: true });
-      expect(document.documentElement.hasAttribute('data-mx-alt')).toBe(true);
+      expect(b.element.hasAttribute('data-mx-alt')).toBe(true);
       expect(press('ß', { altKey: true, ctrlKey: true, code: 'KeyS' })).toBe(true);
       expect(clicks).toBe(1);
       document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Control', bubbles: true }));
-      expect(document.documentElement.hasAttribute('data-mx-alt')).toBe(false);
+      expect(b.element.hasAttribute('data-mx-alt')).toBe(false);
     } finally {
       delete (navigator as unknown as Record<string, unknown>).platform;
       if (platform) Object.defineProperty(Navigator.prototype, 'platform', platform);

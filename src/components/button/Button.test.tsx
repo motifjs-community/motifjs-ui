@@ -191,6 +191,7 @@ describe('Button', () => {
     expect((b.element as HTMLButtonElement).type).toBe('submit');
     expect(b.element.title).toBe('Send the form');
     press('s', { altKey: true });
+    await settle();
     expect(clicked).toHaveBeenCalledTimes(1);
     expect(document.activeElement).toBe(b.element);
   });
@@ -269,7 +270,7 @@ describe('Button', () => {
       'true',
     ]);
     expect(el.querySelector('.mx-button__icon img')).not.toBeNull();
-    expect([el.disabled, el.getAttribute('aria-disabled'), el.getAttribute('tabindex'), el.dataset.mxTabindex]).toEqual([false, 'true', '-1', '4']);
+    expect([el.disabled, el.getAttribute('aria-disabled'), el.getAttribute('tabindex'), String(b.tabIndex)]).toEqual([false, 'true', '-1', '4']);
 
     s.focusable = false;
     s.visible = false;

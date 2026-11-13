@@ -1,9 +1,12 @@
 import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { setAccessKeyAttribute } from '../../core/access-key';
 import { follow } from '../../core/follow';
-import { focusableIn, isFocusable, keepsKeys } from '../../core/focus';
-import { dismissMark, pinMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { canTakeFocus, focusFirstIn, focusOn, hasFocusableIn, isFocused, rememberFocus } from '../../core/focus';
+import type { FocusMark } from '../../core/focus-mark';
+import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { keepScroll } from '../../core/measure';
+import { kept, mark, put, text as writeText } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
 import { Tooltip } from '../tooltip/Tooltip';
@@ -18,69 +21,69 @@ import { uiLocale } from '../../core/ui-locale';
  * group to group; the content in the panel is never recreated for a move.
  */
 export class DocumentTab {
-  readonly header: HTMLButtonElement;
+  /** The tab's component; its group puts it in its strip. */
+  readonly headerPart: Component<HTMLButtonElement>;
   readonly panel: Component<HTMLDivElement>;
   group: TabGroup | null = null;
-  /** What had focus last in the panel. */
-  lastFocus: HTMLElement | null = null;
-  private readonly label: HTMLSpanElement;
-  private readonly letter: HTMLSpanElement;
-  private readonly close: HTMLSpanElement;
-  private readonly pin: HTMLSpanElement;
-  private readonly unsaved: HTMLSpanElement;
-  private readonly status: HTMLSpanElement;
-  private description: HTMLSpanElement | null = null;
-  private icon: HTMLSpanElement | null = null;
+  /** Where focus was last in the panel. */
+  private lastFocus: FocusMark | null = null;
+  /** Drawn as pinned: the manager hears when that changes. */
+  private pinned = false;
+  private readonly label: Component<HTMLSpanElement>;
+  private readonly letter: Component<HTMLSpanElement>;
+  private readonly close: Component<HTMLSpanElement>;
+  private readonly pin: Component<HTMLSpanElement>;
+  private readonly unsaved: Component<HTMLSpanElement>;
+  private readonly status: Component<HTMLSpanElement>;
+  private description: Component<HTMLSpanElement> | null = null;
+  private icon: Component<HTMLSpanElement> | null = null;
   private releaseIcon: () => void = () => {};
-  private badge: HTMLSpanElement | null = null;
+  private badge: Component<HTMLSpanElement> | null = null;
   private tooltip: Tooltip | null = null;
   private tipHolder: Component<HTMLDivElement> | null = null;
   private closeKey: string | null = null;
   private content: ComponentBase | null = null;
   private shown = false;
-  /** What scrolled in the panel: a hidden element tells no scroll, and a move into another window loses it. */
-  private readonly scrolls = new Map<Element, [number, number]>();
-  /** The document the panel was in when it was hidden. */
-  private hiddenIn: Document | null = null;
+  /** Scrolls back what scrolled in the panel when it was hidden: a move into another window while hidden loses it. */
+  private restoreScroll: (() => void) | null = null;
   private readonly stops: (() => void)[] = [];
 
   constructor(
     readonly document: TabDocument,
     private manager: TabDocumentManager,
   ) {
-    const owner = manager.element.ownerDocument;
-    const header = (this.header = owner.createElement('button'));
-    header.type = 'button';
-    header.className = 'mx-tabdocs__tab';
-    header.id = nextId('tabdoc');
-    header.tabIndex = -1;
-    header.setAttribute('role', 'tab');
-    header.setAttribute('aria-selected', 'false');
-    this.letter = append(header, 'mx-tabdocs__letter');
-    this.letter.setAttribute('aria-hidden', 'true');
-    this.label = append(header, 'mx-tabdocs__title');
-    this.unsaved = append(header, 'mx-tabdocs__hidden');
-    this.unsaved.hidden = true;
-    this.status = append(header, 'mx-tabdocs__hidden');
-    this.status.hidden = true;
+    const headerPart = (this.headerPart = loose<HTMLButtonElement>('button', 'mx-tabdocs__tab'));
+    const headerId = nextId('tabdoc');
+    headerPart.attr.add({ type: 'button', id: headerId });
+    put(headerPart, 'tabindex', '-1');
+    headerPart.attr.add({ role: 'tab', 'aria-selected': 'false' });
+    this.letter = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__letter');
+    this.letter.attr.add({ 'aria-hidden': 'true' });
+    this.label = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__title');
+    this.unsaved = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__hidden');
+    mark(this.unsaved, 'hidden', true);
+    this.status = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__hidden');
+    mark(this.status, 'hidden', true);
     // The pin mark unpins under the pointer; the keyboard has the menu and a key for it.
-    this.pin = append(header, 'mx-tabdocs__pin');
-    this.pin.setAttribute('aria-hidden', 'true');
-    this.pin.append(pinMark());
-    this.close = append(header, 'mx-tabdocs__close');
-    this.close.setAttribute('aria-hidden', 'true');
-    this.close.append(dismissMark());
-    append(this.close, 'mx-tabdocs__dirty');
+    const pin = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__pin');
+    this.pin = pin;
+    pin.attr.add({ 'aria-hidden': 'true' });
+    glyphPart(pin, 'pin');
+    const close = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__close');
+    this.close = close;
+    close.attr.add({ 'aria-hidden': 'true' });
+    glyphPart(close, 'dismiss');
+    part(close, 'span', 'mx-tabdocs__dirty');
 
-    const panel = (this.panel = new Component<HTMLDivElement>('div'));
-    const el = panel.element;
-    el.className = 'mx-tabdocs__panel';
-    el.id = nextId('tabdoc-panel');
-    el.hidden = true;
-    el.setAttribute('role', 'tabpanel');
-    el.setAttribute('aria-labelledby', header.id);
-    header.setAttribute('aria-controls', el.id);
-    el.addEventListener('scroll', (e) => this.noteScroll(e.target), { capture: true, passive: true });
+    const panel = (this.panel = loose<HTMLDivElement>('div', 'mx-tabdocs__panel'));
+    const panelId = nextId('tabdoc-panel');
+    panel.attr.add({ id: panelId, role: 'tabpanel', 'aria-labelledby': headerId });
+    // Hidden until the document is shown: out of the page, kept whole.
+    kept(panel, false);
+    // Where focus goes in the panel, to come back to; the panel itself does not count.
+    panel.motif.on('focusin', (_, e) => {
+      if (!isFocused(panel)) this.lastFocus = rememberFocus(e);
+    });
     this.render();
   }
 
@@ -91,15 +94,17 @@ export class DocumentTab {
 
   /** Shows or hides the panel; the content is built or let go as its lifetime says. */
   show(on: boolean): void {
-    const el = this.panel.element;
-    if (!on && !el.hidden) this.hiddenIn = el.ownerDocument;
+    // Noted before the panel hides, while it still tells its scroll.
+    if (!on && this.shown) this.restoreScroll = keepScroll(this.panel);
     this.shown = on;
-    this.header.setAttribute('aria-selected', String(on));
-    el.hidden = !on;
+    put(this.headerPart, 'aria-selected', String(on));
+    // A hidden panel is out of the page, so only the shown document's tab names its panel.
+    put(this.headerPart, 'aria-controls', on ? this.panel.attr.get('id') : null);
+    kept(this.panel, on);
     if (on) {
-      // Moved into another window while hidden: what scrolled in it scrolls back.
-      if (this.hiddenIn && this.hiddenIn !== el.ownerDocument) this.restoreScrolls();
-      this.hiddenIn = null;
+      // In the next frame, once the panel shows again, wherever it was moved meanwhile.
+      this.restoreScroll?.();
+      this.restoreScroll = null;
       this.build();
       this.updatePanelFocus();
     } else if (this.lifetime() === 'dispose') {
@@ -116,21 +121,25 @@ export class DocumentTab {
   focusContent(still = false): boolean {
     const options = { preventScroll: still };
     const last = this.lastFocus;
-    if (last && this.panel.element.contains(last) && isFocusable(last)) {
-      last.focus(options);
-      return true;
-    }
-    const target = focusableIn(this.panel.element).find(keepsKeys) ?? (isFocusable(this.panel.element) ? this.panel.element : null);
-    (target ?? this.header).focus(options);
+    if (last?.isIn(this.panel) && last.restore(options)) return true;
+    if (focusFirstIn(this.panel, 'any', options)) return true;
+    focusOn(canTakeFocus(this.panel) ? this.panel : this.headerPart, options);
     return true;
   }
 
   /** A panel with nothing to focus in it takes focus itself, so Tab reaches it. */
   updatePanelFocus(): void {
-    const el = this.panel.element;
-    if (el.hidden) return;
-    if (focusableIn(el).length) el.removeAttribute('tabindex');
-    else if (!el.hasAttribute('tabindex')) el.tabIndex = 0;
+    if (this.shown) put(this.panel, 'tabindex', hasFocusableIn(this.panel) ? null : '0');
+  }
+
+  /** Whether an event started on the tab's close button. */
+  isCloseEvent(e: Event): boolean {
+    return this.close.motif.isEventFrom(e);
+  }
+
+  /** Whether an event started on the tab's pin mark. */
+  isPinEvent(e: Event): boolean {
+    return this.pin.motif.isEventFrom(e);
   }
 
   /** The tooltip lives next to the strip of the group the tab is in. */
@@ -152,28 +161,9 @@ export class DocumentTab {
     for (const stop of this.stops.splice(0)) stop();
     this.releaseIcon();
     this.attachTooltip(null);
-    this.header.remove();
+    removePart(this.headerPart);
     if (!this.panel.isDisposed) void this.panel.dispose();
     this.content = null;
-  }
-
-  private noteScroll(target: EventTarget | null): void {
-    const el = target as Element | null;
-    if (!el || typeof el.scrollTop !== 'number') return;
-    if (el.scrollTop || el.scrollLeft) this.scrolls.set(el, [el.scrollTop, el.scrollLeft]);
-    else this.scrolls.delete(el);
-  }
-
-  private restoreScrolls(): void {
-    const panel = this.panel.element;
-    for (const [el, [top, left]] of this.scrolls) {
-      if (!panel.contains(el)) {
-        this.scrolls.delete(el);
-        continue;
-      }
-      el.scrollTop = top;
-      el.scrollLeft = left;
-    }
   }
 
   private lifetime(): ContentLifetime {
@@ -186,6 +176,8 @@ export class DocumentTab {
     if (!made) return;
     this.content = made;
     this.panel.controls.add(made);
+    // Once the content is in the page, the panel knows whether it still needs a tab stop of its own.
+    void made.motif.on('x:mounted', () => this.updatePanelFocus());
   }
 
   private release(): void {
@@ -213,8 +205,8 @@ export class DocumentTab {
     this.watch(
       () => doc.title,
       (title) => {
-        this.label.textContent = title;
-        this.letter.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase(uiLocale.locale) ?? '';
+        writeText(this.label, title);
+        writeText(this.letter, Array.from(title.trim())[0]?.toLocaleUpperCase(uiLocale.locale) ?? '');
         this.manager.tabChanged(this);
       },
     );
@@ -225,8 +217,8 @@ export class DocumentTab {
     this.watch(
       () => doc.tone,
       (tone) => {
-        if (tone) this.header.dataset.tone = tone;
-        else this.header.removeAttribute('data-tone');
+        if (tone) put(this.headerPart, 'data-tone', tone);
+        else put(this.headerPart, 'data-tone', null);
       },
     );
     this.watch(
@@ -237,13 +229,13 @@ export class DocumentTab {
         return { pinned, preview, text, unpin: this.manager.textOf('tabDocsUnpin') };
       },
       ({ pinned, preview, text, unpin }) => {
-        const header = this.header;
-        const was = header.hasAttribute('data-pinned');
-        header.toggleAttribute('data-pinned', pinned);
-        header.toggleAttribute('data-preview', preview);
-        this.status.textContent = text ? `, ${text}` : '';
-        this.status.hidden = !text;
-        this.pin.title = unpin;
+        const was = this.pinned;
+        this.pinned = pinned;
+        mark(this.headerPart, 'data-pinned', pinned);
+        mark(this.headerPart, 'data-preview', preview);
+        writeText(this.status, text ? `, ${text}` : '');
+        mark(this.status, 'hidden', !text);
+        put(this.pin, 'title', unpin);
         if (was !== pinned) this.manager.pinChanged(this);
         this.manager.tabChanged(this);
       },
@@ -271,20 +263,19 @@ export class DocumentTab {
         closeHint: this.manager.textOf('close'),
       }),
       ({ dirty, closable, mode, text, closeHint }) => {
-        const header = this.header;
-        header.toggleAttribute('data-dirty', dirty);
-        this.unsaved.textContent = `, ${text}`;
-        this.unsaved.hidden = !dirty;
-        if (closable && mode !== 'never') header.dataset.close = mode;
-        else header.removeAttribute('data-close');
-        this.close.title = closeHint;
+        mark(this.headerPart, 'data-dirty', dirty);
+        writeText(this.unsaved, `, ${text}`);
+        mark(this.unsaved, 'hidden', !dirty);
+        if (closable && mode !== 'never') put(this.headerPart, 'data-close', mode);
+        else put(this.headerPart, 'data-close', null);
+        put(this.close, 'title', closeHint);
         this.manager.tabChanged(this);
       },
     );
     this.watch(
       () => (doc.closable ? this.manager.closeKeyHint() : null),
       (key) => {
-        setAccessKeyAttribute(this.header, this.closeKey, key);
+        setAccessKeyAttribute(this.headerPart, this.closeKey, key);
         this.closeKey = key;
       },
     );
@@ -303,7 +294,7 @@ export class DocumentTab {
 
   private renderTooltip(text: string): void {
     if (text && !this.tooltip && this.tipHolder) {
-      this.tooltip = new Tooltip({ target: this.header, text: () => this.tooltipText(), placement: 'bottom' });
+      this.tooltip = new Tooltip({ target: this.headerPart, text: () => this.tooltipText(), placement: 'bottom' });
       this.tipHolder.controls.add(this.tooltip);
     } else if (!text && this.tooltip) {
       void this.tooltip.dispose();
@@ -312,15 +303,14 @@ export class DocumentTab {
   }
 
   private renderDescription(text: string): void {
+    const items = this.headerPart.controls.items;
     if (text && !this.description) {
-      this.description = this.header.ownerDocument.createElement('span');
-      this.description.className = 'mx-tabdocs__description';
-      this.label.after(this.description);
+      this.description = partBefore<HTMLSpanElement>(this.headerPart, items[items.indexOf(this.label) + 1] ?? null, 'span', 'mx-tabdocs__description');
     } else if (!text && this.description) {
-      this.description.remove();
+      removePart(this.description);
       this.description = null;
     }
-    if (this.description) this.description.textContent = text;
+    if (this.description) writeText(this.description, text);
     this.manager.tabChanged(this);
   }
 
@@ -328,20 +318,19 @@ export class DocumentTab {
     this.releaseIcon();
     this.releaseIcon = () => {};
     if (!icon) {
-      this.icon?.remove();
+      removePart(this.icon);
       this.icon = null;
     } else {
-      if (!this.icon) {
-        this.icon = this.header.ownerDocument.createElement('span');
-        this.icon.className = 'mx-tabdocs__icon';
-        this.icon.setAttribute('aria-hidden', 'true');
-        this.header.prepend(this.icon);
+      let host = this.icon;
+      if (!host) {
+        host = partBefore<HTMLSpanElement>(this.headerPart, this.headerPart.controls.items[0] ?? null, 'span', 'mx-tabdocs__icon');
+        host.attr.add({ 'aria-hidden': 'true' });
+        this.icon = host;
       }
-      const shown = iconNode(icon, this.header.ownerDocument);
-      this.icon.replaceChildren(shown.node);
-      this.releaseIcon = shown.release;
+      clearParts(host);
+      this.releaseIcon = showIcon(icon, host);
     }
-    this.header.toggleAttribute('data-icon', !!icon);
+    mark(this.headerPart, 'data-icon', !!icon);
     this.manager.tabChanged(this);
   }
 
@@ -349,24 +338,15 @@ export class DocumentTab {
     const dot = badge === true;
     const text = badge === null || badge === undefined || badge === false || dot ? '' : String(badge);
     if ((text || dot) && !this.badge) {
-      this.badge = this.header.ownerDocument.createElement('span');
-      this.badge.className = 'mx-tabdocs__badge';
-      this.unsaved.before(this.badge);
+      this.badge = partBefore<HTMLSpanElement>(this.headerPart, this.unsaved, 'span', 'mx-tabdocs__badge');
     } else if (!text && !dot && this.badge) {
-      this.badge.remove();
+      removePart(this.badge);
       this.badge = null;
     }
     if (this.badge) {
-      this.badge.textContent = text;
-      this.badge.toggleAttribute('data-dot', dot);
+      writeText(this.badge, text);
+      mark(this.badge, 'data-dot', dot);
     }
     this.manager.tabChanged(this);
   }
-}
-
-function append(parent: HTMLElement, className: string): HTMLSpanElement {
-  const span = parent.ownerDocument.createElement('span');
-  span.className = className;
-  parent.append(span);
-  return span;
 }

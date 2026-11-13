@@ -1,9 +1,10 @@
-import { Component, read, type Bind, type IBaseProp } from '@motifx/core';
+import { read, type Bind, type Component, type ComponentBase, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { registerControl } from '../../core/control-map';
-import { chevronDown } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { isInPage, measure, transitionTime } from '../../core/measure';
+import { mark, put } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
 import { PanelContent } from '../tabs/PanelContent';
@@ -14,10 +15,12 @@ const OWN = ['key', 'icon', 'hint', 'expanded', 'lazy', 'keepAlive'] as const;
 
 /** The parts of an item. On one object made on first use: the base constructor already asks for the focus element. */
 interface Parts {
-  heading: HTMLDivElement;
-  header: HTMLButtonElement;
-  label: HTMLSpanElement;
-  icon: HTMLSpanElement | null;
+  heading: Component<HTMLDivElement>;
+  header: Component<HTMLButtonElement>;
+  /** The header's id: the region is labelled by it. */
+  headerId: string;
+  label: Component<HTMLSpanElement>;
+  icon: Component<HTMLSpanElement> | null;
   releaseIcon: () => void;
   region: Component<HTMLDivElement>;
   body: Component<HTMLDivElement>;
@@ -56,17 +59,18 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     });
     this.observeProperty('icon', () => this.renderIcon());
     this.observeProperty<string>('hint', (hint) => {
-      if (hint) parts.header.title = hint;
-      else parts.header.removeAttribute('title');
+      if (hint) put(parts.header, 'title', hint);
+      else put(parts.header, 'title', null);
     });
     this.observeProperty<boolean>('expanded', (on) => this.renderExpanded(!!on));
     this.observeProperty('key', () => parts.owner?.itemChanged(this));
     this.observeProperty('lazy', () => this.prepare());
 
-    parts.header.addEventListener('click', (e) => {
+    parts.header.motif.on('click', (_sender, e: MouseEvent) => {
       if (parts.owner) parts.owner.itemClicked(this, e);
       else this.setExpanded(!this.peekProperty('expanded'));
     });
+    parts.header.motif.on('keydown', (_sender, e: KeyboardEvent) => parts.owner?.headerKeyDown(this, e));
     this.motif.setDisposable(() => {
       clearTimeout(parts.releaseTimer);
       parts.releaseIcon();
@@ -135,14 +139,14 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     return !!this.parts.content?.isBuilt;
   }
 
-  /** The header button. */
-  get headerElement(): HTMLButtonElement {
+  /** The header button, as a component. */
+  get headerPart(): Component<HTMLButtonElement> {
     return this.parts.header;
   }
 
-  /** The region the header opens. */
-  get regionElement(): HTMLDivElement {
-    return this.parts.region.element;
+  /** The region the header opens, as a component. */
+  get regionPart(): Component<HTMLDivElement> {
+    return this.parts.region;
   }
 
   /** Opens the section as a click would, so `onExpanding` can cancel it. */
@@ -155,14 +159,14 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     return this.toggleAsUser(false);
   }
 
-  protected override get focusElement(): HTMLElement {
+  override get focusPart(): ComponentBase {
     return this.parts.header;
   }
 
-  /** The access key moves focus to the header and clicks it. */
+  /** The access key moves focus to the header and opens or closes the section, as a click does. */
   override onAccessKey(): boolean {
     if (!this.focus()) return false;
-    this.parts.header.click();
+    this.toggleAsUser(!this.peekProperty('expanded'));
     return true;
   }
 
@@ -185,18 +189,17 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
   /** @internal The heading level and whether the section is a region; the Accordion decides. */
   renderOuter(level: number, region: boolean, locked: boolean): void {
     const parts = this.parts;
-    parts.heading.setAttribute('aria-level', String(level));
-    const el = parts.region.element;
+    put(parts.heading, 'aria-level', String(level));
     if (region) {
-      el.setAttribute('role', 'region');
-      el.setAttribute('aria-labelledby', parts.header.id);
+      put(parts.region, 'role', 'region');
+      put(parts.region, 'aria-labelledby', parts.headerId);
     } else {
-      el.removeAttribute('role');
-      el.removeAttribute('aria-labelledby');
+      put(parts.region, 'role', null);
+      put(parts.region, 'aria-labelledby', null);
     }
     // An open section that may not close says so (APG).
-    if (locked) parts.header.setAttribute('aria-disabled', 'true');
-    else parts.header.removeAttribute('aria-disabled');
+    if (locked) put(parts.header, 'aria-disabled', 'true');
+    else put(parts.header, 'aria-disabled', null);
   }
 
   /** @internal Builds the section now when it is not lazy. */
@@ -225,18 +228,27 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
 
   private renderExpanded(on: boolean): void {
     const parts = this.parts;
-    this.element.toggleAttribute('data-expanded', on);
-    parts.header.setAttribute('aria-expanded', String(on));
+    mark(this, 'data-expanded', on);
+    put(parts.header, 'aria-expanded', String(on));
     clearTimeout(parts.releaseTimer);
     if (on) parts.content?.build();
-    else if (!this.keepAliveNow()) {
-      // Dropped once the closing animation is over.
-      const wait = longestTransition(parts.region.element);
-      if (wait) parts.releaseTimer = setTimeout(() => parts.content?.release(), wait);
-      else parts.content?.release();
-    }
+    else if (!this.keepAliveNow()) measure(this, this.readClosing, this.dropContent);
     parts.owner?.itemToggled(this);
   }
+
+  // A closed section's content is dropped once the closing animation is over.
+  private readonly readClosing = (): number => {
+    const region = this.parts.region;
+    return isInPage(region) ? transitionTime(region) : 0;
+  };
+
+  private readonly dropContent = (wait: number): void => {
+    const parts = this.parts;
+    if (this.peekProperty('expanded')) return;
+    clearTimeout(parts.releaseTimer);
+    if (wait) parts.releaseTimer = setTimeout(() => parts.content?.release(), wait);
+    else parts.content?.release();
+  };
 
   private renderIcon(): void {
     const parts = this.parts;
@@ -244,19 +256,18 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     parts.releaseIcon();
     parts.releaseIcon = () => {};
     if (!icon) {
-      parts.icon?.remove();
+      if (parts.icon) removePart(parts.icon);
       parts.icon = null;
       return;
     }
-    if (!parts.icon) {
-      parts.icon = document.createElement('span');
-      parts.icon.className = 'mx-accordion__icon';
-      parts.icon.setAttribute('aria-hidden', 'true');
-      parts.label.before(parts.icon);
+    let host = parts.icon;
+    if (!host) {
+      host = partBefore<HTMLSpanElement>(parts.header, parts.label, 'span', 'mx-accordion__icon');
+      host.attr.add({ 'aria-hidden': 'true' });
+      parts.icon = host;
     }
-    const shown = iconNode(icon);
-    parts.icon.replaceChildren(shown.node);
-    parts.releaseIcon = shown.release;
+    clearParts(host);
+    parts.releaseIcon = showIcon(icon, host);
   }
 
   private get parts(): Parts {
@@ -265,51 +276,21 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
   }
 
   private createParts(): Parts {
-    this.element.classList.add('mx-accordion__item');
-    const heading = document.createElement('div');
-    heading.className = 'mx-accordion__heading';
-    heading.setAttribute('role', 'heading');
-    heading.setAttribute('aria-level', '3');
-    const header = heading.appendChild(document.createElement('button'));
-    header.type = 'button';
-    header.className = 'mx-accordion__header';
-    header.id = nextId('accordion-header');
-    header.setAttribute('aria-expanded', 'false');
-    const label = header.appendChild(document.createElement('span'));
-    label.className = 'mx-accordion__label';
+    this.class.add('mx-accordion__item');
+    const heading = partBefore<HTMLDivElement>(this, this.controls.items[0] ?? null, 'div', 'mx-accordion__heading');
+    heading.attr.add({ role: 'heading', 'aria-level': '3' });
+    const header = part<HTMLButtonElement>(heading, 'button', 'mx-accordion__header');
+    const headerId = nextId('accordion-header');
+    header.attr.add({ type: 'button', id: headerId, 'aria-expanded': 'false' });
+    const label = part<HTMLSpanElement>(header, 'span', 'mx-accordion__label');
     // The chevron stands in a plate of its own, which a language may draw behind it.
-    const plate = header.appendChild(document.createElement('span'));
-    plate.className = 'mx-accordion__plate';
-    const chevron = plate.appendChild(chevronDown());
-    chevron.classList.add('mx-accordion__chevron');
-    registerControl(header, this);
-    this.element.prepend(heading);
+    glyphPart(part(header, 'span', 'mx-accordion__plate'), 'chevron-down', 'mx-accordion__chevron');
 
-    const region = new Component<HTMLDivElement>('div');
-    region.element.className = 'mx-accordion__region';
-    region.element.id = nextId('accordion-region');
-    header.setAttribute('aria-controls', region.element.id);
-    const body = new Component<HTMLDivElement>('div');
-    body.element.className = 'mx-accordion__body';
-    return { heading, header, label, icon: null, releaseIcon: () => {}, region, body, owner: null, content: null, releaseTimer: undefined };
+    const region = loose<HTMLDivElement>('div', 'mx-accordion__region');
+    const regionId = nextId('accordion-region');
+    region.attr.add({ id: regionId });
+    header.attr.add({ 'aria-controls': regionId });
+    const body = loose<HTMLDivElement>('div', 'mx-accordion__body');
+    return { heading, header, headerId, label, icon: null, releaseIcon: () => {}, region, body, owner: null, content: null, releaseTimer: undefined };
   }
-}
-
-/** The longest transition on an element, in milliseconds (0 under reduced motion). */
-function longestTransition(el: Element): number {
-  if (typeof getComputedStyle !== 'function' || !el.isConnected) return 0;
-  const style = getComputedStyle(el);
-  const durations = style.transitionDuration.split(',');
-  const delays = style.transitionDelay.split(',');
-  let longest = 0;
-  durations.forEach((d, i) => {
-    longest = Math.max(longest, seconds(d) + seconds(delays[i] ?? '0s'));
-  });
-  return longest * 1000;
-}
-
-function seconds(text: string): number {
-  const value = parseFloat(text);
-  if (!Number.isFinite(value)) return 0;
-  return text.trim().endsWith('ms') ? value / 1000 : value;
 }

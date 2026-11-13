@@ -13,7 +13,7 @@ export class TestButton extends Control<HTMLButtonElement> {
     this.observeProperty<string>('text', (text) => {
       const parsed = parseAccessKey(text);
       this.setAccessKey(parsed.key);
-      renderAccessKey(this.element, parsed);
+      renderAccessKey(this, parsed);
     });
   }
 
@@ -28,7 +28,7 @@ export class TestButton extends Control<HTMLButtonElement> {
 export class TestWindow extends FocusContainer<HTMLDialogElement> {
   static override elementTag = 'dialog';
 
-  private readonly entry = { element: this.element, modal: true, setActive: () => {} };
+  private readonly entry = { part: this, modal: true, setActive: () => {} };
 
   protected override get cyclesTab(): boolean {
     return true;

@@ -1,12 +1,20 @@
 import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, mark, part, put, shown, text } from "../../core/draw-parts";
+import { part, removePart } from "../../core/draw-parts";
+import { focusOn } from "../../core/focus";
+import { orderControls } from "../../core/order-controls";
+import { onWindow } from "../../core/window-events";
 import { follow } from "../../core/follow";
 import { givenField, givenList, givenValue } from "../../core/given-field";
+import { isRtl, measure, rectOf, shareAlong } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { windowOf } from "../../core/page-documents";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
+import { autoScroll } from "../../parts/drag/auto-scroll";
+import { DragBoxes } from "../../parts/drag/drag-boxes";
 import { DragGhost } from "../../parts/drag/DragGhost";
-import { scrollStep } from "../../parts/drag/scroll-step";
+import { stackCover } from "../../parts/drag/stack-cover";
 import type { TileClickEventArgs } from "./tile-click-event-args";
 import type { TileReorderEventArgs } from "./tile-reorder-event-args";
 import type { TileSelectionChangedEventArgs } from "./tile-selection-changed-event-args";
@@ -43,11 +51,20 @@ interface Session {
     x: number;
     y: number;
     fromIndex: number;
-    element: HTMLElement;
+    tile: Component<HTMLDivElement>;
     started: boolean;
     toIndex: number;
     timer: ReturnType<typeof setTimeout> | null;
-    frame: number;
+    boxes: DragBoxes | null;
+    stopEdge: (() => void) | null;
+}
+
+// The tile a drag aims at and where the drop would land.
+interface Aim {
+    session: Session;
+    over: ComponentBase | null;
+    to: number;
+    side: 'before' | 'after' | null;
 }
 
 /**
@@ -83,12 +100,11 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
     constructor(props?: IBaseProp<TileViewProps>) {
         super('div', props);
         const own = (this.props ?? {}) as TileViewProps;
-        const el = this.element;
-        el.classList.add('mx-tile-view');
+        this.class.add('mx-tile-view');
         this.grid = part<HTMLDivElement>(this, 'div', 'mx-tile-view__grid');
         this.live = part<HTMLSpanElement>(this, 'span', 'mx-sr-only');
-        this.live.element.setAttribute('aria-live', 'polite');
-        this.ghost = new DragGhost(() => el.ownerDocument.body, () => true, 'mx-tile-view__ghost');
+        this.live.attr.add({ 'aria-live': 'polite' });
+        this.ghost = new DragGhost(() => windowOf(this)?.document ?? document, () => true, 'mx-tile-view__ghost');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onItemClick) this.onItemClick(own.onItemClick);
         if (own.onSelectionChanged) this.onSelectionChanged(own.onSelectionChanged);
@@ -96,9 +112,9 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         if (own.onReordered) this.onReordered(own.onReordered);
 
         this.observeProperty('items', () => this.renderItems());
-        this.observeProperty<number>('baseItemWidth', w => css(el, '--_base-w', `${Math.max(1, w ?? 100)}px`));
-        this.observeProperty<number>('baseItemHeight', h => css(el, '--_base-h', `${Math.max(1, h ?? 100)}px`));
-        this.observeProperty<TileViewDirection>('direction', d => put(el, 'data-direction', d ?? 'horizontal'));
+        this.observeProperty<number>('baseItemWidth', w => css(this, '--_base-w', `${Math.max(1, w ?? 100)}px`));
+        this.observeProperty<number>('baseItemHeight', h => css(this, '--_base-h', `${Math.max(1, h ?? 100)}px`));
+        this.observeProperty<TileViewDirection>('direction', d => put(this, 'data-direction', d ?? 'horizontal'));
         this.observeProperty<TileViewSelectionMode>('selectionMode', () => this.drawRole());
         this.observeProperty('value', () => {
             this.drawStates();
@@ -109,14 +125,14 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
             this.selectionChanged.fire({ indexes, items: indexes.map(i => this.looks[i].item), byUser: this.byUser, source: this });
         });
         this.observeProperty('allowReorder', () => this.drawStates());
-        this.observeProperty<string | number | null>('height', h => css(el, 'block-size', typeof h === 'number' ? `${h}px` : h ?? ''));
+        this.observeProperty<string | number | null>('height', h => css(this, 'block-size', typeof h === 'number' ? `${h}px` : h ?? ''));
         this.observeProperty<string>('label', () => this.renderName());
         onLanguage(this, () => this.renderName());
-        el.addEventListener('pointerdown', e => this.pointerDown(e));
-        el.addEventListener('click', e => this.click(e));
-        el.addEventListener('keydown', e => this.keyDown(e));
-        el.addEventListener('focusin', e => {
-            const at = this.tileElements().findIndex(tile => tile.contains(e.target as Node));
+        this.motif.on('pointerdown', (_, e) => this.pointerDown(e));
+        this.motif.on('click', (_, e) => this.click(e));
+        this.motif.on('keydown', (_, e) => this.keyDown(e));
+        this.motif.on('focusin', (_, e) => {
+            const at = this.tileParts().findIndex(tile => tile.motif.isEventFrom(e));
             if (at >= 0) {
                 this.focusedAt = at;
                 this.drawStops();
@@ -249,7 +265,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
     }
 
     renderName(): void {
-        put(this.grid.element, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.tiles);
+        put(this.grid, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.tiles);
     }
 
     renderItems(): void {
@@ -286,8 +302,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
     // Tiles keyed by item: a new item gets a tile, one gone loses it, the rest keep theirs and take their place.
     drawTiles(): void {
         const seen = new Set<unknown>();
-        const grid = this.grid.element;
-        let before: HTMLElement | null = null;
+        const order: ComponentBase[] = [];
         this.looks.forEach(look => {
             let tile = this.tiles.get(look.item);
             if (!tile) {
@@ -295,28 +310,26 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
                 this.tiles.set(look.item, tile);
             }
             seen.add(look.item);
-            const el = tile.el.element;
-            const wanted = before ? before.nextSibling : grid.firstChild;
-            if (wanted !== el) grid.insertBefore(el, wanted);
-            before = el;
-            text(tile.text.element, look.text);
-            shown(tile.text.element, look.text !== '' && !tile.content);
+            order.push(tile.el);
+            const el = tile.el;
+            text(tile.text, look.text);
+            shown(tile.text, look.text !== '' && !tile.content);
             css(el, 'grid-column', `span ${look.widthRatio}`);
             css(el, 'grid-row', `span ${look.heightRatio}`);
         });
         for (const [item, tile] of this.tiles) {
             if (!seen.has(item)) {
                 this.tiles.delete(item);
-                void tile.el.dispose();
+                removePart(tile.el);
             }
         }
+        // The tiles in the items' order, the focused one never moved.
+        orderControls(this.grid, order);
         this.drawStates();
     }
 
     makeTile(look: Look): Tile {
-        const el = new Component<HTMLDivElement>('div');
-        el.element.className = 'mx-tile-view__tile';
-        this.grid.controls.add(el);
+        const el = part<HTMLDivElement>(this.grid, 'div', 'mx-tile-view__tile');
         const label = part<HTMLSpanElement>(el, 'span', 'mx-tile-view__text');
         let content: ComponentBase | null = null;
         if (look.content) {
@@ -326,14 +339,29 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         return { item: look.item, el, text: label, content };
     }
 
-    tileElements(): HTMLElement[] {
-        return this.looks.map(look => this.tiles.get(look.item)!.el.element);
+    // The tiles in the items' order.
+    tileParts(): Component<HTMLDivElement>[] {
+        return this.looks.map(look => this.tiles.get(look.item)!.el);
+    }
+
+    // Whether an event started on something inside the tile that the selector picks (a button, a link, a field…).
+    startedOn(tile: ComponentBase, selector: string, e: Event): boolean {
+        return tile.$(selector).fromComponent().some(inner => inner !== tile && inner.motif.isEventFrom(e));
+    }
+
+    // Whether an event started on a tile of a tile view inside `root`.
+    onInnerTile(root: ComponentBase, e: Event): boolean {
+        return root.controls.items.some(child => {
+            if (!child.motif.isEventFrom(e)) return false;
+            if (child instanceof TileView && child.tileParts().some(tile => tile.motif.isEventFrom(e))) return true;
+            return this.onInnerTile(child, e);
+        });
     }
 
     drawRole(): void {
         const mode = this.selectionMode;
-        put(this.grid.element, 'role', mode === 'none' ? 'list' : 'listbox');
-        put(this.grid.element, 'aria-multiselectable', mode === 'multiple' ? 'true' : null);
+        put(this.grid, 'role', mode === 'none' ? 'list' : 'listbox');
+        put(this.grid, 'aria-multiselectable', mode === 'multiple' ? 'true' : null);
         this.drawStates();
     }
 
@@ -342,23 +370,22 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         const mode = this.selectionMode;
         const chosen = new Set(this.selectedIndexes);
         this.looks.forEach((look, index) => {
-            const el = this.tiles.get(look.item)?.el.element;
+            const el = this.tiles.get(look.item)?.el;
             if (!el) return;
             put(el, 'role', mode === 'none' ? 'listitem' : 'option');
             put(el, 'aria-selected', mode === 'none' ? null : chosen.has(index) ? 'true' : 'false');
             put(el, 'aria-disabled', look.enabled ? null : 'true');
         });
-        mark(this.element, 'data-reorder', this.allowReorder);
+        mark(this, 'data-reorder', this.allowReorder);
         this.drawStops();
     }
 
     // One Tab stop: the tile focused last, else the first chosen, else the first enabled.
     drawStops(): void {
-        const elements = this.tileElements();
         const usable = this.looks.map(look => look.enabled);
         const chosen = this.selectedIndexes.find(i => usable[i]);
-        const stop = this.focusedAt >= 0 && this.focusedAt < elements.length && usable[this.focusedAt] ? this.focusedAt : (chosen ?? usable.indexOf(true));
-        elements.forEach((el, index) => (el.tabIndex = index === stop ? 0 : -1));
+        const stop = this.focusedAt >= 0 && this.focusedAt < usable.length && usable[this.focusedAt] ? this.focusedAt : (chosen ?? usable.indexOf(true));
+        this.looks.forEach((look, index) => put(this.tiles.get(look.item)!.el, 'tabindex', index === stop ? '0' : '-1'));
     }
 
     // `only`: the tile alone; `add`: one more; `toggle`: in or out.
@@ -386,12 +413,11 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
     }
 
     click(e: MouseEvent): void {
-        const target = e.target as Element;
-        const el = target.closest<HTMLElement>('.mx-tile-view__tile');
-        const index = el ? this.tileElements().indexOf(el) : -1;
-        if (index < 0 || el!.parentElement !== this.grid.element) return;
-        const control = target.closest(INTERACTIVE);
-        if (control && control !== el && el!.contains(control)) return;
+        const tiles = this.tileParts();
+        const index = tiles.findIndex(tile => tile.motif.isEventFrom(e));
+        if (index < 0) return;
+        // A click on a button, a link or a field inside the tile is theirs, and so is one on a tile of a view inside it.
+        if (this.startedOn(tiles[index], INTERACTIVE, e) || this.onInnerTile(tiles[index], e)) return;
         if (!this.looks[index].enabled) return;
         this.itemClick.fire({ index, item: this.looks[index].item, source: this, event: e });
         this.choose(index, true, this.selectionMode === 'multiple' && (e.ctrlKey || e.metaKey) ? 'toggle' : 'only');
@@ -399,15 +425,15 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
 
     // The tile in a direction: the nearest one whose middle lies that way.
     neighbour(from: number, dx: number, dy: number): number {
-        const elements = this.tileElements();
-        const origin = elements[from].getBoundingClientRect();
+        const tiles = this.tileParts();
+        const origin = rectOf(tiles[from]);
         const ox = origin.left + origin.width / 2;
         const oy = origin.top + origin.height / 2;
         let best = -1;
         let bestScore = Number.POSITIVE_INFINITY;
-        elements.forEach((el, i) => {
+        tiles.forEach((tile, i) => {
             if (i === from || !this.looks[i].enabled) return;
-            const box = el.getBoundingClientRect();
+            const box = rectOf(tile);
             const cx = box.left + box.width / 2;
             const cy = box.top + box.height / 2;
             const along = (cx - ox) * dx + (cy - oy) * dy;
@@ -424,23 +450,23 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
 
     keyDown(e: KeyboardEvent): void {
         if (e.altKey || e.metaKey) return;
-        const elements = this.tileElements();
-        const from = elements.findIndex(el => el.contains(e.target as Node));
+        const tiles = this.tileParts();
+        const from = tiles.findIndex(tile => tile.motif.isEventFrom(e));
         if (from < 0) return;
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
         if (e.ctrlKey) {
             if (!this.allowReorder) return;
             let to = -1;
             if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = from - 1;
             else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = from + 1;
             else if (e.key === 'Home') to = 0;
-            else if (e.key === 'End') to = elements.length - 1;
+            else if (e.key === 'End') to = tiles.length - 1;
             else return;
             e.preventDefault();
-            if (to < 0 || to >= elements.length || !this.looks[from].enabled) return;
-            if (this.move(from, to, e, true)) elements[from].focus({ preventScroll: true });
+            if (to < 0 || to >= tiles.length || !this.looks[from].enabled) return;
+            if (this.move(from, to, e, true)) focusOn(tiles[from], { preventScroll: true });
             return;
         }
+        const rtl = isRtl(this);
         let to = -1;
         if (e.key === 'ArrowLeft') to = this.neighbour(from, rtl ? 1 : -1, 0);
         else if (e.key === 'ArrowRight') to = this.neighbour(from, rtl ? -1 : 1, 0);
@@ -456,7 +482,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
             return;
         } else return;
         e.preventDefault();
-        if (to >= 0) elements[to].focus({ preventScroll: true });
+        if (to >= 0) focusOn(tiles[to], { preventScroll: true });
     }
 
     // A move by the keys or a drop: the tile's element goes to its place and the app is told the indexes.
@@ -467,15 +493,16 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
             this.reordering.fire(args);
             if (args.cancel) return false;
         }
-        const elements = this.tileElements();
-        const el = elements[from];
-        const others = elements.filter(other => other !== el);
-        this.grid.element.insertBefore(el, others[to] ?? null);
+        const tiles = this.tileParts();
+        const tile = tiles[from];
+        const others = tiles.filter(other => other !== tile);
+        // The tile is moved alive among the grid's children.
+        this.grid.controls.move(tile, others[to] ?? null);
         const look = this.looks.splice(from, 1)[0];
         this.looks.splice(to, 0, look);
         this.focusedAt = to;
         this.drawStops();
-        text(this.live.element, uiLocale.text('sortableMoved', { index: to + 1, count: elements.length }));
+        text(this.live, uiLocale.text('sortableMoved', { index: to + 1, count: tiles.length }));
         this.reordered.fire({ item: look.item, fromIndex: from, toIndex: to, cancel: false, source: this, event });
         return true;
     }
@@ -483,16 +510,15 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
     // A click on a tile: a drag may follow (a long press with a finger).
     pointerDown(e: PointerEvent): void {
         if (e.button !== 0 || this.session || !this.isEnabled || !this.allowReorder) return;
-        const target = e.target as HTMLElement;
-        const element = this.tileElements().find(el => el.contains(target));
-        if (!element) return;
-        const index = this.tileElements().indexOf(element);
-        if (!this.looks[index].enabled) return;
-        if (target.closest(INTERACTIVE) && target.closest(INTERACTIVE) !== element) return;
+        const tiles = this.tileParts();
+        const index = tiles.findIndex(tile => tile.motif.isEventFrom(e));
+        if (index < 0 || !this.looks[index].enabled) return;
+        const tile = tiles[index];
+        // A press on a button, a link or a field inside the tile is theirs.
+        if (this.startedOn(tile, INTERACTIVE, e)) return;
         const touch = e.pointerType === 'touch';
-        const session: Session = { pointerId: e.pointerId, touch, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, fromIndex: index, element, started: false, toIndex: -1, timer: null, frame: 0 };
+        const session: Session = { pointerId: e.pointerId, touch, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, fromIndex: index, tile, started: false, toIndex: -1, timer: null, boxes: null, stopEdge: null };
         this.session = session;
-        const win = element.ownerDocument.defaultView ?? window;
         const move = (ev: PointerEvent) => this.pointerMove(ev);
         const up = (ev: PointerEvent) => this.pointerUp(ev);
         const key = (ev: KeyboardEvent) => {
@@ -502,23 +528,15 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
                 this.end(ev, false);
             }
         };
-        win.addEventListener('pointermove', move);
-        win.addEventListener('pointerup', up);
-        win.addEventListener('pointercancel', up);
-        win.addEventListener('keydown', key, true);
-        this.stops.push(() => {
-            win.removeEventListener('pointermove', move);
-            win.removeEventListener('pointerup', up);
-            win.removeEventListener('pointercancel', up);
-            win.removeEventListener('keydown', key, true);
-        });
+        // The drag goes on past the view: its window is listened to while it runs.
+        this.stops.push(onWindow(this, 'pointermove', move), onWindow(this, 'pointerup', up), onWindow(this, 'pointercancel', up), onWindow(this, 'keydown', key, true));
         if (touch) {
             // A finger that moves before the long press is over scrolls; one that stays lifts the tile.
             session.timer = setTimeout(() => {
                 session.timer = null;
                 if (this.session === session) this.start(e);
             }, LONG_PRESS);
-        } else if (!target.closest(INTERACTIVE)) {
+        } else {
             e.preventDefault();
         }
     }
@@ -537,8 +555,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
             if (moved < THRESHOLD || !this.start(e)) return;
         }
         if (s.touch) e.preventDefault();
-        this.track();
-        this.autoScroll();
+        measure(this, this.readAim, this.paint);
     }
 
     pointerUp(e: PointerEvent): void {
@@ -548,14 +565,17 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
             this.end(null, false);
             return;
         }
+        // The drop lands where the pointer is let go: read now, before anything is written.
+        s.x = e.clientX;
+        s.y = e.clientY;
+        const aim = this.readAim();
+        if (aim) s.toIndex = aim.to;
         // The click that follows the drop is not a click on the tile.
-        const win = s.element.ownerDocument.defaultView ?? window;
         const swallow = (ev: MouseEvent) => {
             ev.stopPropagation();
             ev.preventDefault();
         };
-        win.addEventListener('click', swallow, true);
-        setTimeout(() => win.removeEventListener('click', swallow, true), 0);
+        setTimeout(onWindow(this, 'click', swallow, true), 0);
         this.end(e, e.type === 'pointerup');
     }
 
@@ -569,58 +589,40 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         }
         s.started = true;
         s.toIndex = s.fromIndex;
-        s.element.setPointerCapture?.(e.pointerId);
-        mark(s.element, 'data-dragging', true);
-        mark(this.element, 'data-dragging', true);
-        this.ghost.show(s.element, s.x, s.y, 'move');
+        // The other tiles are the ones a drop aims at; a window over the view hides what lies under it.
+        s.boxes = new DragBoxes(this, () => this.tileParts().filter(tile => tile !== s.tile), stackCover);
+        s.tile.attr.add({ setPointerCapture: e.pointerId });
+        if (!s.tile.isDisposed) mark(s.tile, 'data-dragging', true);
+        mark(this, 'data-dragging', true);
+        if (!s.tile.isDisposed) this.ghost.show(s.tile, s.x, s.y, 'move');
+        // Near an edge of the grid it scrolls on, along the way the tiles flow.
+        s.stopEdge = autoScroll(this, this.grid, () => (this.session === s ? { x: s.x, y: s.y } : null), () => {
+            s.boxes?.moved();
+            measure(this, this.readAim, this.paint);
+        }, { axis: this.direction === 'horizontal' ? 'x' : 'y' });
         return true;
     }
 
     // The tile under the pointer and which side of it: the drop lands before or after it.
-    track(): void {
+    readonly readAim = (): Aim | null => {
         const s = this.session;
-        if (!s?.started) return;
-        const doc = s.element.ownerDocument;
-        const under = doc.elementFromPoint(s.x, s.y)?.closest<HTMLElement>('.mx-tile-view__tile') ?? null;
-        const elements = this.tileElements();
-        const at = under && under !== s.element && under.parentElement === this.grid.element ? elements.indexOf(under) : -1;
-        let to = -1;
-        let side: 'before' | 'after' | null = null;
-        if (at >= 0) {
-            const box = under!.getBoundingClientRect();
-            const columns = this.direction === 'horizontal';
-            const rtl = !columns && getComputedStyle(this.element).direction === 'rtl';
-            const first = columns ? s.y < box.top + box.height / 2 : rtl ? s.x > box.left + box.width / 2 : s.x < box.left + box.width / 2;
-            side = first ? 'before' : 'after';
-            // Among the others, with the dragged tile counted out.
-            const others = elements.filter(el => el !== s.element);
-            to = others.indexOf(under!) + (first ? 0 : 1);
-        }
-        s.toIndex = to;
-        elements.forEach(el => put(el, 'data-drop', el === under && to >= 0 ? side : null));
-        this.ghost.move(s.x, s.y, to >= 0 ? 'move' : 'none');
-    }
+        if (!s?.started || !s.boxes) return null;
+        const point = { x: s.x, y: s.y };
+        const over = s.boxes.at(point, this);
+        if (!over) return { session: s, over: null, to: -1, side: null };
+        const first = shareAlong(over, point, this.direction === 'horizontal' ? 'y' : 'x') < 0.5;
+        // Among the others, with the dragged tile counted out.
+        const others = this.tileParts().filter(tile => tile !== s.tile);
+        return { session: s, over, to: others.indexOf(over as Component<HTMLDivElement>) + (first ? 0 : 1), side: first ? 'before' : 'after' };
+    };
 
-    autoScroll(): void {
+    readonly paint = (aim: Aim | null): void => {
         const s = this.session;
-        if (!s?.started) return;
-        const win = s.element.ownerDocument.defaultView ?? window;
-        win.cancelAnimationFrame?.(s.frame);
-        const step = () => {
-            if (this.session !== s || !s.started) return;
-            const el = this.grid.element;
-            const box = el.getBoundingClientRect();
-            const columns = this.direction === 'horizontal';
-            const by = columns ? scrollStep(s.x, box.left, box.right, 40, 12) : scrollStep(s.y, box.top, box.bottom, 40, 12);
-            if (by) {
-                if (columns) el.scrollLeft += by;
-                else el.scrollTop += by;
-                this.track();
-                s.frame = win.requestAnimationFrame(step);
-            }
-        };
-        s.frame = win.requestAnimationFrame(step);
-    }
+        if (!aim || !s || aim.session !== s) return;
+        s.toIndex = aim.to;
+        for (const tile of this.tiles.values()) put(tile.el, 'data-drop', tile.el === aim.over && aim.to >= 0 ? aim.side : null);
+        this.ghost.move(s.x, s.y, aim.to >= 0 ? 'move' : 'none');
+    };
 
     end(e: Event | null, drop: boolean): void {
         const s = this.session;
@@ -628,14 +630,15 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         if (!s) return;
         this.session = null;
         if (s.timer) clearTimeout(s.timer);
-        const win = s.element.ownerDocument.defaultView ?? window;
-        win.cancelAnimationFrame?.(s.frame);
+        s.stopEdge?.();
+        s.boxes?.stop();
         if (!s.started) return;
         this.ghost.hide();
-        mark(s.element, 'data-dragging', false);
-        mark(this.element, 'data-dragging', false);
-        if (s.element.hasPointerCapture?.(s.pointerId)) s.element.releasePointerCapture(s.pointerId);
-        for (const el of this.tileElements()) put(el, 'data-drop', null);
+        if (!s.tile.isDisposed) mark(s.tile, 'data-dragging', false);
+        mark(this, 'data-dragging', false);
+        // Let go after Escape; after a pointerup the browser already did, and letting go again does nothing.
+        if (!s.tile.isDisposed) s.tile.attr.add({ releasePointerCapture: s.pointerId });
+        for (const tile of this.tiles.values()) put(tile.el, 'data-drop', null);
         if (!drop || s.toIndex < 0) return;
         const landing = Math.min(s.toIndex, this.looks.length - 1);
         if (landing !== s.fromIndex) this.move(s.fromIndex, landing, e ?? undefined, false);

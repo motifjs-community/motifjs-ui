@@ -1,11 +1,12 @@
 import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { handOver, kept, part, put, text } from '../../core/draw-parts';
+import { handOver, loose, part } from '../../core/draw-parts';
 import { fillTemplate } from '../../core/fill-template';
 import { chevronEnd, chevronStart } from '../../core/glyphs';
 import { LanguageLook } from '../../core/language-look';
+import { boxOf, holderOf, isRendered, measure, onLayout, readAgain } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
-import { ResizeWatch } from '../../core/resize-watch';
+import { kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import type { ButtonSize } from '../button/button-size';
@@ -23,6 +24,8 @@ const OWN = ['page', 'total', 'pageSize', 'pageCount', 'pageSizes', 'showInfo', 
 type PageItem = { key: string; page: number; gap: boolean };
 /** A page size of the drop-down. */
 type SizeItem = { key: string; value: number; text: string };
+/** The room its holder has, and the width it needs as drawn. */
+type FitRead = { room: number; width: number };
 
 /** The buttons' look, the design language's. */
 const LOOK = {
@@ -46,7 +49,7 @@ const LOOK = {
  */
 export class Pagination extends Control<HTMLElement, PaginationProps> {
   private readonly changed = new Emitter<PageChangedEventArgs>();
-  private readonly look = new LanguageLook(this.element, LOOK, () => this.draw());
+  private readonly look = new LanguageLook(this, LOOK, () => this.draw());
   private readonly sizeGroup: Component<HTMLDivElement>;
   private readonly sizeList: DropDown<SizeItem, number>;
   private readonly info: Component<HTMLSpanElement>;
@@ -62,28 +65,29 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
   /** The full look does not fit (adaptive), and the room it did not fit in. */
   private narrow = false;
   private narrowRoom = 0;
-  private readonly watch = new ResizeWatch(() => this.fit());
+  /** What holds it: the room it has decides the adaptive look. */
+  private holder: ComponentBase | null = null;
+  private stopRoom: (() => void) | null = null;
   private ready = false;
 
   constructor(props?: IBaseProp<PaginationProps>) {
     super('nav', props);
     const own = (this.props ?? {}) as PaginationProps;
-    this.element.classList.add('mx-pagination');
+    this.class.add('mx-pagination');
     this.sizeGroup = part(this, 'div', 'mx-pagination__sizes');
-    this.sizeGroup.element.setAttribute('role', 'group');
+    this.sizeGroup.attr.add({ role: 'group' });
     this.sizeList = new DropDown<SizeItem, number>({ size: 'sm', labelMode: 'hidden', onValueChanged: (e) => e.byUser && typeof e.value === 'number' && this.setSize(e.value) });
-    this.sizeList.element.classList.add('mx-pagination__size-list');
+    this.sizeList.class.add('mx-pagination__size-list');
     this.controls.add(this.sizeList);
     this.info = part(this, 'span', 'mx-pagination__info');
     const step = (name: string, twice: boolean, to: () => number) => {
-      const glyphs = document.createElement('span');
-      glyphs.className = 'mx-pagination__step-icon';
+      const glyphs = loose<HTMLSpanElement>('span', 'mx-pagination__step-icon');
       const back = name === 'first' || name === 'previous';
-      glyphs.append(back ? chevronStart() : chevronEnd());
-      if (twice) glyphs.append(back ? chevronStart() : chevronEnd());
+      glyphs.controls.add(back ? chevronStart() : chevronEnd());
+      if (twice) glyphs.controls.add(back ? chevronStart() : chevronEnd());
       const b = new Button({ icon: glyphs, onclick: () => this.goTo(to(), true) });
-      b.element.classList.add('mx-pagination__step');
-      b.element.dataset.step = name;
+      b.class.add('mx-pagination__step');
+      b.attr.add({ 'data-step': name });
       return b;
     };
     this.steps = {
@@ -96,12 +100,12 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
     this.pagesPart = part(this, 'span', 'mx-pagination__pages');
     this.jump = part(this, 'span', 'mx-pagination__jump');
     this.pageText = part(this.jump, 'span', '');
-    this.pageText.element.setAttribute('aria-hidden', 'true');
+    this.pageText.attr.add({ 'aria-hidden': 'true' });
     this.pageBox = new NumberBox({ size: 'sm', labelMode: 'hidden', min: 1, decimals: 0, showSpinButtons: false, updateOn: 'change', selectOnFocus: true, onValueChanged: (e) => e.byUser && typeof e.value === 'number' && this.goTo(e.value, true) });
-    this.pageBox.element.classList.add('mx-pagination__number');
+    this.pageBox.class.add('mx-pagination__number');
     this.jump.controls.add(this.pageBox);
     this.countText = part(this.jump, 'span', '');
-    this.countText.element.setAttribute('aria-hidden', 'true');
+    this.countText.attr.add({ 'aria-hidden': 'true' });
     this.controls.add(this.steps.next, this.steps.last);
 
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
@@ -116,10 +120,7 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
     // Its texts and numbers are the kit's language's.
     onLanguage(this, () => this.draw());
     this.motif.setDisposable(this.look.watch());
-    this.motif.setDisposable(() => {
-      this.watch.disconnect();
-      this.changed.dispose();
-    });
+    this.motif.setDisposable(() => this.changed.dispose());
     this.ready = true;
   }
 
@@ -223,7 +224,13 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
 
   override onMounted(): void {
     this.look.read();
-    this.watch.observe(this.element.parentElement ?? this.element);
+    // Its parent, past parents that have no element of their own (a list, a branch).
+    const holder = (this.parent && holderOf(this.parent)) ?? this;
+    if (holder !== this.holder) {
+      this.stopRoom?.();
+      this.holder = holder;
+      this.stopRoom = onLayout(holder, 'size', () => this.fit(), { owner: this });
+    }
     this.draw();
   }
 
@@ -272,27 +279,41 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
     this.draw();
   }
 
-  /**
-   * The adaptive look: compact while the full one is wider than the room it has. The full look is drawn and measured
-   * in the same frame (nothing is painted in between), so its width is the one it has now.
-   */
+  /** The adaptive look: compact while the full one is wider than the room it has. Seen in the next frame. */
   private fit(): void {
-    const el = this.element;
-    const room = el.parentElement?.clientWidth ?? 0;
-    if (this.isDisposed || (this.peekProperty<PaginationMode>('mode') ?? 'adaptive') !== 'adaptive' || !room) return;
+    measure(this, this.readFit, this.drawFit);
+  }
+
+  private readonly readFit = (): FitRead | null => {
+    const holder = this.holder;
+    if (!holder || this.isDisposed || (this.peekProperty<PaginationMode>('mode') ?? 'adaptive') !== 'adaptive' || !isRendered(this)) return null;
+    return { room: boxOf(holder).clientWidth, width: boxOf(this).scrollWidth };
+  };
+
+  /**
+   * Compact already, the full look is drawn and measured in the same write (nothing is painted in between), so its
+   * width is the one it has now.
+   */
+  private readonly drawFit = (seen: FitRead | null): void => {
+    if (!seen?.room) return;
+    const room = seen.room;
     const was = this.narrow;
     // Compact already: the full look is tried again only when there is more room than when it last did not fit, so
     // a page box being typed in stays where it is.
     if (was && room <= this.narrowRoom) return;
+    let width = seen.width;
     if (was) {
       this.narrow = false;
       this.draw(false);
+      width = readAgain(() => boxOf(this).scrollWidth);
     }
-    const narrow = el.scrollWidth > room + 0.5;
+    const narrow = width > room + 0.5;
     this.narrow = narrow;
-    if (narrow) this.narrowRoom = room;
-    if (narrow !== was || was) this.draw(false);
-  }
+    if (narrow) {
+      this.narrowRoom = room;
+      this.draw(false);
+    }
+  };
 
   /** Draws it as it is now; `fit` again afterwards unless the drawing is the fit's own. */
   private draw(refit = true): void {
@@ -300,33 +321,32 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
     const s = uiLocale.strings;
     const format = new Intl.NumberFormat(uiLocale.locale);
     const n = (v: number) => format.format(v);
-    const el = this.element;
     const compact = this.compact;
     const page = this.current;
     const count = this.count;
     const look = (name: keyof typeof LOOK, fallback: string) => this.look.get(name) ?? fallback;
     const size = look('size', 'sm') as ButtonSize;
-    put(el, 'aria-label', this.peekProperty<string>('label') || s.gridPager);
-    put(el, 'data-look', compact ? 'compact' : 'full');
+    put(this, 'aria-label', this.peekProperty<string>('label') || s.gridPager);
+    put(this, 'data-look', compact ? 'compact' : 'full');
 
     const sizes = this.peekProperty<readonly number[]>('pageSizes') ?? [];
     const sizesShown = sizes.length > 0;
-    kept(this.sizeGroup.element, sizesShown && !compact);
-    put(this.sizeGroup.element, 'aria-label', s.pagerPageSize);
+    kept(this.sizeGroup, sizesShown && !compact);
+    put(this.sizeGroup, 'aria-label', s.pagerPageSize);
     this.drawSizes(sizes, size, look);
-    kept(this.sizeList.element, sizesShown && compact);
+    kept(this.sizeList, sizesShown && compact);
     if (this.sizeList.label !== s.pagerPageSize) this.sizeList.label = s.pagerPageSize;
     const items = this.sizeItems(sizes, n);
     if (this.sizeList.items.length !== items.length || this.sizeList.items.some((item, i) => item !== items[i])) this.sizeList.items = items;
     handOver(this.sizeList, this.size as number | null);
 
-    kept(this.info.element, this.peekProperty('showInfo') !== false);
+    kept(this.info, this.peekProperty('showInfo') !== false);
     // Hidden, not taken away, in the compact look: its text stays readable.
-    this.info.element.hidden = compact;
+    mark(this.info, 'hidden', compact);
     const total = Number(this.peekProperty('total')) || 0;
     const own = this.peekProperty<string>('infoText');
     const values = { page: n(page), count: n(count), total: n(total) };
-    text(this.info.element, own ? fillTemplate(own, values) : uiLocale.text('gridPageOf', { page: n(page), count: n(count), total }));
+    text(this.info, own ? fillTemplate(own, values) : uiLocale.text('gridPageOf', { page: n(page), count: n(count), total }));
 
     const navigation = this.peekProperty('showNavigation') !== false;
     const stepLook = (b: Button, hint: string, enabled: boolean) => {
@@ -342,17 +362,17 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
     stepLook(this.steps.next, s.gridNextPage, page < count);
     stepLook(this.steps.last, s.gridLastPage, page < count);
 
-    kept(this.pagesPart.element, !compact);
+    kept(this.pagesPart, !compact);
     this.drawPages(page, count, size, look, n);
 
-    kept(this.jump.element, compact);
-    text(this.pageText.element, s.gridPage);
+    kept(this.jump, compact);
+    text(this.pageText, s.gridPage);
     if (this.pageBox.label !== s.gridPageNumber) this.pageBox.label = s.gridPageNumber;
     if (this.pageBox.max !== count) this.pageBox.max = count;
     handOver(this.pageBox, page as number | null);
-    text(this.countText.element, uiLocale.text('gridPageCount', { count: n(count) }));
+    text(this.countText, uiLocale.text('gridPageCount', { count: n(count) }));
     // What decides whether the full look fits may have changed.
-    if (refit) queueMicrotask(() => this.fit());
+    if (refit) this.fit();
   }
 
   /** A button per page size, kept while the size stays, the one in use pressed. */
@@ -371,7 +391,7 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
           // The button turns itself on or off after the click: drawn after it, it shows the size in use again.
           queueMicrotask(() => this.draw());
         } });
-        button.element.classList.add('mx-pagination__size');
+        button.class.add('mx-pagination__size');
         this.sizeButtons.set(value, button);
         group.controls.insert(index, button);
       }
@@ -401,14 +421,13 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
       let item = this.pageParts.get(p.key);
       if (!item) {
         if (p.gap) {
-          const gap = new Component<HTMLSpanElement>('span');
-          gap.element.className = 'mx-pagination__gap';
-          gap.element.setAttribute('aria-hidden', 'true');
-          gap.element.textContent = '…';
+          const gap = loose<HTMLSpanElement>('span', 'mx-pagination__gap');
+          gap.attr.add({ 'aria-hidden': 'true' });
+          text(gap, '…');
           item = gap;
         } else {
           const button = new Button({ onclick: () => this.goTo(p.page, true) });
-          button.element.classList.add('mx-pagination__page');
+          button.class.add('mx-pagination__page');
           item = button;
         }
         this.pageParts.set(p.key, item);
@@ -427,8 +446,8 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
         const tone = look(current ? 'currentTone' : 'pageTone', current ? 'accent' : 'standard') as ButtonTone;
         if (item.variant !== variant) item.variant = variant;
         if (item.tone !== tone) item.tone = tone;
-        put(item.element as HTMLElement, 'aria-label', uiLocale.text('gridPageButton', { page: label }));
-        put(item.element as HTMLElement, 'aria-current', current ? 'page' : null);
+        put(item, 'aria-label', uiLocale.text('gridPageButton', { page: label }));
+        put(item, 'aria-current', current ? 'page' : null);
       }
     });
   }

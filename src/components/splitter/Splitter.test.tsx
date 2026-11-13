@@ -81,8 +81,9 @@ describe('Splitter', () => {
         key(first, 'ArrowRight');
         expect(tracks(s)).toMatch(/^[a-z]*\([^)]*320px/);
         expect(tracks(s)).toContain('minmax(150px, 280fr)');
-        expect(told).toEqual(['0:300/300/300']);
-        expect(m.sizes).toEqual([300, 300, 300]);
+        // The sizes the step gives, from the sizes measured before it.
+        expect(told).toEqual(['0:320/280/300']);
+        expect(m.sizes).toEqual([320, 280, 300]);
         key(first, 'ArrowLeft');
         expect(tracks(s)).toMatch(/^[a-z]*\([^)]*280px/);
         key(first, 'End');

@@ -1,3 +1,4 @@
+import type { ComponentBase } from '@motifx/core';
 import type { DataGrid } from './DataGrid';
 
 /**
@@ -19,8 +20,8 @@ export interface GridRowDragEventArgs<T = any> {
   readonly itemData: T;
   /** The row's key, when it has one. */
   readonly itemKey: unknown;
-  /** The row's element in the grid it comes from. */
-  readonly itemElement: HTMLElement;
+  /** The row's part in the grid it comes from. */
+  readonly itemPart: ComponentBase;
   readonly fromIndex: number;
   readonly toIndex: number;
   /**

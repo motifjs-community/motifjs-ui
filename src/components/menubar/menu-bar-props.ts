@@ -44,8 +44,8 @@ export interface MenuBarProps extends ControlProps {
   mergeInto?: Bind<string | MenuBar | null>;
   /** When the bar merges. The default is `'shown'`. */
   mergeWhen?: Bind<MenuBarMergeWhen>;
-  /** The place whose being shown or focused merges the bar. The default is the bar's parent element. */
-  mergeScope?: Bind<HTMLElement | ComponentBase | null>;
+  /** The place whose being shown or focused merges the bar. The default is the component the bar is in. */
+  mergeScope?: Bind<ComponentBase | null>;
   /** The bar is hidden while it is merged. The default is `true`. */
   hideWhenMerged?: Bind<boolean>;
   /** On the main bar: occurs when a bar merged into it. */

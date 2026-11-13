@@ -2,7 +2,8 @@ import { Component } from '@motifx/core';
 import { givenField } from '../../../core/given-field';
 import { pencilMark, trashMark } from '../../../core/glyphs';
 import { Button } from '../../button/Button';
-import { css, flag, part, shown, text } from '../../../core/draw-parts';
+import { part } from '../../../core/draw-parts';
+import { css, flag, shown, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -30,14 +31,14 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
   private editButton!: Button;
   private deleteButton!: Button;
   private parts!: {
-    title: HTMLElement;
-    time: HTMLElement;
-    zone: HTMLElement;
-    repeat: HTMLElement;
-    description: HTMLElement;
+    title: Component<HTMLElement>;
+    time: Component<HTMLElement>;
+    zone: Component<HTMLElement>;
+    repeat: Component<HTMLElement>;
+    description: Component<HTMLElement>;
     resources: KeyedParts<ResourceLine, Component<HTMLDivElement>>;
   };
-  private readonly itemsOf = new WeakMap<Component<HTMLDivElement>, { label: HTMLElement; items: KeyedParts<ResourceItem, Component<HTMLSpanElement>> }>();
+  private readonly itemsOf = new WeakMap<Component<HTMLDivElement>, { label: Component<HTMLElement>; items: KeyedParts<ResourceItem, Component<HTMLSpanElement>> }>();
 
   constructor(props: Props<T>) {
     super('div', props);
@@ -69,7 +70,7 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
       if (item) this.props.remove(item);
     });
     actions.controls.add(this.editButton, this.deleteButton);
-    this.parts = { title: title.element, time: time.element, zone: zone.element, repeat: repeat.element, description: description.element, resources };
+    this.parts = { title, time, zone, repeat, description, resources };
     this.made = true;
     this.draw();
   }
@@ -85,7 +86,7 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
     const item = shownItem();
     const parts = this.parts;
     const field = (name: 'text' | 'description') => givenField(item, host.fields()[name]);
-    for (const [name, value] of Object.entries(this.color())) this.element.style.setProperty(name, value);
+    for (const [name, value] of Object.entries(this.color())) css(this, name, value);
     const title = field('text');
     text(parts.title, title === undefined || title === null || title === '' ? host.text('schedulerNoTitle') : String(title));
     text(parts.time, this.when(item));
@@ -137,25 +138,25 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
   /** A line per kind of resource it has: the kind's name, then its items with their colors. */
   private makeLine(line: ResourceLine): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__tooltip-resource';
+    c.class.add('mx-scheduler__tooltip-resource');
     const label = part(c, 'span', 'mx-scheduler__tooltip-resource-label');
     const items = new KeyedParts<ResourceItem, Component<HTMLSpanElement>>(
       c,
       (item) => String(item.value),
       (item) => {
         const span = new Component<HTMLSpanElement>('span');
-        span.element.className = 'mx-scheduler__tooltip-resource-item';
+        span.class.add('mx-scheduler__tooltip-resource-item');
         const swatch = part(span, 'span', 'mx-scheduler__resource-swatch');
-        swatch.element.setAttribute('aria-hidden', 'true');
-        shown(swatch.element, !!item.color);
-        css(swatch.element, '--_color', item.color ?? '');
-        text(part(span, 'span', '').element, item.text);
+        swatch.attr.add({ 'aria-hidden': 'true' });
+        shown(swatch, !!item.color);
+        css(swatch, '--_color', item.color ?? '');
+        text(part(span, 'span', ''), item.text);
         return span;
       },
       () => {},
       () => 1,
     );
-    this.itemsOf.set(c, { label: label.element, items });
+    this.itemsOf.set(c, { label, items });
     this.drawLine(c, line);
     return c;
   }

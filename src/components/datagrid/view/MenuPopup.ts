@@ -1,4 +1,6 @@
-import type { ComponentBase } from '@motifx/core';
+import { untracked, type ComponentBase } from '@motifx/core';
+import { fieldOf } from '../../../core/command-fields';
+import { put } from '../../../core/part-writes';
 import { MenuList } from '../../../parts/menu/MenuList';
 import type { MenuItem } from '../../../parts/menu/menu-item';
 import { Popup } from '../../../parts/popup/Popup';
@@ -16,7 +18,7 @@ export class MenuPopup {
     const popup = new Popup();
     popup.placement = placement;
     popup.matchWidth = false;
-    popup.element.classList.add(className);
+    popup.class.add(className);
     const list = new MenuList();
     list.source = owner;
     popup.controls.add(list);
@@ -25,7 +27,7 @@ export class MenuPopup {
       popup.close('code');
       e.item.click?.(e);
     });
-    popup.element.addEventListener('keydown', (e) => {
+    popup.motif.on('keydown', (_, e) => {
       if (e.key !== 'Tab') return;
       e.preventDefault();
       popup.close('code');
@@ -38,8 +40,9 @@ export class MenuPopup {
     return this.popup.isOpen;
   }
 
-  open(items: readonly MenuItem[], anchor: HTMLElement, label: string, returnTo: HTMLElement = anchor) {
-    this.list.element.setAttribute('aria-label', label);
+  /** Opens next to `anchor` (the button that asks); focus goes back to `returnTo` when it closes. */
+  open(items: readonly MenuItem[], anchor: ComponentBase, label: string, returnTo: ComponentBase = anchor) {
+    put(this.list, 'aria-label', label);
     this.list.setItems(items);
     this.popup.open(anchor, { toggle: anchor, returnFocus: returnTo });
     this.list.focusItem('first');
@@ -47,8 +50,7 @@ export class MenuPopup {
 
   /** Focuses the item that is checked (a condition), else the first. */
   focusChecked() {
-    const item = this.list.element.querySelector<HTMLElement>('[aria-checked="true"]');
-    if (item) item.focus();
+    this.list.focusWhere((item) => untracked(() => !!fieldOf(item, 'checked', this.list)));
   }
 
   close() {

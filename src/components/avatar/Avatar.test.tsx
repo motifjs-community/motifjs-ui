@@ -163,12 +163,12 @@ describe('AvatarGroup', () => {
     );
     await settle();
     const more = group.element.querySelector('.mx-avatar-group__more')!;
-    expect(group.avatars.length).toBe(3);
-    expect(group.avatars.map((el) => el.hasAttribute('data-beyond'))).toEqual([false, false, true]);
+    expect(group.members.length).toBe(3);
+    expect(group.members.map((avatar) => avatar.element.hasAttribute('data-beyond'))).toEqual([false, false, true]);
     expect(more.textContent).toBe('+1');
     s.people.push({ name: 'Edsger Dijkstra' });
     await settle();
-    expect(group.avatars.length).toBe(4);
+    expect(group.members.length).toBe(4);
     expect(more.textContent).toBe('+2');
     expect(group.element.lastElementChild).toBe(more);
   });

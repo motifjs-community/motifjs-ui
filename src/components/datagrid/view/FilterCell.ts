@@ -1,13 +1,14 @@
 import { Component, ComponentBase, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { handOver } from '../../../core/draw-parts';
+import { handOver, part } from '../../../core/draw-parts';
+import { mark as markPart, put, text as writeText } from '../../../core/part-writes';
 import { DateBox } from '../../datebox/DateBox';
 import { DropDown } from '../../dropdown/DropDown';
 import type { DropDownItem } from '../../dropdown/drop-down-item';
 import { NumberBox } from '../../numberbox/NumberBox';
 import { TextBox } from '../../textbox/TextBox';
 import { Field } from '../../../parts/field/Field';
-import { focusableIn } from '../../../core/focus';
+import { focusFirstIn } from '../../../core/focus';
 import type { FilterEditorContext } from '../filter-editor-context';
 import type { ColumnFilter } from '../column-filter';
 import type { GridFilterValue } from '../grid-filter-value';
@@ -15,6 +16,7 @@ import type { GridModel } from '../model/GridModel';
 import { optionOf } from '../model/option-of';
 import { ChoiceListAdapter, type ChoiceRow } from '../model/ChoiceListAdapter';
 import { createActionButton } from './action-button';
+import type { CellTipTarget } from './cell-tip-target';
 import { OPERATOR_MARKS, OPERATOR_TEXTS } from './operator-texts';
 import { readField } from '../model/read-field';
 
@@ -31,7 +33,7 @@ const same = (a: readonly unknown[], b: readonly unknown[]) => a.length === b.le
  */
 export class FilterCell<T> {
   /** The condition button; `null` for a check box column. */
-  readonly condition: HTMLButtonElement | null;
+  readonly conditionPart: Component<HTMLButtonElement> | null;
   readonly editors: Field<any>[] = [];
   /** A custom filter editor's content when it is not a `Field`. */
   private custom: ComponentBase | null = null;
@@ -40,24 +42,25 @@ export class FilterCell<T> {
   private readonly stops: (() => void)[] = [];
   /** Holds the editors; it goes with the cell. */
   private readonly holder: Component<HTMLDivElement>;
+  /** The editors are hidden: the column has no filter in the row now. */
+  private hidden = false;
   private disposed = false;
 
   constructor(
     private readonly model: GridModel<T>,
     readonly field: string,
-    readonly cell: HTMLElement,
-    owner: ComponentBase,
+    /** The cell's component: the editors' box is its child. */
+    readonly part: Component<HTMLDivElement>,
   ) {
     const col = model.columns.get(field);
     // The editors live in a component of their own, so showing and hiding them keeps their place.
     const holder = new Component<HTMLDivElement>('div');
     this.holder = holder;
-    owner.controls.add(holder);
-    const box = holder.element;
-    box.className = 'mx-data-grid__filter';
-    cell.append(box);
-    this.condition = col.type === 'boolean' || col.lookup ? null : this.createCondition();
-    const get = () => model.filters.get(field) ?? ({} as ColumnFilter);
+    part.controls.add(holder);
+    holder.class.add('mx-data-grid__filter');
+    const condition = col.type === 'boolean' || col.lookup ? null : this.createCondition();
+    this.conditionPart = condition;
+    const get =() => model.filters.get(field) ?? ({} as ColumnFilter);
     const set = (change: Partial<ColumnFilter>, typed: boolean) => model.filters.update(field, change, typed);
     const title = () => model.columns.title(field);
     const between = () => model.filters.operator(field) === 'between';
@@ -144,18 +147,18 @@ export class FilterCell<T> {
         this.editors.push(editor);
       }
     }
-    if (this.condition) box.append(this.condition);
+    if (condition) holder.controls.add(condition);
     for (const editor of this.editors) {
-      editor.element.setAttribute('data-in-filter', '');
+      editor.attr.add({ 'data-in-filter': '' });
       holder.controls.add(editor);
     }
     if (this.custom) {
-      this.custom.element.setAttribute('data-in-filter', '');
+      this.custom.attr.add({ 'data-in-filter': '' });
       holder.controls.add(this.custom);
     }
     this.drawers.push(() => {
-      const hidden = !model.columns.can(field, 'filterRow');
-      if (box.hidden !== hidden) box.hidden = hidden;
+      this.hidden = !model.columns.can(field, 'filterRow');
+      markPart(holder, 'hidden', this.hidden);
     });
     this.draw();
   }
@@ -168,9 +171,15 @@ export class FilterCell<T> {
     });
   }
 
-  /** The element that takes the keys of an editor (its input or its list's field). */
-  inputOf(editor: Field<any>): HTMLElement {
-    return (editor as unknown as { focusElement: HTMLElement }).focusElement;
+  /** The part that takes the keys of an editor (its input or its list's field). */
+  inputPartOf(editor: Field<any>): ComponentBase {
+    return editor.focusPart;
+  }
+
+  /** The condition button and its hint, for the grid's tip; `null` for a check box column. */
+  conditionTip(): CellTipTarget | null {
+    const part = this.conditionPart;
+    return part ? { part, hint: () => this.conditionLabel() } : null;
   }
 
   /** The editors that show now. */
@@ -180,20 +189,12 @@ export class FilterCell<T> {
 
   /** Focuses the first editor; a character typed on the cell starts its text. Returns whether there was one. */
   focus(typed?: string): boolean {
-    if (this.custom && !this.cell.querySelector('.mx-data-grid__filter')?.hasAttribute('hidden')) {
-      const target = focusableIn(this.custom.element as HTMLElement)[0];
-      target?.focus();
-      return !!target;
-    }
+    if (this.hidden) return false;
+    if (this.custom) return focusFirstIn(this.custom);
     const editor = this.shownEditors()[0];
-    if (!editor || this.cell.querySelector('.mx-data-grid__filter')?.hasAttribute('hidden')) return false;
+    if (!editor) return false;
     editor.focus();
-    const input = this.inputOf(editor);
-    if (typed !== undefined && input instanceof HTMLInputElement && (editor instanceof TextBox || editor instanceof NumberBox)) {
-      input.value = typed;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.setSelectionRange(input.value.length, input.value.length);
-    }
+    if (typed !== undefined && (editor instanceof TextBox || editor instanceof NumberBox)) editor.typeText(typed);
     return true;
   }
 
@@ -371,26 +372,31 @@ export class FilterCell<T> {
     return [all, ...options.map(optionOf).map((o) => ({ value: o.value, text: o.label }))];
   }
 
-  private createCondition(): HTMLButtonElement {
+  /** The condition button, not placed yet. */
+  private createCondition(): Component<HTMLButtonElement> {
     const model = this.model;
-    const button = createActionButton();
-    button.classList.remove('mx-data-grid__action');
-    button.classList.add('mx-data-grid__condition');
-    button.dataset.tone = 'standard';
-    button.setAttribute('aria-haspopup', 'menu');
-    const mark = document.createElement('span');
-    mark.className = 'mx-data-grid__condition-mark';
-    mark.setAttribute('aria-hidden', 'true');
-    button.append(mark);
+    const condition = createActionButton();
+    condition.class.remove('mx-data-grid__action');
+    condition.class.add('mx-data-grid__condition');
+    condition.attr.add({ 'data-tone': 'standard', 'aria-haspopup': 'menu' });
+    const mark = part<HTMLSpanElement>(condition, 'span', 'mx-data-grid__condition-mark');
+    mark.attr.add({ 'aria-hidden': 'true' });
     this.drawers.push(() => {
       const op = model.filters.operator(this.field);
-      if (mark.textContent !== OPERATOR_MARKS[op]) mark.textContent = OPERATOR_MARKS[op];
-      const label = model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[op]), title: readField(model.columns.get(this.field), 'title') ?? '' });
-      if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
-      if (button.dataset.hint !== label) button.dataset.hint = label;
+      writeText(mark, OPERATOR_MARKS[op]);
+      const label = this.conditionLabel();
+      put(condition, 'aria-label', label);
+      put(condition, 'data-hint', label);
       const set = model.filters.isActive(this.field);
-      if (button.hasAttribute('data-set') !== set) button.toggleAttribute('data-set', set);
+      markPart(condition, 'data-set', set);
     });
-    return button;
+    return condition;
+  }
+
+  /** "Name condition: Contains": the condition button's name and hint. */
+  private conditionLabel(): string {
+    const model = this.model;
+    const op = model.filters.operator(this.field);
+    return model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[op]), title: readField(model.columns.get(this.field), 'title') ?? '' });
   }
 }

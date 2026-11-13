@@ -1,13 +1,17 @@
-import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, createSignal, untracked, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { focusGoesInto, focusOn } from '../../core/focus';
+import { kept, mark, put, text as writeText } from '../../core/part-writes';
 import { functionValue } from '../../core/function-value';
-import { checkMark, chevronDown, dashMark, dismissMark } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { DataItems } from '../../parts/data/DataItems';
 import { Field } from '../../parts/field/Field';
+import { pressedFocusable } from '../../parts/field/pressed-focusable';
 import type { ItemField } from '../../parts/list/item-field';
 import type { OptionChosenEventArgs } from '../../parts/list/option-chosen-event-args';
+import type { OptionParts } from '../../parts/list/option-parts';
 import { OptionList } from '../../parts/list/OptionList';
 import { itemOwnValue } from '../../parts/list/item-own-value';
 import { readItemField } from '../../parts/list/read-item-field';
@@ -56,17 +60,48 @@ const TITLE_TEXTS = 20;
 
 const PARTS = Symbol('mx.tagbox');
 
+/** A value's tag: made when the value is chosen, kept while it stays, its texts written in place. */
+interface TagSlot {
+  tag: Component<HTMLDivElement>;
+  label: Component<HTMLSpanElement>;
+  remove: Component<HTMLButtonElement>;
+  /** The text written in the label, `null` while a template draws it. */
+  text: string | null;
+  /** The item and template the label is drawn with. */
+  item: unknown;
+  template: unknown;
+  release?: () => void;
+}
+
 interface Parts<T> {
   items: DataItems<T>;
   rows: ListRows<T>;
   known: ValueItems<T>;
   chosen: Set<unknown>;
-  tags: HTMLDivElement;
-  releaseTags: (() => void)[];
+  tags: Component<HTMLDivElement>;
+  /** The tags shown, in the order of the values, with their remove buttons. */
+  shownTags: { tag: Component<HTMLDivElement>; remove: Component<HTMLButtonElement> }[];
+  /** The "+3" tag, while some values have no tag of their own. */
+  more: Component<HTMLDivElement> | null;
+  /** The "+3" tag, made once when first needed. */
+  moreTag: Component<HTMLDivElement> | null;
+  /** The tags of the values, by value (a value given twice has two). */
+  slots: Map<unknown, TagSlot[]>;
+  /** The parts in the tag list, in order; the list follows `drawn`. */
+  tagList: ComponentBase[];
+  drawn: Signal<number>;
   popup: Popup | null;
   list: OptionList<T | SelectAllRow> | null;
-  arrow: HTMLButtonElement | null;
-  clear: HTMLButtonElement | null;
+  /** The "Select all" rows drawn: the list draws its rows again when they change or scroll into view. */
+  allRows: Set<OptionParts>;
+  /** What the rows are drawn with: the list draws its rows again only when it changes. */
+  drawnWith?: { withAll: boolean; template: ItemTemplate<T> | null };
+  arrow: Component<HTMLButtonElement> | null;
+  clear: Component<HTMLButtonElement> | null;
+  /** Clicks on a tag or a button, told before their own listeners run: a click can take its part away. */
+  partClicks: WeakSet<Event>;
+  /** The text typed in the input. */
+  text: string;
   /** The highlight was moved with the keys since the last typing. */
   moved: boolean;
   timer: ReturnType<typeof setTimeout> | undefined;
@@ -90,14 +125,22 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   constructor(props?: IBaseProp<TagBoxProps<T, V>>) {
     super(props);
     const own = (this.props ?? {}) as TagBoxProps<T, V>;
-    this.element.classList.add('mx-tag-box');
+    this.class.add('mx-tag-box');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     for (const name of FUNCTIONS) if (own[name] !== undefined) this.bindProperty(name, functionValue(own[name]));
     if (own.onOpened) this.onOpened(own.onOpened);
     if (own.onClosed) this.onClosed(own.onClosed);
 
     const parts = this.tagParts;
-    this.inputElement.before(parts.tags);
+    this.boxPart.controls.insert(this.boxPart.controls.items.indexOf(this.controlPart), parts.tags);
+    // Built once: the list holds the tags of the values, made when a value comes and taken out when it goes.
+    parts.tags.bindings.list(
+      () => {
+        void parts.drawn.value;
+        return untracked(() => parts.tagList);
+      },
+      (c: ComponentBase) => c
+    );
     parts.items.textOf = (item) => this.itemText(item);
     parts.known.valueOf = (item) => this.itemValue(item);
     this.observeProperty('dataSource', () => this.renderSource());
@@ -119,8 +162,8 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     });
     const stopLocale = onLanguage(this, () => {
       const strings = uiLocale.strings;
-      parts.arrow?.setAttribute('aria-label', strings.moreOptions);
-      parts.clear?.setAttribute('aria-label', strings.clear);
+      if (parts.arrow) put(parts.arrow, 'aria-label', strings.moreOptions);
+      if (parts.clear) put(parts.clear, 'aria-label', strings.clear);
       this.renderTags();
       this.listChanged();
     });
@@ -131,7 +174,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.motif.setDisposable(() => {
       stopLocale();
       clearTimeout(parts.timer);
-      for (const release of parts.releaseTags.splice(0)) release();
+      for (const slot of [...parts.slots.values()].flat()) slot.release?.();
       parts.items.dispose();
       parts.opened.dispose();
       parts.closed.dispose();
@@ -290,8 +333,9 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.assignProperty('matchWidth', value, Boolean);
   }
 
-  get inputElement(): HTMLInputElement {
-    return this.focusElement as HTMLInputElement;
+  /** The text input as a component: write its attributes with `put` and call its methods through `attr`. */
+  get inputPart(): ComponentBase<HTMLInputElement> {
+    return this.controlPart as ComponentBase<HTMLInputElement>;
   }
 
   /** The known items for the selected values. Reactive. */
@@ -330,11 +374,10 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const popup = (parts.popup ??= this.createPopup());
     if (popup.isOpen) return true;
     this.drawList();
-    const box = this.inputElement.parentElement!;
-    popup.open(box, { toggle: box, returnFocus: this.inputElement });
+    popup.open(this.boxPart, { returnFocus: this.controlPart });
     this.setProperty('opened', true);
-    this.element.setAttribute('data-open', '');
-    this.inputElement.setAttribute('aria-expanded', 'true');
+    mark(this, 'data-open', true);
+    put(this.controlPart, 'aria-expanded', 'true');
     this.highlight();
     parts.opened.fire();
     return true;
@@ -368,16 +411,14 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     return this.chooseAll(true);
   }
 
-  protected createControl(): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'mx-field__input mx-tag-box__input';
-    input.autocomplete = 'off';
-    input.spellcheck = false;
-    input.setAttribute('role', 'combobox');
-    input.setAttribute('aria-autocomplete', 'list');
-    input.setAttribute('aria-expanded', 'false');
-    return input;
+  protected override get controlTag(): string {
+    return 'input';
+  }
+
+  protected createControl(): ComponentBase {
+    const control = loose<HTMLInputElement>('input', 'mx-field__input mx-tag-box__input');
+    control.attr.add({ type: 'text', autocomplete: 'off', spellcheck: 'false', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': 'false' });
+    return control;
   }
 
   protected emptyValue(): V[] {
@@ -408,8 +449,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       parts.popup.place();
     } else {
       list.refresh();
-      const all = list.element.querySelector<HTMLElement>('[data-select-all]');
-      if (all) this.markSelectAllRow(all);
+      this.markSelectAll();
     }
   }
 
@@ -432,21 +472,27 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const self = this as unknown as { [PARTS]?: Parts<T> };
     if (!self[PARTS]) {
       const items = new DataItems<T>();
-      const tags = document.createElement('div');
-      tags.className = 'mx-tag-box__tags';
-      tags.setAttribute('role', 'list');
-      tags.hidden = true;
+      const tags = loose<HTMLDivElement>('div', 'mx-tag-box__tags');
+      tags.attr.add({ role: 'list', hidden: true });
       self[PARTS] = {
         items,
         rows: new ListRows(items),
         known: new ValueItems(items),
         chosen: new Set(),
         tags,
-        releaseTags: [],
+        shownTags: [],
+        more: null,
+        moreTag: null,
+        slots: new Map(),
+        tagList: [],
+        drawn: createSignal(0),
         popup: null,
         list: null,
+        allRows: new Set(),
         arrow: null,
         clear: null,
+        partClicks: new WeakSet(),
+        text: '',
         moved: false,
         timer: undefined,
         ready: false,
@@ -494,7 +540,6 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   private renderTags(): void {
     const parts = this.tagParts;
     if (!parts.ready) return;
-    for (const release of parts.releaseTags.splice(0)) release();
     const values = this.values();
     const max = this.peekProperty<number>('maxTags') ?? 0;
     const shown = max > 0 && values.length > max ? max : values.length;
@@ -504,27 +549,53 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       this.renderTags();
       this.setProperty('found', (this.peekProperty<number>('found') ?? 0) + 1);
     });
-    const nodes: HTMLElement[] = [];
-    for (let i = 0; i < shown; i++) nodes.push(this.tagElement(values[i], i));
-    if (shown < values.length) {
-      const more = document.createElement('div');
-      more.className = 'mx-tag-box__tag mx-tag-box__more';
-      more.setAttribute('role', 'listitem');
-      more.textContent = uiLocale.strings.moreItems.replace('{count}', String(values.length - shown));
-      const rest = values.slice(shown);
-      more.title = rest
-        .slice(0, TITLE_TEXTS)
-        .map((value) => this.tagText(value))
-        .concat(rest.length > TITLE_TEXTS ? ['…'] : [])
-        .join(', ');
-      nodes.push(more);
+    // A value keeps its tag; a tag whose value went is taken out by the list.
+    const old = parts.slots;
+    const slots = new Map<unknown, TagSlot[]>();
+    const list: ComponentBase[] = [];
+    parts.shownTags = [];
+    for (let i = 0; i < shown; i++) {
+      const value = values[i];
+      const slot = old.get(value)?.shift() ?? this.makeTag();
+      const same = slots.get(value);
+      if (same) same.push(slot);
+      else slots.set(value, [slot]);
+      this.writeTag(slot, value);
+      parts.shownTags.push({ tag: slot.tag, remove: slot.remove });
+      list.push(slot.tag);
     }
-    parts.tags.replaceChildren(...nodes);
-    parts.tags.hidden = !nodes.length;
+    for (const slot of [...old.values()].flat()) slot.release?.();
+    parts.slots = slots;
+    parts.more = null;
+    if (shown < values.length && !parts.moreTag) {
+      parts.moreTag = loose<HTMLDivElement>('div', 'mx-tag-box__tag mx-tag-box__more');
+      parts.moreTag.attr.add({ role: 'listitem' });
+    }
+    // Once made, it stays last in the list, kept out of the page while every value has a tag.
+    if (parts.moreTag) list.push(parts.moreTag);
+    if (shown < values.length && parts.moreTag) {
+      const more = parts.moreTag;
+      writeText(more, uiLocale.strings.moreItems.replace('{count}', String(values.length - shown)));
+      const rest = values.slice(shown);
+      put(
+        more,
+        'title',
+        rest
+          .slice(0, TITLE_TEXTS)
+          .map((value) => this.tagText(value))
+          .concat(rest.length > TITLE_TEXTS ? ['…'] : [])
+          .join(', ')
+      );
+      parts.more = more;
+    }
+    parts.tagList = list;
+    untracked(() => parts.drawn.value++);
+    if (parts.moreTag) kept(parts.moreTag, !!parts.more);
+    mark(parts.tags, 'hidden', !values.length);
     const placeholder = this.peekProperty<string>('placeholder') ?? '';
-    if (placeholder && !values.length) this.inputElement.placeholder = placeholder;
-    else this.inputElement.removeAttribute('placeholder');
-    this.element.toggleAttribute('data-placeholder', !!placeholder && !values.length);
+    if (placeholder && !values.length) put(this.controlPart, 'placeholder', placeholder);
+    else put(this.controlPart, 'placeholder', null);
+    mark(this, 'data-placeholder', !!placeholder && !values.length);
   }
 
   private tagText(value: V): string {
@@ -534,37 +605,48 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     return parts.known.isAsking(value) ? uiLocale.strings.loading : this.textOfValue(value);
   }
 
-  private tagElement(value: V, index: number): HTMLElement {
+  private makeTag(): TagSlot {
+    const tag = loose<HTMLDivElement>('div', 'mx-tag-box__tag');
+    tag.attr.add({ role: 'listitem' });
+    put(tag, 'tabindex', '-1');
+    const label = part<HTMLSpanElement>(tag, 'span', 'mx-tag-box__tag-text');
+    const remove = part<HTMLButtonElement>(tag, 'button', 'mx-tag-box__remove');
+    remove.attr.add({ type: 'button' });
+    put(remove, 'tabindex', '-1');
+    glyphPart(remove, 'dismiss');
+    return { tag, label, remove, text: null, item: undefined, template: null };
+  }
+
+  /** Writes what the tag shows of `value`; its label is drawn again only when its item or the template changes. */
+  private writeTag(slot: TagSlot, value: V): void {
     const parts = this.tagParts;
     const item = parts.known.itemOf(value);
     const text = this.tagText(value);
-    const tag = document.createElement('div');
-    tag.className = 'mx-tag-box__tag';
-    tag.setAttribute('role', 'listitem');
-    tag.tabIndex = -1;
-    tag.dataset.index = String(index);
-    if (item === undefined && parts.known.isAsking(value)) tag.setAttribute('data-loading', '');
-    const label = tag.appendChild(document.createElement('span'));
-    label.className = 'mx-tag-box__tag-text';
-    const template = this.peekProperty<ItemTemplate<T> | null>('tagTemplate');
-    const release = item !== undefined && template ? template(item, label) : undefined;
-    if (release) parts.releaseTags.push(release);
-    else if (!(item !== undefined && template)) label.textContent = text;
-    const remove = tag.appendChild(document.createElement('button'));
-    remove.type = 'button';
-    remove.tabIndex = -1;
-    remove.className = 'mx-tag-box__remove';
-    remove.setAttribute('aria-label', uiLocale.strings.removeItem.replace('{text}', text));
-    remove.append(dismissMark());
-    return tag;
+    mark(slot.tag, 'data-loading', item === undefined && parts.known.isAsking(value));
+    put(slot.remove, 'aria-label', uiLocale.strings.removeItem.replace('{text}', text));
+    const template = item !== undefined ? this.peekProperty<ItemTemplate<T> | null>('tagTemplate') : null;
+    if (template) {
+      if (slot.text === null && slot.item === item && slot.template === template) return;
+      this.freshLabel(slot);
+      slot.item = item;
+      slot.template = template;
+      slot.release = template(item as T, slot.label) || undefined;
+      return;
+    }
+    if (slot.text === null && slot.template) this.freshLabel(slot);
+    slot.item = item;
+    slot.template = null;
+    if (slot.text !== text) slot.label.setText(text);
+    slot.text = text;
   }
 
-  private tagAt(index: number): HTMLElement | null {
-    return this.tagParts.tags.querySelector<HTMLElement>(`.mx-tag-box__tag[data-index="${index}"]`);
-  }
-
-  private shownTags(): number {
-    return this.tagParts.tags.querySelectorAll('.mx-tag-box__tag[data-index]').length;
+  /** A new label for a template to draw in, the one drawn before taken out. */
+  private freshLabel(slot: TagSlot): void {
+    slot.release?.();
+    slot.release = undefined;
+    removePart(slot.label);
+    slot.label = partBefore<HTMLSpanElement>(slot.tag, slot.remove, 'span', 'mx-tag-box__tag-text');
+    slot.text = null;
   }
 
   private removeAt(index: number, event?: Event): void {
@@ -583,7 +665,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const parts = this.tagParts;
     const popup = new Popup();
     popup.matchWidth = this.peekProperty('matchWidth') !== false;
-    popup.element.classList.add('mx-tag-box__popup');
+    popup.class.add('mx-tag-box__popup');
     this.controls.add(popup);
     const list = new OptionList<T | SelectAllRow>();
     list.multiple = true;
@@ -595,24 +677,14 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     };
     list.isSelected = (row) => (row === selectAllRow ? this.allState() === true : parts.chosen.has(this.itemValue(row as T)));
     list.emptyText = () => (parts.items.loading ? uiLocale.strings.loading : uiLocale.strings.noItems);
-    list.draw = (row, host) => {
-      if (row === selectAllRow) {
-        host.textContent = uiLocale.strings.selectAll;
-        if (host.parentElement) this.markSelectAllRow(host.parentElement);
-        return;
-      }
-      const template = this.peekProperty<ItemTemplate<T> | null>('itemTemplate');
-      if (template) return template(row as T, host);
-      host.textContent = this.itemText(row as T);
-    };
     list.onChosen((e) => this.chosen(e));
     popup.controls.add(list);
     parts.list = list;
-    this.inputElement.setAttribute('aria-controls', list.element.id);
+    put(this.controlPart, 'aria-controls', list.id);
     popup.onClosed((reason) => {
       this.setProperty('opened', false);
-      this.element.removeAttribute('data-open');
-      this.inputElement.setAttribute('aria-expanded', 'false');
+      mark(this, 'data-open', false);
+      put(this.controlPart, 'aria-expanded', 'false');
       this.pointAt();
       parts.closed.fire(reason);
     });
@@ -628,6 +700,14 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const group = this.peekProperty<ItemField<T>>('groupField');
     const withAll = !!this.peekProperty('selectAll');
     list.iconOf = icon === undefined ? null : (row) => (row === selectAllRow ? undefined : (readItemField(row as T, icon, 'icon') as IconSource | undefined));
+    // The list writes the items' texts itself; a template, or a "Select all" row to mark, is drawn here. The drawing is
+    // made anew only when what it draws with changes, so the rows are not drawn again with every change of the items.
+    const template = this.peekProperty<ItemTemplate<T> | null>('itemTemplate') ?? null;
+    const drawn = parts.drawnWith;
+    if (!drawn || drawn.withAll !== withAll || drawn.template !== template) {
+      parts.drawnWith = { withAll, template };
+      list.draw = withAll || template ? (row, host, option) => this.drawRow(row, host, option, template) : null;
+    }
     if (parts.items.dataSource) {
       list.groupOf = null;
       parts.rows.withSelectAll = withAll;
@@ -643,9 +723,20 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       if (this.peekProperty('hideSelected')) shown = shown.filter((item) => !parts.chosen.has(this.itemValue(item)));
       list.setItems(withAll && shown.length ? [selectAllRow, ...shown] : shown);
     }
-    // An empty listbox reads as empty; its "No items" is for the eyes.
-    list.element.querySelector('.mx-list__empty')?.setAttribute('aria-hidden', 'true');
     this.pointAt();
+  }
+
+  /** Draws a row's content when the list leaves it to the box: with a template, or with a "Select all" row, kept to be marked. */
+  private drawRow(row: T | SelectAllRow, host: ComponentBase<HTMLElement>, option: OptionParts, template: ItemTemplate<T> | null): (() => void) | void {
+    const list = this.tagParts.list!;
+    if (row === selectAllRow) {
+      // Bound, written in place when the items are given again or the language changes.
+      const release = list.bindText(option, () => uiLocale.strings.selectAll);
+      this.keepSelectAllRow(option);
+      return release;
+    }
+    if (template) return template(row as T, host);
+    return list.bindText(option, () => this.itemText(row as T));
   }
 
   private listChanged(): void {
@@ -666,13 +757,29 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     if (this.values().some((value) => parts.known.itemOf(value) === undefined)) this.renderTags();
   }
 
-  private markSelectAllRow(row: HTMLElement): void {
+  /** Keeps a "Select all" row the list drew, to mark it again when the selection changes. */
+  private keepSelectAllRow(option: OptionParts): void {
+    this.tagParts.allRows.add(option);
+    this.markSelectAll();
+  }
+
+  /** Marks the "Select all" rows drawn, letting go of those the list took away. */
+  private markSelectAll(): void {
+    const rows = this.tagParts.allRows;
+    for (const option of rows) if (option.row.isDisposed) rows.delete(option);
+    if (!rows.size) return;
     const state = this.allState();
-    row.setAttribute('data-select-all', '');
-    row.setAttribute('aria-selected', String(state === true));
-    row.toggleAttribute('data-selected', state !== false);
-    row.toggleAttribute('data-mixed', state === 'mixed');
-    row.querySelector('.mx-list__check')?.replaceChildren(state === 'mixed' ? dashMark() : checkMark());
+    for (const option of rows) this.markSelectAllRow(option, state);
+  }
+
+  /** The "Select all" row is chosen when every item is, and shows a dash when some are. */
+  private markSelectAllRow(option: OptionParts, state: boolean | 'mixed'): void {
+    const row = option.row;
+    mark(row, 'data-select-all', true);
+    put(row, 'aria-selected', String(state === true));
+    mark(row, 'data-selected', state !== false);
+    mark(row, 'data-mixed', state === 'mixed');
+    if (option.check) put(option.check, 'data-icon', state === 'mixed' ? 'dash' : 'check');
   }
 
   /** While typing, the first match is highlighted so Enter takes it. */
@@ -681,7 +788,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const list = parts.list;
     if (!list) return;
     const auto = this.peekProperty<boolean>('autoHighlight') ?? !this.peekProperty('acceptCustomValue');
-    if (this.inputElement.value && auto) {
+    if (parts.text && auto) {
       list.move('first');
       if (list.activeItem === selectAllRow) list.move(1);
     } else if (!parts.moved) {
@@ -693,8 +800,8 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   private pointAt(): void {
     const parts = this.tagParts;
     const list = parts.list;
-    if (list && parts.popup?.isOpen && list.activeIndex >= 0) this.inputElement.setAttribute('aria-activedescendant', list.idOf(list.activeIndex));
-    else this.inputElement.removeAttribute('aria-activedescendant');
+    if (list && parts.popup?.isOpen && list.activeIndex >= 0) put(this.controlPart, 'aria-activedescendant', list.idOf(list.activeIndex));
+    else put(this.controlPart, 'aria-activedescendant', null);
   }
 
   private chosen(e: OptionChosenEventArgs<T | SelectAllRow>): void {
@@ -733,12 +840,17 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const parts = this.tagParts;
     clearTimeout(parts.timer);
     parts.moved = false;
-    if (this.inputElement.value) {
-      this.inputElement.value = '';
-      this.element.removeAttribute('data-text');
-      void parts.items.search('');
-    }
+    if (parts.text) this.clearText();
     if (this.peekProperty('closeOnSelect')) this.close();
+  }
+
+  /** Empties the input, and the search with it. */
+  private clearText(): void {
+    const parts = this.tagParts;
+    parts.text = '';
+    this.controlPart.attr.add({ value: '' });
+    mark(this, 'data-text', false);
+    void parts.items.search('');
   }
 
   private addCustom(text: string, event: Event): boolean {
@@ -773,47 +885,51 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   // Keys and the pointer.
 
   private listen(): void {
-    const input = this.inputElement;
     const parts = this.tagParts;
-    input.addEventListener('input', () => this.typed());
-    input.addEventListener('keydown', (e) => this.inputKeyDown(e));
-    parts.tags.addEventListener('keydown', (e) => this.tagKeyDown(e));
-    parts.tags.addEventListener('click', (e) => {
-      const remove = (e.target as Element).closest('.mx-tag-box__remove');
-      if (!remove) return;
+    this.controlPart.motif.on('input', (_, e) => this.typed((e.target as HTMLInputElement).value));
+    this.controlPart.motif.on('keydown', (_, e: KeyboardEvent) => this.inputKeyDown(e));
+    parts.tags.motif.on('keydown', (_, e: KeyboardEvent) => this.tagKeyDown(e));
+    parts.tags.motif.on('click', (_, e: MouseEvent) => {
+      const index = parts.shownTags.findIndex((shown) => shown.remove.motif.isEventFrom(e));
+      if (index < 0) return;
       e.stopPropagation();
-      const tag = remove.closest<HTMLElement>('.mx-tag-box__tag')!;
-      this.removeAt(Number(tag.dataset.index), e);
-      this.inputElement.focus();
+      this.removeAt(index, e);
+      this.focus();
     });
-    const box = input.parentElement!;
-    // A click in the box, on a tag too, keeps focus in the input.
-    box.addEventListener('mousedown', (e) => {
-      const target = e.target as Element;
-      if (target === input || target.closest('.mx-field__button')) return;
+    // A click in the box, on a tag too, keeps focus in the input; the input and the buttons handle their own clicks.
+    this.boxPart.motif.on('mousedown', (_, e: MouseEvent) => {
+      if (this.controlPart.motif.isEventFrom(e) || this.fromButton(e)) return;
       e.preventDefault();
-      input.focus();
+      this.focus();
     });
-    box.addEventListener('click', (e) => {
-      const target = e.target as Element;
-      if (target.closest('.mx-field__button, .mx-tag-box__tag')) return;
+    // Where a click started is told before the tags and the buttons handle it: their own click can take them away.
+    this.boxPart.motif.on('click:capture', (_, e: MouseEvent) => {
+      const onTag = parts.shownTags.some((shown) => shown.tag.motif.isEventFrom(e)) || !!parts.more?.motif.isEventFrom(e);
+      if (onTag || this.fromButton(e)) parts.partClicks.add(e);
+    });
+    this.boxPart.motif.on('click', (_, e: MouseEvent) => {
+      if (parts.partClicks.has(e)) return;
       if (this.peekProperty('openOnFieldClick') !== false) this.openAll();
     });
-    this.element.addEventListener('focusout', (e) => {
-      const to = e.relatedTarget as Node | null;
-      if (to && this.element.contains(to)) return;
-      if (!this.inputElement.value) return;
-      this.inputElement.value = '';
-      this.element.removeAttribute('data-text');
-      void this.tagParts.items.search('');
+    // Leaving with text typed starts the text and the search again.
+    this.motif.on('focusout', (_, e: FocusEvent) => {
+      if (parts.text && !focusGoesInto(this, e)) this.clearText();
     });
   }
 
-  private typed(): void {
+  /**
+   * Whether an event came from a button in the box (the arrow, the clear button, the buttons given): a part outside the
+   * input and the tags that takes focus itself.
+   */
+  private fromButton(e: Event): boolean {
+    return !this.tagParts.tags.motif.isEventFrom(e) && !this.controlPart.motif.isEventFrom(e) && pressedFocusable(this.boxPart, e);
+  }
+
+  private typed(text: string): void {
     const parts = this.tagParts;
-    const text = this.inputElement.value;
+    parts.text = text;
     parts.moved = false;
-    this.element.toggleAttribute('data-text', !!text);
+    mark(this, 'data-text', !!text);
     clearTimeout(parts.timer);
     const run = () => {
       void parts.items.search(text);
@@ -832,14 +948,15 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   /** Opens with every item, as the arrow does. */
   private openAll(): void {
     const parts = this.tagParts;
-    if (!this.inputElement.value && parts.items.searchText) void parts.items.search('');
+    if (!parts.text && parts.items.searchText) void parts.items.search('');
     this.open();
   }
 
   private inputKeyDown(e: KeyboardEvent): void {
     const parts = this.tagParts;
-    const input = this.inputElement;
+    const input = e.target as HTMLInputElement;
     const open = !!parts.popup?.isOpen;
+    const tags = parts.shownTags.length;
     if (e.key === 'ArrowDown' && e.altKey) {
       e.preventDefault();
       this.openAll();
@@ -850,15 +967,15 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       this.close();
       return;
     }
-    if ((e.key === 'Backspace' || e.key === 'ArrowLeft') && !input.value && this.shownTags()) {
+    if ((e.key === 'Backspace' || e.key === 'ArrowLeft') && !parts.text && tags) {
       e.preventDefault();
       if (e.key === 'Backspace') this.removeAt(this.values().length - 1, e);
-      else this.focusTag(this.shownTags() - 1);
+      else this.focusTag(tags - 1);
       return;
     }
-    if (e.key === 'ArrowLeft' && input.selectionStart === 0 && input.selectionEnd === 0 && this.shownTags()) {
+    if (e.key === 'ArrowLeft' && input.selectionStart === 0 && input.selectionEnd === 0 && tags) {
       e.preventDefault();
-      this.focusTag(this.shownTags() - 1);
+      this.focusTag(tags - 1);
       return;
     }
     if (e.key === 'Escape') {
@@ -866,12 +983,10 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
         e.preventDefault();
         e.stopPropagation();
         parts.popup?.close('escape');
-      } else if (input.value) {
+      } else if (parts.text) {
         e.preventDefault();
         e.stopPropagation();
-        input.value = '';
-        this.element.removeAttribute('data-text');
-        void parts.items.search('');
+        this.clearText();
       } else if (this.peekProperty('clearButton') && this.values().length && this.canChange()) {
         e.preventDefault();
         e.stopPropagation();
@@ -907,7 +1022,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   private enter(e: KeyboardEvent, open: boolean): void {
     const parts = this.tagParts;
     const list = parts.list;
-    const text = this.inputElement.value.trim();
+    const text = parts.text.trim();
     const row = open && list && list.activeIndex >= 0 ? list.activeItem : undefined;
     if (row !== undefined) {
       e.preventDefault();
@@ -923,43 +1038,44 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   }
 
   private focusTag(index: number): void {
-    const tag = this.tagAt(Math.max(0, index));
-    if (!tag) return;
+    const shown = this.tagParts.shownTags[Math.max(0, index)];
+    if (!shown) return;
     this.close();
-    tag.focus();
+    focusOn(shown.tag);
   }
 
   private tagKeyDown(e: KeyboardEvent): void {
-    const tag = (e.target as Element).closest<HTMLElement>('.mx-tag-box__tag[data-index]');
-    if (!tag) return;
-    const index = Number(tag.dataset.index);
-    const count = this.shownTags();
+    const parts = this.tagParts;
+    const index = parts.shownTags.findIndex((shown) => shown.tag.motif.isEventFrom(e));
+    if (index < 0) return;
+    const count = parts.shownTags.length;
     switch (e.key) {
       case 'ArrowLeft':
         this.focusTag(index - 1);
         break;
       case 'ArrowRight':
         if (index + 1 < count) this.focusTag(index + 1);
-        else this.inputElement.focus();
+        else this.focus();
         break;
       case 'Home':
         this.focusTag(0);
         break;
       case 'End':
-        this.inputElement.focus();
+        this.focus();
         break;
       case 'Delete':
       case 'Backspace':
         if (!this.canChange()) return;
         this.removeAt(index, e);
-        if (!this.shownTags()) this.inputElement.focus();
-        else this.focusTag(e.key === 'Backspace' ? index - 1 : Math.min(index, this.shownTags() - 1));
+        // The tags are drawn again for the values left.
+        if (!parts.shownTags.length) this.focus();
+        else this.focusTag(e.key === 'Backspace' ? index - 1 : Math.min(index, parts.shownTags.length - 1));
         break;
       case 'Escape':
-        this.inputElement.focus();
+        this.focus();
         break;
       default:
-        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) this.inputElement.focus();
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) this.focus();
         return;
     }
     e.preventDefault();
@@ -970,50 +1086,46 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   private renderArrow(): void {
     const parts = this.tagParts;
     if (this.peekProperty('showDropDownButton') === false) {
-      parts.arrow?.remove();
+      removePart(parts.arrow);
       parts.arrow = null;
       return;
     }
     if (parts.arrow) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.tabIndex = -1;
-    button.className = 'mx-field__button mx-tag-box__arrow';
-    button.setAttribute('aria-label', uiLocale.strings.moreOptions);
-    button.append(chevronDown());
-    button.addEventListener('mousedown', (e) => e.preventDefault());
-    button.addEventListener('click', () => {
+    const arrow = part<HTMLButtonElement>(this.area('actions'), 'button', 'mx-field__button mx-tag-box__arrow');
+    arrow.attr.add({ type: 'button' });
+    put(arrow, 'tabindex', '-1');
+    put(arrow, 'aria-label', uiLocale.strings.moreOptions);
+    glyphPart(arrow, 'chevron-down');
+    arrow.motif.on('mousedown', (_, e: MouseEvent) => e.preventDefault());
+    arrow.motif.on('click', () => {
       if (this.tagParts.popup?.isOpen) this.close();
       else {
-        this.inputElement.focus();
+        this.focus();
         this.openAll();
       }
     });
-    this.area('actions').append(button);
-    parts.arrow = button;
+    parts.arrow = arrow;
   }
 
   private renderClear(): void {
     const parts = this.tagParts;
     if (!this.peekProperty('clearButton')) {
-      parts.clear?.remove();
+      removePart(parts.clear);
       parts.clear = null;
       return;
     }
     if (parts.clear) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.tabIndex = -1;
-    button.className = 'mx-field__button mx-tag-box__clear';
-    button.setAttribute('aria-label', uiLocale.strings.clear);
-    button.append(dismissMark());
-    button.addEventListener('mousedown', (e) => e.preventDefault());
-    button.addEventListener('click', (e) => {
+    const clear = part<HTMLButtonElement>(this.area('tools'), 'button', 'mx-field__button mx-tag-box__clear');
+    clear.attr.add({ type: 'button' });
+    put(clear, 'tabindex', '-1');
+    put(clear, 'aria-label', uiLocale.strings.clear);
+    glyphPart(clear, 'dismiss');
+    clear.motif.on('mousedown', (_, e: MouseEvent) => e.preventDefault());
+    clear.motif.on('click', (_, e: MouseEvent) => {
       if (!this.canChange()) return;
       this.commit([], e);
-      this.inputElement.focus();
+      this.focus();
     });
-    this.area('tools').append(button);
-    parts.clear = button;
+    parts.clear = clear;
   }
 }

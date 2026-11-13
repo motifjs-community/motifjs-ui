@@ -1,9 +1,11 @@
-import { read, type Bind, type IBaseProp } from '@motifx/core';
+import { read, type Bind, type Component, type ComponentBase, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey, setAccessKeyAttribute } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { registerControl } from '../../core/control-map';
-import { dismissMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { hasFocusableIn, standFor } from '../../core/focus';
+import { keepScroll } from '../../core/measure';
+import { kept, mark, put, text as writeText } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
@@ -14,20 +16,22 @@ import { onLanguage } from '../../core/on-language';
 
 const OWN = ['key', 'icon', 'badge', 'hint', 'closable', 'lazy', 'keepAlive'] as const;
 
-const FOCUSABLE_INSIDE =
-  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
-
 /** The parts of a tab. On one object made on first use: the base constructor already asks for the focus element. */
 interface Parts {
-  header: HTMLButtonElement;
-  label: HTMLSpanElement;
-  icon: HTMLSpanElement | null;
+  /** The tab's button as a component: the Tabs puts it in its strip; its parts are its children. */
+  headerPart: Component<HTMLButtonElement>;
+  label: Component<HTMLSpanElement>;
+  icon: Component<HTMLSpanElement> | null;
   releaseIcon: () => void;
-  badge: HTMLSpanElement | null;
-  close: HTMLSpanElement | null;
+  badge: Component<HTMLSpanElement> | null;
+  close: Component<HTMLSpanElement> | null;
   stopCloseHint: (() => void) | null;
   owner: Tabs | null;
   content: PanelContent | null;
+  /** The panel is shown: the Tabs selected the tab. */
+  shown: boolean;
+  /** Scrolls back what scrolled in the panel when it was hidden: out of the page, it loses it. */
+  restoreScroll: (() => void) | null;
 }
 
 const PARTS = Symbol('mx.tab');
@@ -57,8 +61,8 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     this.observeProperty('icon', () => this.renderIcon());
     this.observeProperty<string | number | null | undefined>('badge', (badge) => this.renderBadge(badge));
     this.observeProperty<string>('hint', (hint) => {
-      if (hint) parts.header.title = hint;
-      else parts.header.removeAttribute('title');
+      if (hint) put(parts.headerPart, 'title', hint);
+      else put(parts.headerPart, 'title', null);
     });
     this.observeProperty('closable', () => this.renderClose());
     this.observeProperty('key', () => parts.owner?.tabChanged(this));
@@ -67,9 +71,11 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     this.motif.setDisposable(() => {
       parts.releaseIcon();
       parts.stopCloseHint?.();
-      parts.header.remove();
+      removePart(parts.headerPart);
       parts.owner?.tabGone(this);
     });
+    // Hidden until its tab is selected: built with the Tabs, so what is bound to it is followed, and out of the page.
+    kept(this, false);
   }
 
   // Properties (see TabProps).
@@ -149,9 +155,9 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     return !!this.parts.content?.isBuilt;
   }
 
-  /** The tab's button in the strip (`role="tab"`). The tab's own element is its panel. */
-  get headerElement(): HTMLButtonElement {
-    return this.parts.header;
+  /** The tab's button in the strip (`role="tab"`) as a component. The tab's own element is its panel. */
+  get headerPart(): Component<HTMLButtonElement> {
+    return this.parts.headerPart;
   }
 
   /** Selects the tab. Returns `false` if it is hidden or not in a `Tabs`. */
@@ -164,10 +170,9 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     return this.parts.owner?.close(this) ?? false;
   }
 
-  protected override get focusElement(): HTMLElement {
-    return this.parts.header;
+  override get focusPart(): ComponentBase {
+    return this.parts.headerPart;
   }
-
   /** The access key selects the tab and sets focus on it. */
   override onAccessKey(): boolean {
     return this.parts.owner?.activate(this) ?? false;
@@ -175,17 +180,19 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
 
   protected override applyProperty(name: string, value: unknown): void {
     if (name === 'visible') {
-      this.parts.header.hidden = !value;
+      mark(this.parts.headerPart, 'hidden', !value);
       this.parts.owner?.tabChanged(this);
       return;
     }
     // The Tabs keeps one tab in the Tab order.
     if (name === 'tabStop') return;
+    // Disabled while its button has focus: focus stays in the strip, on the tab Tab reaches now.
+    if (name === 'enabled' && !value && this.focused) this.parts.owner?.focus();
     super.applyProperty(name, value);
     if (name === 'enabled') {
-      this.parts.header.toggleAttribute('data-disabled', !value);
-      if (value) this.parts.header.removeAttribute('aria-disabled');
-      else this.parts.header.setAttribute('aria-disabled', 'true');
+      mark(this.parts.headerPart, 'data-disabled', !value);
+      if (value) put(this.parts.headerPart, 'aria-disabled', null);
+      else put(this.parts.headerPart, 'aria-disabled', 'true');
       this.parts.owner?.tabChanged(this);
     }
   }
@@ -195,7 +202,8 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     const parts = this.parts;
     parts.owner = owner;
     if (!owner) {
-      parts.header.remove();
+      // Out of the strip, kept for another Tabs.
+      parts.headerPart.parent?.controls.silentDetach(parts.headerPart);
       this.showPanel(false, true);
     }
     this.renderClose();
@@ -204,9 +212,17 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
   /** @internal Shows or hides the panel; the Tabs decides. */
   showPanel(on: boolean, keepAlive: boolean): void {
     const parts = this.parts;
-    parts.header.setAttribute('aria-selected', String(on));
-    this.element.hidden = !on;
+    // Noted before the panel hides, while it still tells its scroll.
+    if (!on && parts.shown) parts.restoreScroll = keepScroll(this);
+    parts.shown = on;
+    put(parts.headerPart, 'aria-selected', String(on));
+    // A hidden panel is out of the page, so only the selected tab names its panel.
+    put(parts.headerPart, 'aria-controls', on ? this.attr.get('id') : null);
+    kept(this, on);
     if (on) {
+      // In the next frame, once the panel is back in the page.
+      parts.restoreScroll?.();
+      parts.restoreScroll = null;
       parts.content?.build();
       this.updatePanelFocus();
     } else if (!keepAlive) {
@@ -221,9 +237,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
 
   /** @internal A panel with nothing focusable in it takes focus itself, so Tab reaches it. */
   updatePanelFocus(): void {
-    if (this.element.hidden) return;
-    if (this.element.querySelector(FOCUSABLE_INSIDE)) this.element.removeAttribute('tabindex');
-    else if (!this.element.hasAttribute('tabindex')) this.element.tabIndex = 0;
+    if (this.parts.shown) put(this, 'tabindex', hasFocusableIn(this) ? null : '0');
   }
 
   /** @internal The `Tabs` closable setting changed. */
@@ -231,28 +245,26 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     const parts = this.parts;
     const on = this.peekProperty<boolean>('closable') ?? parts.owner?.peekClosable() ?? false;
     if (on && !parts.close) {
-      const close = document.createElement('span');
-      close.className = 'mx-tabs__close';
-      close.setAttribute('aria-hidden', 'true');
-      close.append(dismissMark());
+      const close = part<HTMLSpanElement>(parts.headerPart, 'span', 'mx-tabs__close');
+      close.attr.add({ 'aria-hidden': 'true' });
+      glyphPart(close, 'dismiss');
       // Pressing it does not move focus to the tab it closes.
-      close.addEventListener('mousedown', (e) => e.preventDefault());
-      close.addEventListener('click', (e) => {
+      close.motif.on('mousedown', (_, e) => e.preventDefault());
+      close.motif.on('click', (_, e) => {
         e.stopPropagation();
         parts.owner?.close(this, true, e);
       });
-      parts.header.append(close);
-      parts.stopCloseHint = onLanguage(this, () => (close.title = uiLocale.strings.close));
+      parts.stopCloseHint = onLanguage(this, () => put(close, 'title', uiLocale.strings.close));
       parts.close = close;
-      setAccessKeyAttribute(parts.header, null, 'Delete');
+      setAccessKeyAttribute(parts.headerPart, null, 'Delete');
     } else if (!on && parts.close) {
       parts.stopCloseHint?.();
-      parts.close.remove();
+      removePart(parts.close);
       parts.close = parts.stopCloseHint = null;
-      setAccessKeyAttribute(parts.header, 'Delete', null);
+      setAccessKeyAttribute(parts.headerPart, 'Delete', null);
     }
-    this.element.toggleAttribute('data-closable', on);
-    parts.header.toggleAttribute('data-closable', on);
+    mark(this, 'data-closable', on);
+    mark(parts.headerPart, 'data-closable', on);
   }
 
   private get parts(): Parts {
@@ -261,25 +273,20 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
   }
 
   private createParts(): Parts {
-    const header = document.createElement('button');
-    header.type = 'button';
-    header.className = 'mx-tabs__tab';
-    header.id = nextId('tab');
-    header.tabIndex = -1;
-    header.setAttribute('role', 'tab');
-    header.setAttribute('aria-selected', 'false');
-    const label = header.appendChild(document.createElement('span'));
-    label.className = 'mx-tabs__label';
-    registerControl(header, this);
+    // Placed in the strip by the Tabs (not a child of the tab: the tab's own element is its panel).
+    const headerPart = loose<HTMLButtonElement>('button', 'mx-tabs__tab');
+    const headerId = nextId('tab');
+    headerPart.attr.add({ type: 'button', id: headerId });
+    put(headerPart, 'tabindex', '-1');
+    headerPart.attr.add({ role: 'tab', 'aria-selected': 'false' });
+    const label = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabs__label');
+    // Focus on the button counts as focus in the tab.
+    standFor(headerPart, this);
 
-    const panel = this.element;
-    panel.classList.add('mx-tabs__panel');
-    panel.id = nextId('tab-panel');
-    panel.hidden = true;
-    panel.setAttribute('role', 'tabpanel');
-    panel.setAttribute('aria-labelledby', header.id);
-    header.setAttribute('aria-controls', panel.id);
-    return { header, label, icon: null, releaseIcon: () => {}, badge: null, close: null, stopCloseHint: null, owner: null, content: null };
+    const panelId = nextId('tab-panel');
+    this.class.add('mx-tabs__panel');
+    this.attr.add({ id: panelId, role: 'tabpanel', 'aria-labelledby': headerId });
+    return { headerPart, label, icon: null, releaseIcon: () => {}, badge: null, close: null, stopCloseHint: null, owner: null, content: null, shown: false, restoreScroll: null };
   }
 
   private renderTitle(text: string): void {
@@ -295,18 +302,16 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     parts.releaseIcon();
     parts.releaseIcon = () => {};
     if (!icon) {
-      parts.icon?.remove();
+      removePart(parts.icon);
       parts.icon = null;
     } else {
       if (!parts.icon) {
-        parts.icon = document.createElement('span');
-        parts.icon.className = 'mx-tabs__icon';
-        parts.icon.setAttribute('aria-hidden', 'true');
-        parts.header.prepend(parts.icon);
+        // First in the button.
+        parts.icon = partBefore<HTMLSpanElement>(parts.headerPart, parts.headerPart.controls.items[0] ?? null, 'span', 'mx-tabs__icon');
+        parts.icon.attr.add({ 'aria-hidden': 'true' });
       }
-      const shown = iconNode(icon);
-      parts.icon.replaceChildren(shown.node);
-      parts.releaseIcon = shown.release;
+      clearParts(parts.icon);
+      parts.releaseIcon = showIcon(icon, parts.icon);
     }
     parts.owner?.tabResized();
   }
@@ -315,14 +320,14 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     const parts = this.parts;
     const text = badge === null || badge === undefined ? '' : String(badge);
     if (text && !parts.badge) {
-      parts.badge = document.createElement('span');
-      parts.badge.className = 'mx-tabs__badge';
-      parts.label.after(parts.badge);
+      // Right after the label.
+      const items = parts.headerPart.controls.items;
+      parts.badge = partBefore<HTMLSpanElement>(parts.headerPart, items[items.indexOf(parts.label) + 1] ?? null, 'span', 'mx-tabs__badge');
     } else if (!text && parts.badge) {
-      parts.badge.remove();
+      removePart(parts.badge);
       parts.badge = null;
     }
-    if (parts.badge) parts.badge.textContent = text;
+    if (parts.badge) writeText(parts.badge, text);
     parts.owner?.tabResized();
   }
 }

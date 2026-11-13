@@ -1,9 +1,13 @@
+import type { Component, ComponentBase } from '@motifx/core';
 import { arcPath, polar, roundRectPath } from '../../parts/chart/chart-paths';
-import { formatNumber, textWidth } from '../../parts/chart/chart-text';
-import { svgPart, svgPut, TextPool } from '../../parts/chart/svg-parts';
+import { formatNumber } from '../../parts/chart/chart-text';
+import { svgComponent } from '../../parts/chart/svg-parts';
+import { removePart } from '../../core/draw-parts';
+import { css, put } from '../../core/part-writes';
 import type { ModelPoint, ModelSeries, ModelSlot } from './chart-model';
 import { pointText, positionText, shareText } from './plot-text';
 import type { PlotInput, PlotView, Rect } from './plot-view';
+import { TextParts } from './text-parts';
 
 const TURN = Math.PI * 2;
 /** The palest stage of a funnel: the stages darken towards the first one, in one hue, as they are in order. */
@@ -15,32 +19,38 @@ const FUNNEL_FADE = 45;
  */
 export class PartsPlot implements PlotView {
     svg: SVGSVGElement;
-    marks: SVGGElement;
-    names: TextPool;
-    labels: TextPool;
-    center: TextPool;
-    active: SVGPathElement;
+    svgPart: Component<SVGSVGElement>;
+    marksPart: Component<SVGGElement>;
+    names: TextParts;
+    labels: TextParts;
+    center: TextParts;
+    active: Component<SVGPathElement>;
     input: PlotInput | null = null;
+    /** The size of the last drawing. */
+    size = { width: 0, height: 0 };
     box: Rect = { left: 0, top: 0, width: 0, height: 0 };
     order: ModelSlot[] = [];
     /** Each part's angles, or its rectangle for a funnel. */
     angles = new Map<ModelPoint, [number, number]>();
     rects = new Map<ModelPoint, Rect>();
+    /** The parts drawn, by their row's key, and those the drawing under way has taken. */
+    slices = new Map<string, Component<SVGPathElement>>();
+    used = new Map<string, Component<SVGPathElement>>();
     cx = 0;
     cy = 0;
     radius = 0;
     hole = 0;
 
-    constructor(host: Element) {
-        const svg = svgPart(host, 'svg', 'mx-chart__svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-        this.svg = svg;
-        this.marks = svgPart(svg, 'g', 'mx-chart__marks');
-        this.names = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks'));
-        this.labels = new TextPool(svgPart(svg, 'g', 'mx-chart__labels'));
-        this.center = new TextPool(svgPart(svg, 'g', 'mx-chart__center'));
-        this.active = svgPart(svg, 'path', 'mx-chart__active-slice');
+    constructor(host: ComponentBase) {
+        const svg = svgComponent(host, 'svg', 'mx-chart__svg');
+        svg.attr.add({ 'aria-hidden': 'true', focusable: 'false' });
+        this.svg = svg.element;
+        this.svgPart = svg;
+        this.marksPart = svgComponent(svg, 'g', 'mx-chart__marks');
+        this.names = new TextParts(svgComponent(svg, 'g', 'mx-chart__ticks'));
+        this.labels = new TextParts(svgComponent(svg, 'g', 'mx-chart__labels'));
+        this.center = new TextParts(svgComponent(svg, 'g', 'mx-chart__center'));
+        this.active = svgComponent(svg, 'path', 'mx-chart__active-slice');
     }
 
     get whole(): ModelSeries | undefined {
@@ -68,26 +78,40 @@ export class PartsPlot implements PlotView {
     draw(input: PlotInput): void {
         this.input = input;
         const { width, height } = input;
-        svgPut(this.svg, 'viewBox', `0 0 ${width} ${height}`);
-        svgPut(this.svg, 'width', width);
-        svgPut(this.svg, 'height', height);
+        this.size = { width, height };
+        put(this.svgPart, 'viewBox', `0 0 ${width} ${height}`);
+        put(this.svgPart, 'width', String(width));
+        put(this.svgPart, 'height', String(height));
         this.box = { left: 0, top: 0, width, height };
         this.order = [...input.model.slots];
         this.angles.clear();
         this.rects.clear();
-        this.marks.replaceChildren();
+        this.used = new Map();
         const whole = this.whole;
         if (whole?.type === 'funnel') this.drawFunnel(whole);
         else if (whole) this.drawPie(whole);
+        // A part whose row went is taken out; the others stay, written in place.
+        for (const [key, mark] of this.slices) if (!this.used.has(key)) removePart(mark);
+        this.slices = this.used;
         this.names.done();
         this.labels.done();
         this.center.done();
         this.showActive(null, null);
     }
 
+    /** The part of a row, by its key: the one it had, else a new one. A key given twice has one part each time. */
+    sliceOf(p: ModelPoint): Component<SVGPathElement> {
+        const base = `${typeof p.key}:${String(p.key)}`;
+        let key = base;
+        for (let n = 1; this.used.has(key); n++) key = `${base}#${n}`;
+        const slice = this.slices.get(key) ?? svgComponent(this.marksPart, 'path', 'mx-chart__slice');
+        this.used.set(key, slice);
+        return slice;
+    }
+
     drawPie(series: ModelSeries): void {
-        const { width, height, look, locale, model } = this.input!;
-        const measure = (text: string) => textWidth(text, look.font, this.svg.ownerDocument);
+        const { width, height, look, locale, model, texts } = this.input!;
+        const measure = (text: string) => texts.width(text, look.font);
         this.cx = width / 2;
         this.cy = height / 2;
         this.radius = Math.max(1, Math.min(width, height) / 2 - look.sliceLift);
@@ -98,9 +122,9 @@ export class PartsPlot implements PlotView {
             if (p.share === null) continue;
             const sweep = p.share * TURN;
             this.angles.set(p, [at, at + sweep]);
-            const slice = svgPart(this.marks, 'path', 'mx-chart__slice');
-            slice.style.setProperty('--_mark', this.markOfPoint(p));
-            svgPut(slice, 'd', arcPath(this.cx, this.cy, this.hole, this.radius, at, at + sweep));
+            const slice = this.sliceOf(p);
+            css(slice, '--_mark', this.markOfPoint(p));
+            put(slice, 'd', arcPath(this.cx, this.cy, this.hole, this.radius, at, at + sweep));
             if (series.source.labels !== 'none') {
                 // A share inside its slice, where the slice has room for it.
                 const text = shareText(locale, p.share);
@@ -116,14 +140,14 @@ export class PartsPlot implements PlotView {
         }
         if (donut && this.hole > look.line * 2) {
             const total = formatNumber(model.total, series.source.format ?? this.input!.yAxis.format, locale);
-            this.center.add(total, this.cx, this.cy + look.line * 0.2, 'middle').setAttribute('class', 'mx-chart__center-value');
-            this.center.add(series.name, this.cx, this.cy + look.line * 1.3, 'middle').setAttribute('class', 'mx-chart__center-label');
+            this.center.add(total, this.cx, this.cy + look.line * 0.2, 'middle').class.add('mx-chart__center-value');
+            this.center.add(series.name, this.cx, this.cy + look.line * 1.3, 'middle').class.add('mx-chart__center-label');
         }
     }
 
     drawFunnel(series: ModelSeries): void {
-        const { width, height, look, locale } = this.input!;
-        const measure = (text: string) => textWidth(text, look.font, this.svg.ownerDocument);
+        const { width, height, look, locale, texts } = this.input!;
+        const measure = (text: string) => texts.width(text, look.font);
         const shown = series.points.filter(p => p.share !== null);
         if (!shown.length) return;
         const names = shown.map(p => this.xText(p.key));
@@ -138,9 +162,9 @@ export class PartsPlot implements PlotView {
             const size = Math.max(1, ((p.y as number) / most) * room);
             const rect = { left: left + (room - size) / 2, top: i * (step + gap), width: size, height: step };
             this.rects.set(p, rect);
-            const stage = svgPart(this.marks, 'path', 'mx-chart__slice');
-            stage.style.setProperty('--_mark', this.markOfPoint(p));
-            svgPut(stage, 'd', roundRectPath(rect.left, rect.top, rect.width, rect.height, look.barRadius));
+            const stage = this.sliceOf(p);
+            css(stage, '--_mark', this.markOfPoint(p));
+            put(stage, 'd', roundRectPath(rect.left, rect.top, rect.width, rect.height, look.barRadius));
             const middle = rect.top + rect.height / 2 + look.line * 0.34;
             this.names.add(names[i], nameWide, middle, 'end');
             // The value, and what is left of the first stage: inside when it fits, else beside the stage.
@@ -178,16 +202,16 @@ export class PartsPlot implements PlotView {
     showActive(slot: ModelSlot | null, point: ModelPoint | null): void {
         const p = point ?? slot?.points[0] ?? null;
         if (!p || !this.input) {
-            svgPut(this.active, 'd', null);
+            put(this.active, 'd', null);
             return;
         }
-        this.active.style.setProperty('--_mark', this.markOfPoint(p));
+        css(this.active, '--_mark', this.markOfPoint(p));
         const rect = this.rects.get(p);
         if (rect) {
-            svgPut(this.active, 'd', roundRectPath(rect.left, rect.top, rect.width, rect.height, this.input.look.barRadius));
+            put(this.active, 'd', roundRectPath(rect.left, rect.top, rect.width, rect.height, this.input.look.barRadius));
             return;
         }
         const angles = this.angles.get(p);
-        svgPut(this.active, 'd', angles ? arcPath(this.cx, this.cy, this.hole, this.radius + this.input.look.sliceLift, angles[0], angles[1]) : null);
+        put(this.active, 'd', angles ? arcPath(this.cx, this.cy, this.hole, this.radius + this.input.look.sliceLift, angles[0], angles[1]) : null);
     }
 }

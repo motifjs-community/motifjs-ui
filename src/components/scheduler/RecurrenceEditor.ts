@@ -19,7 +19,8 @@ import type { RadioItem } from '../radiogroup/radio-item';
 import { RadioGroup } from '../radiogroup/RadioGroup';
 import { RecurrenceDraft, type DraftContext, type DraftState } from './model/RecurrenceDraft';
 import type { RecurrenceEditorProps } from './recurrence-editor-props';
-import { part, shown } from '../../core/draw-parts';
+import { part } from '../../core/draw-parts';
+import { put, shown, text } from '../../core/part-writes';
 
 const OWN = ['value', 'start', 'allDay', 'timeZone', 'frequencies', 'firstDayOfWeek', 'summary', 'readOnly', 'locale', 'texts'] as const;
 
@@ -61,8 +62,8 @@ interface Item<V> {
 interface Editors {
   frequency: DropDown<Item<'never' | RecurrenceFrequency>, 'never' | RecurrenceFrequency>;
   interval: NumberBox;
-  daysField: HTMLElement;
-  daysLabel: HTMLElement;
+  daysField: ComponentBase;
+  daysLabel: ComponentBase;
   /** A button per day of the draft, in its order. */
   days: Button[];
   by: RadioGroup<DraftState['by']>;
@@ -73,7 +74,7 @@ interface Editors {
   end: RadioGroup<DraftState['end']>;
   count: NumberBox;
   until: DateBox;
-  summary: HTMLElement;
+  summary: ComponentBase;
 }
 
 interface Parts {
@@ -231,8 +232,8 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
       });
     };
     const add = <C extends ComponentBase>(c: C, className: string, all = false): C => {
-      c.element.classList.add(className);
-      if (all) c.element.setAttribute('data-span', 'all');
+      c.class.add(className);
+      if (all) c.attr.add({ 'data-span': 'all' });
       this.controls.add(c);
       return c;
     };
@@ -242,16 +243,14 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     picked(interval, (v) => (s.interval = v ?? s.interval));
 
     const daysField = part(this, 'div', 'mx-recurrence-editor__days-field');
-    daysField.element.setAttribute('data-span', 'all');
-    daysField.element.setAttribute('role', 'group');
-    daysField.element.setAttribute('aria-labelledby', this.parts.labelId);
-    const daysLabel = part(daysField, 'span', 'mx-recurrence-editor__days-label').element;
-    daysLabel.id = this.parts.labelId;
+    daysField.attr.add({ 'data-span': 'all', role: 'group', 'aria-labelledby': this.parts.labelId });
+    const daysLabel = part(daysField, 'span', 'mx-recurrence-editor__days-label');
+    daysLabel.attr.add({ id: this.parts.labelId });
     const dayList = part(daysField, 'div', 'mx-recurrence-editor__days');
     // The draft keeps its seven days (their order follows the first day of the week): a button each.
     const days = s.days.map((day) => {
       const button = new Button({ toggle: true });
-      button.element.classList.add('mx-recurrence-editor__day');
+      button.class.add('mx-recurrence-editor__day');
       button.motif.on('click', () => {
         day.on = button.pressed;
         this.chosen();
@@ -277,10 +276,9 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     const until = add(new DateBox({ stretch: true }), 'mx-recurrence-editor__until');
     picked(until, (v) => (s.until = v));
 
-    const summary = part(this, 'p', 'mx-recurrence-editor__summary').element;
-    summary.setAttribute('data-span', 'all');
-    summary.setAttribute('aria-live', 'polite');
-    return { frequency, interval, daysField: daysField.element, daysLabel, days, by, month, monthDay, nth, weekday, end, count, until, summary };
+    const summary = part(this, 'p', 'mx-recurrence-editor__summary');
+    summary.attr.add({ 'data-span': 'all', 'aria-live': 'polite' });
+    return { frequency, interval, daysField, daysLabel, days, by, month, monthDay, nth, weekday, end, count, until, summary };
   }
 
   /** The rule (or what it is read for) changed: the choices show it. */
@@ -330,7 +328,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
       c.visible = visible;
       c.readOnly = readOnly;
     };
-    this.element.setAttribute('aria-label', this.text || t('recurrenceRepeat'));
+    put(this, 'aria-label', this.text || t('recurrenceRepeat'));
 
     this.list(e.frequency, this.frequencies.map((f) => ({ value: f, text: t(FREQUENCY_TEXTS[f]) })));
     field(e.frequency, t('recurrenceRepeat'), s.frequency, true);
@@ -340,7 +338,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     e.interval.suffix = units ? t(new Intl.PluralRules(this.locale).select(s.interval) === 'one' ? units[0] : units[1]) : '';
 
     shown(e.daysField, s.frequency === 'weekly');
-    e.daysLabel.textContent = t('recurrenceOn');
+    text(e.daysLabel, t('recurrenceOn'));
     e.days.forEach((button, i) => {
       const day = s.days[i];
       button.pressed = day.on;
@@ -381,7 +379,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     field(e.until, t('recurrenceUntil'), sameDay ? e.until.value : s.until, repeats && s.end === 'until');
 
     shown(e.summary, this.summary && repeats);
-    e.summary.textContent = this.summaryText;
+    text(e.summary, this.summaryText);
   }
 
   /** A list's items, given again only when they changed (another language, another first day of the week). */

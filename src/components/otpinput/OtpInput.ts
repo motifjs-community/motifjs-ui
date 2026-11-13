@@ -1,6 +1,8 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
-import { mark, shown, text } from "../../core/draw-parts";
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { loose, part, removePart } from "../../core/draw-parts";
 import { onLanguage } from "../../core/on-language";
+import { rectOf } from "../../core/measure";
+import { kept, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Field } from "../../parts/field/Field";
 import type { ValidationRule } from "../../parts/validation/validation-rule";
@@ -17,9 +19,11 @@ const CHARSETS: Record<OtpCharset, RegExp> = {
 };
 
 interface Cell {
-    box: HTMLSpanElement;
-    char: HTMLSpanElement;
-    caret: HTMLSpanElement;
+    boxPart: Component<HTMLSpanElement>;
+    charPart: Component<HTMLSpanElement>;
+    caretPart: Component<HTMLSpanElement>;
+    /** The separator after the box, in the page only at the end of a group. */
+    separatorPart: Component<HTMLSpanElement>;
 }
 
 /**
@@ -36,19 +40,19 @@ interface Cell {
 export class OtpInput extends Field<string, OtpInputProps> {
     completed = new Emitter<OtpCompletedEventArgs>();
     cells: Cell[] = [];
-    row!: HTMLDivElement;
+    rowPart!: Component<HTMLDivElement>;
     /** The complete value told last, so that it is told once. */
     told: string | null = null;
+    /** A character typed into a filled box, from its `beforeinput` to its `input`: it takes the place of the next one. */
+    replacing: { at: number; data: string; before: string } | null = null;
 
     constructor(props?: IBaseProp<OtpInputProps>) {
         super(props);
         const own = (this.props ?? {}) as OtpInputProps;
-        const input = this.input;
-        this.element.classList.add('mx-otp-input');
-        this.row = input.parentElement!.appendChild(document.createElement('div'));
-        this.row.className = 'mx-otp-input__cells';
-        this.row.setAttribute('dir', 'ltr');
-        this.row.setAttribute('aria-hidden', 'true');
+        this.class.add('mx-otp-input');
+        // The boxes, in the field's box after the input.
+        this.rowPart = part<HTMLDivElement>(this.boxPart, 'div', 'mx-otp-input__cells');
+        this.rowPart.attr.add({ dir: 'ltr', 'aria-hidden': 'true' });
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         // The field took the value before the length and the accepted characters were known.
         if (own.value !== undefined) this.value = own.value;
@@ -58,12 +62,14 @@ export class OtpInput extends Field<string, OtpInputProps> {
         for (const name of ['charset', 'pattern', 'uppercase'] as const) this.observeProperty(name, () => this.renderRules());
         for (const name of ['masked', 'maskCharacter', 'placeholder'] as const) this.observeProperty(name, () => this.drawCells());
         this.observeProperty<string>('autoComplete', () => this.renderInput());
-        input.addEventListener('beforeinput', e => this.beforeInput(e));
-        input.addEventListener('input', e => this.typed(e));
-        input.addEventListener('focus', () => this.placeCaret());
-        input.addEventListener('blur', () => this.drawCells());
-        input.addEventListener('pointerup', e => this.pressed(e));
-        for (const name of ['keyup', 'select'] as const) input.addEventListener(name, () => this.drawCells());
+        const control = this.controlPart;
+        control.motif.on('beforeinput', (_, e) => this.beforeInput(e));
+        control.motif.on('input', (_, e) => this.typed(e));
+        control.motif.on('focus', () => this.placeCaret());
+        control.motif.on('blur', () => this.drawCells());
+        control.motif.on('pointerup', (_, e) => this.pressed(e));
+        control.motif.on('keyup', () => this.drawCells());
+        control.motif.on('select', () => this.drawCells());
         onLanguage(this, () => this.renderInput());
         this.motif.setDisposable(() => this.completed.dispose());
         this.renderCells();
@@ -147,14 +153,14 @@ export class OtpInput extends Field<string, OtpInputProps> {
         this.focus();
     }
 
-    protected createControl(): HTMLElement {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'mx-otp-input__input';
-        input.spellcheck = false;
-        input.setAttribute('autocorrect', 'off');
-        input.setAttribute('dir', 'ltr');
-        return input;
+    protected override get controlTag(): string {
+        return 'input';
+    }
+
+    protected createControl(): ComponentBase {
+        const control = loose<HTMLInputElement>('input', 'mx-otp-input__input');
+        control.attr.add({ type: 'text', spellcheck: 'false', autocorrect: 'off', dir: 'ltr' });
+        return control;
     }
 
     protected emptyValue(): string {
@@ -174,13 +180,14 @@ export class OtpInput extends Field<string, OtpInputProps> {
     }
 
     protected renderValue(value: string): void {
-        const input = this.input;
-        if (input.value !== value) input.value = value;
+        // Core writes the input's value only when it differs.
+        this.controlPart.attr.add({ value });
         this.drawCells();
     }
 
-    get input(): HTMLInputElement {
-        return this.focusElement as HTMLInputElement;
+    /** The hidden input that takes the keys, as a component: write its attributes with `put` and call its methods through `attr`. */
+    get inputPart(): ComponentBase<HTMLInputElement> {
+        return this.controlPart as ComponentBase<HTMLInputElement>;
     }
 
     /** The characters of `value` the field takes, at most `length` of them. */
@@ -193,10 +200,10 @@ export class OtpInput extends Field<string, OtpInputProps> {
     }
 
     renderInput(): void {
-        const input = this.input;
-        input.autocomplete = this.autoComplete as AutoFill;
-        input.inputMode = this.charset === 'digits' && !this.pattern ? 'numeric' : 'text';
-        input.setAttribute('autocapitalize', this.uppercase ? 'characters' : 'off');
+        const control = this.controlPart;
+        put(control, 'autocomplete', this.autoComplete);
+        put(control, 'inputmode', this.charset === 'digits' && !this.pattern ? 'numeric' : 'text');
+        put(control, 'autocapitalize', this.uppercase ? 'characters' : 'off');
     }
 
     // No `maxlength`: it would cut a pasted code before its separators are left out.
@@ -216,64 +223,80 @@ export class OtpInput extends Field<string, OtpInputProps> {
 
     renderCells(): void {
         const count = this.length;
-        const row = this.row;
+        const row = this.rowPart;
         const group = this.groupSize;
-        row.textContent = '';
-        this.cells = Array.from({ length: count }, (_, index) => {
-            const box = document.createElement('span');
-            box.className = 'mx-otp-input__cell';
-            const char = box.appendChild(document.createElement('span'));
-            char.className = 'mx-otp-input__char';
-            const caret = box.appendChild(document.createElement('span'));
-            caret.className = 'mx-otp-input__caret';
-            row.append(box);
-            if (group && group > 0 && (index + 1) % group === 0 && index + 1 < count) {
-                const line = row.appendChild(document.createElement('span'));
-                line.className = 'mx-otp-input__separator';
-                line.textContent = this.separator;
-            }
-            return { box, char, caret };
+        // A box stays in its place; boxes are added or taken away at the end, separators kept in or out.
+        while (this.cells.length > count) {
+            const gone = this.cells.pop()!;
+            removePart(gone.separatorPart);
+            removePart(gone.boxPart);
+        }
+        while (this.cells.length < count) {
+            const cell = part<HTMLSpanElement>(row, 'span', 'mx-otp-input__cell');
+            const char = part<HTMLSpanElement>(cell, 'span', 'mx-otp-input__char');
+            const caret = part<HTMLSpanElement>(cell, 'span', 'mx-otp-input__caret');
+            const separator = part<HTMLSpanElement>(row, 'span', 'mx-otp-input__separator');
+            this.cells.push({ boxPart: cell, charPart: char, caretPart: caret, separatorPart: separator });
+        }
+        this.cells.forEach((cell, index) => {
+            const between = !!group && group > 0 && (index + 1) % group === 0 && index + 1 < count;
+            if (between) text(cell.separatorPart, this.separator);
+            kept(cell.separatorPart, between);
         });
         this.renderInput();
         this.fitValue();
         this.renderValue(this.peekValue());
     }
 
-    drawCells(): void {
+    // `caret` is where the component has just put the caret: the input takes it a little later.
+    drawCells(caret?: number): void {
         // The field gives its first value before the boxes exist.
-        if (!this.row) return;
-        const input = this.input;
+        if (!this.rowPart) return;
         const value = this.peekValue();
         const chars = [...value];
-        const focused = input.ownerDocument.activeElement === input;
-        const at = Math.min(input.selectionStart ?? chars.length, this.length - 1);
+        const focused = this.focused;
+        const at = Math.min(caret ?? this.inputPart.element.selectionStart ?? chars.length, this.length - 1);
         const masked = this.masked;
         this.cells.forEach((cell, index) => {
             const filled = index < chars.length;
-            text(cell.char, filled ? (masked ? this.maskCharacter : chars[index]) : this.placeholder);
-            mark(cell.box, 'data-filled', filled);
-            mark(cell.box, 'data-active', focused && index === at);
-            shown(cell.caret, focused && index === at && !filled);
+            text(cell.charPart, filled ? (masked ? this.maskCharacter : chars[index]) : this.placeholder);
+            mark(cell.boxPart, 'data-filled', filled);
+            mark(cell.boxPart, 'data-active', focused && index === at);
+            shown(cell.caretPart, focused && index === at && !filled);
         });
     }
 
-    // A character typed into a filled box takes its place.
+    // A character typed into a filled box takes its place: `typed` leaves out the one it pushed on.
     beforeInput(e: InputEvent): void {
-        const input = this.input;
+        const input = this.inputPart.element;
         const start = input.selectionStart ?? 0;
-        if (e.inputType !== 'insertText' || input.selectionEnd !== start || start >= input.value.length) return;
-        input.setSelectionRange(start, start + 1);
+        const before = this.peekValue();
+        const fills = e.inputType === 'insertText' && !!e.data && input.selectionEnd === start && start < before.length;
+        this.replacing = fills ? { at: start, data: e.data!, before } : null;
+    }
+
+    // The text the browser wrote, without the character a character typed into a filled box pushed on.
+    withoutPushed(text: string, e: InputEvent): string {
+        const replacing = this.replacing;
+        this.replacing = null;
+        if (!replacing || e.inputType !== 'insertText') return text;
+        const { at, data, before } = replacing;
+        const rest = before.slice(at);
+        if (text !== before.slice(0, at) + data + rest) return text;
+        const pushed = [...rest][0].length;
+        return before.slice(0, at) + data + rest.slice(pushed);
     }
 
     typed(e: Event): void {
-        const input = this.input;
-        const written = input.value;
+        const input = e.target as HTMLInputElement;
+        const text = (e.target as HTMLInputElement).value;
+        const written = this.withoutPushed(text, e as InputEvent);
         const value = this.accepted(written);
         const caret = Math.min(this.accepted(written.slice(0, input.selectionStart ?? written.length)).length, value.length);
-        if (written !== value) input.value = value;
-        input.setSelectionRange(caret, caret);
+        if (text !== value) this.controlPart.attr.add({ value });
+        this.controlPart.attr.add({ setSelectionRange: [caret, caret] });
         this.commit(value, e);
-        this.drawCells();
+        this.drawCells(caret);
         if (this.isComplete && this.told !== value) {
             this.told = value;
             this.completed.fire({ value, source: this, originalEvent: e });
@@ -282,22 +305,23 @@ export class OtpInput extends Field<string, OtpInputProps> {
 
     // Focus goes to the first empty box, unless a box was pressed.
     placeCaret(): void {
-        const end = this.input.value.length;
-        this.input.setSelectionRange(end, end);
-        this.drawCells();
+        const end = this.peekValue().length;
+        this.controlPart.attr.add({ setSelectionRange: [end, end] });
+        this.drawCells(end);
     }
 
     // A press puts the caret in the box under the pointer, but not beyond the characters.
     pressed(e: PointerEvent): void {
-        const input = this.input;
         const under = this.cells.findIndex(cell => {
-            const box = cell.box.getBoundingClientRect();
+            const box = rectOf(cell.boxPart);
             return e.clientX >= box.left && e.clientX <= box.right;
         });
-        if (under >= 0) {
-            const at = Math.min(under, input.value.length);
-            input.setSelectionRange(at, at);
+        if (under < 0) {
+            this.drawCells();
+            return;
         }
-        this.drawCells();
+        const at = Math.min(under, this.peekValue().length);
+        this.controlPart.attr.add({ setSelectionRange: [at, at] });
+        this.drawCells(at);
     }
 }

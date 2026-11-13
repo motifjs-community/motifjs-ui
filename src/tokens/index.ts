@@ -21,6 +21,13 @@ export function cssVar(name: TokenName): `var(${string})` {
   return `var(${tokens[name].cssVar})`;
 }
 
+let properties: readonly `--${string}`[] | null = null;
+
+/** The CSS custom property of every token, design and component: what a part reads to know the token values it has. */
+export function tokenProperties(): readonly `--${string}`[] {
+  return (properties ??= Object.values(tokens).map((token) => token.cssVar as `--${string}`));
+}
+
 /**
  * The name of a token's CSS custom property, for `getComputedStyle` reads or
  * for writing an override on an element.

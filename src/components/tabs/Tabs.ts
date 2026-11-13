@@ -1,11 +1,11 @@
-import { Component, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { deepActiveElement, rescueStop } from '../../core/focus';
-import { chevronDown } from '../../core/glyphs';
-import { isElement } from '../../core/node-kind';
-import { ResizeWatch } from '../../core/resize-watch';
+import { glyphPart, part, partBefore } from '../../core/draw-parts';
+import { focusAway, holdsFocus } from '../../core/focus';
+import { boxOf, isInPage, isRtl, measure, mediaOf, onLayout, reveal, scrollBy, type Box, type ScrollMotion } from '../../core/measure';
+import { mark, put } from '../../core/part-writes';
 import { Tab } from './Tab';
 import type { TabCloseEventArgs } from './tab-close-event-args';
 import type { TabSelectingEventArgs } from './tab-selecting-event-args';
@@ -22,16 +22,16 @@ const LOOK = ['placement', 'variant', 'size', 'stretch'] as const;
 const NO_TABS: readonly Tab[] = [];
 
 interface Parts {
-  list: HTMLDivElement;
-  back: HTMLSpanElement;
-  forward: HTMLSpanElement;
+  /** The list of tabs as a component: the tabs' buttons are its children. */
+  listPart: Component<HTMLDivElement>;
+  back: Component<HTMLSpanElement>;
+  forward: Component<HTMLSpanElement>;
   panels: Component<HTMLDivElement>;
   /** A selection asked for (by `value` or `selectedIndex`) before its tab was there. */
   wanted: { name: 'value' | 'selectedIndex'; value: unknown } | null;
   /** The JSX tabs are in: from now on an added tab may be selected at once. */
   ready: boolean;
   disposing: boolean;
-  overflowQueued: boolean;
   selecting: Emitter<TabSelectingEventArgs>;
   selectionChanged: Emitter<TabSelectionChangedEventArgs>;
   closing: Emitter<TabCloseEventArgs>;
@@ -65,8 +65,8 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     for (const name of LOOK) this.observeProperty(name, () => this.renderLook());
     this.observeProperty<string>('text', (text) => {
       const label = parseAccessKey(text ?? '').text;
-      if (label) parts.list.setAttribute('aria-label', label);
-      else parts.list.removeAttribute('aria-label');
+      if (label) put(parts.listPart, 'aria-label', label);
+      else put(parts.listPart, 'aria-label', null);
     });
     this.observeProperty('closable', () => this.refreshTabs());
     this.observeProperty('lazy', () => this.refreshTabs());
@@ -210,11 +210,10 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   /** Removes the tab and disposes it, without raising `onClose`. Selection moves to an adjacent tab. */
   remove(tab: Tab): boolean {
     if (!this.tabsNow().includes(tab)) return false;
-    const active = deepActiveElement();
-    const hadFocus = !!active && (tab.element.contains(active) || tab.headerElement.contains(active));
+    const hadFocus = holdsFocus(tab);
     this.forget(tab);
     this.parts.panels.controls.remove(tab);
-    if (hadFocus && !this.focus()) rescueStop(this.element, this.element.closest('dialog') ?? document.body)?.focus();
+    if (hadFocus && !this.focus()) focusAway(this);
     return true;
   }
 
@@ -236,14 +235,19 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     return !e.cancel && this.remove(tab);
   }
 
+  override onMounted(): void {
+    // The shown panel's content is in the page now: it decides whether the panel takes focus.
+    this.selectedNow()?.updatePanelFocus();
+  }
+
   override onDisposing(): void {
     // The tabs go with it: no new selection for each.
     this.parts.disposing = true;
   }
 
   /** Focuses the selected tab (the one Tab reaches). */
-  protected override get focusElement(): HTMLElement {
-    return this.stopTab()?.headerElement ?? this.parts.list;
+  override get focusPart(): ComponentBase {
+    return this.stopTab()?.headerPart ?? this.parts.listPart;
   }
 
   protected override applyProperty(name: string, value: unknown): void {
@@ -298,7 +302,11 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     const parts = this.parts;
     const next = [...this.tabsNow()];
     next.splice(index, 0, tab);
-    parts.list.insertBefore(tab.headerElement, next[index + 1]?.headerElement ?? null);
+    // The button goes into the strip before the next tab's.
+    const after = next[index + 1]?.headerPart;
+    const at = after ? parts.listPart.controls.items.indexOf(after) : -1;
+    if (at >= 0) parts.listPart.controls.insert(at, tab.headerPart);
+    else parts.listPart.controls.add(tab.headerPart);
     parts.panels.controls.add(index, tab);
     this.setProperty('tabs', next);
     tab.attachTo(this);
@@ -404,7 +412,7 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     tab?.showPanel(true, true);
     this.renderRoving();
     this.syncSelection();
-    if (tab) this.reveal(tab.headerElement);
+    if (tab) this.scrollToTab(tab);
     // `x-model` hears every change of the selection, except while it waits for a tab it asked for.
     if (byUser || !parts.wanted) this.bindings.writeModel(this.value);
     parts.selectionChanged.fire({ tab, index, previousTab: previous, previousIndex, byUser, source: this, event });
@@ -438,12 +446,12 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
 
   private renderRoving(): void {
     const stop = this.peekProperty('tabStop') === false ? null : untracked(() => this.stopTab());
-    for (const tab of this.tabsNow()) tab.headerElement.tabIndex = tab === stop ? 0 : -1;
+    for (const tab of this.tabsNow()) put(tab.headerPart, 'tabindex', tab === stop ? '0' : '-1');
   }
 
-  private tabOf(target: EventTarget | null): Tab | undefined {
-    const header = isElement(target) ? target.closest('.mx-tabs__tab') : null;
-    return header ? this.tabsNow().find((t) => t.headerElement === header) : undefined;
+  /** The tab whose button an event came from. */
+  private tabOf(e: Event): Tab | undefined {
+    return this.tabsNow().find((t) => t.headerPart.motif.isEventFrom(e));
   }
 
   private get vertical(): boolean {
@@ -453,46 +461,43 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
 
   private listen(): void {
     const parts = this.parts;
-    const list = parts.list;
-    list.addEventListener('click', (e) => {
-      const tab = this.tabOf(e.target);
+    const listPart = parts.listPart;
+    // Before Tab moves focus, by the browser or by a part inside: what the shown panel holds now decides whether it is a stop.
+    this.motif.on('keydown:capture', (_, e) => {
+      if (e.key === 'Tab') this.selectedNow()?.updatePanelFocus();
+    });
+    listPart.motif.on('click', (_, e) => {
+      const tab = this.tabOf(e);
       if (tab) untracked(() => this.choose(tab, true, e));
     });
-    list.addEventListener('auxclick', (e) => {
-      const tab = this.tabOf(e.target);
+    listPart.motif.on('auxclick', (_, e) => {
+      const tab = this.tabOf(e);
       if (tab && e.button === 1 && untracked(() => tab.isClosable)) {
         e.preventDefault();
         this.close(tab, true, e);
       }
     });
-    list.addEventListener('keydown', (e) => untracked(() => this.onKeyDown(e)));
-    list.addEventListener('focusin', (e) => this.reveal(e.target as HTMLElement));
-    list.addEventListener('scroll', () => this.renderEnds());
+    listPart.motif.on('keydown', (_, e) => untracked(() => this.onKeyDown(e)));
+    listPart.motif.on('focusin', (_, e) => {
+      const tab = this.tabOf(e);
+      if (tab) this.scrollToTab(tab);
+    });
+    listPart.motif.on('scroll', () => measure(this, this.readEnds, this.drawEnds));
     for (const button of [parts.back, parts.forward]) {
-      button.addEventListener('mousedown', (e) => e.preventDefault());
-      button.addEventListener('click', () => this.scrollBy(button === parts.forward ? 1 : -1));
+      button.motif.on('mousedown', (_, e) => e.preventDefault());
+      button.motif.on('click', () => this.scrollStrip(button === parts.forward ? 1 : -1));
     }
-    if (typeof ResizeObserver === 'function') {
-      const observer = new ResizeWatch(() => this.checkOverflow());
-      observer.observe(list);
-      this.motif.setDisposable(() => observer.disconnect());
-    }
-    if (typeof MutationObserver === 'function') {
-      // Content that comes and goes in the shown panel decides whether the panel takes focus.
-      const observer = new MutationObserver(() => this.selectedNow()?.updatePanelFocus());
-      observer.observe(parts.panels.element, { childList: true, subtree: true });
-      this.motif.setDisposable(() => observer.disconnect());
-    }
+    onLayout(listPart, 'size', () => this.queueOverflow());
   }
 
   private onKeyDown(e: KeyboardEvent): void {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    const tab = this.tabOf(e.target);
+    const tab = this.tabOf(e);
     if (!tab) return;
     const usable = this.tabsNow().filter((t) => t.visible && t.isEnabled);
     const at = usable.indexOf(tab);
     const vertical = this.vertical;
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
+    const rtl = isRtl(this);
     let next: Tab | undefined;
     switch (e.key) {
       case 'ArrowRight':
@@ -521,70 +526,56 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     }
     e.preventDefault();
     if (!next) return;
-    next.headerElement.focus();
+    next.focus();
     if (this.activation === 'auto') this.choose(next, true, e);
   }
 
   // The strip: overflow, scroll buttons.
 
+  /** Checks in the next frame whether the tabs fit the strip. */
   private queueOverflow(): void {
-    const parts = this.parts;
-    if (parts.overflowQueued) return;
-    parts.overflowQueued = true;
-    queueMicrotask(() => {
-      parts.overflowQueued = false;
-      this.checkOverflow();
-    });
+    measure(this, this.readOverflow, this.drawOverflow);
   }
 
-  private checkOverflow(): void {
-    const list = this.parts.list;
+  private readonly readOverflow = (): Box => boxOf(this.parts.listPart);
+
+  private readonly drawOverflow = (list: Box): void => {
     const vertical = this.vertical;
     const room = vertical ? list.clientHeight : list.clientWidth;
     const needed = vertical ? list.scrollHeight : list.scrollWidth;
     const buttons = this.peekProperty('scrollButtons') !== false;
-    this.element.toggleAttribute('data-scroll-buttons', buttons);
-    this.element.toggleAttribute('data-overflow', buttons && needed > room + 1);
-    this.renderEnds();
-  }
+    mark(this, 'data-scroll-buttons', buttons);
+    mark(this, 'data-overflow', buttons && needed > room + 1);
+    this.drawEnds(list);
+  };
+
+  private readonly readEnds = (): Box => boxOf(this.parts.listPart);
 
   /** Dims a scroll button that has nowhere to go. */
-  private renderEnds(): void {
-    const { list, back, forward } = this.parts;
+  private readonly drawEnds = (list: Box): void => {
+    const { back, forward } = this.parts;
     const vertical = this.vertical;
-    const position = Math.abs(vertical ? list.scrollTop : list.scrollLeft);
+    const position = vertical ? list.scrollTop : list.scrollStart;
     const room = vertical ? list.clientHeight : list.clientWidth;
     const needed = vertical ? list.scrollHeight : list.scrollWidth;
-    back.toggleAttribute('data-end', position <= 1);
-    forward.toggleAttribute('data-end', position + room >= needed - 1);
-  }
+    mark(back, 'data-end', position <= 1);
+    mark(forward, 'data-end', position + room >= needed - 1);
+  };
 
-  private scrollBy(direction: 1 | -1): void {
-    const list = this.parts.list;
-    const smooth = typeof matchMedia === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
-    if (this.vertical) {
-      list.scrollBy({ top: direction * list.clientHeight * 0.8, behavior });
-    } else {
-      const rtl = getComputedStyle(this.element).direction === 'rtl';
-      list.scrollBy({ left: direction * (rtl ? -1 : 1) * list.clientWidth * 0.8, behavior });
-    }
+  private scrollStrip(direction: 1 | -1): void {
+    const list = this.parts.listPart;
+    const box = boxOf(list);
+    const smooth = mediaOf(this, '(prefers-reduced-motion: no-preference)');
+    const motion: ScrollMotion = smooth ? 'smooth' : 'auto';
+    if (this.vertical) scrollBy(list, { top: direction * box.clientHeight * 0.8 }, motion);
+    else scrollBy(list, { start: direction * box.clientWidth * 0.8 }, motion);
   }
 
   /** Scrolls the strip, not the page, so that a tab is in sight. */
-  private reveal(header: HTMLElement): void {
-    const list = this.parts.list;
-    if (!list.isConnected || header.hidden || header.parentElement !== list) return;
-    const room = list.getBoundingClientRect();
-    const box = header.getBoundingClientRect();
-    if (this.vertical) {
-      if (box.top < room.top) list.scrollTop += box.top - room.top;
-      else if (box.bottom > room.bottom) list.scrollTop += box.bottom - room.bottom;
-    } else if (box.left < room.left) {
-      list.scrollLeft += box.left - room.left;
-    } else if (box.right > room.right) {
-      list.scrollLeft += box.right - room.right;
-    }
+  private scrollToTab(tab: Tab): void {
+    const list = this.parts.listPart;
+    if (!isInPage(list) || !tab.visible) return;
+    reveal(list, tab.headerPart, { axis: this.vertical ? 'y' : 'x' });
   }
 
   // Rendering.
@@ -595,27 +586,23 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   }
 
   private createParts(): Parts {
-    this.element.classList.add('mx-tabs');
-    const strip = document.createElement('div');
-    strip.className = 'mx-tabs__strip';
-    const list = document.createElement('div');
-    list.className = 'mx-tabs__list';
-    list.setAttribute('role', 'tablist');
-    const back = scrollButton('back');
-    const forward = scrollButton('forward');
-    strip.append(back, list, forward);
-    this.element.prepend(strip);
+    this.class.add('mx-tabs');
+    // The strip comes first: the scroll buttons around the list of tabs.
+    const strip = partBefore<HTMLDivElement>(this, this.controls.items[0] ?? null, 'div', 'mx-tabs__strip');
+    const back = scrollButton(strip, 'back');
+    const listPart = part<HTMLDivElement>(strip, 'div', 'mx-tabs__list');
+    listPart.attr.add({ role: 'tablist' });
+    const forward = scrollButton(strip, 'forward');
     const panels = new Component<HTMLDivElement>('div');
-    panels.element.className = 'mx-tabs__panels';
+    panels.class.add('mx-tabs__panels');
     return {
-      list,
+      listPart,
       back,
       forward,
       panels,
       wanted: null,
       ready: false,
       disposing: false,
-      overflowQueued: false,
       selecting: new Emitter(),
       selectionChanged: new Emitter(),
       closing: new Emitter(),
@@ -623,13 +610,12 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
-    data.placement = this.peekProperty<TabsPlacement>('placement') ?? 'top';
-    data.variant = this.peekProperty<TabsVariant>('variant') ?? 'line';
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
-    this.element.toggleAttribute('data-stretch', !!this.peekProperty('stretch'));
-    if (this.vertical) this.parts.list.setAttribute('aria-orientation', 'vertical');
-    else this.parts.list.removeAttribute('aria-orientation');
+    put(this, 'data-placement', this.peekProperty<TabsPlacement>('placement') ?? 'top');
+    put(this, 'data-variant', this.peekProperty<TabsVariant>('variant') ?? 'line');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
+    mark(this, 'data-stretch', !!this.peekProperty('stretch'));
+    if (this.vertical) put(this.parts.listPart, 'aria-orientation', 'vertical');
+    else put(this.parts.listPart, 'aria-orientation', null);
     this.queueOverflow();
   }
 
@@ -643,12 +629,10 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   }
 }
 
-function scrollButton(direction: 'back' | 'forward'): HTMLSpanElement {
+function scrollButton(strip: ComponentBase, direction: 'back' | 'forward'): Component<HTMLSpanElement> {
   // The arrow keys reach every tab, so these are for the pointer only.
-  const button = document.createElement('span');
-  button.className = 'mx-tabs__scroll';
-  button.dataset.direction = direction;
-  button.setAttribute('aria-hidden', 'true');
-  button.append(chevronDown());
+  const button = part<HTMLSpanElement>(strip, 'span', 'mx-tabs__scroll');
+  button.attr.add({ 'data-direction': direction, 'aria-hidden': 'true' });
+  glyphPart(button, 'chevron-down');
   return button;
 }

@@ -1,6 +1,8 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
+import { kept } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import { TextBox } from '../textbox/TextBox';
@@ -27,6 +29,9 @@ function page(...children: Parameters<typeof mountHost>) {
 }
 
 async function settle() {
+  for (let i = 0; i < 8; i++) await tick();
+  // The overflow is read with the window's next measuring round.
+  for (const host of hosts) await whenMeasured(host);
   for (let i = 0; i < 8; i++) await tick();
 }
 
@@ -234,6 +239,8 @@ describe('Toolbar', () => {
     expect(s.bold).toBe(false);
     moreFace(t).click();
     press('p');
+    // The moved button is pressed through its element's click, which core runs a moment later.
+    await settle();
     expect(s.log).toEqual(['print']);
 
     moreFace(t).click();
@@ -280,6 +287,42 @@ describe('Toolbar', () => {
     expect(t.overflowed.length).toBe(0);
     expect(more(t)!.hasAttribute('data-idle')).toBe(true);
     expect(t.element.dataset.overflow).toBe('wrap');
+  });
+
+  it('fits nothing while hidden, and fits once shown', async () => {
+    const t = new Toolbar({ items: [{ text: 'Save' }, { text: 'Print', overflow: 'always' }] });
+    page(t);
+    // Its padding leaves less than no room in a box of no size.
+    t.element.style.padding = '4px';
+    kept(t, false);
+    await settle();
+    // A hidden bar has no room: nothing moves, and the "more" button is not made to be measured.
+    expect(t.overflowed).toEqual([]);
+    expect(more(t)).toBeNull();
+    t.element.style.padding = '';
+    kept(t, true);
+    t.updateOverflow();
+    await settle();
+    expect(t.overflowed.length).toBe(1);
+    expect(more(t)!.hasAttribute('data-idle')).toBe(false);
+  });
+
+  it('gives the "more" menu its own icon: a function is called again, a component given as is stays in its button', async () => {
+    const kept = new Component<HTMLElement>('i');
+    let t!: Toolbar;
+    page(
+      <Toolbar ref={(x: Toolbar) => (t = x)} items={[{ icon: () => <svg class="drawn" />, hint: 'Cut', overflow: 'always' }]}>
+        <Button icon={kept} aria-label="Copy" data-overflow="always" />
+      </Toolbar>,
+    );
+    await settle();
+    moreFace(t).click();
+    await settle();
+    const [cut, copy] = moreItems(t);
+    expect(cut.querySelector('.mx-menu__icon svg.drawn')).not.toBeNull();
+    expect(t.element.querySelectorAll('svg.drawn').length).toBe(2);
+    expect(copy.querySelector('.mx-menu__icon i')).toBeNull();
+    expect(kept.element.closest('.mx-button__icon')).not.toBeNull();
   });
 
   it('follows controls added and disabled programmatically', async () => {

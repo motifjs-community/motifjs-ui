@@ -92,10 +92,11 @@ describe('Popover', () => {
         expect(pop.isOpen).toBe(false);
     });
 
-    it('opens programmatically next to a plain element, closes on a press outside unless told not to, and on its close button', async () => {
-        const anchor = document.createElement('button');
-        const other = document.createElement('input');
-        document.body.append(anchor, other);
+    it('opens programmatically next to a component, closes on a press outside unless told not to, and on its close button', async () => {
+        const anchor = new Component<HTMLButtonElement>('button');
+        const otherPart = new Component<HTMLInputElement>('input');
+        page(anchor, otherPart);
+        const other = otherPart.element;
         const reasons: string[] = [];
         const pop = new Popover({ target: anchor, label: 'Help', showClose: true, onClosed: reason => reasons.push(String(reason)) });
         hosts.push(pop);
@@ -113,15 +114,14 @@ describe('Popover', () => {
         await settle();
         expect(pop.isOpen).toBe(false);
         expect(reasons).toEqual(['outside', 'close-button']);
-        anchor.remove();
-        other.remove();
     });
 
     it('opens while the pointer rests on the target, stays while the pointer is on it, and goes when both are left', async () => {
         vi.useFakeTimers();
-        const anchor = document.createElement('span');
-        document.body.append(anchor);
-        const pop = new Popover({ target: anchor, showOn: 'hover', delay: 100, hideDelay: 50, content: new Component('p') });
+        const anchorPart = new Component<HTMLSpanElement>('span');
+        page(anchorPart);
+        const anchor = anchorPart.element;
+        const pop = new Popover({ target: anchorPart, showOn: 'hover', delay: 100, hideDelay: 50, content: new Component('p') });
         hosts.push(pop);
         expect(anchor.getAttribute('aria-haspopup')).toBe(null);
         anchor.dispatchEvent(new PointerEvent('pointerenter'));
@@ -138,12 +138,11 @@ describe('Popover', () => {
         expect(pop.isOpen).toBe(false);
         anchor.dispatchEvent(new FocusEvent('focusin'));
         expect(pop.isOpen).toBe(true);
-        anchor.remove();
     });
 
     it('may be kept open by onClosing, and closes when disabled', async () => {
-        const anchor = document.createElement('button');
-        document.body.append(anchor);
+        const anchor = new Component<HTMLButtonElement>('button');
+        page(anchor);
         let keep = true;
         const pop = new Popover({ target: anchor, onClosing: e => (e.cancel = keep) });
         hosts.push(pop);
@@ -154,6 +153,5 @@ describe('Popover', () => {
         pop.enabled = false;
         expect(pop.isOpen).toBe(false);
         expect(pop.open()).toBe(false);
-        anchor.remove();
     });
 });

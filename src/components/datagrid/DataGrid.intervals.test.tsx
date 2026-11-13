@@ -50,7 +50,7 @@ const header = (grid: DataGrid<any>, field: string) => grid.element.querySelecto
 const hf = (grid: DataGrid<any>) => (grid as any).headerFilter;
 
 async function open(grid: DataGrid<any>, field: string) {
-  (grid as any).openHeaderFilter(field, header(grid, field));
+  (grid as any).openHeaderFilter(field, (grid as any).headerAnchor(field));
   await settle();
   return hf(grid);
 }

@@ -19,7 +19,7 @@ export interface AppBarProps extends ControlProps {
     titleAlign?: Bind<AppBarTitleAlign>;
     /** Makes the title a heading of this level. By default, it is plain text. */
     headingLevel?: Bind<number | null>;
-    /** An image, an element or a component before the title. */
+    /** An image address or a component before the title. */
     logo?: Bind<IconSource | null | undefined>;
     /** The button at the start of the bar. The default is `'none'`. */
     navigation?: Bind<AppBarNavigation>;
@@ -44,7 +44,7 @@ export interface AppBarProps extends ControlProps {
     /** The default is `'none'`. */
     scrollBehavior?: Bind<AppBarScrollBehavior>;
     /** What `scrollBehavior` watches. By default, the nearest ancestor that scrolls, else the page. */
-    scrollTarget?: Bind<HTMLElement | null>;
+    scrollTarget?: Bind<ComponentBase | null>;
     /** Occurs when the button at the start of the bar is pressed. */
     onNavigationClick?: (e: AppBarNavigationClickEventArgs) => void;
 }

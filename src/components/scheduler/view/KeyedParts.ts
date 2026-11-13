@@ -28,6 +28,11 @@ export class KeyedParts<I, P extends ComponentBase> {
     return this.parts.get(key);
   }
 
+  /** Every part shown, in no given order. */
+  each(fn: (part: P) => void): void {
+    this.parts.forEach((part) => fn(part));
+  }
+
   show(items: readonly I[]): void {
     const keys = items.map((item) => this.keyOf(item));
     const wanted = new Set(keys);

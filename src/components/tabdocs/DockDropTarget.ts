@@ -1,4 +1,5 @@
 import { untracked } from '@motifx/core';
+import { rectOf, type Rect } from '../../core/measure';
 import type { DockGuideHit } from './dock-guide-hit';
 import { DockGuides } from './DockGuides';
 import type { TabDockSide } from './tab-dock-side';
@@ -33,7 +34,7 @@ export class DockDropTarget implements TabDropTarget {
     if (drag.window && drag.manager !== m) return null;
     const group = m.groupAt(x, y, drag.window ?? null);
     // In a new window there are no dock areas and no floating: only the guides over its groups.
-    const main = m.dragSpace === m.element.ownerDocument;
+    const main = m.hostIn(m.dragSpace) === m;
     const hit = m.dockGuides ? this.guides.hit(x, y) : null;
     let place: TabDropPlace | null = null;
     if (hit && 'dock' in hit) place = this.areaPlace(hit.dock, drag);
@@ -42,9 +43,9 @@ export class DockDropTarget implements TabDropTarget {
     this.guides.point(this.pointed);
     if (place) return place;
     // The strips are the built-in target's.
-    if (group && contains(group.barElement.getBoundingClientRect(), x, y)) return null;
+    if (group && contains(rectOf(group.barPart), x, y)) return null;
     if (!main) return null;
-    const folded = m.dockAreas.find((a) => a.autoHidden && a.strip && contains(a.strip.element.getBoundingClientRect(), x, y));
+    const folded = m.dockAreas.find((a) => a.autoHidden && a.strip && contains(rectOf(a.strip.part), x, y));
     if (folded) return this.areaPlace(folded.side, drag);
     if (drag.window || m.dockGuides) return m.floatPlace(drag, x, y);
     return null;
@@ -71,12 +72,12 @@ export class DockDropTarget implements TabDropTarget {
     }
     untracked(() => {
       const kinds = m.dockGuideKinds;
-      const space = m.dragSpace;
-      const main = space === m.element.ownerDocument;
+      const host = m.hostIn(m.dragSpace);
+      const main = host === m;
       const group = kinds.includes('group') ? m.groupAt(point.x, point.y, drag.window ?? null) : null;
       const sides = group && group.acceptsDrop ? CROSS.filter((side) => !!this.guidePlace(group, side, drag)) : [];
       const docks = main && kinds.includes('edges') ? SIDES.filter((side) => !!this.areaPlace(side, drag)) : [];
-      this.guides.show(sides.length ? group : null, sides, docks, m.hostElementIn(space));
+      this.guides.show(sides.length ? group : null, sides, docks, host);
     });
   }
 
@@ -100,6 +101,6 @@ export class DockDropTarget implements TabDropTarget {
   }
 }
 
-function contains(box: DOMRect, x: number, y: number): boolean {
+function contains(box: Rect, x: number, y: number): boolean {
   return x >= box.left && x < box.right && y >= box.top && y < box.bottom;
 }

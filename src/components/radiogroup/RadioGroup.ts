@@ -1,9 +1,11 @@
-import { untracked, type Bind, type IBaseProp } from '@motifx/core';
-import { registerControl } from '../../core/control-map';
+import { untracked, type Bind, type Component, type ComponentBase, type IBaseProp } from '@motifx/core';
+import { loose, part, removePart } from '../../core/draw-parts';
+import { css, mark, put, text as writeText } from '../../core/part-writes';
 import { follow } from '../../core/follow';
 import { givenField, givenList } from '../../core/given-field';
 import { LanguageLook } from '../../core/language-look';
-import { deepActiveElement, isFocusable } from '../../core/focus';
+import { canTakeFocus, focusOn, isFocused } from '../../core/focus';
+import { isRtl } from '../../core/measure';
 import { nextId } from '../../core/next-id';
 import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
@@ -28,10 +30,10 @@ interface Look {
 
 /** One drawn option. */
 interface Row {
-  element: HTMLDivElement;
-  input: HTMLInputElement;
-  text: HTMLSpanElement;
-  help: HTMLSpanElement | null;
+  part: Component<HTMLDivElement>;
+  input: Component<HTMLInputElement>;
+  text: Component<HTMLSpanElement>;
+  help: Component<HTMLSpanElement> | null;
   value: unknown;
   enabled: boolean;
   visible: boolean;
@@ -39,7 +41,11 @@ interface Row {
 
 interface Parts {
   rows: Row[];
+  /** The row drawn checked. */
+  checked: Row | null;
   name: string;
+  /** What the ids of the help lines start with. */
+  id: string;
   stopItems: (() => void) | null;
 }
 
@@ -58,18 +64,15 @@ interface Parts {
  */
 export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>> {
   /** Where the design language puts the focus ring: around the circle, or around the circle and its text. */
-  private readonly focusLook = new LanguageLook(this.element, { scope: '--_radiogroup-focus-scope' }, () => {
-    this.element.dataset.focusScope = this.focusLook.get('scope') ?? 'box';
+  private readonly focusLook = new LanguageLook(this, { scope: '--_radiogroup-focus-scope' }, () => {
+    put(this, 'data-focus-scope', this.focusLook.get('scope') ?? 'box');
   });
 
   constructor(props?: IBaseProp<RadioGroupProps<T>>) {
     super(props);
     this.motif.setDisposable(this.focusLook.watch());
     const own = (this.props ?? {}) as RadioGroupProps<T>;
-    const list = this.listElement;
-    this.element.classList.add('mx-radio-group');
-    // The access key finds the control through the element that carries it.
-    registerControl(list, this);
+    this.class.add('mx-radio-group');
 
     if (own.itemText !== undefined) this.setProperty('itemText', own.itemText);
     if (own.itemValue !== undefined) this.setProperty('itemValue', own.itemValue);
@@ -77,24 +80,25 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     this.observeProperty('itemText', () => this.renderItems());
     this.observeProperty('itemValue', () => this.renderItems());
     this.observeProperty<RadioGroupOrientation>('orientation', (orientation) => {
-      this.element.dataset.orientation = orientation ?? 'vertical';
-      list.setAttribute('aria-orientation', orientation ?? 'vertical');
+      put(this, 'data-orientation', orientation ?? 'vertical');
+      put(this.controlPart, 'aria-orientation', orientation ?? 'vertical');
       this.renderGrid();
     });
     this.observeProperty('columns', () => this.renderGrid());
     this.observeProperty('name', () => this.renderNames());
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
 
-    list.addEventListener('click', (e) => {
-      if (this.peekProperty('readOnly') && this.rowOf(e.target)) e.preventDefault();
+    const control = this.controlPart;
+    control.motif.on('click', (_, e) => {
+      if (this.peekProperty('readOnly') && this.rowOf(e)) e.preventDefault();
     });
-    list.addEventListener('change', (e) => {
-      const row = this.rowOf(e.target);
+    control.motif.on('change', (_, e) => {
+      const row = this.rowOf(e);
       if (!row) return;
       this.commit(row.value as T, e);
       this.renderValue();
     });
-    list.addEventListener('keydown', (e) => this.keyDown(e));
+    control.motif.on('keydown', (_, e) => this.keyDown(e));
     this.motif.setDisposable(() => this.radioParts.stopItems?.());
   }
 
@@ -137,9 +141,9 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     this.assignProperty('name', value);
   }
 
-  /** The element with `role="radiogroup"`. */
-  get listElement(): HTMLElement {
-    return this.focusElement;
+  /** The part with `role="radiogroup"`. */
+  get listPart(): ComponentBase {
+    return this.controlPart;
   }
 
   /**
@@ -151,8 +155,8 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     this.renderItems();
   }
 
-  /** The native radios, in item order. */
-  get inputs(): readonly HTMLInputElement[] {
+  /** The native radios as components, in item order. */
+  get inputParts(): readonly ComponentBase<HTMLInputElement>[] {
     return this.radioParts.rows.map((row) => row.input);
   }
 
@@ -163,25 +167,23 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
 
   override get canFocus(): boolean {
     const row = this.stopRow();
-    return this.isEnabled && !!row && row.input.isConnected && isFocusable(row.input);
+    return this.isEnabled && !!row && canTakeFocus(row.input);
   }
 
   override get focused(): boolean {
-    const active = deepActiveElement();
-    return !!active && this.radioParts.rows.some((row) => row.input === active);
+    return this.radioParts.rows.some((row) => isFocused(row.input));
   }
 
   /** Sets focus on the selected option, or on the first available one. */
   override focus(): boolean {
     if (!this.canFocus) return false;
-    this.stopRow()!.input.focus();
+    focusOn(this.stopRow()!.input);
     return this.focused;
   }
 
-  protected createControl(): HTMLElement {
-    const list = document.createElement('div');
-    list.className = 'mx-radio-group__list';
-    list.setAttribute('role', 'radiogroup');
+  protected createControl(): ComponentBase {
+    const list = loose<HTMLDivElement>('div', 'mx-radio-group__list');
+    list.attr.add({ role: 'radiogroup' });
     return list;
   }
 
@@ -190,8 +192,15 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
   }
 
   protected renderValue(): void {
+    const parts = this.radioParts;
     const value = this.peekValue();
-    for (const row of this.radioParts.rows) row.input.checked = Object.is(row.value, value);
+    parts.checked = null;
+    for (const row of parts.rows) {
+      const on = Object.is(row.value, value);
+      row.input.attr.add({ checked: on });
+      // Radios of one name keep one checked: the last one given it.
+      if (on) parts.checked = row;
+    }
     this.renderStops();
   }
 
@@ -199,7 +208,7 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     super.applyProperty(name, value);
     if (name === 'tabStop') {
       // The group is not a Tab stop of its own; its radios are.
-      this.listElement.removeAttribute('tabindex');
+      put(this.controlPart, 'tabindex', null);
       this.renderStops();
     } else if (name === 'enabled') {
       this.renderEnabled();
@@ -208,7 +217,7 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
 
   private get radioParts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
-    return (self[PARTS] ??= { rows: [], name: nextId('radio'), stopItems: null });
+    return (self[PARTS] ??= { rows: [], checked: null, name: nextId('radio'), id: nextId('radio-group'), stopItems: null });
   }
 
   private renderItems(): void {
@@ -243,107 +252,103 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
 
   private drawItems(looks: Look[]): void {
     const parts = this.radioParts;
-    const list = this.listElement;
     looks.forEach((look, index) => {
       let row = parts.rows[index];
       if (!row) {
         row = this.createRow();
         parts.rows.push(row);
-        list.append(row.element);
       }
       row.value = look.value;
       row.enabled = look.enabled;
       row.visible = look.visible;
-      row.element.hidden = !look.visible;
-      row.text.textContent = look.text;
-      if (look.hint) row.element.title = look.hint;
-      else row.element.removeAttribute('title');
+      mark(row.part, 'hidden', !look.visible);
+      writeText(row.text, look.text);
+      if (look.hint) put(row.part, 'title', look.hint);
+      else put(row.part, 'title', null);
       this.renderHelp(row, look.helpText, index);
     });
-    for (const row of parts.rows.splice(looks.length)) row.element.remove();
+    for (const row of parts.rows.splice(looks.length)) removePart(row.part);
     this.renderNames();
     this.renderEnabled();
     this.renderGrid();
     this.renderValue();
   }
 
+  /** A row at the end of the list: a label with its radio and text. */
   private createRow(): Row {
-    const element = document.createElement('div');
-    element.className = 'mx-radio-group__item';
-    const label = element.appendChild(document.createElement('label'));
-    label.className = 'mx-radio-group__label';
-    const input = label.appendChild(document.createElement('input'));
-    input.type = 'radio';
-    input.className = 'mx-radio-group__input';
-    const text = label.appendChild(document.createElement('span'));
-    text.className = 'mx-radio-group__text';
-    return { element, input, text, help: null, value: undefined, enabled: true, visible: true };
+    const row = part<HTMLDivElement>(this.controlPart, 'div', 'mx-radio-group__item');
+    const label = part<HTMLLabelElement>(row, 'label', 'mx-radio-group__label');
+    const input = part<HTMLInputElement>(label, 'input', 'mx-radio-group__input');
+    input.attr.add({ type: 'radio' });
+    const text = part<HTMLSpanElement>(label, 'span', 'mx-radio-group__text');
+    return { part: row, input, text, help: null, value: undefined, enabled: true, visible: true };
   }
 
   /** The help line sits outside the label: it describes the option, it does not name it. */
   private renderHelp(row: Row, text: string, index: number): void {
     if (!text) {
-      row.help?.remove();
+      removePart(row.help);
       row.help = null;
-      row.input.removeAttribute('aria-describedby');
+      put(row.input, 'aria-describedby', null);
       return;
     }
-    if (!row.help) {
-      row.help = row.element.appendChild(document.createElement('span'));
-      row.help.className = 'mx-radio-group__help';
-    }
-    row.help.id = `${this.listElement.id}-help-${index}`;
-    row.help.textContent = text;
-    row.input.setAttribute('aria-describedby', row.help.id);
+    row.help ??= part<HTMLSpanElement>(row.part, 'span', 'mx-radio-group__help');
+    const help = row.help;
+    const id = `${this.radioParts.id}-help-${index}`;
+    put(help, 'id', id);
+    writeText(help, text);
+    put(row.input, 'aria-describedby', id);
   }
 
   private renderNames(): void {
     const parts = this.radioParts;
     const name = this.peekProperty<string>('name') || parts.name;
-    for (const row of parts.rows) row.input.name = name;
+    for (const row of parts.rows) put(row.input, 'name', name);
   }
 
   private renderEnabled(): void {
     const off = !untracked(() => this.isEnabled);
-    for (const row of this.radioParts.rows) row.input.disabled = off || !row.enabled;
+    for (const row of this.radioParts.rows) mark(row.input, 'disabled', off || !row.enabled);
     this.renderStops();
   }
 
   private renderGrid(): void {
-    const list = this.listElement;
+    const list = this.controlPart;
     const columns = this.peekProperty<number>('columns') ?? 0;
-    this.element.toggleAttribute('data-columns', columns > 0);
+    mark(this, 'data-columns', columns > 0);
     if (columns > 0) {
       const shown = this.radioParts.rows.filter((row) => row.visible).length;
-      list.style.setProperty('--_columns', String(columns));
-      list.style.setProperty('--_rows', String(Math.max(1, Math.ceil(shown / columns))));
+      css(list, '--_columns', String(columns));
+      css(list, '--_rows', String(Math.max(1, Math.ceil(shown / columns))));
     } else {
-      list.style.removeProperty('--_columns');
-      list.style.removeProperty('--_rows');
+      css(list, '--_columns', '');
+      css(list, '--_rows', '');
     }
   }
 
   /** One Tab stop: the chosen option, or the first one that can be chosen. */
   private renderStops(): void {
     const stop = this.peekProperty('tabStop') === false ? null : this.stopRow();
-    for (const row of this.radioParts.rows) row.input.tabIndex = row === stop ? 0 : -1;
+    for (const row of this.radioParts.rows) put(row.input, 'tabindex', row === stop ? '0' : '-1');
   }
 
   private stopRow(): Row | undefined {
-    const rows = this.radioParts.rows.filter((row) => row.visible && row.enabled);
-    return rows.find((row) => row.input.checked) ?? rows[0];
+    const parts = this.radioParts;
+    const rows = parts.rows.filter((row) => row.visible && row.enabled);
+    return rows.find((row) => row === parts.checked) ?? rows[0];
   }
 
-  private rowOf(target: EventTarget | null): Row | undefined {
-    return this.radioParts.rows.find((row) => row.input === target);
+  /** The row whose radio an event came from. */
+  private rowOf(e: Event): Row | undefined {
+    return this.radioParts.rows.find((row) => row.input.motif.isEventFrom(e));
   }
 
   private keyDown(e: KeyboardEvent): void {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const rtl = isRtl(this);
     const rows = this.radioParts.rows;
-    const at = rows.findIndex((row) => row.input === e.target);
+    const at = rows.findIndex((row) => row.input.motif.isEventFrom(e));
     if (at < 0) return;
-    const rtl = this.element.closest('[dir]')?.getAttribute('dir') === 'rtl';
     const steps: Record<string, number> = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 };
     const step = steps[e.key];
     if (!step) return;
@@ -351,7 +356,7 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     const count = rows.length;
     for (let i = 1; i < count; i++) {
       const row = rows[(((at + step * i) % count) + count) % count];
-      if (row.visible && !row.input.disabled) {
+      if (row.visible && row.enabled && this.isEnabled) {
         this.moveTo(row, e);
         return;
       }
@@ -360,9 +365,9 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
 
   /** Arrow keys choose the option they move to; read-only, they only move. */
   private moveTo(row: Row, e: KeyboardEvent): void {
-    row.input.focus();
+    focusOn(row.input);
     if (this.peekProperty('readOnly')) {
-      for (const other of this.radioParts.rows) other.input.tabIndex = other === row ? 0 : -1;
+      for (const other of this.radioParts.rows) put(other.input, 'tabindex', other === row ? '0' : '-1');
       return;
     }
     this.commit(row.value as T, e);

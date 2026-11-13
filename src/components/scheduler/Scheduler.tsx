@@ -1,16 +1,15 @@
-import { Component, Emitter, read, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, read, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp, errorHandler } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import { follow } from '../../core/follow';
+import { onDocument, onWindow } from '../../core/window-events';
 import { every } from '../../core/every';
-import { deepActiveElement } from '../../core/focus';
+import { focusFirstIn, focusOn, holdsFocus } from '../../core/focus';
 import { fillText } from '../../core/fill-text';
 import { givenField, givenList, givenValue } from '../../core/given-field';
 import { later } from '../../core/later';
-import { nextFrame } from '../../core/next-frame';
 import { calendarMark, chevronEnd, chevronStart } from '../../core/glyphs';
-import { ResizeWatch } from '../../core/resize-watch';
-import { onLookChanged } from '../../core/look-watch';
+import { boxOf, componentAt, isRtl, measure, mediaOf, onLayout, onMedia, rectOf, scrollTo, styleOf, visibleRectOf, whenMeasured, type Box, type Point, type Rect, type ScrollPlace } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import { Popup } from '../../parts/popup/Popup';
@@ -23,7 +22,9 @@ import { Button } from '../button/Button';
 import { Calendar } from '../calendar/Calendar';
 import { Spinner } from '../progress/Spinner';
 import { Toolbar } from '../toolbar/Toolbar';
-import { flag, put, shown, text } from '../../core/draw-parts';
+import { css, flag, mark, put, shown, text } from '../../core/part-writes';
+import { windowOf } from '../../core/page-documents';
+import { appRootOf } from '../../core/page-layer';
 import { KeyedParts } from './view/KeyedParts';
 import type { AppointmentAddedEventArgs } from './appointment-added-event-args';
 import type { AppointmentAddingEventArgs } from './appointment-adding-event-args';
@@ -86,6 +87,7 @@ import type { ViewChangingEventArgs } from './view-changing-event-args';
 import { MonthView } from './view/MonthView';
 import { MoreList, type MoreListState } from './view/MoreList';
 import type { SchedulerHost } from './view/scheduler-host';
+import type { ShownView } from './view/shown-view';
 import { SchedulerFormat } from './view/SchedulerFormat';
 import { TimeView } from './view/TimeView';
 import { AgendaView } from './view/AgendaView';
@@ -296,7 +298,7 @@ interface RootParts {
   loading: Component<HTMLDivElement>;
   spinner: Spinner;
   failed: Component<HTMLDivElement>;
-  failedText: HTMLElement;
+  failedText: Component<HTMLSpanElement>;
   retry: Button;
 }
 
@@ -320,6 +322,8 @@ interface Parts<T> {
     coarse: boolean;
     /** It is being printed: everything is built, nothing scrolls. */
     printing: boolean;
+    /** `print()` prints it alone: the page around it is left out. The app's root it marked for that (`appRootOf`). */
+    printOne: ComponentBase | null;
     /** A finger swiping sideways: how far, which way, and whether letting go now moves on. */
     swipe: { active: boolean; x: number; next: boolean; ready: boolean };
     /** The appointment a finger lifted last (by its id): it shows its handles. */
@@ -341,14 +345,15 @@ interface Parts<T> {
   moreChoose: ((item: T, event: MouseEvent) => void) | null;
   picker: Calendar | null;
   title: Button | null;
-  scroller: HTMLElement | null;
+  /** The view's scroll box. */
+  scroller: ComponentBase | null;
   timeline: TimelineScroll | null;
   /** The agenda's focused row, by its piece's id; `drawn` draws the agenda again after it moved. */
   agendaFocus: { id: string; drawn: () => void };
   /** The parts drawn by hand by name: the bar, the content (the view in it), the view shown, the swipe's edge, the spoken text. */
   bar: Toolbar | null;
   content: ComponentBase | null;
-  viewNow: (ComponentBase & { draw(): void }) | null;
+  viewNow: (ComponentBase & ShownView) | null;
   /** The kind of view shown, and the root's parts drawn by hand. */
   viewKind: string;
   root: RootParts | null;
@@ -363,6 +368,8 @@ interface Parts<T> {
   selecting: boolean;
   /** Focus goes to the cell once the next view is on the page. */
   focusWhenShown: boolean;
+  /** The model's focused cell as last told: focus on its cell moves on with it. */
+  focusPlace: CellPlace | null;
   baseFilter: data.DataSource<T, unknown>['filter'];
   source: data.DataSource<T, unknown> | null;
   stopSource: (() => void) | null;
@@ -395,7 +402,8 @@ interface Parts<T> {
   icalendar: ICalendarBridge<T>;
   /** The scheduler's width, as measured last. */
   width: number;
-  sizeWatch: ResizeWatch | null;
+  /** What the next scroll of the day columns brings into view: a time of day (a share of the time rows), a column. */
+  gridScroll: { share: number | null; column: number | null };
   /** The view it had before a presentation changed it, and the one it changed to. */
   viewBefore: string | null;
   viewSet: string | null;
@@ -471,7 +479,6 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       parts.drag.dispose();
       parts.editor.dispose();
       parts.stopSource?.();
-      parts.sizeWatch?.disconnect();
       for (const stop of parts.stopKeys) stop();
       for (const [, emitter] of on) emitter.dispose();
     });
@@ -928,11 +935,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private drawSwipe(x: number | null, next: boolean, ready: boolean): void {
     const parts = this.parts;
     Object.assign(parts.version.swipe, { active: x !== null, x: x ?? 0, next, ready });
-    const content = parts.content?.element as HTMLElement | undefined;
+    const content = parts.content;
     if (content) {
-      content.toggleAttribute('data-swiping', x !== null);
-      if (x === null) content.style.removeProperty('--_swipe');
-      else content.style.setProperty('--_swipe', `${x}px`);
+      mark(content, 'data-swiping', x !== null);
+      css(content, '--_swipe', x === null ? '' : `${x}px`);
     }
     this.drawSwipeEdge();
   }
@@ -1077,10 +1083,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
    * otherwise the first day).
    */
   scrollToTime(hour: number, minute = 0): void {
-    const scroller = this.parts.scroller;
     const view = this.resolveView();
     const kind = viewKind(view.type);
-    if (!scroller || kind === 'month' || kind === 'agenda') return;
+    if (!this.parts.scroller || kind === 'month' || kind === 'agenda') return;
     if (kind === 'timeline') {
       const model = this.parts.model;
       const days = model.state.days;
@@ -1088,11 +1093,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       this.parts.timeline?.scrollTo(this.tickAt(Math.max(0, shown), hour * 60 + minute), null);
       return;
     }
-    const body = scroller.firstElementChild as HTMLElement | null;
     const span = (view.endDayHour - view.startDayHour) * 60;
-    if (!body || !(span > 0)) return;
-    const at = (hour * 60 + minute - view.startDayHour * 60) / span;
-    scroller.scrollTop = Math.max(0, at * body.offsetHeight);
+    if (!(span > 0)) return;
+    this.parts.gridScroll.share = Math.max(0, (hour * 60 + minute - view.startDayHour * 60) / span);
+    measure(this, this.readGrid, this.scrollGrid);
   }
   /**
    * Scrolls a time into view: its hour and column in the day views, or its cell and the row of
@@ -1235,9 +1239,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   showAppointmentForm(appointment: T | null = null, cell: SchedulerCell | null = null): Promise<void> {
     return this.parts.editor.openForm(appointment, cell ?? (appointment ? null : this.parts.model.selection()));
   }
-  /** Shows an appointment's tooltip next to `anchor` (its box by default). */
-  showTooltip(appointment: T, anchor?: HTMLElement): void {
-    const box = anchor ?? this.boxOf(appointment);
+  /** Shows an appointment's tooltip next to the component `anchor` (its box by default). */
+  showTooltip(appointment: T, anchor?: ComponentBase<HTMLElement>): void {
+    const box = anchor ?? this.boxesOf(appointment)[0];
     if (box) this.parts.editor.showTooltip(appointment, box);
   }
   hideTooltip(): void {
@@ -1313,14 +1317,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const e: PrintingEventArgs<T> = { cancel: false, source: this };
     parts.printing.fire(e);
     if (e.cancel) return false;
-    const doc = this.element.ownerDocument;
-    const view = doc.defaultView;
+    const view = windowOf(this);
     if (!view) return false;
-    doc.documentElement.toggleAttribute('data-mx-print-one', true);
-    this.element.toggleAttribute('data-print-one', true);
+    // The app's root in that window carries the mark the print styles read; it goes when printing ends.
+    const root = appRootOf(this);
+    mark(root, 'data-mx-print-one', true);
+    parts.version.printOne = root;
+    mark(this, 'data-print-one', true);
     this.setPrinting(true);
     // Built whole before the page is laid out for paper.
-    await new Promise<void>((done) => nextFrame(done, view));
+    await whenMeasured(this);
     try {
       view.print();
     } finally {
@@ -1349,13 +1355,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private drawRoot(): void {
     untracked(() => {
       const version = this.parts.version;
-      put(this.element, 'aria-label', this.text || this.textOf('schedulerLabel'));
-      put(this.element, 'data-view', this.resolveView().type);
-      put(this.element, 'data-presentation', version.presentation);
-      this.element.toggleAttribute('data-printing', version.printing);
+      put(this, 'aria-label', this.text || this.textOf('schedulerLabel'));
+      put(this, 'data-view', this.resolveView().type);
+      put(this, 'data-presentation', version.presentation);
+      mark(this, 'data-printing', version.printing);
       const zoom = this.timeZoom;
-      if (zoom === 1) this.element.style.removeProperty('--_zoom');
-      else this.element.style.setProperty('--_zoom', String(zoom));
+      css(this, '--_zoom', zoom === 1 ? '' : String(zoom));
     });
   }
 
@@ -1409,6 +1414,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     for (const name of ['presentation', 'tabletWidth', 'phoneWidth', 'tabletWhen'] as const) this.observeProperty(name, () => this.resolvePresentation());
     this.watchPointer();
     this.watchPrint();
+    this.watchSize();
+    onLayout(this, 'look', () => measure(this, this.readLook, this.useLook));
     // Set as one way, it is that way from the start; by its width, once it is measured.
     this.resolvePresentation();
   }
@@ -1416,9 +1423,6 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   override onMounted() {
     // The finger's listeners are there before a finger lands: only then can a drag, a swipe or a pinch keep the page still.
     this.motif.setDisposable(this.parts.touch.attach());
-    this.watchSize();
-    this.readLook();
-    this.motif.setDisposable(onLookChanged(() => this.readLook()));
   }
 
   /**
@@ -1428,20 +1432,19 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private makeRoot(): void {
     const parts = this.parts;
     const bar = new Toolbar({});
-    bar.element.classList.add('mx-scheduler__bar');
+    bar.class.add('mx-scheduler__bar');
     const content = new Component<HTMLDivElement>('div');
-    content.element.className = 'mx-scheduler__content';
+    content.class.add('mx-scheduler__content');
     const live = new Component<HTMLDivElement>('div');
-    live.element.className = 'mx-scheduler__live mx-sr-only';
-    live.element.setAttribute('aria-live', 'polite');
-    live.element.setAttribute('role', 'status');
+    live.class.add('mx-scheduler__live mx-sr-only');
+    live.attr.add({ 'aria-live': 'polite', role: 'status' });
     parts.bar = bar;
     parts.content = content;
     parts.live = live;
     this.controls.add(bar, content, live);
     const button = (className: string, props: ConstructorParameters<typeof Button>[0] = {}) => {
       const b = new Button(props);
-      b.element.classList.add(...className.split(' '));
+      b.class.add(className);
       bar.controls.add(b);
       return b;
     };
@@ -1457,13 +1460,13 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const title = button('mx-scheduler__title', { dropDown: parts.picker });
     parts.title = title;
     const viewMenu = button('mx-scheduler__view-menu', { menu: [] });
-    put(viewMenu.element, 'data-overflow', 'never');
+    put(viewMenu, 'data-overflow', 'never');
     const views = new KeyedParts<SchedulerView & { name: string }, Button>(
       bar,
       (view) => view.name,
       (view) => {
         const b = new Button({ toggle: true });
-        b.element.classList.add('mx-scheduler__view-button');
+        b.class.add('mx-scheduler__view-button');
         b.motif.on('click', () => {
           const name = this.viewOfButton.get(b);
           if (name !== undefined) this.changeView(name, true);
@@ -1474,27 +1477,27 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       () => 5,
     );
     const loading = new Component<HTMLDivElement>('div');
-    loading.element.className = 'mx-scheduler__state';
+    loading.class.add('mx-scheduler__state');
     const spinner = new Spinner({ size: 'sm' });
     loading.controls.add(spinner);
     const failed = new Component<HTMLDivElement>('div');
-    failed.element.className = 'mx-scheduler__state';
-    put(failed.element, 'data-tone', 'danger');
-    failed.element.setAttribute('role', 'alert');
+    failed.class.add('mx-scheduler__state');
+    put(failed, 'data-tone', 'danger');
+    failed.attr.add({ role: 'alert' });
     const failedText = new Component<HTMLSpanElement>('span');
     failed.controls.add(failedText);
     const retry = new Button();
     retry.motif.on('click', () => void this.dataSource?.retry());
     failed.controls.add(retry);
     const edge = new Component<HTMLDivElement>('div');
-    edge.element.className = 'mx-scheduler__swipe-edge';
-    edge.element.setAttribute('aria-hidden', 'true');
+    edge.class.add('mx-scheduler__swipe-edge');
+    edge.attr.add({ 'aria-hidden': 'true' });
     const icon = new Component<HTMLSpanElement>('span');
-    icon.element.className = 'mx-glyph mx-scheduler__swipe-icon';
+    icon.class.add('mx-glyph mx-scheduler__swipe-icon');
     edge.controls.add(icon);
     content.controls.add(loading, failed, edge);
     parts.swipeEdge = edge;
-    parts.root = { today, todayIcon, previous, next, title, viewMenu, views, loading, spinner, failed, failedText: failedText.element, retry };
+    parts.root = { today, todayIcon, previous, next, title, viewMenu, views, loading, spinner, failed, failedText, retry };
     this.drawStates();
     this.drawSwipeEdge();
     this.drawLive();
@@ -1536,7 +1539,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       root.next.visible = !phone;
       root.title.text = phone ? this.phoneTitle() : this.rangeText();
       root.title.hint = phone ? this.rangeText() : '';
-      put(root.title.element, 'data-overflow', phone ? 'never' : null);
+      put(root.title, 'data-overflow', phone ? 'never' : null);
       const list = this.viewList();
       root.views.show(list);
       for (const view of list) {
@@ -1587,10 +1590,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     untracked(() => {
       const t = (key: keyof UiStrings) => this.textOf(key);
       const loading = this.loading;
-      if (parts.content) flag(parts.content.element, 'aria-busy', loading);
-      shown(root.loading.element, loading);
+      if (parts.content) flag(parts.content, 'aria-busy', loading);
+      shown(root.loading, loading);
       root.spinner.label = t('loading');
-      shown(root.failed.element, parts.version.status === 'error');
+      shown(root.failed, parts.version.status === 'error');
       text(root.failedText, t('loadFailed'));
       root.retry.text = t('retry');
     });
@@ -1598,7 +1601,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   /** The swipe's edge: shown while a finger swipes between dates, on the side what comes is on. */
   private drawSwipeEdge(): void {
-    const edge = this.parts.swipeEdge?.element as HTMLElement | undefined;
+    const edge = this.parts.swipeEdge;
     if (!edge) return;
     const swipe = this.parts.version.swipe;
     put(edge, 'data-side', swipe.next ? 'next' : 'previous');
@@ -1608,7 +1611,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   /** The text read out last. */
   private drawLive(): void {
-    const live = this.parts.live?.element as HTMLElement | undefined;
+    const live = this.parts.live;
     if (live) text(live, this.parts.version.said);
   }
 
@@ -1650,8 +1653,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       saving: [],
       lines: { lane: 0, gap: 0, min: 0 },
       presentation: 'desktop',
-      coarse: coarsePointer(),
+      coarse: mediaOf(this, COARSE),
       printing: false,
+      printOne: null,
       swipe: { active: false, x: 0, next: true, ready: false },
       touchSelected: '',
       phoneBarSize: 'lg',
@@ -1709,6 +1713,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       scrolledFor: '',
       selecting: false,
       focusWhenShown: false,
+      focusPlace: null,
       baseFilter: null,
       source: null,
       stopSource: null,
@@ -1737,7 +1742,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       printing: new Emitter(),
       printed: new Emitter(),
       width: 0,
-      sizeWatch: null,
+      gridScroll: { share: null, column: null },
       viewBefore: null,
       viewSet: null,
       tapAgain: false,
@@ -1792,23 +1797,24 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         // A finger lifted it: once let go it stays selected, with its handles.
         if (next?.touch) this.setTouchSelected(model.idOf(next.item));
       },
-      root: () => this.element,
+      boxesOf: (item) => this.boxesOf(item),
       scroller: () => parts.scroller,
-      rtl: () => this.isRtl(),
+      rtl: () => isRtl(this),
       keys: () => this.keys,
       saving: version.saving,
       presentation: () => version.presentation,
       redraw: () => parts.viewNow?.draw(),
     });
-    parts.drag = new AppointmentDrag<T>(parts.editor);
+    parts.drag = new AppointmentDrag<T>(parts.editor, { cellUnder: (point) => this.cellUnder(point), scroller: () => parts.scroller });
     parts.touch = new SchedulerTouch({
-      root: () => this.element,
+      root: () => this,
+      content: () => parts.content,
       scroller: () => parts.scroller,
       kind: () => parts.model.kind,
       dragging: () => parts.drag.active,
       swipeNavigation: () => this.swipeNavigation,
       pinchZoom: () => this.pinchZoom,
-      rtl: () => this.isRtl(),
+      rtl: () => isRtl(this),
       zoom: () => this.timeZoom,
       zoomChanging: (from, to) => {
         const e: TimeZoomChangingEventArgs<T> = { from, to, cancel: false, source: this };
@@ -1864,7 +1870,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       tooltipTemplate: () => this.templateOf('appointmentTooltipTemplate'),
       moreTemplate: () => this.templateOf('moreListTemplate'),
       allDayLines: () => this.allDayLines,
-      rtl: () => this.isRtl(),
+      rtl: () => isRtl(this),
       template: () => this.templateOf('appointmentTemplate'),
       recurrenceMarks: () => this.recurrenceMarks,
       recurrenceText: (item) => this.recurrenceText(item),
@@ -1906,12 +1912,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         parts.drawn.add(draw);
         return () => parts.drawn.delete(draw);
       },
-      appointmentBlur: (item, e) => {
-        const to = e.relatedTarget;
-        const id = `${parts.model.idOf(item)}@`;
-        if (to instanceof HTMLElement && (to.dataset.piece ?? '').startsWith(id)) return;
-        parts.editor.cancelKeys();
-      },
+      appointmentBlur: (item) => parts.editor.blurred(item),
       canDrag: (item) => parts.editor.canDrag(item),
       canResize: (item) => parts.editor.canResize(item),
       isSaving: (item) => parts.editor.isSaving(item),
@@ -1923,9 +1924,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         parts.focusWhenShown = false;
         this.focusCellElement();
       },
-      setScroller: (el) => {
-        parts.scroller = el;
-        if (!el) parts.scrolledFor = '';
+      setScroller: (scroller) => {
+        parts.scroller = scroller;
+        if (!scroller) parts.scrolledFor = '';
       },
     };
   }
@@ -1947,7 +1948,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       if (!source) return;
       // A page of rows would leave appointments of the days shown out.
       if (source.loadMode !== 'all')
-        console.warn(`Scheduler: its data source loads '${source.loadMode}'; make it with loadMode: 'all' so every appointment of the days shown comes.`);
+        errorHandler.reportSuppressed('Scheduler.dataSource', new Error(`Scheduler: its data source loads '${source.loadMode}'; make it with loadMode: 'all' so every appointment of the days shown comes.`));
       const listening = source.onChanged(() => {
         parts.model.refresh();
         this.setStatus(source.status);
@@ -2042,14 +2043,18 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
-  /** Focus on a cell follows the model's focused cell (it keeps its date when the days change). */
+  /**
+   * Focus on a cell follows the model's focused cell (it keeps its date when the days change): when the model's focus
+   * moved and focus is on the cell it left, focus goes to the cell it is on now.
+   */
   private followFocus(): void {
-    const focus = this.parts.model.state.focus;
-    untracked(() => {
-      const active = deepActiveElement(this.element);
-      const cell = active?.closest<HTMLElement>('[data-cell]');
-      if (cell && this.element.contains(cell) && cell.dataset.cell !== `${focus.column}:${focus.slot}`) this.focusCellElement();
-    });
+    const parts = this.parts;
+    const focus = parts.model.state.focus;
+    const left = parts.focusPlace;
+    parts.focusPlace = { column: focus.column, slot: focus.slot };
+    if (!left || (left.column === focus.column && left.slot === focus.slot)) return;
+    const cell = untracked(() => parts.viewNow?.cellAt(left) ?? null);
+    if (cell && holdsFocus(cell)) this.focusCellElement();
   }
 
   private watchContent(): void {
@@ -2103,7 +2108,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const parts = this.parts;
     untracked(() => {
       const set = this.presentation;
-      const width = parts.width || (this.element.isConnected ? this.element.getBoundingClientRect().width : 0);
+      const width = parts.width;
       let to: SchedulerPresentationKind;
       if (set !== 'auto') to = set;
       else if (!(width > 0)) return;
@@ -2163,52 +2168,39 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   /** A screen that gets or loses its touch (a tablet with a keyboard and a mouse) may show it another way. */
   private watchPointer(): void {
-    const media = this.element.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)');
-    if (!media?.addEventListener) return;
-    const changed = () => {
-      this.parts.version.coarse = media.matches;
+    const stop = onMedia(this, COARSE, (coarse) => {
+      this.parts.version.coarse = coarse;
       this.drawBar();
       this.resolvePresentation();
-    };
-    media.addEventListener('change', changed);
-    this.motif.setDisposable(() => media.removeEventListener('change', changed));
+    });
+    this.motif.setDisposable(stop);
   }
 
   private watchSize(): void {
     const parts = this.parts;
-    parts.sizeWatch ??= new ResizeWatch(() => {
-      const width = this.element.getBoundingClientRect().width;
-      if (Math.round(width) === Math.round(parts.width)) return;
-      parts.width = width;
+    onLayout(this, 'size', (size) => {
+      if (Math.round(size.width) === Math.round(parts.width)) return;
+      parts.width = size.width;
       this.resolvePresentation();
     });
-    parts.sizeWatch.observe(this.element);
-    parts.width = this.element.getBoundingClientRect().width;
-    this.resolvePresentation();
   }
 
   /** What the design language says in values the code reads: the size of the phone's bar. */
-  private readLook(): void {
-    const view = this.element.ownerDocument.defaultView;
-    const size = view?.getComputedStyle(this.element).getPropertyValue('--_scheduler-phone-bar-size').trim();
+  private readonly readLook = () => styleOf(this, ['--_scheduler-phone-bar-size'])['--_scheduler-phone-bar-size'];
+
+  private readonly useLook = (size: string) => {
     const version = this.parts.version;
     const next = size === 'sm' || size === 'md' ? size : 'lg';
     if (version.phoneBarSize === next) return;
     version.phoneBarSize = next;
     this.drawBar();
-  }
+  };
 
   /** The browser's print (and `print()`) lays it out whole for paper. */
   private watchPrint(): void {
-    const view = this.element.ownerDocument.defaultView;
-    if (!view) return;
-    const before = () => this.setPrinting(true);
-    const after = () => this.printDone();
-    view.addEventListener('beforeprint', before);
-    view.addEventListener('afterprint', after);
+    const stops = [onWindow(this, 'beforeprint', () => this.setPrinting(true)), onWindow(this, 'afterprint', () => this.printDone())];
     this.motif.setDisposable(() => {
-      view.removeEventListener('beforeprint', before);
-      view.removeEventListener('afterprint', after);
+      for (const stop of stops) stop();
     });
   }
 
@@ -2226,9 +2218,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const parts = this.parts;
     if (!parts.version.printing) return;
     this.setPrinting(false);
-    const one = this.element.hasAttribute('data-print-one');
-    this.element.removeAttribute('data-print-one');
-    if (one) this.element.ownerDocument.documentElement.removeAttribute('data-mx-print-one');
+    const one = parts.version.printOne;
+    parts.version.printOne = null;
+    mark(this, 'data-print-one', false);
+    if (one && !one.isDisposed) mark(one, 'data-mx-print-one', false);
     parts.printed.fire({ source: this });
   }
 
@@ -2312,11 +2305,6 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   /** Today on the scheduler's clock, as a date of the browser's (what `currentDate` holds). */
   private today(): Date {
     return TimeZone.localOfWall(this.parts.model.todayWall());
-  }
-
-  private isRtl(): boolean {
-    const view = this.element.ownerDocument.defaultView;
-    return !!view && view.getComputedStyle(this.element).direction === 'rtl';
   }
 
   private step(by: number, byUser: boolean): boolean {
@@ -2407,23 +2395,54 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     parts.tapAgain = false;
     parts.model.focusCell(place, e.shiftKey);
     parts.selecting = true;
-    const doc = this.element.ownerDocument;
     const move = (ev: PointerEvent) => {
-      const target = doc.elementFromPoint(ev.clientX, ev.clientY);
-      const cell = target instanceof Element ? target.closest<HTMLElement>('[data-cell]') : null;
-      if (!cell || !this.element.contains(cell)) return;
-      const [column, slot] = cell.dataset.cell!.split(':').map(Number);
+      const hit = this.cellUnder({ x: ev.clientX, y: ev.clientY });
+      if (!hit) return;
+      const { column, slot } = hit.place;
       if (column !== parts.model.state.focus.column || slot !== parts.model.state.focus.slot) parts.model.focusCell({ column, slot }, true);
     };
+    // The selection follows the pointer past the cells: the document is listened to until it is let go.
     const up = () => {
       parts.selecting = false;
-      doc.removeEventListener('pointermove', move);
-      doc.removeEventListener('pointerup', up);
-      doc.removeEventListener('pointercancel', up);
+      for (const stop of stops) stop();
     };
-    doc.addEventListener('pointermove', move);
-    doc.addEventListener('pointerup', up);
-    doc.addEventListener('pointercancel', up);
+    const stops = [onDocument(this, 'pointermove', move), onDocument(this, 'pointerup', up), onDocument(this, 'pointercancel', up)];
+  }
+
+  /**
+   * The cell under a point of the screen, from the cells the view keeps, and its place: the line it is in first (a
+   * day column across, a timeline row down) by one cell of each, then the cell in that line where it shows.
+   */
+  private cellUnder(point: Point): { place: CellPlace; cell: ComponentBase } | null {
+    const parts = this.parts;
+    const view = parts.viewNow;
+    const model = parts.model;
+    const kind = model.kind;
+    if (!view || kind === 'agenda') return null;
+    const st = model.state;
+    const ticks = kind === 'timeline' ? model.shownTicks() : [];
+    const slots = kind === 'time' ? [-1, ...st.slots.map((slot) => slot.index)] : [-1];
+    const along = kind === 'timeline' ? ticks.length : slots.length;
+    const placeAt = (line: number, at: number): CellPlace =>
+      kind === 'timeline' ? { column: st.rows[line].first + ticks[at].day.index, slot: ticks[at].slot } : { column: st.columns[line].index, slot: slots[at] };
+    const holds = (rect: Rect) => point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom;
+    const lines = kind === 'timeline' ? st.rows.length : st.columns.length;
+    for (let line = 0; line < lines; line++) {
+      // A line not built has no cells: its first two places tell (a day column may have no all-day cell).
+      const probe = (along > 0 ? view.cellAt(placeAt(line, 0)) : null) ?? (along > 1 ? view.cellAt(placeAt(line, 1)) : null);
+      if (!probe) continue;
+      const rect = rectOf(probe);
+      if (kind === 'timeline' ? point.y < rect.top || point.y >= rect.bottom : point.x < rect.left || point.x >= rect.right) continue;
+      const cells = new Map<ComponentBase, CellPlace>();
+      for (let at = 0; at < along; at++) {
+        const place = placeAt(line, at);
+        const cell = view.cellAt(place);
+        if (cell) cells.set(cell, place);
+      }
+      const cell = componentAt(point, [...cells.keys()], { rects: (one) => (holds(rectOf(one)) ? visibleRectOf(one) : null) });
+      if (cell) return { place: cells.get(cell)!, cell };
+    }
+    return null;
   }
 
   private fireCell(emitter: Emitter<CellClickEventArgs<T>>, place: CellPlace, event: MouseEvent | KeyboardEvent): boolean {
@@ -2470,7 +2489,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     if (parts.drag.justEnded || parts.touch.justSwiped) return;
     const item = parts.model.itemOf(piece);
     if (parts.version.touchSelected && parts.version.touchSelected !== parts.model.idOf(item)) this.setTouchSelected('');
-    const box = e.currentTarget as HTMLElement | null;
+    const box = parts.viewNow?.boxOf(piece.id) ?? null;
     if (!this.fireAppointment(parts.appointmentClick, piece, e)) return;
     if (this.tooltip && box) parts.editor.showTooltip(item, box);
   }
@@ -2511,8 +2530,11 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     }
   }
 
-  /** The box an appointment shows in (its first one). */
-  private boxOf(item: T): HTMLElement | null {
+  /** The boxes an appointment shows in now (in the agenda, its rows), as the view built them. */
+  private boxesOf(item: T): ComponentBase[] {
+    if (this.isDisposed) return [];
+    const view = this.parts.viewNow;
+    if (!view) return [];
     const id = this.parts.model.idOf(item);
     const st = this.parts.model.state;
     const pieces = [
@@ -2522,11 +2544,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       ...st.rows.flatMap((r) => r.pieces),
       ...st.agenda.flatMap((d) => d.items),
     ];
-    const ids = pieces.filter((p) => p.id.startsWith(`${id}@`) || p.id.startsWith(`${id}#`)).map((p) => p.id);
-    return [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__appointment, .mx-scheduler__agenda-row')].find((el) => ids.includes(el.dataset.piece ?? '')) ?? null;
+    const boxes: ComponentBase[] = [];
+    for (const piece of pieces) {
+      if (!piece.id.startsWith(`${id}@`) && !piece.id.startsWith(`${id}#`)) continue;
+      const box = view.boxOf(piece.id);
+      if (box) boxes.push(box);
+    }
+    return boxes;
   }
 
-  private openMore(day: Date, group: number, anchor: HTMLElement): void {
+  private openMore(day: Date, group: number, anchor: ComponentBase): void {
     const parts = this.parts;
     const items = parts.model.appointmentsIn(day, parts.model.zone.addDays(day, 1), parts.model.state.groups[group] ?? null);
     const e: MoreOpeningEventArgs<T> = {
@@ -2541,7 +2568,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const popup = this.morePopup();
     this.drawMorePopup();
     popup.open(anchor);
-    queueMicrotask(() => (popup.element.querySelector('button') as HTMLElement | null)?.focus());
+    queueMicrotask(() => focusFirstIn(popup));
   }
 
   private morePopup(): Popup {
@@ -2597,7 +2624,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     if (parts.moreContent) popup.controls.remove(parts.moreContent);
     if (template) {
       const own = new Component<HTMLDivElement>('div');
-      own.element.className = 'mx-scheduler__more-own';
+      own.class.add('mx-scheduler__more-own');
       own.controls.add(template(parts.moreContext));
       parts.moreContent = own;
     } else {
@@ -2621,7 +2648,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     // A row of the month is a week (in every group); the day views are one row.
     const per = model.perRow;
     const rows = model.state.slots.length;
-    const across = this.isRtl() ? -1 : 1;
+    const across = isRtl(this) ? -1 : 1;
     const minSlot = month ? -1 : view.allDayPanel ? -1 : 0;
     let column = focus.column;
     let slot = focus.slot;
@@ -2740,7 +2767,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     e.preventDefault();
     focus.id = rows[next].id;
     focus.drawn();
-    queueMicrotask(() => [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__agenda-row')].find((el) => el.dataset.piece === focus.id)?.focus());
+    queueMicrotask(() => {
+      const row = this.isDisposed ? null : parts.viewNow?.boxOf(focus.id);
+      if (row) focusOn(row);
+    });
   }
 
   /**
@@ -2761,7 +2791,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const rows = Math.max(1, st.rows.length);
     let row = Math.floor(focus.column / days);
     let tick = (focus.column % days) * per + (whole ? 0 : Math.max(0, focus.slot));
-    const across = this.isRtl() ? -1 : 1;
+    const across = isRtl(this) ? -1 : 1;
     switch (e.key) {
       case 'ArrowLeft':
         tick -= across;
@@ -2825,20 +2855,41 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.focusCellElement();
   }
 
-  /** The time rows on one screen. */
+  /** The time rows on one screen: as many as the scroll box holds of a row as high as the first time row, the focused line or agenda row. */
   private pageRows(): number {
-    const scroller = this.parts.scroller;
-    const row = scroller?.querySelector<HTMLElement>('.mx-scheduler__cells .mx-scheduler__row, .mx-scheduler__line, .mx-scheduler__agenda-row');
-    return scroller && row && row.offsetHeight > 0 ? Math.max(1, Math.floor(scroller.clientHeight / row.offsetHeight) - 1) : 8;
+    const parts = this.parts;
+    const model = parts.model;
+    const view = parts.viewNow;
+    const kind = model.kind;
+    const row =
+      kind === 'agenda'
+        ? (view?.boxOf(parts.agendaFocus.id || (model.state.agenda[0]?.items[0]?.id ?? '')) ?? null)
+        : kind === 'time'
+          ? (this.builtCell(0)?.cell ?? null)
+          : (view?.cellAt(model.state.focus) ?? null);
+    const scroller = parts.scroller;
+    const height = row ? boxOf(row).offsetHeight : 0;
+    return scroller && height > 0 ? Math.max(1, Math.floor(boxOf(scroller).clientHeight / height) - 1) : 8;
+  }
+
+  /** A cell of a time row in the first column built (a big view builds only the columns in view), with that column. */
+  private builtCell(slot: number): { cell: ComponentBase; column: number } | null {
+    const view = this.parts.viewNow;
+    if (!view) return null;
+    for (const column of this.parts.model.shownColumns()) {
+      const cell = view.cellAt({ column: column.index, slot });
+      if (cell) return { cell, column: column.index };
+    }
+    return null;
   }
 
   /** Whether focus is in the view (not in the bar). */
   private focusInView(): boolean {
-    const focus = deepActiveElement(this.element);
-    return !!focus && !!this.element.querySelector('.mx-scheduler__content')?.contains(focus);
+    const content = this.parts.content;
+    return !!content && holdsFocus(content);
   }
 
-  /** Moves DOM focus to the focused cell (after the view drew it; in a big view it is scrolled into view and built first). */
+  /** Moves focus to the focused cell (after the view drew it; in a big view it is scrolled into view and built first). */
   private focusCellElement(): void {
     const model = this.parts.model;
     const focus = model.state.focus;
@@ -2852,31 +2903,53 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     }
     let tries = 0;
     const find = () => {
-      const now = model.state.focus;
-      const cell = this.element.querySelector<HTMLElement>(`[data-cell="${now.column}:${now.slot}"]`);
-      if (cell) cell.focus({ preventScroll: !model.virtual ? false : true });
-      else if (tries++ < 4) nextFrame(find, this.element.ownerDocument.defaultView);
+      if (this.isDisposed) return;
+      const cell = this.parts.viewNow?.cellAt(model.state.focus);
+      if (cell) focusOn(cell, { preventScroll: model.virtual });
+      else if (tries++ < 4) void whenMeasured(this).then(find);
     };
     queueMicrotask(find);
   }
 
   /** In a big day view: scrolls a column into view (it is then built). */
   private revealColumn(column: number): void {
-    const scroller = this.parts.scroller;
-    const model = this.parts.model;
-    if (!scroller || model.kind !== 'time') return;
-    const cells = scroller.querySelector<HTMLElement>('.mx-scheduler__cells');
-    const count = model.state.columns.length;
-    if (!cells || !count) return;
-    const width = cells.offsetWidth / count;
-    const ruler = cells.offsetLeft;
-    const left = Math.abs(scroller.scrollLeft);
-    const start = column * width;
-    const room = scroller.clientWidth - ruler;
-    if (start >= left && start + width <= left + room) return;
-    const at = Math.max(0, start < left ? start : start + width - room);
-    scroller.scrollLeft = this.isRtl() ? -at : at;
+    const parts = this.parts;
+    if (!parts.scroller || parts.model.kind !== 'time' || !parts.model.state.columns.length) return;
+    parts.gridScroll.column = column;
+    measure(this, this.readGrid, this.scrollGrid);
   }
+
+  /** The day columns' scroll box and the cells of the first and the last time row in a column built, to scroll by. */
+  private readonly readGrid = () => {
+    const parts = this.parts;
+    const last = parts.model.state.slots.length - 1;
+    const scroller = parts.scroller;
+    const first = scroller && parts.model.kind === 'time' && last >= 0 ? this.builtCell(0) : null;
+    const end = first ? parts.viewNow?.cellAt({ column: first.column, slot: last }) : null;
+    if (!scroller || !first || !end) return null;
+    return { scroller, box: boxOf(scroller), first: rectOf(first.cell), end: rectOf(end), column: first.column };
+  };
+
+  /** Scrolls the day columns to the time asked (down) and to the column asked (along, past the ruler of the hours). */
+  private readonly scrollGrid = (read: { scroller: ComponentBase; box: Box; first: Rect; end: Rect; column: number } | null) => {
+    const asked = this.parts.gridScroll;
+    const { share, column } = asked;
+    asked.share = asked.column = null;
+    if (!read) return;
+    const { box, first, end } = read;
+    const place: ScrollPlace = {};
+    if (share !== null) place.top = Math.max(0, first.top - box.top - box.clientTop + box.scrollTop + share * (end.bottom - first.top));
+    const width = first.width;
+    if (column !== null && width > 0) {
+      const inside = box.left + box.clientLeft;
+      // The ruler of the hours stays in view at the start: the columns start past it.
+      const ruler = (box.rtl ? inside + box.clientWidth - first.right : first.left - inside) + box.scrollStart - read.column * width;
+      const start = column * width;
+      const room = box.clientWidth - ruler;
+      if (start < box.scrollStart || start + width > box.scrollStart + room) place.start = Math.max(0, start < box.scrollStart ? start : start + width - room);
+    }
+    scrollTo(read.scroller, place);
+  };
 
   /** A timeline's cell along the time at a time of a day (by the day's index), as a share of cells. */
   private tickAt(day: number, minutes: number): number {
@@ -2905,7 +2978,5 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 }
 
-/** Whether the screen's pointer is a finger. */
-function coarsePointer(): boolean {
-  return typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
-}
+/** The screen's pointer is a finger. */
+const COARSE = '(pointer: coarse)';

@@ -1,5 +1,5 @@
 import { effect } from '@motifx/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { tick } from '../../tests/helpers';
 import { enStrings, uiLocale } from './ui-locale';
 
@@ -9,6 +9,19 @@ afterEach(async () => {
 });
 
 describe('uiLocale', () => {
+  it("starts with the browser's language; the page's <html lang> is not read", async () => {
+    vi.resetModules();
+    vi.spyOn(navigator, 'language', 'get').mockReturnValue('tr-TR');
+    document.documentElement.lang = 'de';
+    try {
+      const fresh = await import('./ui-locale');
+      expect(fresh.uiLocale.locale).toBe('tr-TR');
+    } finally {
+      vi.restoreAllMocks();
+      document.documentElement.removeAttribute('lang');
+    }
+  });
+
   it('keeps the set it is given as it is, and tells a new set; nothing follows it', async () => {
     const seen: string[] = [];
     const followed: string[] = [];

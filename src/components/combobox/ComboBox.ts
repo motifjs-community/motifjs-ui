@@ -1,7 +1,8 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { glyphPart, loose, part, removePart } from '../../core/draw-parts';
+import { mark, put } from '../../core/part-writes';
 import { functionValue } from '../../core/function-value';
-import { chevronDown } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { DataItems } from '../../parts/data/DataItems';
@@ -32,7 +33,7 @@ const OWN = [
 
 const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enabledField', 'itemTemplate'] as const;
 
-type Template<T> = ((item: T, host: HTMLElement) => (() => void) | void) | null;
+type Template<T> = ((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null;
 
 const PARTS = Symbol('mx.combobox');
 
@@ -40,8 +41,10 @@ interface Parts<T> {
   items: DataItems<T>;
   popup: Popup | null;
   list: OptionList<T> | null;
-  arrow: HTMLButtonElement | null;
+  arrow: Component<HTMLButtonElement> | null;
   stopLabels: (() => void) | null;
+  /** The text in the box: what was typed, or what was shown for the value. */
+  text: string;
   /** The text was typed since the value was last shown. */
   editing: boolean;
   /** The item of the value, kept when it is on no loaded page. */
@@ -67,7 +70,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   constructor(props?: IBaseProp<ComboBoxProps<T, V>>) {
     super(props);
     const own = (this.props ?? {}) as ComboBoxProps<T, V>;
-    this.element.classList.add('mx-combo-box');
+    this.class.add('mx-combo-box');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     for (const name of FUNCTIONS) if (own[name] !== undefined) this.bindProperty(name, functionValue(own[name]));
     if (own.onOpened) this.onOpened(own.onOpened);
@@ -75,9 +78,8 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
 
     const parts = this.comboParts;
     this.observeProperty<string>('placeholder', (text) => {
-      if (text) this.inputElement.placeholder = text;
-      else this.inputElement.removeAttribute('placeholder');
-      this.element.toggleAttribute('data-placeholder', !!text);
+      put(this.controlPart, 'placeholder', text);
+      mark(this, 'data-placeholder', !!text);
     });
     this.observeProperty('showDropDownButton', () => this.renderArrow());
     this.observeProperty('clearButton', () => this.renderClear());
@@ -91,7 +93,9 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.observeProperty<readonly T[] | undefined>('items', (items) => {
       if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
     });
-    parts.stopLabels = onLanguage(this, () => parts.arrow?.setAttribute('aria-label', uiLocale.strings.moreOptions));
+    parts.stopLabels = onLanguage(this, () => {
+      if (parts.arrow) put(parts.arrow, 'aria-label', uiLocale.strings.moreOptions);
+    });
     this.listen();
     this.motif.setDisposable(() => {
       parts.stopLabels?.();
@@ -205,8 +209,9 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.assignProperty('matchWidth', value, Boolean);
   }
 
-  get inputElement(): HTMLInputElement {
-    return this.focusElement as HTMLInputElement;
+  /** The text input as a component: write its attributes with `put` and call its methods through `attr`. */
+  get inputPart(): ComponentBase<HTMLInputElement> {
+    return this.controlPart as ComponentBase<HTMLInputElement>;
   }
 
   /** The item for the current value, when known. */
@@ -243,11 +248,10 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     const popup = (parts.popup ??= this.createPopup());
     if (popup.isOpen) return true;
     this.drawList();
-    const box = this.inputElement.parentElement!;
-    popup.open(box, { toggle: box, returnFocus: this.inputElement });
+    popup.open(this.boxPart, { toggle: this.boxPart, returnFocus: this.controlPart });
     this.setProperty('opened', true);
-    this.element.setAttribute('data-open', '');
-    this.inputElement.setAttribute('aria-expanded', 'true');
+    mark(this, 'data-open', true);
+    put(this.controlPart, 'aria-expanded', 'true');
     this.highlight();
     parts.opened.fire();
     return true;
@@ -274,16 +278,14 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     if (!parts.editing) this.renderValue(this.peekValue());
   }
 
-  protected createControl(): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'mx-field__input';
-    input.autocomplete = 'off';
-    input.spellcheck = false;
-    input.setAttribute('role', 'combobox');
-    input.setAttribute('aria-autocomplete', 'list');
-    input.setAttribute('aria-expanded', 'false');
-    return input;
+  protected override get controlTag(): string {
+    return 'input';
+  }
+
+  protected createControl(): ComponentBase {
+    const control = loose<HTMLInputElement>('input', 'mx-field__input');
+    control.attr.add({ type: 'text', autocomplete: 'off', spellcheck: 'false', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': 'false' });
+    return control;
   }
 
   protected emptyValue(): V | null {
@@ -341,6 +343,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
       list: null,
       arrow: null,
       stopLabels: null,
+      text: '',
       editing: false,
       chosen: undefined,
       timer: undefined,
@@ -353,8 +356,11 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   private showText(text: string): void {
     const parts = this.comboParts;
     parts.editing = false;
-    if (this.inputElement.value !== text) this.inputElement.value = text;
-    this.element.toggleAttribute('data-text', !!text);
+    if (parts.text !== text) {
+      parts.text = text;
+      this.controlPart.attr.add({ value: text });
+    }
+    mark(this, 'data-text', !!text);
   }
 
   private renderSource(): void {
@@ -365,21 +371,28 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   }
 
   private listen(): void {
-    const input = this.inputElement;
-    input.addEventListener('input', () => this.typed());
-    input.addEventListener('keydown', (e) => this.keyDown(e));
-    input.addEventListener('blur', () => {
+    const input = this.controlPart;
+    input.motif.on('input', (_, e) => this.typed((e.target as HTMLInputElement).value));
+    input.motif.on('keydown', (_, e) => this.keyDown(e));
+    input.motif.on('blur', () => {
       // Leaving for the list (a click on an option) is not leaving.
-      if (this.element.contains(document.activeElement)) return;
+      if (this.focusWithin) return;
       if (this.comboParts.editing) this.finish();
     });
   }
 
-  private typed(): void {
+  /** Puts `text` in the box as if the user typed it: the list opens and searches it. */
+  typeText(text: string): void {
+    if (this.peekProperty('readOnly')) return;
+    this.controlPart.attr.add({ value: text, setSelectionRange: [text.length, text.length] });
+    this.typed(text);
+  }
+
+  private typed(text: string): void {
     const parts = this.comboParts;
+    parts.text = text;
     parts.editing = true;
-    this.element.toggleAttribute('data-text', !!this.inputElement.value);
-    const text = this.inputElement.value;
+    mark(this, 'data-text', !!text);
     clearTimeout(parts.timer);
     const run = () => {
       void parts.items.search(text);
@@ -394,7 +407,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   /** The user is done with the text: an item that has it, a custom value, or back to the chosen item. */
   private finish(event?: Event): void {
     const parts = this.comboParts;
-    const text = this.inputElement.value.trim();
+    const text = parts.text.trim();
     if (!text) {
       this.choose(undefined, null, event);
       return;
@@ -513,7 +526,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
       }
     }
     if (index >= 0) list.setActive(index);
-    else if (parts.editing && this.inputElement.value && this.peekProperty('autoHighlight') !== false) list.move('first');
+    else if (parts.editing && parts.text && this.peekProperty('autoHighlight') !== false) list.move('first');
     else list.setActive(-1);
     this.pointAt();
   }
@@ -521,8 +534,8 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   private pointAt(): void {
     const parts = this.comboParts;
     const list = parts.list;
-    if (list && parts.popup?.isOpen && list.activeIndex >= 0) this.inputElement.setAttribute('aria-activedescendant', list.idOf(list.activeIndex));
-    else this.inputElement.removeAttribute('aria-activedescendant');
+    if (list && parts.popup?.isOpen && list.activeIndex >= 0) put(this.controlPart, 'aria-activedescendant', list.idOf(list.activeIndex));
+    else put(this.controlPart, 'aria-activedescendant', null);
   }
 
   private drawList(): void {
@@ -531,7 +544,9 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     const icon = this.peekProperty<ItemField<T>>('iconField');
     const group = this.peekProperty<ItemField<T>>('groupField');
     list.iconOf = icon === undefined ? null : (item) => readItemField(item, icon, 'icon') as IconSource | undefined;
-    list.draw = this.peekProperty<Template<T>>('itemTemplate') ?? null;
+    const template = this.peekProperty<Template<T>>('itemTemplate');
+    // The template itself, so the rows are drawn again only when it changes.
+    list.draw = template ?? null;
     if (group !== undefined && !parts.items.dataSource) {
       list.groupOf = (item) => (readItemField(item, group, 'group') as string | undefined) ?? undefined;
       list.setItems(parts.items.loaded);
@@ -545,7 +560,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     const parts = this.comboParts;
     const popup = new Popup();
     popup.matchWidth = this.peekProperty('matchWidth') !== false;
-    popup.element.classList.add('mx-combo-box__popup');
+    popup.class.add('mx-combo-box__popup');
     this.controls.add(popup);
     const list = new OptionList<T>();
     list.textOf = (item) => this.itemText(item);
@@ -558,11 +573,11 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     });
     popup.controls.add(list);
     parts.list = list;
-    this.inputElement.setAttribute('aria-controls', list.element.id);
+    put(this.controlPart, 'aria-controls', list.id);
     popup.onClosed((reason) => {
       this.setProperty('opened', false);
-      this.element.removeAttribute('data-open');
-      this.inputElement.setAttribute('aria-expanded', 'false');
+      mark(this, 'data-open', false);
+      put(this.controlPart, 'aria-expanded', 'false');
       this.pointAt();
       parts.closed.fire(reason);
     });
@@ -572,27 +587,25 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   private renderArrow(): void {
     const parts = this.comboParts;
     if (this.peekProperty('showDropDownButton') === false) {
-      parts.arrow?.remove();
+      removePart(parts.arrow);
       parts.arrow = null;
       return;
     }
     if (parts.arrow) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.tabIndex = -1;
-    button.className = 'mx-field__button mx-combo-box__arrow';
-    button.setAttribute('aria-label', uiLocale.strings.moreOptions);
-    button.append(chevronDown());
-    button.addEventListener('mousedown', (e) => e.preventDefault());
-    button.addEventListener('click', () => {
+    const arrow = part<HTMLButtonElement>(this.area('actions'), 'button', 'mx-field__button mx-combo-box__arrow');
+    arrow.attr.add({ type: 'button' });
+    put(arrow, 'tabindex', '-1');
+    put(arrow, 'aria-label', uiLocale.strings.moreOptions);
+    glyphPart(arrow, 'chevron-down');
+    arrow.motif.on('mousedown', (_, e) => e.preventDefault());
+    arrow.motif.on('click', () => {
       if (this.comboParts.popup?.isOpen) this.close();
       else {
-        this.inputElement.focus();
+        this.focus();
         this.openAll();
       }
     });
-    this.area('actions').append(button);
-    parts.arrow = button;
+    parts.arrow = arrow;
   }
 
   private renderClear(): void {

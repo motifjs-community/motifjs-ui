@@ -1,11 +1,15 @@
-import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, Emitter, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, glyphPart, iconPart, mark, part, put, shown, text } from "../../core/draw-parts";
+import { glyphPart, iconPart, loose, part } from "../../core/draw-parts";
+import { onDocument } from "../../core/window-events";
+import { focusOn, holdsFocus } from "../../core/focus";
+import { isRtl } from "../../core/measure";
 import { follow } from "../../core/follow";
 import { givenField, givenList, givenValue } from "../../core/given-field";
 import type { IconSource } from "../../core/icon-source";
 import { nextId } from "../../core/next-id";
 import { onLanguage } from "../../core/on-language";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Tooltip } from "../tooltip/Tooltip";
 import type { SpeedDialAction } from "./speed-dial-action";
@@ -41,8 +45,31 @@ interface ActionPart {
     iconHost: Component<HTMLSpanElement>;
     glyph: Component<HTMLSpanElement>;
     icon: ComponentBase | null;
+    iconSource: IconSource | null;
     label: Component<HTMLSpanElement>;
+    /** The side its label and tooltip take (`data-side`), once it was laid out. */
+    side: Side | null;
     tooltip: Tooltip | null;
+}
+
+/** The options each tooltip was made with. */
+const madeWith = new WeakMap<Tooltip, SpeedDialTooltip>();
+
+/** The tooltip of `target` for `options`: the one it has while they stay the same, else a new one that goes with `target`. */
+function tooltipFor(target: ComponentBase, tooltip: Tooltip | null, options: SpeedDialTooltip | null): Tooltip | null {
+    if (tooltip && options && sameOptions(madeWith.get(tooltip), options)) return tooltip;
+    void tooltip?.dispose();
+    if (!options) return null;
+    const made = new Tooltip({ ...options, target });
+    madeWith.set(made, options);
+    return made;
+}
+
+/** Whether a tooltip made with `made` shows what `options` ask for: the same value in every field. */
+function sameOptions(made: SpeedDialTooltip | undefined, options: SpeedDialTooltip): boolean {
+    if (!made) return false;
+    const keys = Object.keys(made) as (keyof SpeedDialTooltip)[];
+    return keys.length === Object.keys(options).length && keys.every(key => key in options && Object.is(made[key], options[key]));
 }
 
 /**
@@ -61,30 +88,40 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
     closed = new Emitter<SpeedDialEventArgs>();
     actionClick = new Emitter<SpeedDialActionClickEventArgs>();
     fan: Component<HTMLDivElement>;
+    /** The main button. */
     main: Component<HTMLButtonElement>;
     mainGlyph: Component<HTMLSpanElement>;
     mainText: Component<HTMLSpanElement>;
     parts: ActionPart[] = [];
+    // The actions' parts by their key (else the action itself); a count that tells the fan to take the parts again.
+    slots = new Map<unknown, ActionPart[]>();
+    drawn = reactive({ count: 0 });
     looks: Look[] = [];
     mainTooltip: Tooltip | null = null;
     stopItems: (() => void) | null = null;
     byUser = false;
     ready = false;
     outside = (e: PointerEvent): void => {
-        if (this.isOpen && !this.element.contains(e.target as Node)) this.setOpen(false, true, e);
+        if (this.isOpen && !this.motif.isEventFrom(e)) this.setOpen(false, true, e);
     };
 
     constructor(props?: IBaseProp<SpeedDialProps>) {
         super('div', props);
         const own = (this.props ?? {}) as SpeedDialProps;
-        const el = this.element;
-        el.classList.add('mx-speed-dial');
+        const mainId = nextId('speed-dial');
+        this.class.add('mx-speed-dial');
         this.fan = part<HTMLDivElement>(this, 'div', 'mx-speed-dial__fan');
-        this.fan.element.setAttribute('role', 'menu');
-        this.main = part<HTMLButtonElement>(this, 'button', 'mx-speed-dial__main');
-        this.main.element.type = 'button';
-        this.main.element.id = nextId('speed-dial');
-        this.fan.element.setAttribute('aria-labelledby', this.main.element.id);
+        this.fan.attr.add({ role: 'menu', 'aria-labelledby': mainId });
+        // Built once: the fan holds a button per action, made when the action comes and taken out when it goes.
+        this.fan.bindings.list(
+            () => {
+                void this.drawn.count;
+                return untracked(() => this.parts.map(p => p.button));
+            },
+            (c: ComponentBase) => c
+        );
+        this.main =part<HTMLButtonElement>(this, 'button', 'mx-speed-dial__main');
+        this.main.attr.add({ type: 'button', id: mainId });
         this.mainGlyph = glyphPart(this.main, 'plus', 'mx-speed-dial__main-glyph');
         this.mainText = part<HTMLSpanElement>(this.main, 'span', 'mx-speed-dial__main-text');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
@@ -103,13 +140,14 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
             else this.closed.fire(args);
         });
         onLanguage(this, () => this.drawMain());
-        this.main.element.addEventListener('click', e => this.mainClick(e));
-        this.main.element.addEventListener('keydown', e => this.mainKeyDown(e));
-        this.fan.element.addEventListener('keydown', e => this.fanKeyDown(e));
-        this.fan.element.addEventListener('click', e => this.fanClick(e));
-        el.ownerDocument.addEventListener('pointerdown', this.outside, true);
+        this.main.motif.on('click', (_, e) => this.mainClick(e));
+        this.main.motif.on('keydown', (_, e) => this.mainKeyDown(e));
+        this.fan.motif.on('keydown', (_, e) => this.fanKeyDown(e));
+        this.fan.motif.on('click', (_, e) => this.fanClick(e));
+        // A press outside closes it.
+        const stopOutside = onDocument(this, 'pointerdown', this.outside, true);
         this.motif.setDisposable(() => {
-            el.ownerDocument.removeEventListener('pointerdown', this.outside, true);
+            stopOutside();
             this.stopItems?.();
             for (const p of this.parts) void p.tooltip?.dispose();
             void this.mainTooltip?.dispose();
@@ -226,11 +264,6 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         return this.open && !this.single;
     }
 
-    /** The main button. */
-    get mainElement(): HTMLButtonElement {
-        return this.main.element;
-    }
-
     /** The single visible action, when there is exactly one. The main button performs it directly. */
     get single(): Look | null {
         const shown = this.looks.filter(look => look.visible);
@@ -289,32 +322,38 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         };
     }
 
-    // The action buttons are recreated when the actions are others; otherwise written in place.
+    // An action keeps its button while an action of its key (else the same action) stays; a new one gets a button, and
+    // the button of one that is gone goes with it. The buttons are written in place.
     drawActions(): void {
-        const stale = this.parts.length !== this.looks.length || this.parts.some((p, i) => p.item !== this.looks[i].item);
-        if (stale) {
-            for (const p of this.parts) {
-                void p.tooltip?.dispose();
-                void p.button.dispose();
-            }
-            this.parts = this.looks.map(look => this.makeAction(look));
+        const used = new Map<unknown, ActionPart[]>();
+        this.parts = this.looks.map(look => {
+            const id = look.key !== null ? `key:${look.key}` : look.item;
+            const taken = used.get(id) ?? [];
+            const p = this.slots.get(id)?.[taken.length] ?? this.makeAction(look);
+            used.set(id, [...taken, p]);
+            return p;
+        });
+        for (const [id, list] of this.slots) {
+            const stay = used.get(id) ?? [];
+            for (const p of list) if (!stay.includes(p)) void p.tooltip?.dispose();
         }
+        this.slots = used;
+        untracked(() => this.drawn.count++);
         this.looks.forEach((look, i) => {
             const p = this.parts[i];
-            text(p.label.element, look.text);
-            put(p.button.element, 'aria-label', look.text);
-            put(p.button.element, 'aria-disabled', look.enabled ? null : 'true');
-            shown(p.button.element, look.visible);
-            if (p.icon) {
-                void p.icon.dispose();
-                p.icon = null;
+            p.item = look.item;
+            text(p.label, look.text);
+            put(p.button, 'aria-label', look.text);
+            put(p.button, 'aria-disabled', look.enabled ? null : 'true');
+            shown(p.button, look.visible);
+            if (look.icon !== p.iconSource) {
+                void p.icon?.dispose();
+                p.icon = look.icon ? iconPart(p.iconHost, look.icon) : null;
+                p.icon?.class.add('mx-speed-dial__icon');
+                p.iconSource = look.icon;
             }
-            if (look.icon) {
-                p.icon = iconPart(p.iconHost, look.icon);
-                p.icon.element.classList.add('mx-speed-dial__icon');
-            }
-            put(p.glyph.element, 'data-icon', look.glyph || null);
-            shown(p.glyph.element, !look.icon && look.glyph !== '');
+            put(p.glyph, 'data-icon', look.glyph || null);
+            shown(p.glyph, !look.icon && look.glyph !== '');
         });
         this.drawLayout();
         this.drawMain();
@@ -322,41 +361,40 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
     }
 
     makeAction(look: Look): ActionPart {
-        const button = part<HTMLButtonElement>(this.fan, 'button', 'mx-speed-dial__action');
-        button.element.type = 'button';
-        button.element.setAttribute('role', 'menuitem');
-        button.element.tabIndex = -1;
+        const button = loose<HTMLButtonElement>('button', 'mx-speed-dial__action');
+        button.attr.add({ type: 'button', role: 'menuitem' });
+        put(button, 'tabindex', '-1');
         const iconHost = part<HTMLSpanElement>(button, 'span', 'mx-speed-dial__action-face');
-        iconHost.element.setAttribute('aria-hidden', 'true');
+        iconHost.attr.add({ 'aria-hidden': 'true' });
         const glyph = glyphPart(iconHost, look.glyph || 'plus', 'mx-speed-dial__action-icon');
         const label = part<HTMLSpanElement>(button, 'span', 'mx-speed-dial__label');
-        label.element.setAttribute('aria-hidden', 'true');
-        return { item: look.item, button, iconHost, glyph, icon: null, label, tooltip: null };
+        label.attr.add({ 'aria-hidden': 'true' });
+        return { item: look.item, button, iconHost, glyph, icon: null, iconSource: null, label, side: null, tooltip: null };
     }
 
     // How the actions lie: their places around the button, the side their labels and tooltips take.
     drawLayout(): void {
-        const el = this.element;
         const layout = this.layout;
         const direction = this.direction;
         const linear = layout === 'linear';
-        put(el, 'data-layout', layout);
-        put(el, 'data-direction', linear ? this.lineDirection() : direction);
-        put(el, 'data-position', this.position);
-        put(el, 'data-relative', this.relativeTo);
-        mark(el, 'data-labels', this.showLabels);
+        put(this, 'data-layout', layout);
+        put(this, 'data-direction', linear ? this.lineDirection() : direction);
+        put(this, 'data-position', this.position);
+        put(this, 'data-relative', this.relativeTo);
+        mark(this, 'data-labels', this.showLabels);
         const radius = this.radius;
-        css(el, '--_radius', radius === null || linear ? '' : `${radius}px`);
+        css(this, '--_radius', radius === null || linear ? '' : `${radius}px`);
         const shownParts = this.parts.filter((p, i) => this.looks[i].visible);
         const span = SPANS[layout];
         const count = shownParts.length;
         const step = count < 2 ? 180 : span === 360 ? span / count : span / (count - 1);
         const first = ANGLES[direction] - (span === 360 ? 0 : span / 2);
-        css(el, '--_step', linear ? '' : `${step}deg`);
+        css(this, '--_step', linear ? '' : `${step}deg`);
         shownParts.forEach((p, i) => {
             const angle = first + i * step;
-            css(p.button.element, '--_angle', linear ? '' : `${angle}deg`);
-            put(p.button.element, 'data-side', linear ? this.lineSide() : this.sideAt(angle));
+            p.side = linear ? this.lineSide() : this.sideAt(angle);
+            css(p.button, '--_angle', linear ? '' : `${angle}deg`);
+            put(p.button, 'data-side', p.side);
         });
         this.drawTooltips();
     }
@@ -407,14 +445,10 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
     // With one action shown, the main button is that action and carries its tooltip.
     drawTooltips(): void {
         this.parts.forEach((p, i) => {
-            void p.tooltip?.dispose();
-            const options = this.tooltipOf(this.looks[i], (p.button.element.getAttribute('data-side') as Side | null) ?? 'start');
-            p.tooltip = options ? new Tooltip({ ...options, target: p.button.element }) : null;
+            p.tooltip = tooltipFor(p.button, p.tooltip, this.tooltipOf(this.looks[i], p.side ?? 'start'));
         });
-        void this.mainTooltip?.dispose();
         const single = this.single;
-        const options = single && this.tooltipOf(single, this.lineSide());
-        this.mainTooltip = options ? new Tooltip({ ...options, target: this.main.element }) : null;
+        this.mainTooltip = tooltipFor(this.main, this.mainTooltip, single && this.tooltipOf(single, this.lineSide()));
     }
 
     // The main button: the glyph, its name, and whether it opens the actions or is the one action itself.
@@ -422,25 +456,23 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         const single = this.single;
         const open = this.isOpen;
         const name = single ? single.text : this.peekProperty<string>('text') || uiLocale.strings.actions;
-        const main = this.main.element;
+        const main = this.main;
         put(main, 'aria-label', name);
         put(main, 'aria-haspopup', single ? null : 'menu');
         put(main, 'aria-expanded', single ? null : open ? 'true' : 'false');
-        put(main, 'aria-controls', single ? null : this.fan.element.id || null);
         put(main, 'aria-disabled', single && !single.enabled ? 'true' : null);
-        put(this.mainGlyph.element, 'data-icon', open ? this.openGlyph : single?.glyph || this.glyph);
-        text(this.mainText.element, name);
-        shown(this.mainText.element, this.extended);
-        mark(this.element, 'data-extended', this.extended);
-        mark(this.element, 'data-single', !!single);
+        put(this.mainGlyph, 'data-icon', open ? this.openGlyph : single?.glyph || this.glyph);
+        text(this.mainText, name);
+        shown(this.mainText, this.extended);
+        mark(this, 'data-extended', this.extended);
+        mark(this, 'data-single', !!single);
     }
 
     drawOpen(): void {
         const open = this.isOpen;
-        mark(this.element, 'data-open', open);
-        const fan = this.fan.element;
-        fan.inert = !open;
-        put(fan, 'aria-hidden', open ? null : 'true');
+        mark(this, 'data-open', open);
+        mark(this.fan, 'inert', !open);
+        put(this.fan, 'aria-hidden', open ? null : 'true');
         if (!open) for (const p of this.parts) p.tooltip?.close();
         this.drawMain();
     }
@@ -452,7 +484,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         this.byUser = false;
         // `x-model` takes the state back.
         this.bindings.writeModel(on);
-        if (!on && byUser && this.element.contains(this.element.ownerDocument.activeElement)) this.main.element.focus({ preventScroll: true });
+        if (!on && byUser && holdsFocus(this)) focusOn(this.main, { preventScroll: true });
     }
 
     shownActions(): ActionPart[] {
@@ -494,14 +526,14 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         this.setOpen(true, true, e);
         const actions = this.shownActions();
         const first = forward.includes(e.key) ? actions[0] : actions[actions.length - 1];
-        first?.button.element.focus({ preventScroll: true });
+        if (first) focusOn(first.button, { preventScroll: true });
     }
 
     // The keys along the fan move between the actions, Home and End to the ends, Escape and Tab close.
     fanKeyDown(e: KeyboardEvent): void {
         if (e.altKey || e.ctrlKey || e.metaKey) return;
         const actions = this.shownActions();
-        const at = actions.findIndex(p => p.button.element === e.target);
+        const at = actions.findIndex(p => p.button.motif.isEventFrom(e));
         if (at < 0) return;
         const [back, forward] = this.moveKeys();
         let to = -1;
@@ -518,12 +550,12 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
             return;
         } else return;
         e.preventDefault();
-        actions[to]?.button.element.focus({ preventScroll: true });
+        focusOn(actions[to].button, { preventScroll: true });
     }
 
     // The keys back and forward: along a line Up and Down, or Left and Right; around the button either pair.
     moveKeys(): [string[], string[]] {
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
+        const rtl = isRtl(this);
         const toStart = rtl ? 'ArrowRight' : 'ArrowLeft';
         const toEnd = rtl ? 'ArrowLeft' : 'ArrowRight';
         if (this.layout !== 'linear') return [['ArrowUp', toStart], ['ArrowDown', toEnd]];
@@ -534,8 +566,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
     }
 
     fanClick(e: MouseEvent): void {
-        const button = (e.target as Element).closest<HTMLElement>('.mx-speed-dial__action');
-        const index = this.parts.findIndex(p => p.button.element === button);
+        const index = this.parts.findIndex(p => p.button.motif.isEventFrom(e));
         if (index >= 0 && this.looks[index].enabled) this.run(index, e);
     }
 }

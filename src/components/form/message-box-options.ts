@@ -17,6 +17,6 @@ export interface MessageBoxOptions {
    * otherwise the first button. In a danger box, focus starts on the safe button.
    */
   defaultButton?: FormResult;
-  /** Where it is shown. The default is the application, otherwise a holder it creates on the page. */
+  /** Where it is shown. The default is the application, otherwise the page's body. */
   host?: FormHost;
 }

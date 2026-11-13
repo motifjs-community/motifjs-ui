@@ -1,8 +1,9 @@
 import { Component, type Bind, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { css, mark, part, put } from '../../core/draw-parts';
+import { part } from '../../core/draw-parts';
 import { LanguageLook } from '../../core/language-look';
 import { onLanguage } from '../../core/on-language';
+import { css, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { SkeletonAnimation } from './skeleton-animation';
 import type { SkeletonProps } from './skeleton-props';
@@ -27,21 +28,21 @@ const length = (value: string | number | null | undefined): string =>
  */
 export class Skeleton extends Control<HTMLDivElement, SkeletonProps> {
   /** An animation not given is the design language's. */
-  private readonly look = new LanguageLook(this.element, { animation: '--_skeleton-animation' }, () => this.renderLook());
+  private readonly look = new LanguageLook(this, { animation: '--_skeleton-animation' }, () => this.renderLook());
   private readonly bones: Component<HTMLSpanElement>[] = [];
   private readonly contentPart: Component<HTMLDivElement>;
 
   constructor(props?: IBaseProp<SkeletonProps>) {
     super('div', props);
     const own = (this.props ?? {}) as SkeletonProps;
-    this.element.classList.add('mx-skeleton');
+    this.class.add('mx-skeleton');
     this.contentPart = part(this, 'div', 'mx-skeleton__content');
     if (this.childs?.length) this.contentPart.controls.add(...this.childs);
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
 
     for (const name of ['shape', 'lines'] as const) this.observeProperty(name, () => this.renderBones());
-    this.observeProperty<string | number | null>('width', (width) => css(this.element, '--_width', length(width)));
-    this.observeProperty<string | number | null>('height', (height) => css(this.element, '--_height', length(height)));
+    this.observeProperty<string | number | null>('width', (width) => css(this, '--_width', length(width)));
+    this.observeProperty<string | number | null>('height', (height) => css(this, '--_height', length(height)));
     for (const name of ['animation', 'shape'] as const) this.observeProperty(name, () => this.renderLook());
     for (const name of ['loading', 'label'] as const) this.observeProperty(name, () => this.renderLoading());
     // "Loading…" is a kit text.
@@ -117,25 +118,23 @@ export class Skeleton extends Control<HTMLDivElement, SkeletonProps> {
     while (this.bones.length < count) {
       // Before the content: the bones come first, wherever they are added.
       const bone = new Component<HTMLSpanElement>('span');
-      bone.element.className = 'mx-skeleton__bone';
-      bone.element.setAttribute('aria-hidden', 'true');
+      bone.class.add('mx-skeleton__bone');
+      bone.attr.add({ 'aria-hidden': 'true' });
       this.controls.insert(this.bones.length, bone);
       this.bones.push(bone);
     }
   }
 
   private renderLoading(): void {
-    const el = this.element;
     const loading = this.peekProperty<boolean | undefined>('loading') !== false;
-    mark(el, 'data-loading', loading);
-    put(el, 'role', loading ? 'progressbar' : null);
-    put(el, 'aria-busy', loading ? 'true' : null);
-    put(el, 'aria-label', loading ? this.peekProperty<string>('label') || uiLocale.strings.loading : null);
+    mark(this, 'data-loading', loading);
+    put(this, 'role', loading ? 'progressbar' : null);
+    put(this, 'aria-busy', loading ? 'true' : null);
+    put(this, 'aria-label', loading ? this.peekProperty<string>('label') || uiLocale.strings.loading : null);
   }
 
   private renderLook(): void {
-    const el = this.element;
-    put(el, 'data-shape', this.peekProperty<SkeletonShape>('shape') ?? 'text');
-    put(el, 'data-animation', this.peekProperty<SkeletonAnimation>('animation') ?? (this.look.get('animation') as SkeletonAnimation | null) ?? 'wave');
+    put(this, 'data-shape', this.peekProperty<SkeletonShape>('shape') ?? 'text');
+    put(this, 'data-animation', this.peekProperty<SkeletonAnimation>('animation') ?? (this.look.get('animation') as SkeletonAnimation | null) ?? 'wave');
   }
 }

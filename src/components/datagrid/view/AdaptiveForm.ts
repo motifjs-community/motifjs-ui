@@ -4,6 +4,9 @@ import type { FormItem } from '../../formlayout/form-item';
 import type { GridAdaptiveFormOptions } from '../grid-adaptive-form-options';
 import type { GridModel } from '../model/GridModel';
 import { givenList } from '../../../core/given-field';
+import { loose, part } from '../../../core/draw-parts';
+import { focusGoesInto } from '../../../core/focus';
+import { put, text as writeText } from '../../../core/part-writes';
 import { Switches } from '../model/Switches';
 import type { AdaptiveFormHost } from './adaptive-form-host';
 import { EditForm } from './EditForm';
@@ -34,7 +37,7 @@ export class AdaptiveForm<T> extends Component<HTMLDivElement> {
     private readonly host: AdaptiveFormHost<T>,
   ) {
     super('div');
-    this.element.className = 'mx-data-grid__adaptive';
+    this.class.add('mx-data-grid__adaptive');
     const lookups = model.lookups.onChanged(() => this.drawTexts());
     this.motif.setDisposable(() => lookups.dispose());
     const shape = this.shape;
@@ -46,17 +49,18 @@ export class AdaptiveForm<T> extends Component<HTMLDivElement> {
     });
     untracked(() => this.lay());
     this.form = new EditForm<T>(model, rowId, row, settings, host, false);
-    this.form.element.classList.add('mx-data-grid__adaptive-form');
+    this.form.class.add('mx-data-grid__adaptive-form');
     this.controls.add(this.form);
     this.motif.setDisposable(model.notices.on(() => this.draw()));
-    this.element.addEventListener('focusin', (e) => {
-      if ((e.target as Element).closest?.('.mx-data-grid__form-field')) host.begin();
+    this.motif.on('focusin', (_, e) => {
+      if (this.form.fieldFrom(e) !== null) host.begin();
     });
     // After the form wrote the value of the field left.
-    this.element.addEventListener('focusout', (e) => {
-      const holder = (e.target as Element).closest?.('.mx-data-grid__form-field') as HTMLElement | null;
-      const next = e.relatedTarget as Node | null;
-      if (holder?.dataset.field && !(next && holder.contains(next))) host.kept(holder.dataset.field);
+    this.motif.on('focusout', (_, e) => {
+      const field = this.form.fieldFrom(e);
+      if (field === null) return;
+      const box = this.form.editorOf(field)?.box;
+      if (!box || !focusGoesInto(box, e)) host.kept(field);
     });
   }
 
@@ -126,20 +130,16 @@ export class AdaptiveForm<T> extends Component<HTMLDivElement> {
       template: () => {
         const { model, rowId, row } = this;
         const col = model.columns.get(field);
-        const item = new Component<HTMLDivElement>('div');
-        const el = item.element;
-        el.className = 'mx-data-grid__adaptive-item';
-        el.dataset.column = field;
-        const label = el.appendChild(document.createElement('span'));
-        label.className = 'mx-data-grid__adaptive-label';
-        const value = el.appendChild(document.createElement('span'));
-        value.className = 'mx-data-grid__adaptive-value';
+        const item = loose<HTMLDivElement>('div', 'mx-data-grid__adaptive-item');
+        item.attr.add({ 'data-column': field });
+        const label = part<HTMLSpanElement>(item, 'span', 'mx-data-grid__adaptive-label');
+        const value = part<HTMLSpanElement>(item, 'span', 'mx-data-grid__adaptive-value');
         const draw = () => {
           const title = model.columns.title(field);
-          if (label.textContent !== title) label.textContent = title;
+          writeText(label, title);
           const text = model.shownText(rowId, row, col);
-          if (value.textContent !== text) value.textContent = text;
-          if (el.dataset.labelMode !== this.shape.labelMode) el.dataset.labelMode = this.shape.labelMode;
+          writeText(value, text);
+          put(item, 'data-label-mode', this.shape.labelMode);
         };
         this.texts.add(draw);
         item.motif.setDisposable(() => this.texts.delete(draw));

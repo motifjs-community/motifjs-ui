@@ -1,4 +1,5 @@
 import { data } from '@motifx-community/data';
+import { loose } from '../../../core/draw-parts';
 import type { GridColumn } from '../grid-column';
 import type { GridExportCell } from '../grid-export-cell';
 import type { GridExportOptions } from '../grid-export-options';
@@ -303,17 +304,13 @@ export class GridExport<T> {
     if (lookups.length) await model.lookups.load(lookups, rows, (row, col) => model.value(model.rowIdOf(row), row, col));
   }
 
-  /** Saves text as a file through a link the browser downloads. */
+  /** Saves text as a file through a link the browser downloads; the link needs no place in the page. */
   download(text: string, fileName: string) {
     if (typeof URL.createObjectURL !== 'function') return;
     const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.hidden = true;
-    document.body.append(link);
-    link.click();
-    link.remove();
+    const link = loose<HTMLAnchorElement>('a');
+    link.attr.add({ href: url, download: fileName, click: true });
+    void link.dispose();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 

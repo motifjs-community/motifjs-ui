@@ -1,5 +1,6 @@
 import { Emitter, type Event as MotifEvent } from '@motifx/core';
 import { data } from '@motifx-community/data';
+import { isEmptyKey } from './empty-key';
 import type { KeyedItem } from './keyed-item';
 import type { TextSearch } from './text-search';
 import { uiLocale } from '../../core/ui-locale';
@@ -118,7 +119,7 @@ export class KeyedItems<T = unknown> {
     if (this.inMemory) return Promise.resolve();
     const waits = new Set<Promise<void>>();
     for (const key of keys) {
-      if (key === null || key === undefined || key === '') continue;
+      if (isEmptyKey(key)) continue;
       const ks = keyString(key);
       const known = this.entries.get(ks);
       if (known && known.state !== 'loading') continue;

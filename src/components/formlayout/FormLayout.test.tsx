@@ -7,6 +7,7 @@ import { DateBox } from '../datebox/DateBox';
 import { NumberBox } from '../numberbox/NumberBox';
 import { TextBox } from '../textbox/TextBox';
 import { FormLayout } from './FormLayout';
+import type { FormTemplateContext } from './form-template-context';
 
 let hosts: Component[] = [];
 
@@ -51,7 +52,7 @@ describe('FormLayout', () => {
       expect(form.editorOf('due')).toBeInstanceOf(DateBox);
       const customer = form.editorOf('customer') as TextBox;
       expect(customer.value).toBe('Ada');
-      type(customer.inputElement, 'Grace');
+      type(customer.inputPart.element, 'Grace');
       expect(order.customer).toBe('Grace');
       // A change in place shows after the form reads it again, for one field or all of them.
       order.amount = 40;
@@ -94,7 +95,7 @@ describe('FormLayout', () => {
       await new Promise((done) => setTimeout(done, 10));
       expect(onInvalid).toHaveBeenCalledTimes(1);
       expect(onInvalid.mock.calls[0][0].invalid.length).toBe(2);
-      expect(document.activeElement).toBe((form.editorOf('name') as TextBox).inputElement);
+      expect(document.activeElement).toBe((form.editorOf('name') as TextBox).inputPart.element);
       user.name = 'Ada';
       user.email = 'ada@motif.dev';
       form.refresh();
@@ -124,7 +125,7 @@ describe('FormLayout', () => {
       form.refresh();
       await settle();
       expect(form.editorOf('zip')).toBe(zip);
-      expect((form.editorOf('zip') as TextBox).element.closest<HTMLElement>('.mx-form-layout__item')!.hidden).toBe(true);
+      expect((form.editorOf('zip') as TextBox).element.closest<HTMLElement>('.mx-form-layout__item')!.isConnected).toBe(false);
     });
   });
 
@@ -146,14 +147,16 @@ describe('FormLayout', () => {
     await settle();
     const legend = form.element.querySelector('legend')!;
     expect(legend.textContent).toBe('Address');
-    const noteCell = form.element.querySelector<HTMLElement>('[data-span="all"]:not(:has(fieldset))')!;
-    expect(noteCell.hidden).toBe(true);
+    const noteCell = (form.editorOf('note')!.element as HTMLElement).closest<HTMLElement>('.mx-form-layout__item')!;
+    expect(noteCell.dataset.span).toBe('all');
+    expect(noteCell.isConnected).toBe(false);
     s.showNote = true;
     await settle();
-    expect(noteCell.hidden).toBe(false);
+    expect(noteCell.isConnected).toBe(true);
+    expect(form.element.querySelector('[data-span="all"]:not(:has(fieldset))')).toBe(noteCell);
     s.ro = true;
     await settle();
-    expect((form.editorOf('city') as TextBox).inputElement.readOnly).toBe(true);
+    expect((form.editorOf('city') as TextBox).inputPart.element.readOnly).toBe(true);
     form.items = [{ field: 'zip', label: 'Zip code' }];
     await settle();
     expect(form.editorOf('city')).toBeUndefined();
@@ -171,19 +174,19 @@ describe('FormLayout', () => {
     const host = page(<FormLayout ref={(f: FormLayout<typeof data>) => (form = f)} data={() => data} items={() => items} />);
     await settle();
     const city = form.editorOf('city') as TextBox;
-    city.inputElement.focus();
+    city.inputPart.element.focus();
     Object.assign(plain, { showNote: true, caption: 'Where' });
     data.city = 'Bursa';
     await settle();
-    expect(city.inputElement.value).toBe('Ankara');
+    expect(city.inputPart.element.value).toBe('Ankara');
     host.reState();
     await settle();
     expect(form.editorOf('city')).toBe(city);
-    expect(document.activeElement).toBe(city.inputElement);
-    expect(city.inputElement.value).toBe('Bursa');
+    expect(document.activeElement).toBe(city.inputPart.element);
+    expect(city.inputPart.element.value).toBe('Bursa');
     expect(form.element.querySelector('legend')!.textContent).toBe('Where');
-    expect((form.editorOf('note')!.element as HTMLElement).closest<HTMLElement>('.mx-form-layout__item')!.hidden).toBe(false);
-    type(city.inputElement, 'İzmir');
+    expect((form.editorOf('note')!.element as HTMLElement).closest<HTMLElement>('.mx-form-layout__item')!.isConnected).toBe(true);
+    type(city.inputPart.element, 'İzmir');
     expect(data.city).toBe('İzmir');
   });
 
@@ -209,7 +212,7 @@ describe('FormLayout', () => {
     });
     page(form);
     await settle();
-    expect((form.editorOf('code') as TextBox).inputElement.placeholder).toBe('Code');
+    expect((form.editorOf('code') as TextBox).inputPart.element.placeholder).toBe('Code');
     expect(form.editorOf('tags')!.element.classList.contains('mx-tag-box')).toBe(true);
     expect(form.element.querySelector('.own')!.textContent).toBe('note=Hi');
   });
@@ -257,10 +260,66 @@ describe('FormLayout', () => {
     await settle();
     const shown = await form.validate();
     expect(shown.valid).toBe(false);
-    expect(shown.invalid.map((t) => t.element)).toEqual([form.editorOf('guests')!.element]);
+    expect(shown.invalid.length).toBe(1);
+    expect(shown.invalid[0].part).toBe(form.editorOf('guests'));
     data.catering = false;
     await settle();
     expect((await form.validate()).valid).toBe(true);
     expect(form.isValid).toBe(true);
+  });
+
+  it('keeps its parts when the data or the items change: new data reaches editors and templates, new items make only their own', async () => {
+    const s = reactive({ data: { name: 'Ada', city: 'Ankara' } as Record<string, unknown>, extra: false, cityLabel: 'City', tab2: 'Address' });
+    const show = (place: FormTemplateContext) => <output class="own">{() => String(place.data?.name)}</output>;
+    let form!: FormLayout;
+    page(
+      <FormLayout
+        ref={(f: FormLayout) => (form = f)}
+        data={() => s.data}
+        items={() => [
+          { field: 'name', label: 'Name' },
+          { group: 'Where', items: [{ field: 'city', label: s.cityLabel }, ...(s.extra ? [{ field: 'zip', label: 'Zip' }] : [])] },
+          { tabs: [{ title: 'One', items: [{ field: 'note', label: 'Note' }] }, { title: s.tab2, items: [] }] },
+          { field: 'show', template: show },
+          { button: { text: 'Send', submit: true } },
+        ]}
+      />,
+    );
+    await settle();
+    const name = form.editorOf('name') as TextBox;
+    const city = form.editorOf('city') as TextBox;
+    const note = form.editorOf('note') as TextBox;
+    const cityInput = city.inputPart.element;
+    const own = form.element.querySelector('.own')!;
+    const send = form.element.querySelector('button[type="submit"]')!;
+    const legend = form.element.querySelector('legend')!;
+    s.data = { name: 'Grace', city: 'Bursa', note: 'Hi' };
+    await settle();
+    expect(form.editorOf('name')).toBe(name);
+    expect(name.value).toBe('Grace');
+    expect(city.inputPart.element).toBe(cityInput);
+    expect(cityInput.value).toBe('Bursa');
+    expect(note.value).toBe('Hi');
+    expect(form.element.querySelector('.own')).toBe(own);
+    expect(own.textContent).toBe('Grace');
+    type(name.inputPart.element, 'Lin');
+    s.extra = true;
+    s.cityLabel = 'Town';
+    s.tab2 = 'More';
+    await settle();
+    expect(form.editorOf('name')).toBe(name);
+    expect(name.inputPart.element.value).toBe('Lin');
+    expect(form.editorOf('city')).toBe(city);
+    expect(city.label).toBe('Town');
+    expect(form.editorOf('note')).toBe(note);
+    expect(form.editorOf('zip')).toBeInstanceOf(TextBox);
+    expect(form.element.querySelector('.own')).toBe(own);
+    expect(form.element.querySelector('button[type="submit"]')).toBe(send);
+    expect(form.element.querySelector('legend')).toBe(legend);
+    expect([...form.element.querySelectorAll('[role="tab"]')].map((t) => t.textContent)).toEqual(['One', 'More']);
+    s.extra = false;
+    await settle();
+    expect(form.editorOf('zip')).toBeUndefined();
+    expect(form.editorOf('city')).toBe(city);
   });
 });

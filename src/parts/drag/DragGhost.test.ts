@@ -1,10 +1,18 @@
+import { Component } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DragGhost } from './DragGhost';
 
 describe('DragGhost', () => {
-  const root = document.createElement('div');
-  document.body.append(root);
-  afterEach(() => root.replaceChildren());
+  let rootPart: Component<HTMLDivElement>;
+  let root: HTMLDivElement;
+  const place = () => {
+    rootPart = new Component<HTMLDivElement>('div');
+    rootPart.build();
+    root = rootPart.element;
+    document.body.append(root);
+    return rootPart;
+  };
+  afterEach(() => void rootPart?.dispose());
 
   const header = () => {
     const cell = document.createElement('div');
@@ -15,11 +23,12 @@ describe('DragGhost', () => {
     cell.toggleAttribute('data-dragging', true);
     cell.innerHTML = '<span class="mx-data-grid__title">Customer</span><button tabindex="-1" aria-label="Menu"></button>';
     cell.getBoundingClientRect = () => ({ left: 0, top: 0, right: 180, bottom: 36, width: 180, height: 36, x: 0, y: 0, toJSON: () => ({}) });
-    return cell;
+    return new Component<HTMLDivElement>(cell);
   };
 
   it('shows a copy of the header next to the pointer, follows it with what a drop would do, and goes away', () => {
-    const ghost = new DragGhost(() => root, () => true, 'mx-data-grid__ghost');
+    const part = place();
+    const ghost = new DragGhost(() => part, () => true, 'mx-data-grid__ghost');
     ghost.show(header(), 100, 50, 'header');
     const el = root.querySelector<HTMLElement>('.mx-data-grid__ghost')!;
     const copy = el.querySelector<HTMLElement>('.mx-data-grid__header-cell')!;
@@ -39,7 +48,8 @@ describe('DragGhost', () => {
 
   it('shows nothing while it is turned off', () => {
     let on = false;
-    const ghost = new DragGhost(() => root, () => on, 'mx-data-grid__ghost');
+    const part = place();
+    const ghost = new DragGhost(() => part, () => on, 'mx-data-grid__ghost');
     ghost.show(header(), 0, 0, 'header');
     ghost.move(10, 10, 'move');
     expect(root.querySelector('.mx-data-grid__ghost')).toBeNull();

@@ -1,4 +1,4 @@
-import type { Bind } from '@motifx/core';
+import type { Bind, ComponentBase } from '@motifx/core';
 import type { GridRowDragEventArgs } from './grid-row-drag-event-args';
 import type { GridRowDropEventArgs } from './grid-row-drop-event-args';
 
@@ -29,17 +29,17 @@ export interface GridRowDragging<T = any> {
   data?: Bind<unknown>;
   /** The directions the copy of the row can move: `'vertical'`, `'horizontal'` or `'both'`. The default is `'both'`. */
   dragDirection?: Bind<'both' | 'vertical' | 'horizontal'>;
-  /** An element or CSS selector the dragged row stays inside. By default, none. */
-  boundary?: Bind<string | HTMLElement | undefined>;
-  /** An element or CSS selector the copy of the row appears in. The default is the grid. */
-  container?: Bind<string | HTMLElement | undefined>;
+  /** A component, or a CSS selector of one in the page's component tree, the dragged row stays inside. By default, none. */
+  boundary?: Bind<string | ComponentBase | undefined>;
+  /** A component, or a CSS selector of one in the page's component tree, the copy of the row appears in. The default is the grid. */
+  container?: Bind<string | ComponentBase | undefined>;
   /**
    * The offset of the copy from the pointer, `{ x, y }` or `'x y'`. By default, where the row was grabbed,
    * kept level with the rows.
    */
   cursorOffset?: Bind<{ x?: number; y?: number } | string | undefined>;
-  /** Custom content in place of the copy of the row: a component, an element or text. */
-  dragTemplate?: (e: { itemData: T; itemElement: HTMLElement }) => unknown;
+  /** Custom content in place of the copy of the row: a component or text. */
+  dragTemplate?: (e: { itemData: T; itemPart: ComponentBase }) => ComponentBase | string;
   /** The rows scroll while the pointer is near their top or bottom edge. The default is `true`. */
   autoScroll?: Bind<boolean>;
   /** The pixels scrolled per frame at the edge. The default is `30`. */

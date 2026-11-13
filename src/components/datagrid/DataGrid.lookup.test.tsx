@@ -208,7 +208,7 @@ describe('lookup columns: editing', () => {
     const search = (dropDown as any).dropParts.search;
     expect(search.value).toBe('D');
     // Escape closes the list; Escape again ends the edit without a change.
-    key(search.inputElement, 'Escape');
+    key(search.inputPart.element, 'Escape');
     key(document.activeElement!, 'Escape');
     expect(cell.querySelector('.mx-data-grid__editor')).toBeNull();
     expect(grid.hasChanges).toBe(false);
@@ -225,8 +225,8 @@ describe('lookup columns: editing', () => {
     key(cell, 'M');
     const combo = (grid as any).editor.field as ComboBox<Customer, number>;
     expect(combo).toBeInstanceOf(ComboBox);
-    expect(combo.inputElement.value).toBe('M');
-    key(combo.inputElement, 'Escape');
+    expect(combo.inputPart.element.value).toBe('M');
+    key(combo.inputPart.element, 'Escape');
     key(document.activeElement!, 'Escape');
     await grid.dispose();
     const table = make({
@@ -392,7 +392,7 @@ describe('lookup columns: setCellValue and onEditorPreparing', () => {
 
 describe('lookup columns: filters', () => {
   async function openValues(grid: DataGrid<any>, field: string) {
-    (grid as any).openHeaderFilter(field, grid.element.querySelector(`[role="columnheader"][data-field="${field}"]`));
+    (grid as any).openHeaderFilter(field, (grid as any).headerAnchor(field));
     await settle();
     const list = (grid as any).headerFilter.listBox;
     return { list, values: () => list.listItems.loaded.map((v: { text: string; count?: number }) => `${v.text}:${v.count ?? ''}`) as string[] };

@@ -15,7 +15,7 @@ export interface GridMasterDetail<T> {
   enabled?: Bind<boolean>;
   /** Every row starts open. Changing it, `enabled` or `template` reopens or closes them all. The default is `false`. */
   autoExpandAll?: Bind<boolean>;
-  /** The content of a row's details: a component, an element or text, created the first time they appear. */
+  /** The content of a row's details: a component or text, created the first time they appear. */
   template?: (ctx: DetailContext<T>) => unknown;
   /** Indicates whether a row has details: a value, or a function of the row. The default is `true`. */
   canExpand?: Bind<boolean> | ((row: T) => boolean);

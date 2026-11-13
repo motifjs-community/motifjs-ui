@@ -1,24 +1,25 @@
-import type { Bind, IBaseProp } from "@motifx/core";
+import type { Bind, Component, IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
 import { functionValue } from "../../core/function-value";
-import { css, shown, text } from "../../core/draw-parts";
+import { part, removePart } from "../../core/draw-parts";
 import { givenList } from "../../core/given-field";
-import { onLookChanged } from "../../core/look-watch";
+import { isInPage, lengthOf, measure, onLayout, probeLengths, rectOf, styleOf, textWidths } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { ResizeWatch } from "../../core/resize-watch";
-import { onFontsLoaded } from "../../core/fonts-loaded";
+import { css, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { arcPath, polar, type Place } from "../../parts/chart/chart-paths";
-import { formatNumber, textWidth, type ChartFormat } from "../../parts/chart/chart-text";
-import { svgPart, svgPut, TextPool } from "../../parts/chart/svg-parts";
-import { TokenLengths } from "../../core/token-lengths";
+import { DrawnTexts, formatNumber, type ChartFormat } from "../../parts/chart/chart-text";
+import { svgComponent } from "../../parts/chart/svg-parts";
 import { ValueMotion } from "../../parts/chart/value-motion";
 import type { ChartField } from "../chart/chart-field";
+import { TextParts } from "../chart/text-parts";
 import type { BarGaugeProps } from "./bar-gauge-props";
 
 const OWN = ['data', 'valueField', 'nameField', 'colorField', 'min', 'max', 'baseValue', 'angle', 'rotation', 'colors', 'label', 'format', 'showLabels', 'legend', 'tooltip', 'size'] as const;
 const FUNCTIONS: readonly string[] = ['valueField', 'nameField', 'colorField', 'format'];
+const LENGTHS = ['--_bar-gauge-size', '--_bar-gauge-thickness', '--_bar-gauge-gap', '--_bar-gauge-indent', '--_bar-gauge-spacing'];
+const FONT = ['font', 'font-size', 'font-family', 'line-height'] as const;
 const DEGREE = Math.PI / 180;
 const SERIES = 8;
 /** Sizes for where nothing is laid out, as in a test without a browser. */
@@ -38,9 +39,21 @@ interface Look {
     spacing: number;
 }
 
+/** What a draw reads before it writes: the lengths and the font of the values. */
+interface LookRead {
+    look: Look;
+    font: Record<(typeof FONT)[number], string>;
+}
+
 interface Ring {
     inner: number;
     outer: number;
+}
+
+interface LegendEntry {
+    item: Component<HTMLLIElement>;
+    swatch: Component<HTMLSpanElement>;
+    label: Component<HTMLSpanElement>;
 }
 
 /**
@@ -53,17 +66,21 @@ interface Ring {
  * <BarGauge data={() => this.sales} valueField="share" nameField="region" label="Sales by region" legend />
  */
 export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>> {
-    svg: SVGSVGElement;
-    tracks: SVGGElement;
-    fills: SVGGElement;
-    connectors: SVGPathElement;
-    labels: SVGGElement;
-    labelPool: TextPool;
-    probe: SVGTextElement;
-    legendList: HTMLUListElement;
-    tip: HTMLSpanElement;
+    svg: Component<SVGSVGElement>;
+    tracks: Component<SVGGElement>;
+    fills: Component<SVGGElement>;
+    connectors: Component<SVGPathElement>;
+    labels: Component<SVGGElement>;
+    /** The values at the ends of the bars, measured in their font and numbers. */
+    texts: DrawnTexts;
+    legendList: Component<HTMLUListElement>;
+    tip: Component<HTMLSpanElement>;
+    // What is drawn for the values, kept between draws.
+    trackPaths: Component<SVGPathElement>[] = [];
+    barPaths: Component<SVGPathElement>[] = [];
+    labelTexts: TextParts;
+    legendEntries: LegendEntry[] = [];
     motion: ValueMotion;
-    tokens: TokenLengths;
     bars: Bar[] = [];
     rings: Ring[] = [];
     cx = 0;
@@ -73,43 +90,56 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
     reach = 0;
     box = { x: 0, y: 0, width: 0, height: 0 };
     look: Look = UNMEASURED;
-    measure: (text: string) => number = t => t.length * 7;
+    font: LookRead['font'] = { font: '', 'font-size': '', 'font-family': '', 'line-height': '' };
+    widthOf: (text: string) => number = t => t.length * 7;
     lineHeight = 16;
-    placed = false;
-    queued = false;
-    watch: ResizeWatch | null = null;
-    stopLook: (() => void) | null = null;
-    stopFonts: (() => void) | null = null;
+    /** Drawn once with what was read: new values move from there on. */
+    drawn = false;
+
+    readonly readLook = (): LookRead => ({
+        look: {
+            size: this.size ?? lengthOf(this, '--_bar-gauge-size', UNMEASURED.size),
+            thickness: lengthOf(this, '--_bar-gauge-thickness', UNMEASURED.thickness),
+            gap: lengthOf(this, '--_bar-gauge-gap', UNMEASURED.gap),
+            indent: lengthOf(this, '--_bar-gauge-indent', UNMEASURED.indent),
+            spacing: lengthOf(this, '--_bar-gauge-spacing', UNMEASURED.spacing)
+        },
+        font: styleOf(this.labels, FONT)
+    });
+
+    readonly drawLook = (read: LookRead): void => {
+        this.look = read.look;
+        this.font = read.font;
+        if (!this.drawn) {
+            this.drawn = true;
+            this.bars = this.read();
+            this.motion.set(this.bars.map(b => b.value));
+        }
+        this.draw();
+    };
 
     constructor(props?: IBaseProp<BarGaugeProps<T>>) {
         super('div', props);
         const own = (this.props ?? {}) as BarGaugeProps<T>;
-        const el = this.element;
-        el.classList.add('mx-bar-gauge');
-        el.setAttribute('role', 'img');
-        const doc = el.ownerDocument;
-        const svg = svgPart(el, 'svg', 'mx-bar-gauge__svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
+        this.class.add('mx-bar-gauge');
+        this.attr.add({ role: 'img' });
+        const svg = svgComponent(this, 'svg', 'mx-bar-gauge__svg');
+        svg.attr.add({ 'aria-hidden': 'true', focusable: 'false' });
         this.svg = svg;
-        this.tracks = svgPart(svg, 'g', 'mx-bar-gauge__tracks');
-        this.fills = svgPart(svg, 'g', 'mx-bar-gauge__bars');
-        this.connectors = svgPart(svg, 'path', 'mx-bar-gauge__connectors');
-        this.labels = svgPart(svg, 'g', 'mx-bar-gauge__labels');
-        this.labelPool = new TextPool(this.labels);
-        // Texts are measured as they are drawn, with the same font and numbers.
-        this.probe = svgPart(svgPart(svg, 'g', 'mx-bar-gauge__probe'), 'text');
-        this.legendList = doc.createElement('ul');
-        this.legendList.className = 'mx-bar-gauge__legend';
-        this.legendList.setAttribute('aria-hidden', 'true');
-        el.append(this.legendList);
-        this.tip = doc.createElement('span');
-        this.tip.className = 'mx-bar-gauge__tip';
-        this.tip.setAttribute('aria-hidden', 'true');
-        el.append(this.tip);
+        this.tracks = svgComponent(svg, 'g', 'mx-bar-gauge__tracks');
+        this.fills = svgComponent(svg, 'g', 'mx-bar-gauge__bars');
+        this.connectors = svgComponent(svg, 'path', 'mx-bar-gauge__connectors');
+        this.labels = svgComponent(svg, 'g', 'mx-bar-gauge__labels');
+        this.labelTexts = new TextParts(this.labels);
+        // Texts are measured in the font and numbers of the values; one that comes out another size draws again.
+        this.texts = new DrawnTexts(this, () => this.again(), 'mx-bar-gauge__probe');
+        this.legendList = part<HTMLUListElement>(this, 'ul', 'mx-bar-gauge__legend');
+        this.legendList.attr.add({ 'aria-hidden': 'true' });
+        this.tip = part<HTMLSpanElement>(this, 'span', 'mx-bar-gauge__tip');
+        this.tip.attr.add({ 'aria-hidden': 'true' });
         shown(this.tip, false);
-        this.motion = new ValueMotion(el, values => this.drawValues(values));
-        this.tokens = new TokenLengths(el, ['--_bar-gauge-size', '--_bar-gauge-thickness', '--_bar-gauge-gap', '--_bar-gauge-indent', '--_bar-gauge-spacing'], () => this.again());
+        this.motion = new ValueMotion(this, values => this.drawValues(values));
+        probeLengths(this, LENGTHS);
 
         // A function that takes a value is the value itself, not a live one.
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, FUNCTIONS.includes(name) ? functionValue(own[name]) : own[name]);
@@ -119,28 +149,16 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         }
         onLanguage(this, () => this.again());
         onReState(this, () => this.moveTo());
-        el.addEventListener('pointermove', e => this.pointAt(e));
-        el.addEventListener('pointerleave', () => shown(this.tip, false));
-        this.motif.setDisposable(() => {
-            this.motion.stop();
-            this.tokens.dispose();
-            this.watch?.disconnect();
-            this.stopLook?.();
-            this.stopFonts?.();
-        });
+        // In the page with a size to draw at, and again at each new size or look (fonts that finish loading too).
+        onLayout(this, 'size', () => this.again());
+        onLayout(this, 'look', () => this.again());
+        this.motif.on('pointermove', (_, e) => this.pointAt(e));
+        this.motif.on('pointerleave', () => shown(this.tip, false));
+        this.motif.setDisposable(() => this.motion.stop());
     }
 
-    // In the page now: it has a size to draw at.
     override onMounted(): void {
-        if (this.placed) return;
-        this.placed = true;
-        this.watch = new ResizeWatch(() => this.again());
-        this.watch.observe(this.element);
-        this.stopLook = onLookChanged(() => this.again());
-        this.stopFonts = onFontsLoaded(this.element, () => this.again());
-        this.bars = this.read();
-        this.motion.set(this.bars.map(b => b.value));
-        this.draw();
+        this.again();
     }
 
     // Properties (see BarGaugeProps).
@@ -273,17 +291,15 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
     }
 
     again(): void {
-        if (this.queued || !this.placed) return;
-        this.queued = true;
-        queueMicrotask(() => {
-            this.queued = false;
-            if (!this.isDisposed) this.draw();
-        });
+        if (isInPage(this)) measure(this, this.readLook, this.drawLook);
     }
 
     /** New values: a bar that is new grows from the base value. */
     moveTo(): void {
-        if (!this.placed) return;
+        if (!this.drawn) {
+            this.again();
+            return;
+        }
         this.bars = this.read();
         const base = this.baseValue ?? this.min;
         const shown = this.motion.shown.slice(0, this.bars.length);
@@ -294,33 +310,17 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         this.motion.move(this.bars.map(b => b.value));
     }
 
-    lengths(): Look {
-        const t = this.tokens;
-        return {
-            size: this.size ?? t.get('--_bar-gauge-size', UNMEASURED.size),
-            thickness: t.get('--_bar-gauge-thickness', UNMEASURED.thickness),
-            gap: t.get('--_bar-gauge-gap', UNMEASURED.gap),
-            indent: t.get('--_bar-gauge-indent', UNMEASURED.indent),
-            spacing: t.get('--_bar-gauge-spacing', UNMEASURED.spacing)
-        };
-    }
-
+    /** Draws with the lengths and the font read last; `again` reads them anew. */
     draw(): void {
-        const el = this.element;
         const bars = this.bars;
         this.drawName();
-        const look = (this.look = this.lengths());
-        const style = el.ownerDocument.defaultView?.getComputedStyle(this.labels);
-        const font = style?.font || `${style?.fontSize || '12px'} ${style?.fontFamily || 'sans-serif'}`;
-        const fontSize = parseFloat(style?.fontSize ?? '') || 12;
-        const textBox = (t: string) => {
-            this.probe.textContent = t;
-            const width = typeof this.probe.getComputedTextLength === 'function' ? this.probe.getComputedTextLength() : 0;
-            return width ? { width, height: this.probe.getBBox().height } : { width: textWidth(t, font, el.ownerDocument), height: 0 };
-        };
-        this.lineHeight = Math.max(parseFloat(style?.lineHeight ?? '') || fontSize * 1.35, textBox('0').height);
-        const widths = new Map<string, number>();
-        this.measure = t => widths.get(t) ?? widths.set(t, textBox(t).width).get(t)!;
+        const look = this.look;
+        const style = this.font;
+        const font = style.font || `${style['font-size'] || '12px'} ${style['font-family'] || 'sans-serif'}`;
+        const fontSize = parseFloat(style['font-size']) || 12;
+        const texts = this.texts;
+        this.lineHeight = Math.max(parseFloat(style['line-height']) || fontSize * 1.35, texts.height('0', 0));
+        this.widthOf = t => texts.width(t, font);
 
         // The bars from the outside in; thinner when many would not leave a middle.
         const outer = look.size / 2;
@@ -334,8 +334,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
 
         // Room for the values around the bars, the same while they move.
         const labelsOn = this.showLabels && count > 0;
-        const widest = labelsOn ? Math.max(0, ...bars.map(b => (b.value === null ? 0 : this.measure(this.number(b.value))))) : 0;
-        this.probe.textContent = '';
+        const widest = labelsOn ? Math.max(0, ...bars.map(b => (b.value === null ? 0 : this.widthOf(this.number(b.value))))) : 0;
         this.reach = labelsOn ? outer + look.indent + look.spacing + Math.max(widest, this.lineHeight) : outer;
         const points: Place[] = [[this.cx, this.cy]];
         for (const a of [this.start, this.start + this.sweep]) points.push(polar(this.cx, this.cy, this.reach, a));
@@ -349,18 +348,17 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         box.width = Math.ceil(Math.max(...xs)) - box.x + 1;
         box.height = Math.ceil(Math.max(...ys)) - box.y + 1;
         this.box = box;
-        svgPut(this.svg, 'viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
-        svgPut(this.svg, 'width', box.width);
-        svgPut(this.svg, 'height', box.height);
-        css(el, '--_drawn-width', `${box.width}px`);
+        put(this.svg, 'viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+        put(this.svg, 'width', String(box.width));
+        put(this.svg, 'height', String(box.height));
+        css(this, '--_drawn-width', `${box.width}px`);
 
-        while (this.tracks.children.length > count) this.tracks.lastElementChild!.remove();
-        this.rings.forEach((ring, i) => {
-            const path = (this.tracks.children[i] as SVGPathElement | undefined) ?? svgPart(this.tracks, 'path', 'mx-bar-gauge__track');
-            svgPut(path, 'd', arcPath(this.cx, this.cy, ring.inner, ring.outer, this.start, this.start + this.sweep) || null);
-        });
+        while (this.trackPaths.length < count) this.trackPaths.push(svgComponent(this.tracks, 'path', 'mx-bar-gauge__track'));
+        for (const extra of this.trackPaths.splice(count)) removePart(extra);
+        this.rings.forEach((ring, i) => put(this.trackPaths[i], 'd', arcPath(this.cx, this.cy, ring.inner, ring.outer, this.start, this.start + this.sweep) || null));
         this.drawLegend();
         this.drawValues(this.motion.shown);
+        texts.ask();
     }
 
     /** The parts that follow the moving values: the bars and the values at their ends. */
@@ -371,14 +369,15 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         const share = (v: number) => Math.max(0, Math.min(1, (v - min) / (max - min)));
         const base = share(this.baseValue ?? min);
         const at = (v: number) => this.start + share(v) * this.sweep;
-        while (this.fills.children.length > bars.length) this.fills.lastElementChild!.remove();
+        while (this.barPaths.length < bars.length) this.barPaths.push(svgComponent(this.fills, 'path', 'mx-bar-gauge__bar'));
+        for (const extra of this.barPaths.splice(bars.length)) removePart(extra);
         bars.forEach((bar, i) => {
-            const path = (this.fills.children[i] as SVGPathElement | undefined) ?? svgPart(this.fills, 'path', 'mx-bar-gauge__bar');
-            path.style.setProperty('--_bar', bar.color);
+            const path = this.barPaths[i];
+            css(path, '--_bar', bar.color);
             const v = values[i] ?? null;
             const ring = this.rings[i];
             const from = this.start + base * this.sweep;
-            svgPut(path, 'd', v === null || !ring ? null : arcPath(this.cx, this.cy, ring.inner, ring.outer, Math.min(from, at(v)), Math.max(from, at(v))) || null);
+            put(path, 'd', v === null || !ring ? null : arcPath(this.cx, this.cy, ring.inner, ring.outer, Math.min(from, at(v)), Math.max(from, at(v))) || null);
         });
 
         const look = this.look;
@@ -392,7 +391,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
                 const v = values[i]!;
                 const a = at(v);
                 const label = this.number(bars[i].value ?? v);
-                const w = this.measure(label);
+                const w = this.widthOf(label);
                 const h = this.lineHeight;
                 const n: Place = [Math.sin(a), -Math.cos(a)];
                 const reach = Math.abs(n[0]) * w + Math.abs(n[1]) * h;
@@ -410,39 +409,36 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
                 const [x1, y1] = polar(this.cx, this.cy, this.rings[i].outer + 1, a);
                 const [x2, y2] = polar(this.cx, this.cy, out, a);
                 connectors += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
-                this.labelPool.add(label, x, y, 'middle').setAttribute('dominant-baseline', 'central');
+                put(this.labelTexts.add(label, x, y, 'middle'), 'dominant-baseline', 'central');
             }
         }
-        this.labelPool.done();
-        svgPut(this.connectors, 'd', connectors || null);
+        this.labelTexts.done();
+        put(this.connectors, 'd', connectors || null);
     }
 
     drawLegend(): void {
-        const list = this.legendList;
         const bars = this.legend ? this.bars : [];
-        shown(list, bars.length > 0);
-        while (list.children.length > bars.length) list.lastElementChild!.remove();
+        shown(this.legendList, bars.length > 0);
+        while (this.legendEntries.length < bars.length) this.legendEntries.push(this.makeEntry());
+        for (const extra of this.legendEntries.splice(bars.length)) removePart(extra.item);
         bars.forEach((bar, i) => {
-            let item = list.children[i] as HTMLLIElement | undefined;
-            if (!item) {
-                item = list.ownerDocument.createElement('li');
-                item.className = 'mx-bar-gauge__entry';
-                const swatch = list.ownerDocument.createElement('span');
-                swatch.className = 'mx-bar-gauge__swatch';
-                item.append(swatch, list.ownerDocument.createElement('span'));
-                list.append(item);
-            }
-            (item.children[0] as HTMLElement).style.setProperty('--_bar', bar.color);
+            const { item, swatch, label } = this.legendEntries[i];
+            css(swatch, '--_bar', bar.color);
             // The entry keeps the room of its widest value, so values that change do not move the entries.
-            const label = item.children[1] as HTMLElement;
-            let widest = 0;
-            for (const v of [this.min, this.max]) {
-                label.textContent = this.barText({ ...bar, value: v });
-                widest = Math.max(widest, label.getBoundingClientRect().width);
-            }
-            css(label, 'min-inline-size', widest ? `${Math.ceil(widest)}px` : '');
+            const ends = [this.min, this.max].map(v => this.barText({ ...bar, value: v }));
+            textWidths(item, ends, widths => {
+                const widest = Math.max(0, ...widths);
+                css(label, 'min-inline-size', widest ? `${Math.ceil(widest)}px` : '');
+            });
             text(label, this.barText(bar));
         });
+    }
+
+    makeEntry(): LegendEntry {
+        const item = part<HTMLLIElement>(this.legendList, 'li', 'mx-bar-gauge__entry');
+        const swatch = part<HTMLSpanElement>(item, 'span', 'mx-bar-gauge__swatch');
+        const label = part<HTMLSpanElement>(item, 'span', '');
+        return { item, swatch, label };
     }
 
     barText(bar: Bar): string {
@@ -453,13 +449,14 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
     drawName(): void {
         const name = this.label || uiLocale.strings.barGaugeName;
         const values = this.bars.filter(b => b.value !== null).map(b => this.barText(b));
-        this.element.setAttribute('aria-label', values.length ? uiLocale.text('barGaugeSummary', { name, values: values.join(', ') }) : name);
+        put(this, 'aria-label', values.length ? uiLocale.text('barGaugeSummary', { name, values: values.join(', ') }) : name);
     }
 
     /** The bar under the pointer shows in the tooltip. */
     pointAt(e: PointerEvent): void {
         if (!this.tooltip || !this.rings.length) return;
-        const rect = this.svg.getBoundingClientRect();
+        const rect = rectOf(this.svg);
+        const host = rectOf(this);
         if (!rect.width) return;
         const scale = this.box.width / rect.width;
         const x = this.box.x + (e.clientX - rect.left) * scale - this.cx;
@@ -474,7 +471,6 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
             shown(this.tip, false);
             return;
         }
-        const host = this.element.getBoundingClientRect();
         text(this.tip, this.barText(bar));
         shown(this.tip, true);
         css(this.tip, 'left', `${(e.clientX - host.left).toFixed(1)}px`);

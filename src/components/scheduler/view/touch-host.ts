@@ -1,10 +1,14 @@
+import type { ComponentBase } from '@motifx/core';
 import type { ViewKind } from '../model/view-kind';
 
 /** What the finger gestures use of their scheduler. */
 export interface TouchHost {
-  root(): HTMLElement;
+  /** The scheduler: the gestures listen on it. */
+  root(): ComponentBase;
+  /** The part that holds the view, where a swipe starts. */
+  content(): ComponentBase | null;
   /** The view's scroll box. */
-  scroller(): HTMLElement | null;
+  scroller(): ComponentBase | null;
   kind(): ViewKind;
   /** An appointment is being moved or resized. */
   dragging(): boolean;

@@ -77,4 +77,30 @@ describe('Breadcrumb', () => {
     crumb.maxItems = null;
     expect(crumb.collapsed).toEqual([]);
   });
+
+  it('keeps its steps when an item or what it says changes', async () => {
+    const s = reactive({ text: 'Docs' });
+    const docs = { text: () => s.text, href: '/docs' };
+    const crumb = new Breadcrumb({ items: [{ text: 'Home', href: '/' }, docs, 'Page'] });
+    page(crumb);
+    await settle();
+    const before = steps(crumb);
+    const link = before[1].querySelector('a');
+    s.text = 'Guides';
+    await settle();
+    expect(steps(crumb).every((el, i) => el === before[i])).toBe(true);
+    expect(before[1].querySelector('a')).toBe(link);
+    expect(link?.textContent).toBe('Guides');
+    crumb.items = [...crumb.items, 'Child'];
+    await settle();
+    const after = steps(crumb);
+    expect(after[0]).toBe(before[0]);
+    expect(after[1]).toBe(before[1]);
+    // The old last step becomes a button, in the same step; only its face changes.
+    expect(after[2]).toBe(before[2]);
+    expect(after[2].querySelector('button')?.textContent).toBe('Page');
+    expect(after[2].querySelector('.mx-breadcrumb__divider')).not.toBe(null);
+    expect(after[3].querySelector('[aria-current="page"]')?.textContent).toBe('Child');
+    expect(crumb.element.querySelector('.mx-breadcrumb__list')!.children[1].classList.contains('mx-breadcrumb__more')).toBe(true);
+  });
 });

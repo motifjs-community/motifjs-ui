@@ -1,5 +1,6 @@
 import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { css, mark, put } from '../../core/part-writes';
 import { ChildSettings } from './ChildSettings';
 import type { GridCell } from './grid-cell';
 import type { GridFlow } from './grid-flow';
@@ -48,21 +49,20 @@ export class Grid extends Control<HTMLDivElement, GridProps> {
   constructor(props?: IBaseProp<GridProps>) {
     super('div', props);
     const own = (this.props ?? {}) as GridProps;
-    const el = this.element;
-    el.classList.add('mx-grid');
+    this.class.add('mx-grid');
     this.observeProperty<GridTracks>('rows', (rows) => this.writeStyle('grid-template-rows', trackList(rows)));
     this.observeProperty<GridTracks>('columns', (columns) => this.writeStyle('grid-template-columns', trackList(columns)));
     // A number here is a size, not a count.
     this.observeProperty<number | string>('autoRows', (rows) => this.writeStyle('grid-auto-rows', trackList(typeof rows === 'number' ? [rows] : rows)));
     this.observeProperty<number | string>('autoColumns', (columns) => this.writeStyle('grid-auto-columns', trackList(typeof columns === 'number' ? [columns] : columns)));
-    this.observeProperty<LayoutSpace>('gap', (gap) => setSpace(el, '--_gap', gap));
-    this.observeProperty<LayoutSpace>('rowGap', (gap) => setSpace(el, '--_row-gap', gap));
-    this.observeProperty<LayoutSpace>('columnGap', (gap) => setSpace(el, '--_column-gap', gap));
-    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(el, padding));
+    this.observeProperty<LayoutSpace>('gap', (gap) => setSpace(this, '--_gap', gap));
+    this.observeProperty<LayoutSpace>('rowGap', (gap) => setSpace(this, '--_row-gap', gap));
+    this.observeProperty<LayoutSpace>('columnGap', (gap) => setSpace(this, '--_column-gap', gap));
+    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(this, padding));
     this.observeProperty<GridFlow>('flow', (flow) => this.writeStyle('grid-auto-flow', flow ?? ''));
-    this.observeProperty<LayoutAlign>('align', (align) => (el.dataset.align = align ?? 'stretch'));
-    this.observeProperty<GridJustify>('justify', (justify) => (el.dataset.justify = justify ?? 'stretch'));
-    this.observeProperty<boolean>('inline', (inline) => el.toggleAttribute('data-inline', !!inline));
+    this.observeProperty<LayoutAlign>('align', (align) => put(this, 'data-align', align ?? 'stretch'));
+    this.observeProperty<GridJustify>('justify', (justify) => put(this, 'data-justify', justify ?? 'stretch'));
+    this.observeProperty<boolean>('inline', (inline) => mark(this, 'data-inline', !!inline));
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     void this.settings;
     if (this.childs?.length) this.controls.add(...this.childs);
@@ -160,26 +160,25 @@ export class Grid extends Control<HTMLDivElement, GridProps> {
     const self = this as unknown as { [CHILDREN]?: ChildSettings };
     if (self[CHILDREN]) return self[CHILDREN];
     self[CHILDREN] = new ChildSettings(this, CELL, {
-      changed: (child, el) => {
+      changed: (child) => {
         const get = (name: string) => this.settings.get(child, name);
-        this.place(el, 'grid-row-start', line(get('row')));
-        this.place(el, 'grid-row-end', span(get('rowSpan')));
-        this.place(el, 'grid-column-start', line(get('column')));
-        this.place(el, 'grid-column-end', span(get('columnSpan')));
+        this.place(child, 'grid-row-start', line(get('row')));
+        this.place(child, 'grid-row-end', span(get('rowSpan')));
+        this.place(child, 'grid-column-start', line(get('column')));
+        this.place(child, 'grid-column-end', span(get('columnSpan')));
       },
-      left: (_child, el) => {
-        for (const name of PLACEMENT) el.style.removeProperty(name);
+      left: (child) => {
+        for (const name of PLACEMENT) css(child, name, '');
       },
     });
     return self[CHILDREN].addPresent();
   }
 
-  private place(el: HTMLElement, name: string, value: string): void {
-    if (value) el.style.setProperty(name, value);
-    else el.style.removeProperty(name);
+  private place(part: ComponentBase, name: string, value: string): void {
+    css(part, name, value);
   }
 
   private writeStyle(name: string, value: string): void {
-    this.place(this.element, name, value);
+    this.place(this, name, value);
   }
 }

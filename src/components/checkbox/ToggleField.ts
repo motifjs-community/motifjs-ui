@@ -1,5 +1,6 @@
-import type { Bind, IBaseProp } from '@motifx/core';
-import { registerControl } from '../../core/control-map';
+import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
+import { loose } from '../../core/draw-parts';
+import { flag, mark, put } from '../../core/part-writes';
 import { Field } from '../../parts/field/Field';
 import type { LabelPosition } from './label-position';
 import type { ToggleFieldProps } from './toggle-field-props';
@@ -12,22 +13,16 @@ export abstract class ToggleField<T, TProps extends ToggleFieldProps<T> = Toggle
   constructor(props?: IBaseProp<TProps>) {
     super(props);
     const own = (this.props ?? {}) as ToggleFieldProps<T>;
-    const input = this.inputElement;
-    this.element.classList.add('mx-toggle-field');
+    this.class.add('mx-toggle-field');
 
-    this.observeProperty<LabelPosition>('labelPosition', (position) => (this.element.dataset.labelPosition = position ?? 'end'));
-    this.observeProperty<string>('name', (name) => {
-      if (name) input.name = name;
-      else input.removeAttribute('name');
-    });
+    this.observeProperty<LabelPosition>('labelPosition', (position) => put(this, 'data-label-position', position ?? 'end'));
+    this.observeProperty<string>('name', (name) => put(this.controlPart, 'name', name));
     for (const name of ['labelPosition', 'name'] as const) if (own[name] !== undefined) this.bindProperty(name, own[name]);
 
-    // The access key finds the control through the element that carries it.
-    registerControl(input, this);
-    input.addEventListener('click', (e) => {
+    this.controlPart.motif.on('click', (_, e) => {
       if (this.peekProperty('readOnly')) e.preventDefault();
     });
-    input.addEventListener('change', (e) => {
+    this.controlPart.motif.on('change', (_, e) => {
       this.commit(this.nextValue(), e);
       // The browser has already flipped the box; the value decides what it shows.
       this.renderValue(this.peekValue());
@@ -47,8 +42,9 @@ export abstract class ToggleField<T, TProps extends ToggleFieldProps<T> = Toggle
     this.assignProperty('name', value);
   }
 
-  get inputElement(): HTMLInputElement {
-    return this.focusElement as HTMLInputElement;
+  /** The check box input as a component: write its attributes with `put` and call its methods through `attr`. */
+  get inputPart(): ComponentBase<HTMLInputElement> {
+    return this.controlPart as ComponentBase<HTMLInputElement>;
   }
 
   /** Changes the value as a click does. */
@@ -56,26 +52,27 @@ export abstract class ToggleField<T, TProps extends ToggleFieldProps<T> = Toggle
     this.commit(this.nextValue());
   }
 
-  /** The access key moves focus to the box and clicks it, as a click on its label does. */
+  /** The access key moves focus to the box and changes the value, as a click on its label does; read-only keeps it. */
   override onAccessKey(): boolean {
     if (!this.focus()) return false;
-    this.inputElement.click();
+    if (!this.peekProperty('readOnly')) this.toggle();
     return true;
   }
 
   /** A checkbox has no native read-only state: it is said with ARIA, and a click is blocked. */
   protected override renderReadOnly(on: boolean): void {
     super.renderReadOnly(on);
-    const input = this.inputElement;
-    input.readOnly = false;
-    if (on) input.setAttribute('aria-readonly', 'true');
-    else input.removeAttribute('aria-readonly');
+    mark(this.controlPart, 'readonly', false);
+    flag(this.controlPart, 'aria-readonly', on);
   }
 
-  protected createControl(): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.className = 'mx-toggle-field__input';
+  protected override get controlTag(): string {
+    return 'input';
+  }
+
+  protected createControl(): ComponentBase {
+    const input = loose<HTMLInputElement>('input', 'mx-toggle-field__input');
+    input.attr.add({ type: 'checkbox' });
     return input;
   }
 

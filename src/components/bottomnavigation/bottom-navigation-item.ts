@@ -11,7 +11,7 @@ export interface BottomNavigationItem {
     glyph?: Bind<string>;
     /** The glyph while selected, such as a filled one. The default is `glyph`. */
     activeGlyph?: Bind<string>;
-    /** An image, an element or a component, used instead of `glyph`. */
+    /** An image address or a component, used instead of `glyph`. */
     icon?: Bind<IconSource | null | undefined>;
     /** The icon while selected. The default is `icon`. */
     activeIcon?: Bind<IconSource | null | undefined>;

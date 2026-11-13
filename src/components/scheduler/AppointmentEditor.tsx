@@ -1,6 +1,8 @@
 import { Component, read, untracked, type Bind, type ComponentBase, type Emitter } from '@motifx/core';
+import { focusOn, isFocused } from '../../core/focus';
 import { givenField, givenList, givenValue } from '../../core/given-field';
-import { nextFrame } from '../../core/next-frame';
+import { later } from '../../core/later';
+import { everyFrame } from '../../core/measure';
 import type { UiStrings } from '../../core/ui-strings';
 import { addDays } from '../../parts/dates/add-days';
 import { dayStart } from '../../parts/dates/day-start';
@@ -108,8 +110,9 @@ export interface EditorHost<T> {
   text(key: keyof UiStrings, values?: Record<string, unknown>): string;
   say(text: string): void;
   setDraft(draft: Draft<T> | null): void;
-  root(): HTMLElement;
-  scroller(): HTMLElement | null;
+  /** The boxes an appointment shows in now, as the view built them. */
+  boxesOf(item: T): ComponentBase[];
+  scroller(): ComponentBase | null;
   rtl(): boolean;
   keys(): SchedulerKeys;
   /** Ids of the appointments being saved. */
@@ -735,7 +738,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   // The tooltip.
 
-  showTooltip(item: T, anchor: HTMLElement): void {
+  showTooltip(item: T, anchor: ComponentBase<HTMLElement>): void {
     this.tooltipState.value = item;
     if (this.host.presentation() === 'phone') this.showSheet(item);
     else {
@@ -780,7 +783,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     this.tooltipView = null;
     if (template) {
       const own = new Component<HTMLDivElement>('div');
-      own.element.className = 'mx-scheduler__tooltip-own';
+      own.class.add('mx-scheduler__tooltip-own');
       own.controls.add(template(this.tooltipContext(() => popup.close())));
       this.tooltipContent = own;
     } else {
@@ -913,7 +916,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
   /** A tooltip template's content in the phone's sheet. */
   private tooltipOwn(template: NonNullable<ReturnType<SchedulerHost<T>['tooltipTemplate']>>, close: () => void): ComponentBase {
     const own = new Component<HTMLDivElement>('div');
-    own.element.className = 'mx-scheduler__tooltip-own';
+    own.class.add('mx-scheduler__tooltip-own');
     own.controls.add(template(this.tooltipContext(close)));
     return own;
   }
@@ -1017,20 +1020,40 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   /**
    * After a move by the keys, focus stays on the appointment: a box that moved to another row of a
-   * timeline is another element (each row holds its own boxes), so focus goes to the new one.
+   * timeline is another box (each row holds its own boxes), so focus goes to the new one. The view draws the move
+   * now; a box it draws later is looked for in the next frames.
    */
   private keepFocus(item: T): void {
-    const root = this.host.root();
-    const id = `${this.host.model.idOf(item)}@`;
-    const mine = (el: Element | null) => el instanceof HTMLElement && el.classList.contains('mx-scheduler__appointment') && (el.dataset.piece ?? '').startsWith(id);
+    this.host.model.flush();
+    if (this.focusBoxOf(this.host.boxesOf(item))) return;
     let tries = 0;
-    const look = () => {
-      if (mine(root.ownerDocument.activeElement)) return;
-      const box = [...root.querySelectorAll<HTMLElement>('.mx-scheduler__appointment')].find(mine);
-      if (box) box.focus();
-      else if (tries++ < 4) nextFrame(look, root.ownerDocument.defaultView);
-    };
-    queueMicrotask(look);
+    everyFrame(
+      this.host.scheduler,
+      () => this.host.boxesOf(item),
+      (boxes) => {
+        if (this.focusBoxOf(boxes) || ++tries >= 4) return false;
+      },
+    );
+  }
+
+  /** Focus is on one of an appointment's boxes, or goes to the first; false while it has none. */
+  private focusBoxOf(boxes: ComponentBase[]): boolean {
+    if (boxes.some(isFocused)) return true;
+    if (!boxes.length) return false;
+    focusOn(boxes[0]);
+    return true;
+  }
+
+  /**
+   * Focus left a box of `item`: a move by the keys goes back, unless focus went to another box of the same
+   * appointment. That is decided once focus is there.
+   */
+  blurred(item: T): void {
+    const moving = this.keyDraft;
+    if (!moving) return;
+    later(() => {
+      if (this.keyDraft === moving && !this.host.boxesOf(item).some(isFocused)) this.cancelKeys();
+    });
   }
 
   /** Takes a move by the keys back (Escape, or focus leaving it). */
@@ -1071,10 +1094,10 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   // The drag's host.
 
-  root(): HTMLElement {
-    return this.host.root();
+  root(): ComponentBase<HTMLElement> {
+    return this.host.scheduler;
   }
-  scroller(): HTMLElement | null {
+  scroller(): ComponentBase | null {
     return this.host.scroller();
   }
   get model(): SchedulerModel<T> {

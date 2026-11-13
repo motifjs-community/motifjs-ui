@@ -31,6 +31,8 @@ function make(props: Partial<DataGridProps<Row>> = {}) {
   Object.defineProperty(vp, 'scrollLeft', { configurable: true, get: () => left, set: (v: number) => (left = Math.max(0, v)) });
   Object.defineProperty(vp, 'clientHeight', { configurable: true, get: () => 360 });
   Object.defineProperty(vp, 'clientWidth', { configurable: true, get: () => 800 });
+  // How far the rows can scroll sideways: a scroll into view stops there.
+  Object.defineProperty(vp, 'scrollWidth', { configurable: true, get: () => 80 + COLUMNS * 100 });
   (grid as any).measure();
   return {
     grid,
@@ -117,11 +119,11 @@ describe('DataGrid virtual columns', () => {
     const { grid, vp } = make();
     await settle();
     grid.focusCell(0, 'c2');
-    key(grid.getCellElement(0, 'c2')!, 'End');
+    key(grid.getCellPart(0, 'c2')!.element, 'End');
     await settle();
     const last = fields.at(-1)!;
     expect(grid.activeField).toBe(last);
-    const cell = grid.getCellElement(0, last)!;
+    const cell = grid.getCellPart(0, last)!.element;
     expect(cell).toBeDefined();
     expect(document.activeElement).toBe(cell);
     expect(vp.scrollLeft).toBe(80 + COLUMNS * 100 - 800);
@@ -129,11 +131,11 @@ describe('DataGrid virtual columns', () => {
     // Arrow keys build the column before.
     key(cell, 'ArrowLeft');
     await settle();
-    expect(document.activeElement).toBe(grid.getCellElement(0, fields.at(-2)!));
+    expect(document.activeElement).toBe(grid.getCellPart(0, fields.at(-2)!)?.element);
     // Back with Home: the first data column.
     key(document.activeElement!, 'Home');
     await settle();
-    expect([grid.activeField, vp.scrollLeft, document.activeElement === grid.getCellElement(0, 'id')]).toEqual(['id', 0, true]);
+    expect([grid.activeField, vp.scrollLeft, document.activeElement === grid.getCellPart(0, 'id')?.element]).toEqual(['id', 0, true]);
   });
 
   it('lets the filter row, the totals and the group rows follow, and exports every column', async () => {

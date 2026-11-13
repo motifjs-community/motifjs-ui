@@ -1,7 +1,8 @@
-import { Component } from '@motifx/core';
+import { Component, errorHandler } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { backButtonHolders } from '../../core/back-button';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { TabDocument } from './TabDocument';
@@ -18,7 +19,48 @@ afterEach(async () => {
   await uiLocale.use('en');
   vi.restoreAllMocks();
   delete (window as { matchMedia?: unknown }).matchMedia;
+  delete (window as { ResizeObserver?: unknown }).ResizeObserver;
 });
+
+/** The manager laid out `width` × `height`: the measuring layer reads its border box with the window's next frame. */
+async function layOut(m: TabDocumentManager, width: number, height: number) {
+  m.element.getBoundingClientRect = () => new DOMRect(0, 0, width, height);
+  Object.defineProperty(m.element, 'offsetWidth', { configurable: true, get: () => width });
+  Object.defineProperty(m.element, 'offsetHeight', { configurable: true, get: () => height });
+  await settle();
+  await whenMeasured(m);
+}
+
+/** The size observers made in this file: the measuring layer keeps the one it made for the window from test to test. */
+const watches: { report: ResizeObserverCallback; targets: Set<Element> }[] = [];
+
+/** jsdom has no size observer: the test gives the window one (taken away after), and `resize` tells it a new size. */
+function sizeObserver() {
+  Object.defineProperty(window, 'ResizeObserver', {
+    configurable: true,
+    value: class {
+      private readonly watch: { report: ResizeObserverCallback; targets: Set<Element> };
+      constructor(report: ResizeObserverCallback) {
+        this.watch = { report, targets: new Set() };
+        watches.push(this.watch);
+      }
+      observe(el: Element) {
+        this.watch.targets.add(el);
+      }
+      unobserve(el: Element) {
+        this.watch.targets.delete(el);
+      }
+      disconnect() {
+        this.watch.targets.clear();
+      }
+    },
+  });
+  return (el: Element, width: number, height: number) => {
+    const size = [{ inlineSize: width, blockSize: height }];
+    const entry = { target: el, borderBoxSize: size, contentBoxSize: size, contentRect: new DOMRect(0, 0, width, height) } as unknown as ResizeObserverEntry;
+    for (const watch of watches) if (watch.targets.has(el)) watch.report([entry], watch as unknown as ResizeObserver);
+  };
+}
 
 async function settle() {
   for (let i = 0; i < 6; i++) await tick();
@@ -119,6 +161,7 @@ describe('TabDocumentManager presentations', () => {
       return this.classList.contains('mx-tabdocs') ? new DOMRect(0, 0, width, 600) : new DOMRect();
     });
     const pointer = touchScreen(false);
+    const resize = sizeObserver();
     const log: string[] = [];
     const m = layout([['A'], ['B']], {
       onPresentationChanging: (e) => {
@@ -127,7 +170,11 @@ describe('TabDocumentManager presentations', () => {
       },
       onPresentationChanged: (e) => void log.push(`now ${e.to}`),
     });
+    // The measuring layer reads the manager's first size itself (its border box), the observer tells the next ones.
+    Object.defineProperty(m.element, 'offsetWidth', { configurable: true, get: () => width });
+    Object.defineProperty(m.element, 'offsetHeight', { configurable: true, get: () => 600 });
     await settle();
+    await whenMeasured(m);
     // A mouse: 900 pixels under tabletWidth stays a desktop.
     m.tabletWidth = 1000;
     expect(m.currentPresentation).toBe('desktop');
@@ -143,6 +190,8 @@ describe('TabDocumentManager presentations', () => {
     expect(m.currentPresentation).toBe('tablet');
     m.tabletWhen = 'touch';
     width = 500;
+    resize(m.element, width, 600);
+    await whenMeasured(m);
     m.phoneWidth = 559;
     expect(m.currentPresentation).toBe('phone');
     m.presentation = 'desktop';
@@ -166,8 +215,7 @@ describe('TabDocumentManager presentations', () => {
 
   it('gives the documents\' groups the compact bars on a tablet, or the desktop ones with narrowBars', async () => {
     const m = layout([['A', 'B'], ['C']]);
-    m.element.getBoundingClientRect = () => new DOMRect(0, 0, 800, 600);
-    await settle();
+    await layOut(m, 800, 600);
     const [g1, g2] = m.groups;
     const look = (g: TabGroup) => [g.element.hasAttribute('data-compact'), g.element.hasAttribute('data-scroll-buttons'), g.element.dataset.barSize, g.element.dataset.tabSize, g.element.hasAttribute('data-title')];
     expect(look(g1)).toEqual([false, true, 'normal', 'fit', false]);
@@ -192,8 +240,7 @@ describe('TabDocumentManager presentations', () => {
 
   it('on a tablet shows two groups side by side and folds the others into the one beside them, the layout unchanged', async () => {
     const m = layout([['A', 'B'], ['C']], {}, ['D', 'E']);
-    m.element.getBoundingClientRect = () => new DOMRect(0, 0, 800, 600);
-    await settle();
+    await layOut(m, 800, 600);
     const saved = JSON.stringify(m.saveLayout());
     const [g1, g2, g3] = m.groups;
     const content = m.contentOf(m.findDocument('d')!);
@@ -236,32 +283,58 @@ describe('TabDocumentManager presentations', () => {
     const bottom = m.dockArea('bottom')!;
     m.presentation = 'tablet';
     await settle();
-    expect(left.element.closest('.mx-drawer')).not.toBe(null);
-    expect(bottom.element.closest('.mx-bottom-sheet')).not.toBe(null);
-    expect(left.strip!.element.hidden).toBe(false);
-    expect(left.sash.element.hidden).toBe(true);
+    expect(left.part.element.closest('.mx-drawer')).not.toBe(null);
+    expect(bottom.part.element.closest('.mx-bottom-sheet')).not.toBe(null);
+    expect(left.strip!.part.element.hidden).toBe(false);
+    expect(left.sash.part.element.hidden).toBe(true);
     // A title opens its drawer with that tool; again, it closes it.
-    left.strip!.element.querySelector<HTMLElement>('.mx-tabdocs__autohide-tab')!.click();
+    left.strip!.part.element.querySelector<HTMLElement>('.mx-tabdocs__autohide-tab')!.click();
     await settle();
-    expect(left.element.closest('.mx-drawer')!.hasAttribute('data-open')).toBe(true);
+    expect(left.part.element.closest('.mx-drawer')!.hasAttribute('data-open')).toBe(true);
     expect(left.isOpen).toBe(true);
-    left.strip!.element.querySelector<HTMLElement>('.mx-tabdocs__autohide-tab')!.click();
+    left.strip!.part.element.querySelector<HTMLElement>('.mx-tabdocs__autohide-tab')!.click();
     await settle();
-    expect(left.element.closest('.mx-drawer')!.hasAttribute('data-open')).toBe(false);
+    expect(left.part.element.closest('.mx-drawer')!.hasAttribute('data-open')).toBe(false);
     // An area's own setting wins: hidden on a tablet.
     left.tabletDockMode = 'hidden';
     await settle();
-    expect(left.element.closest('.mx-drawer')).toBe(null);
-    expect(left.strip!.element.hidden).toBe(true);
+    expect(left.part.element.closest('.mx-drawer')).toBe(null);
+    expect(left.strip!.part.element.hidden).toBe(true);
     left.tabletDockMode = 'sheet';
     await settle();
-    expect(left.element.closest('.mx-bottom-sheet')).not.toBe(null);
+    expect(left.part.element.closest('.mx-bottom-sheet')).not.toBe(null);
     m.presentation = 'desktop';
     await settle();
-    expect(left.element.parentElement).toBe(m.element);
-    expect(bottom.element.parentElement).toBe(m.element);
-    expect(left.sash.element.hidden).toBe(false);
+    expect(left.part.element.parentElement).toBe(m.element);
+    expect(bottom.part.element.parentElement).toBe(m.element);
+    expect(left.sash.part.element.hidden).toBe(false);
     expect(m.element.querySelector('.mx-drawer, .mx-bottom-sheet')).toBe(null);
+  });
+
+  it('moves the dock areas back home in a measure when a new width changes the presentation, reading nowhere else', async () => {
+    let width = 500;
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      return this.classList.contains('mx-tabdocs') ? new DOMRect(0, 0, width, 600) : new DOMRect();
+    });
+    const resize = sizeObserver();
+    const m = layout([['A']]);
+    m.dock(doc('Explorer', { closable: false }), 'left');
+    Object.defineProperty(m.element, 'offsetWidth', { configurable: true, get: () => width });
+    Object.defineProperty(m.element, 'offsetHeight', { configurable: true, get: () => 600 });
+    await settle();
+    await whenMeasured(m);
+    const left = m.dockArea('left')!;
+    expect(m.currentPresentation).toBe('phone');
+    expect(left.part.element.closest('.mx-bottom-sheet')).not.toBe(null);
+    vi.spyOn(errorHandler, 'isDevelopment').mockReturnValue(true);
+    const heard = vi.spyOn(errorHandler, 'reportSuppressed');
+    width = 1400;
+    resize(m.element, width, 600);
+    await whenMeasured(m);
+    await settle();
+    expect(m.currentPresentation).toBe('desktop');
+    expect(left.part.element.parentElement).toBe(m.element);
+    expect(heard.mock.calls.map(([, e]) => String(e))).toEqual([]);
   });
 
   it('on a phone shows one document under a bar with its title, its close button and the count', async () => {
@@ -310,6 +383,7 @@ describe('TabDocumentManager presentations', () => {
     await settle();
     bar(m).querySelector<HTMLElement>('.mx-tabdocs__phone-count button, button.mx-tabdocs__phone-count')!.click();
     await settle();
+    await whenMeasured(m);
     expect(m.documentListOpen).toBe(true);
     const sheet = m.element.querySelector<HTMLElement>('.mx-tabdocs__phone-list')!;
     expect(sheet.hasAttribute('data-open')).toBe(true);
@@ -318,6 +392,20 @@ describe('TabDocumentManager presentations', () => {
     const rows = () => [...sheet.querySelectorAll('.mx-tabdocs__list-section')].map((s) => [...s.querySelectorAll('.mx-tabdocs__list-title')].map((t) => t.textContent));
     expect(rows()).toEqual([['A', 'B'], ['C']]);
     expect(sheet.querySelector('[aria-current="true"] .mx-tabdocs__list-title')!.textContent).toBe('C');
+    // A document that changes is written into its row's parts.
+    const titleOf = (t: string) => [...sheet.querySelectorAll<HTMLElement>('.mx-tabdocs__list-title')].find((e) => e.textContent === t)!;
+    const title = titleOf('B');
+    const b = m.findDocument('b')!;
+    b.title = 'Bee';
+    b.dirty = true;
+    await settle();
+    expect(titleOf('Bee')).toBe(title);
+    expect(title.closest('.mx-tabdocs__list-open')!.querySelector('.mx-tabdocs__list-dirty')).not.toBeNull();
+    b.title = 'B';
+    b.dirty = false;
+    await settle();
+    expect(titleOf('B')).toBe(title);
+    expect(title.closest('.mx-tabdocs__list-open')!.querySelector('.mx-tabdocs__list-dirty')).toBeNull();
     // Alt+Up moves A? No: B up, then past the start of group 2 C goes into group 1.
     const open = (t: string) => [...sheet.querySelectorAll<HTMLElement>('.mx-tabdocs__list-open')].find((b) => b.textContent?.startsWith(t))!;
     key(open('B'), 'ArrowUp', { altKey: true });
@@ -378,7 +466,7 @@ describe('TabDocumentManager presentations', () => {
     buttons()[1].click();
     await settle();
     const bottom = m.dockArea('bottom')!;
-    const sheet = bottom.element.closest('.mx-bottom-sheet')!;
+    const sheet = bottom.part.element.closest('.mx-bottom-sheet')!;
     expect(sheet.hasAttribute('data-open')).toBe(true);
     expect(bottom.groups[0].activeDocument?.title).toBe('Output');
     expect(buttons()[1].getAttribute('aria-pressed')).toBe('true');
@@ -388,7 +476,7 @@ describe('TabDocumentManager presentations', () => {
     // An area that asks for a drawer gets one; a hidden one has no button.
     m.dockArea('right')!.phoneDockMode = 'drawer';
     await settle();
-    expect(m.dockArea('right')!.element.closest('.mx-drawer')).not.toBe(null);
+    expect(m.dockArea('right')!.part.element.closest('.mx-drawer')).not.toBe(null);
     m.phoneDockMode = 'hidden';
     await settle();
     expect(buttons().map((b) => b.textContent)).toEqual(['OOutline']);
@@ -399,17 +487,18 @@ describe('TabDocumentManager presentations', () => {
     await settle();
     const w = m.float(m.findDocument('b')!)!;
     await settle();
-    const sheet = w.body.closest('.mx-bottom-sheet')!;
+    const sheet = w.bodyPart.element.closest('.mx-bottom-sheet')!;
     expect(sheet).not.toBe(null);
     expect(sheet.classList.contains('mx-tabdocs__window-sheet')).toBe(true);
     m.activate(m.findDocument('b')!);
     await settle();
+    await whenMeasured(m);
     expect(sheet.hasAttribute('data-open')).toBe(true);
     expect(m.moveToNewWindow(m.findDocument('a')!)).toBe(null);
     expect(m.mayDrag(m.findDocument('a')!)).toBe(false);
     m.presentation = 'desktop';
     await settle();
-    expect(w.body.parentElement).toBe(w.element);
+    expect(w.bodyPart.element.parentElement).toBe(w.part.element);
     expect(m.floatingWindows).toEqual([w]);
   });
 
@@ -424,7 +513,9 @@ describe('TabDocumentManager presentations', () => {
     expect(backButtonHolders(window)).toBe(1);
     m.showTool(m.dockArea('bottom')!.documents[0]);
     await settle();
-    const sheet = m.dockArea('bottom')!.element.closest('.mx-bottom-sheet')!;
+    const sheet = m.dockArea('bottom')!.part.element.closest('.mx-bottom-sheet')!;
+    // `data-open` lands with the window's next frame.
+    await until(() => sheet.hasAttribute('data-open'));
     expect(sheet.hasAttribute('data-open')).toBe(true);
     const before = m.activeDocument;
     history.back();
@@ -446,6 +537,7 @@ describe('TabDocumentManager presentations', () => {
     bar(m).querySelector<HTMLElement>('.mx-tabdocs__phone-title')!.click();
     await settle();
     const sheet = m.element.querySelector<HTMLElement>('.mx-tabdocs__menu-sheet')!;
+    await until(() => sheet.hasAttribute('data-open'));
     expect(sheet.hasAttribute('data-open')).toBe(true);
     const items = [...sheet.querySelectorAll('.mx-menu__item .mx-menu__label')].map((l) => l.textContent);
     expect(items).toContain('Close');

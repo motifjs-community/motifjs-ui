@@ -279,7 +279,9 @@ describe('TabDocumentManager: hidden documents', () => {
     m.hide(gone);
     await settle();
     expect(kept.contentComponent).toBe(before);
-    expect(kept.contentComponent!.element.isConnected).toBe(true);
+    // Kept whole while its panel is hidden (out of the page).
+    expect(kept.contentComponent!.isDisposed).toBe(false);
+    expect(kept.contentComponent!.element.isConnected).toBe(false);
     expect(gone.contentComponent).toBeNull();
     m.show(kept);
     m.show(gone);

@@ -11,7 +11,7 @@
         "$description": "The access key in a label (`&Save`); `shown`: while Alt is held, or always. The line is the `underline-*` tokens.",
         "selector": ".mx-access-key",
         "states": {
-          "shown": ":root:is([data-mx-alt], [data-mx-access-keys='always']) .mx-access-key"
+          "shown": ":is([data-mx-alt], :root[data-mx-access-keys='always']) .mx-access-key"
         }
       }
     }

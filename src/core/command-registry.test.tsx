@@ -55,19 +55,19 @@ describe('commands', () => {
 
   it('picks the command of the scope that holds the item, else of the one that holds focus, else the app-wide one', async () => {
     const ran: string[] = [];
-    const a = new Doc();
+    const field = <input />;
+    const a = new Doc({ childs: [field] });
     const b = new Doc();
-    page(a, b);
-    const field = a.element.appendChild(document.createElement('input'));
+    const host = page(a, b);
     removers.push(commands.add({ key: 'save', run: () => void ran.push('app') }));
     commands.add({ key: 'save', scope: a, run: () => void ran.push('a') });
     commands.add({ key: 'save', scope: b, run: () => void ran.push('b') });
-    commands.run('save', b.element);
+    commands.run('save', b);
     commands.run('save');
-    field.focus();
+    (field.element as HTMLInputElement).focus();
     commands.run('save');
     await b.dispose();
-    commands.run('save', document.body);
+    commands.run('save', host);
     expect(ran).toEqual(['b', 'app', 'a', 'a']);
     expect(commands.list().filter((c) => c.key === 'save')).toHaveLength(2);
   });
@@ -127,7 +127,7 @@ describe('commands', () => {
     button.element.querySelector<HTMLElement>('button')!.click();
     await settle();
     button.element.querySelector<HTMLElement>('.mx-menu__item')!.click();
-    context.open({ x: 1, y: 1 }, holder.element);
+    context.open({ x: 1, y: 1 }, holder);
     await settle();
     document.querySelector<HTMLElement>('.mx-context-menu .mx-menu__item')!.click();
     expect(ran).toEqual(['bold', 'bold', 'bold', 'bold']);

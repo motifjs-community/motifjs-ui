@@ -1,6 +1,7 @@
 import { Component, type ComponentBase } from '@motifx/core';
 import { onReState } from '../../../core/on-re-state';
 import type { CellTemplateContext } from '../cell-template-context';
+import type { CellPlace } from '../model/cell-place';
 import type { LinePiece } from '../model/line-piece';
 import type { SchedulerColumn } from '../model/scheduler-column';
 import type { GroupResource } from '../model/group-resource';
@@ -10,7 +11,9 @@ import { dayCells } from '../model/view-kind';
 import { AppointmentBox } from './AppointmentBox';
 import { CellWriter } from './CellWriter';
 import { cellWords } from './cell-words';
-import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
+import { part } from '../../../core/draw-parts';
+import { isFocused } from '../../../core/focus';
+import { css, flag, put, shown, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -54,15 +57,39 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
   private heads!: KeyedParts<{ level: number; resource: GroupResource }, Component<HTMLDivElement>>;
   private now!: Component<HTMLDivElement>;
   /** The day each "+N more" button stands for, as last drawn. */
-  private readonly moreOf = new WeakMap<Element, More>();
-  /** The header template each head was filled with: another one (another view, another prop) fills it again. */
-  private readonly headTemplates = new WeakMap<Element, unknown>();
+  private readonly moreOf = new WeakMap<Component<HTMLButtonElement>, More>();
+  /** Each head's content and the header template it was filled with: another one (another view, another prop) fills it again. */
+  private readonly filled = new WeakMap<Component<HTMLDivElement>, { template: unknown; content: Component<HTMLDivElement> }>();
 
   private row: TimelineRow<T>;
+  /** The cell template the cells are filled with: another one fills the same cells again (`fillCells`). */
+  private cellTemplate: Props<T>['cellTemplate'];
+  /** A cell's content made by the cell template. */
+  private readonly contentOf = new WeakMap<Component<HTMLDivElement>, Component<HTMLDivElement>>();
 
   constructor(props: Props<T>) {
     super('div', props);
     this.row = props.row;
+    this.cellTemplate = props.cellTemplate;
+  }
+
+  /** Another cell template: the same cells, each filled again by it. */
+  fillCells(template: Props<T>['cellTemplate']): void {
+    if (template === this.cellTemplate) return;
+    this.cellTemplate = template;
+    this.cells?.each((tick, c) => this.fillCell(c as Component<HTMLDivElement>, tick));
+  }
+
+  /** A cell's content: the cell template's, if there is one. */
+  private fillCell(c: Component<HTMLDivElement>, tick: TimeTick): void {
+    const was = this.contentOf.get(c);
+    if (was) c.controls.remove(was);
+    this.contentOf.delete(c);
+    const template = this.cellTemplate;
+    if (!template) return;
+    const content = part<HTMLDivElement>(c, 'div', 'mx-scheduler__cell-content');
+    content.controls.add(template(this.cellContext(tick)));
+    this.contentOf.set(c, content);
   }
 
   private get host(): SchedulerHost<T> {
@@ -83,12 +110,11 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
   override onConfigured(): void {
     const { host } = this;
     const model = host.model;
-    const el = this.element;
-    el.className = 'mx-scheduler__line';
-    el.setAttribute('role', 'row');
+    this.class.add('mx-scheduler__line');
+    this.attr.add({ role: 'row' });
 
     const head = part<HTMLDivElement>(this, 'div', 'mx-scheduler__line-head');
-    head.element.setAttribute('aria-hidden', 'true');
+    head.attr.add({ 'aria-hidden': 'true' });
     this.heads = new KeyedParts(
       head,
       ({ resource }) => `${resource.field}=${String(resource.value)}`,
@@ -98,20 +124,25 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
 
     const track = part<HTMLDivElement>(this, 'div', 'mx-scheduler__line-track');
     const placeOf = (e: Event) => {
-      const tick = this.cells.placeOf(e, '.mx-scheduler__cell');
+      const tick = this.cells.placeOf(e);
       return tick ? { column: this.row.first + tick.day.index, slot: tick.slot } : null;
     };
-    track.element.addEventListener('pointerdown', (e) => {
+    track.motif.on('pointerdown', (_, e) => {
       const at = placeOf(e);
       if (at) host.cellPointerDown(at, e);
     });
-    track.element.addEventListener('click', (e) => {
+    track.motif.on('click', (_, e) => {
       const at = placeOf(e);
       if (at) host.cellClick(at, e);
     });
-    track.element.addEventListener('dblclick', (e) => {
+    track.motif.on('dblclick', (_, e) => {
       const at = placeOf(e);
       if (at) host.cellDblClick(at, e);
+    });
+    // The cells' keys, on the cell itself: an appointment has its own, and so has what a cell template put in a cell.
+    track.motif.on('keydown', (_, e) => {
+      const onCell = this.cells.find((cell) => cell.motif.isEventFrom(e) && !cell.controls.items.some((inside) => inside.motif.isEventFrom(e)));
+      if (onCell) host.gridKey(e);
     });
     // A row has a cell for each place along the time in view, and many rows are on screen: a cell is written once
     // when it is created, and again only when what it shows changes (the row writes all its cells at once).
@@ -142,7 +173,7 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
     );
 
     const layer = part<HTMLDivElement>(track, 'div', 'mx-scheduler__line-layer');
-    layer.element.setAttribute('role', 'gridcell');
+    layer.attr.add({ role: 'gridcell' });
     this.boxes = new KeyedParts<LinePiece<T>, AppointmentBox<T>>(
       layer,
       (piece) => piece.id,
@@ -157,7 +188,7 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
       () => this.boxes.size,
     );
     this.now = part<HTMLDivElement>(layer, 'div', 'mx-scheduler__now');
-    this.now.element.setAttribute('aria-hidden', 'true');
+    this.now.attr.add({ 'aria-hidden': 'true' });
 
     this.motif.setDisposable(
       model.onChanged((change) => {
@@ -191,14 +222,40 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
   draw(): void {
     if (this.isDisposed || !this.made) return;
     const row = this.row;
-    const el = this.element;
-    put(el, 'data-edge', row.edge || null);
-    flag(el, 'data-first', row.index === 0);
-    css(el, 'block-size', `${row.height}px`);
+    put(this, 'data-edge', row.edge || null);
+    flag(this, 'data-first', row.index === 0);
+    css(this, 'block-size', `${row.height}px`);
     this.heads.show((row.group?.path ?? []).map((resource, level) => ({ level, resource })));
     this.drawWindow();
     this.cells.writeLook();
     this.writeFocus(true);
+  }
+
+  /** Its cell showing a place, while it is built (only the cells in the window are). */
+  cellAt(place: CellPlace): ComponentBase | null {
+    const tick = this.ticks.find((one) => this.row.first + one.day.index === place.column && one.slot === place.slot);
+    return tick ? (this.cellParts.get(String(tick.index)) ?? null) : null;
+  }
+
+  /** Its box of a piece, while the row shows it. */
+  boxOf(id: string): ComponentBase | null {
+    if (!this.made) return null;
+    return this.boxes.get(id) ?? null;
+  }
+
+  /** The place of its cell that has focus, if one has. */
+  cellWithFocus(): CellPlace | null {
+    const tick = this.made ? this.cells.find(isFocused) : undefined;
+    return tick ? { column: this.row.first + tick.day.index, slot: tick.slot } : null;
+  }
+
+  /** The piece of its box that has focus, if one has. */
+  pieceWithFocus(): string | null {
+    const piece = this.pieces.find((one) => {
+      const box = this.boxOf(one.id);
+      return !!box && isFocused(box);
+    });
+    return piece?.id ?? null;
   }
 
   /** What the window shows along the time: the cells, the boxes, "+N more", the line at the time it is now. */
@@ -217,8 +274,8 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
   private drawNow(): void {
     const { host } = this;
     const at = host.model.nowTick();
-    shown(this.now.element, host.showCurrentTime() && at !== null);
-    css(this.now.element, '--_at', String(at ?? 0));
+    shown(this.now, host.showCurrentTime() && at !== null);
+    css(this.now, '--_at', String(at ?? 0));
   }
 
   private per(): number {
@@ -275,14 +332,10 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
 
   private makeCell(tick: TimeTick): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__cell';
-    c.element.setAttribute('role', 'gridcell');
+    c.class.add('mx-scheduler__cell');
+    c.attr.add({ role: 'gridcell' });
     this.cells.add(tick.index, tick, c);
-    const template = this.props.cellTemplate;
-    if (template) {
-      const content = part<HTMLDivElement>(c, 'div', 'mx-scheduler__cell-content');
-      content.controls.add(template(this.cellContext(tick)));
-    }
+    this.fillCell(c, tick);
     return c;
   }
 
@@ -320,8 +373,8 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
 
   private makeHead(level: number, resource: GroupResource): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__resource';
-    put(c.element, 'data-level', String(level));
+    c.class.add('mx-scheduler__resource');
+    put(c, 'data-level', String(level));
     this.fillHead(c, level, resource);
     this.drawHead(c, level, resource);
     return c;
@@ -332,7 +385,7 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
     c.controls.clear();
     const content = part<HTMLDivElement>(c, 'div', 'mx-scheduler__group-content');
     const template = host.headerTemplate();
-    this.headTemplates.set(c.element, template);
+    this.filled.set(c, { template, content });
     if (template) {
       const row = this.row;
       content.controls.add(
@@ -354,29 +407,28 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
       );
     } else {
       const swatch = part<HTMLSpanElement>(content, 'span', 'mx-scheduler__group-swatch');
-      shown(swatch.element, !!resource.color);
-      css(swatch.element, '--_color', resource.color ?? '');
-      part<HTMLSpanElement>(content, 'span', 'mx-scheduler__group-text').element.textContent = resource.text;
+      shown(swatch, !!resource.color);
+      css(swatch, '--_color', resource.color ?? '');
+      text(part<HTMLSpanElement>(content, 'span', 'mx-scheduler__group-text'), resource.text);
     }
   }
 
   private drawHead(c: Component<HTMLDivElement>, level: number, resource: GroupResource): void {
-    if (this.headTemplates.get(c.element) !== this.host.headerTemplate()) this.fillHead(c, level, resource);
+    if (this.filled.get(c)?.template !== this.host.headerTemplate()) this.fillHead(c, level, resource);
     const starts = !!this.row.starts[level];
-    flag(c.element, 'data-continued', !starts);
-    const content = c.element.firstElementChild as HTMLElement | null;
-    if (content) shown(content, starts);
+    flag(c, 'data-continued', !starts);
+    shown(this.filled.get(c)?.content ?? null, starts);
   }
 
   private makeMore(more: More): Component<HTMLButtonElement> {
     const button = new Component<HTMLButtonElement>('button');
-    button.element.type = 'button';
-    button.element.className = 'mx-scheduler__more';
-    button.element.addEventListener('click', (e) => {
-      const at = this.moreOf.get(button.element);
+    button.attr.add({ type: 'button' });
+    button.class.add('mx-scheduler__more');
+    button.motif.on('click', () => {
+      const at = this.moreOf.get(button);
       if (!at) return;
       const st = this.host.model.state;
-      this.host.openMore(st.days[at.day].date, this.row.group?.index ?? -1, e.currentTarget as HTMLElement);
+      this.host.openMore(st.days[at.day].date, this.row.group?.index ?? -1, button);
     });
     this.drawMore(button, more);
     return button;
@@ -385,11 +437,10 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
   private drawMore(button: Component<HTMLButtonElement>, more: More): void {
     const { host, row } = this;
     const st = host.model.state;
-    const el = button.element;
-    this.moreOf.set(el, more);
-    css(el, '--_from', String(more.day * this.per()));
-    css(el, '--_lane', String(row.moreLane));
-    put(el, 'aria-label', host.text('schedulerMoreLabel', { count: more.count, date: `${row.label ? `${row.label}, ` : ''}${host.format.fullDate(st.days[more.day]?.date ?? new Date())}` }));
-    text(el, host.text('schedulerMore', { count: more.count }));
+    this.moreOf.set(button, more);
+    css(button, '--_from', String(more.day * this.per()));
+    css(button, '--_lane', String(row.moreLane));
+    put(button, 'aria-label', host.text('schedulerMoreLabel', { count: more.count, date: `${row.label ? `${row.label}, ` : ''}${host.format.fullDate(st.days[more.day]?.date ?? new Date())}` }));
+    text(button, host.text('schedulerMore', { count: more.count }));
   }
 }

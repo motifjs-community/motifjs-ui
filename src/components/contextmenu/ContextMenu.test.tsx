@@ -1,6 +1,7 @@
-import { Component, reactive } from '@motifx/core';
+import { Component, reactive, type ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { attachContextMenu } from './attach-context-menu';
 import { ContextMenu } from './ContextMenu';
@@ -23,6 +24,9 @@ function page(...children: Parameters<typeof mountHost>) {
 async function settle() {
   for (let i = 0; i < 5; i++) await tick();
 }
+
+// An open menu hears scrolls once core reports it mounted: a task later.
+const mounted = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function press(key: string, init: KeyboardEventInit = {}) {
   const target = (document.activeElement as HTMLElement) ?? document.body;
@@ -67,14 +71,14 @@ describe('ContextMenu', () => {
       </div>,
     );
     await settle();
-    expect(menu.target).toBe(list.element);
+    expect(menu.target).toBe(list);
     expect(menu.element.className).toContain('mx-context-menu');
 
     const row = list.element.querySelector('li')!;
     expect(rightClick(row, 40, 60)).toBe(true);
     expect(shown(menu)).toBe(true);
     expect(menu.opened).toBe(true);
-    expect(menu.targetElement).toBe(row);
+    expect(menu.targetPart?.element).toBe(row);
     const anchor = menu.element.querySelector<HTMLElement>('.mx-context-menu__anchor')!;
     expect([anchor.style.left, anchor.style.top]).toEqual(['40px', '60px']);
     expect(popupOf(menu)!.querySelector('.mx-menu')!.getAttribute('aria-label')).toBe('Row');
@@ -87,15 +91,16 @@ describe('ContextMenu', () => {
 
   it('opens at the focused element with the Menu key and Shift+F10, focus on the first item', async () => {
     const menu = new ContextMenu({ items: [{ text: 'Open' }, { text: 'Rename' }] });
-    const host = page(<List />);
+    let ul!: Component<HTMLElement>;
+    const host = page(<List ref={(c: Component<HTMLElement>) => (ul = c)} />);
     host.element.append(menu.element);
-    menu.target = host.element.querySelector('ul')!;
+    menu.target = ul;
     await settle();
     const row = host.element.querySelector<HTMLElement>('li')!;
     row.focus();
     expect(press('ContextMenu')).toBe(true);
     expect(shown(menu)).toBe(true);
-    expect(menu.targetElement).toBe(row);
+    expect(menu.targetPart?.element).toBe(row);
     expect(document.activeElement).toBe(items(menu)[0]);
     // The contextmenu event the same key sends does not open it again, nor the browser's.
     expect(rightClick(document.activeElement!, 0, 0)).toBe(true);
@@ -111,27 +116,32 @@ describe('ContextMenu', () => {
     expect(shown(menu)).toBe(false);
   });
 
-  it('builds the items per element in onOpening, and can cancel', async () => {
+  it('builds the items per component in onOpening, and can cancel', async () => {
     const chosen: MenuItemClickEventArgs[] = [];
-    let ul!: HTMLElement;
+    const opened: ComponentBase[] = [];
+    let ul!: Component<HTMLElement>;
     const menu = new ContextMenu({
       onItemClick: (e) => void chosen.push(e),
       onOpening: (e) => {
-        const id = e.target.closest('li')?.getAttribute('data-id');
+        opened.push(e.part);
+        const id = e.part.attr.get('data-id');
         if (!id) e.cancel = true;
         else e.items = [{ text: `Open ${id}` }, { text: `Delete ${id}` }];
       },
     });
-    page(<List ref={(c: Component<HTMLElement>) => (ul = c.element)} />, menu);
+    page(<List ref={(c: Component<HTMLElement>) => (ul = c)} />, menu);
     menu.target = () => ul;
     await settle();
-    rightClick(ul.querySelectorAll('li')[1]);
+    rightClick(ul.element.querySelectorAll('li')[1]);
+    // The innermost component under the pointer, the one targetPart reports.
+    expect(opened[0].element).toBe(ul.element.querySelectorAll('li')[1]);
+    expect(menu.targetPart).toBe(opened[0]);
     expect(names(menu)).toEqual(['Open 2', 'Delete 2']);
     items(menu)[1].click();
     expect(chosen.map((e) => [e.item.text, e.source === menu])).toEqual([['Delete 2', true]]);
 
     // Not on a row: canceled, and the browser keeps its own menu.
-    expect(rightClick(ul)).toBe(false);
+    expect(rightClick(ul.element)).toBe(false);
     expect(shown(menu)).toBe(false);
   });
 
@@ -144,30 +154,32 @@ describe('ContextMenu', () => {
       </section>,
     );
     await settle();
-    expect(menu.target).toBe(document.querySelector('section.area'));
+    expect(menu.target?.element).toBe(document.querySelector('section.area'));
     rightClick(document.querySelector('section.area p')!);
     expect(shown(menu)).toBe(true);
   });
 
   it('closes on a press outside; scrolling the menu itself never closes it', async () => {
     const menu = new ContextMenu({ items: [{ text: 'One' }] });
-    page(<div class="zone" />, menu);
-    menu.target = document.querySelector('.zone')!;
+    let zone!: Component<HTMLElement>;
+    page(<div class="zone" ref={(c: Component<HTMLElement>) => (zone = c)} />, menu);
+    menu.target = zone;
     await settle();
-    rightClick(menu.target!);
+    rightClick(menu.target!.element);
     document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     expect(shown(menu)).toBe(false);
 
-    rightClick(menu.target!);
+    rightClick(menu.target!.element);
     popupOf(menu)!.dispatchEvent(new Event('scroll'));
     expect(shown(menu)).toBe(true);
   });
 
   it('follows the element it opened on while the page scrolls, and closes once that element is off the screen', async () => {
     const menu = new ContextMenu({ items: [{ text: 'One' }] });
-    page(<div class="zone" />, menu);
-    const zone = document.querySelector<HTMLElement>('.zone')!;
-    menu.target = zone;
+    let zonePart!: Component<HTMLElement>;
+    page(<div class="zone" ref={(c: Component<HTMLElement>) => (zonePart = c)} />, menu);
+    const zone = zonePart.element;
+    menu.target = zonePart;
     await settle();
     let top = 50;
     zone.getBoundingClientRect = () => new DOMRect(10, top, 200, 40);
@@ -176,20 +188,21 @@ describe('ContextMenu', () => {
       top -= by;
       document.dispatchEvent(new Event('scroll'));
       document.dispatchEvent(new Event('scrollend'));
+      measureNow(menu);
     };
 
     // The late scroll a press makes when it moves focus: the menu goes along.
     rightClick(zone, 40, 60);
+    await mounted();
     scroll(30);
     expect(shown(menu)).toBe(true);
     expect([anchor.style.left, anchor.style.top]).toEqual(['40px', '30px']);
-    // Another element scrolled: nothing moves.
+    // Another element scrolled, and the element it opened on stayed: nothing moves.
     const other = document.createElement('div');
     document.body.append(other);
-    top -= 5;
     other.dispatchEvent(new Event('scroll'));
+    measureNow(menu);
     expect([shown(menu), anchor.style.top]).toEqual([true, '30px']);
-    top += 5;
 
     scroll(200);
     expect(shown(menu)).toBe(false);
@@ -198,31 +211,38 @@ describe('ContextMenu', () => {
     top = 50;
     menu.closeOnScroll = false;
     rightClick(zone, 40, 60);
+    await mounted();
     scroll(200);
     expect(shown(menu)).toBe(true);
   });
 
   it('closes once the element it opened on is scrolled out of the box that holds it', async () => {
     const menu = new ContextMenu({ items: [{ text: 'One' }] });
+    let holder!: Component<HTMLElement>;
     page(
-      <div class="box">
+      <div class="box" ref={(c: Component<HTMLElement>) => (holder = c)}>
         <div class="row" />
       </div>,
       menu,
     );
     const box = document.querySelector<HTMLElement>('.box')!;
     const row = document.querySelector<HTMLElement>('.row')!;
-    box.style.overflow = 'auto';
-    menu.target = box;
+    // The test document does not expand the shorthand: the menu reads each direction.
+    box.style.overflowX = 'auto';
+    box.style.overflowY = 'auto';
+    // Given as a component, the menu knows the components inside it: the one pressed is the one it follows.
+    menu.target = holder;
     await settle();
     let top = 120;
     box.getBoundingClientRect = () => new DOMRect(0, 100, 300, 200);
     row.getBoundingClientRect = () => new DOMRect(0, top, 300, 30);
     rightClick(row, 20, 130);
+    await mounted();
     const scroll = (to: number) => {
       top = to;
       box.dispatchEvent(new Event('scroll'));
       box.dispatchEvent(new Event('scrollend'));
+      measureNow(menu);
     };
     scroll(85);
     expect(shown(menu)).toBe(true);
@@ -233,30 +253,30 @@ describe('ContextMenu', () => {
 
   it('leaves the browser its own menu while disabled or empty, and follows a target that changes', async () => {
     const s = reactive({ second: false });
-    let a!: HTMLElement;
-    let b!: HTMLElement;
+    let a!: Component<HTMLElement>;
+    let b!: Component<HTMLElement>;
     const menu = new ContextMenu({ items: [{ text: 'One' }], enabled: false });
-    page(<div ref={(c: Component<HTMLElement>) => (a = c.element)} />, <div ref={(c: Component<HTMLElement>) => (b = c.element)} />, menu);
+    page(<div ref={(c: Component<HTMLElement>) => (a = c)} />, <div ref={(c: Component<HTMLElement>) => (b = c)} />, menu);
     menu.target = () => (s.second ? b : a);
     await settle();
-    expect(rightClick(a)).toBe(false);
+    expect(rightClick(a.element)).toBe(false);
     menu.enabled = true;
-    expect(rightClick(a)).toBe(true);
+    expect(rightClick(a.element)).toBe(true);
     menu.close();
     s.second = true;
     await settle();
     expect(menu.target).toBe(b);
-    expect(rightClick(a)).toBe(false);
+    expect(rightClick(a.element)).toBe(false);
     menu.items = [{ text: 'Gone', visible: false }];
-    expect(rightClick(b)).toBe(false);
+    expect(rightClick(b.element)).toBe(false);
   });
 
   it('reads a target given as a function over plain data again on reState', async () => {
     const plain = { second: false };
-    let a!: HTMLElement;
-    let b!: HTMLElement;
+    let a!: Component<HTMLElement>;
+    let b!: Component<HTMLElement>;
     const menu = new ContextMenu({ items: [{ text: 'One' }], target: () => (plain.second ? b : a) });
-    const host = page(<div ref={(c: Component<HTMLElement>) => (a = c.element)} />, <div ref={(c: Component<HTMLElement>) => (b = c.element)} />, menu);
+    const host = page(<div ref={(c: Component<HTMLElement>) => (a = c)} />, <div ref={(c: Component<HTMLElement>) => (b = c)} />, menu);
     await settle();
     expect(menu.target).toBe(a);
     plain.second = true;
@@ -264,25 +284,27 @@ describe('ContextMenu', () => {
     expect(menu.target).toBe(a);
     host.reState();
     expect(menu.target).toBe(b);
-    expect(rightClick(b)).toBe(true);
+    expect(rightClick(b.element)).toBe(true);
   });
 
-  it('opens programmatically at a point or at an element', async () => {
+  it('opens programmatically at a point or at a component', async () => {
     const menu = new ContextMenu({ items: [{ text: 'One' }] });
-    page(<button class="go">Go</button>, menu);
+    const goPart = <button class="go">Go</button>;
+    page(goPart, menu);
     const go = document.querySelector<HTMLElement>('.go')!;
-    menu.target = go;
+    menu.target = goPart;
     expect(menu.open({ x: 5, y: 7 })).toBe(true);
-    expect(menu.targetElement).toBe(go);
+    expect(menu.targetPart?.element).toBe(go);
     menu.close();
-    expect(menu.open(go)).toBe(true);
+    expect(menu.open(goPart)).toBe(true);
     expect(document.activeElement).toBe(items(menu)[0]);
   });
 
-  it('attachContextMenu gives an element a menu made per opening, until removed', async () => {
-    const host = page(<List />);
-    const ul = host.element.querySelector('ul')!;
-    const remove = attachContextMenu(ul, (e) => [{ text: `Row ${e.target.closest('li')?.getAttribute('data-id') ?? '-'}` }]);
+  it('attachContextMenu gives a component a menu made per opening, until removed', async () => {
+    let ulPart!: Component<HTMLElement>;
+    page(<List ref={(c: Component<HTMLElement>) => (ulPart = c)} />);
+    const ul = ulPart.element;
+    const remove = attachContextMenu(ulPart, (e) => [{ text: `Row ${e.part.attr.get('data-id') ?? '-'}` }]);
     expect(rightClick(ul.querySelector('li')!)).toBe(true);
     const popup = document.querySelector<HTMLElement>('.mx-context-menu .mx-popup')!;
     expect(popup.textContent).toBe('Row 1');
@@ -291,7 +313,7 @@ describe('ContextMenu', () => {
     expect(document.querySelector('.mx-context-menu')).toBeNull();
     expect(rightClick(ul)).toBe(false);
 
-    const fixed = attachContextMenu(ul, [{ text: 'Same' }]);
+    const fixed = attachContextMenu(ulPart, [{ text: 'Same' }]);
     expect(rightClick(ul)).toBe(true);
     fixed();
   });
@@ -303,7 +325,7 @@ describe('ContextMenu', () => {
       document.body.append(target);
       const list = make<MenuItem[]>([{ text: 'Copy' }, { text: 'Delete' }]);
       const clicked: unknown[] = [];
-      const menu = new ContextMenu({ target, items: list, onItemClick: (e) => void clicked.push(e.item) });
+      const menu = new ContextMenu({ target: new Component<HTMLElement>(target), items: list, onItemClick: (e) => void clicked.push(e.item) });
       page(menu);
       await settle();
       rightClick(target);

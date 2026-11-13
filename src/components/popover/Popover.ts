@@ -1,14 +1,18 @@
 import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, mark, part, put, shown, text } from "../../core/draw-parts";
-import { homeOf } from "../../core/flow-home";
-import { deepActiveElement, focusInitial } from "../../core/focus";
+import { part } from "../../core/draw-parts";
+import { onDocument } from "../../core/window-events";
+import { placeInTree } from "../../core/flow-home";
+import { focusFirstIn, focusOn, holdsFocus } from "../../core/focus";
 import { dismissMark } from "../../core/glyphs";
+import { boxOf, isInPage, measure, onLayout, type Box } from "../../core/measure";
 import { nextId } from "../../core/next-id";
-import { isElement, isNode } from "../../core/node-kind";
+import { isElement } from "../../core/node-kind";
 import { onLanguage } from "../../core/on-language";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
-import { placePopup } from "../../parts/popup/place-popup";
+import { placeNear } from "../../parts/popup/place-near";
+import type { Placed } from "../../parts/popup/placed";
 import type { PopupPlacement } from "../../parts/popup/popup-placement";
 import { Button } from "../button/Button";
 import type { TooltipTarget } from "../tooltip/tooltip-target";
@@ -20,16 +24,6 @@ import type { PopoverShowOn } from "./popover-show-on";
 const OWN = ['target', 'content', 'showOn', 'placement', 'arrow', 'showClose', 'width', 'closeOnOutside', 'delay', 'hideDelay', 'value', 'label'] as const;
 
 const hasPopover = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
-
-function elementOf(target: TooltipTarget | null | undefined): HTMLElement | null {
-    if (!target) {
-        return null;
-    }
-    if (isElement(target)) {
-        return target as HTMLElement;
-    }
-    return isElement(target.element) ? (target.element as HTMLElement) : null;
-}
 
 /**
  * Content next to the element it belongs to, with a title, a close button and any content. It opens on a click on its
@@ -45,20 +39,30 @@ function elementOf(target: TooltipTarget | null | undefined): HTMLElement | null
  * </Popover>
  */
 export class Popover extends Control<HTMLDivElement, PopoverProps> {
+    /** The ids of the popover and its title, for the attributes that point at them. */
+    popoverId = nextId('popover');
+    titleId = nextId('popover-title');
     arrowPart: Component<HTMLSpanElement>;
     header: Component<HTMLDivElement>;
     titlePart: Component<HTMLDivElement>;
     closeButton: Button;
     body: Component<HTMLDivElement>;
     contentPart: ComponentBase | null = null;
-    anchor: HTMLElement | null = null;
+    /** The target it opens next to. */
+    anchor: ComponentBase | null = null;
     opened = false;
     placedItself = false;
-    watched: Document | null = null;
-    frame = 0;
+    /** Stops listening to the page while it is open. */
+    stopPage: (() => void)[] = [];
+    /** Takes back the placing asked for last. */
+    stopPlace: (() => void) | null = null;
+    /** The arrow as read with the last placing: its length along the edge decides how near a corner it may go. */
+    arrowBox: Box | null = null;
     showTimer: ReturnType<typeof setTimeout> | null = null;
     hideTimer: ReturnType<typeof setTimeout> | null = null;
     unlink: (() => void) | null = null;
+    /** Focus is leaving the target (`hover`) or the popover: where it lands decides whether it closes. */
+    leaving: 'target' | 'popover' | null = null;
     // The value is being given back: the observer must not open or close again.
     telling = false;
     openedEmitter = new Emitter<void>();
@@ -68,23 +72,21 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
     constructor(props?: IBaseProp<PopoverProps>) {
         super('div', props);
         const own = (this.props ?? {}) as PopoverProps;
-        const el = this.element;
-        el.classList.add('mx-popover');
-        el.id = nextId('popover');
-        el.setAttribute('role', 'dialog');
-        el.tabIndex = -1;
+        this.class.add('mx-popover');
+        this.attr.add({ id: this.popoverId, role: 'dialog' });
+        put(this, 'tabindex', '-1');
         if (hasPopover) {
-            el.popover = 'manual';
+            this.attr.add({ popover: 'manual' });
         } else {
-            el.hidden = true;
+            mark(this, 'hidden', true);
         }
         this.arrowPart = part<HTMLSpanElement>(this, 'span', 'mx-popover__arrow');
-        this.arrowPart.element.setAttribute('aria-hidden', 'true');
+        this.arrowPart.attr.add({ 'aria-hidden': 'true' });
         this.header = part<HTMLDivElement>(this, 'div', 'mx-popover__header');
         this.titlePart = part<HTMLDivElement>(this.header, 'div', 'mx-popover__title');
-        this.titlePart.element.id = nextId('popover-title');
+        this.titlePart.attr.add({ id: this.titleId });
         this.closeButton = new Button({ icon: dismissMark(), size: 'sm', onclick: () => this.close('close-button') });
-        this.closeButton.element.classList.add('mx-popover__close');
+        this.closeButton.class.add('mx-popover__close');
         this.header.controls.add(this.closeButton);
         this.body = part<HTMLDivElement>(this, 'div', 'mx-popover__body');
         if (this.childs?.length) {
@@ -100,12 +102,12 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         this.observeProperty<string>('text', () => this.drawHeader());
         this.observeProperty<string>('label', () => this.drawHeader());
         this.observeProperty<boolean>('showClose', () => this.drawHeader());
-        this.observeProperty<TooltipTarget | null>('target', target => this.attach(elementOf(target)));
+        this.observeProperty<TooltipTarget | null>('target', target => this.attach(this.takeIn(target)));
         this.observeProperty<PopoverShowOn>('showOn', () => this.attach(this.anchor, true));
         this.observeProperty('content', () => this.drawContent());
         this.observeProperty('placement', () => this.place());
-        this.observeProperty<boolean>('arrow', on => mark(el, 'data-arrow', on !== false));
-        this.observeProperty<string | number | null>('width', width => css(el, 'inline-size', width === null || width === undefined || width === '' ? '' : typeof width === 'number' ? `${width}px` : width));
+        this.observeProperty<boolean>('arrow', on => mark(this, 'data-arrow', on !== false));
+        this.observeProperty<string | number | null>('width', width => css(this, 'inline-size', width === null || width === undefined || width === '' ? '' : typeof width === 'number' ? `${width}px` : width));
         this.observeProperty<boolean>('value', value => {
             if (this.telling) {
                 return;
@@ -128,16 +130,18 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
                 if (!this.isDisposed && !this.anchor) this.bindProperty('target', target);
             });
         }
-        el.addEventListener('keydown', e => this.keyDown(e));
-        el.addEventListener('focusout', e => this.focusOut(e));
-        el.addEventListener('pointerenter', () => this.pointerIn());
-        el.addEventListener('pointerleave', () => this.pointerOut());
-        el.addEventListener('click', e => e.stopPropagation());
+        this.motif.on('keydown', (_, e) => this.keyDown(e));
+        this.motif.on('focusout', (_, e) => this.focusOut(e));
+        this.motif.on('pointerenter', () => this.pointerIn());
+        this.motif.on('pointerleave', () => this.pointerOut());
+        this.motif.on('click', (_, e) => e.stopPropagation());
+        this.motif.on('toggle', (_, e) => {
+            if ((e as ToggleEvent).newState === 'open') this.moveFocusIn();
+        });
         this.motif.setDisposable(() => {
             this.clearTimers();
             this.close('code');
             this.attach(null);
-            if (this.placedItself) el.remove();
             this.openedEmitter.dispose();
             this.closing.dispose();
             this.closed.dispose();
@@ -250,31 +254,29 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
      */
     open(): boolean {
         const anchor = this.anchor;
-        if (this.opened || !anchor?.isConnected || !this.isEnabled) {
+        if (this.opened || !anchor || !isInPage(anchor) || !this.isEnabled) {
             return false;
         }
         this.clearTimers();
-        const el = this.element;
-        if (!el.isConnected) {
+        if (!isInPage(this)) {
             if (!this.isBuilt) {
                 this.build();
             }
-            homeOf(anchor).append(el);
+            placeInTree(anchor, this);
             this.placedItself = true;
         }
         this.drawContent();
+        // The browser shows it a moment later; focus moves in once it is open (its `toggle` event).
         if (hasPopover) {
-            if (!el.matches(':popover-open')) el.showPopover();
+            this.attr.add({ showPopover: true });
         } else {
-            el.hidden = false;
+            mark(this, 'hidden', false);
         }
         this.opened = true;
-        this.listen(anchor.ownerDocument);
+        this.listen(anchor);
         this.place();
         put(anchor, 'aria-expanded', 'true');
-        if (this.peekProperty<PopoverShowOn>('showOn') !== 'hover') {
-            if (!focusInitial(el)) el.focus({ preventScroll: true });
-        }
+        if (!hasPopover) this.moveFocusIn();
         this.tell(true);
         this.openedEmitter.fire();
         return true;
@@ -291,19 +293,19 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         if (args.cancel && !this.isDisposed) {
             return false;
         }
-        const el = this.element;
-        const focusInside = el.contains(deepActiveElement(el));
+        const focusInside = holdsFocus(this);
         this.opened = false;
         this.stopListening();
-        if (hasPopover && el.matches(':popover-open')) {
-            el.hidePopover();
+        if (hasPopover) {
+            this.attr.add({ showPopover: false });
         } else {
-            el.hidden = true;
+            mark(this, 'hidden', true);
         }
-        if (this.anchor) {
+        // A target already disposed has nothing left to write to or to focus.
+        if (this.anchor && !this.anchor.isDisposed) {
             put(this.anchor, 'aria-expanded', 'false');
             // Focus that leaves on its own (Tab, a click elsewhere) goes where it was going.
-            if (focusInside && reason !== 'focus') this.anchor.focus({ preventScroll: true });
+            if (focusInside && reason !== 'focus') focusOn(this.anchor, { preventScroll: true });
         }
         this.tell(false);
         this.closed.fire(reason);
@@ -324,23 +326,44 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         if (!this.opened || !anchor) {
             return;
         }
-        if (!anchor.isConnected) {
+        if (!isInPage(anchor)) {
             this.close('code');
             return;
         }
-        const el = this.element;
-        placePopup(el, anchor, this.peekProperty<PopupPlacement>('placement') ?? 'bottom', false);
-        // The arrow points at the middle of the target, kept inside the popover's edge.
-        const arrow = this.arrowPart.element;
-        const box = el.getBoundingClientRect();
-        const target = anchor.getBoundingClientRect();
-        const across = el.dataset.side === 'start' || el.dataset.side === 'end';
-        const half = (across ? arrow.offsetHeight : arrow.offsetWidth) / 2 || 6;
+        const placement = this.peekProperty<PopupPlacement>('placement') ?? 'bottom';
+        measure(this, this.readArrow, this.keepArrow);
+        this.stopPlace = placeNear(this, anchor, { placement, placed: this.drawArrow });
+    }
+
+    readArrow = (): Box => boxOf(this.arrowPart);
+
+    keepArrow = (arrow: Box): void => {
+        this.arrowBox = arrow;
+    };
+
+    // The arrow points at the middle of the target, kept inside the popover's edge.
+    drawArrow = (where: Placed): void => {
+        if (!this.opened) {
+            return;
+        }
+        const arrow = this.arrowBox;
+        const box = where.rect;
+        const target = where.anchor;
+        const across = where.side === 'start' || where.side === 'end';
+        const half = (arrow ? (across ? arrow.offsetHeight : arrow.offsetWidth) : 0) / 2 || 6;
         const length = across ? box.height : box.width;
         const middle = across ? target.top + target.height / 2 - box.top : target.left + target.width / 2 - box.left;
         const at = Math.max(half + 4, Math.min(middle, length - half - 4));
-        css(arrow, across ? 'top' : 'left', `${at.toFixed(2)}px`);
-        css(arrow, across ? 'left' : 'top', '');
+        css(this.arrowPart, across ? 'top' : 'left', `${at.toFixed(2)}px`);
+        css(this.arrowPart, across ? 'left' : 'top', '');
+    };
+
+    // Focus already inside (put there by an `onOpened` handler) stays where it is.
+    moveFocusIn(): void {
+        if (!this.opened || this.peekProperty<PopoverShowOn>('showOn') === 'hover' || holdsFocus(this)) {
+            return;
+        }
+        if (!focusFirstIn(this)) focusOn(this, { preventScroll: true });
     }
 
     // The value given back: `x-model` and the `value` property follow what opened or closed.
@@ -360,12 +383,12 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         const title = this.peekProperty<string>('text') ?? '';
         const close = !!this.peekProperty<boolean>('showClose');
         const label = this.peekProperty<string>('label') ?? '';
-        text(this.titlePart.element, title);
-        shown(this.titlePart.element, title !== '');
-        shown(this.closeButton.element, close);
-        shown(this.header.element, title !== '' || close);
-        put(this.element, 'aria-labelledby', title ? this.titlePart.element.id : null);
-        put(this.element, 'aria-label', title ? null : label || null);
+        text(this.titlePart, title);
+        shown(this.titlePart, title !== '');
+        shown(this.closeButton, close);
+        shown(this.header, title !== '' || close);
+        put(this, 'aria-labelledby', title ? this.titleId : null);
+        put(this, 'aria-label', title ? null : label || null);
     }
 
     drawContent(): void {
@@ -383,8 +406,13 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         this.place();
     }
 
+    /** The target given, when it has an element to open next to (a fragment has none). */
+    takeIn(target: TooltipTarget | null | undefined): ComponentBase | null {
+        return target && isElement(target.element) ? target : null;
+    }
+
     // The target's listeners, for the way it opens; the attributes that tie the two.
-    attach(anchor: HTMLElement | null, again = false): void {
+    attach(anchor: ComponentBase | null, again = false): void {
         if (anchor === this.anchor && !again) {
             return;
         }
@@ -392,14 +420,14 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         this.unlink = null;
         if (this.anchor && this.anchor !== anchor) {
             this.close('code');
-            for (const name of ['aria-expanded', 'aria-controls', 'aria-haspopup']) this.anchor.removeAttribute(name);
+            if (!this.anchor.isDisposed) for (const name of ['aria-expanded', 'aria-controls', 'aria-haspopup']) put(this.anchor, name, null);
         }
         this.anchor = anchor;
-        if (!anchor) {
+        if (!anchor || anchor.isDisposed) {
             return;
         }
         const showOn = this.peekProperty<PopoverShowOn>('showOn') ?? 'click';
-        put(anchor, 'aria-controls', this.element.id);
+        put(anchor, 'aria-controls', this.popoverId);
         put(anchor, 'aria-expanded', this.opened ? 'true' : 'false');
         put(anchor, 'aria-haspopup', showOn === 'click' ? 'dialog' : null);
         const press = () => {
@@ -414,23 +442,24 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
             this.clearTimers();
             this.open();
         };
-        const focusOut = (e: FocusEvent) => {
-            const to = e.relatedTarget as Node | null;
-            if (!to || !this.element.contains(to)) this.close('focus');
+        // Focus that goes somewhere while it is open closes it unless it lands in the popover (onFocusIn).
+        const focusOut = (_: ComponentBase, e: FocusEvent) => {
+            if (e.relatedTarget && this.opened) this.leaving = 'target';
+            else this.close('focus');
         };
         if (showOn === 'click') {
-            anchor.addEventListener('click', press);
-            this.unlink = () => anchor.removeEventListener('click', press);
+            void anchor.motif.on('click', press);
+            this.unlink = () => void anchor.motif.off('click', press);
         } else if (showOn === 'hover') {
-            anchor.addEventListener('pointerenter', enter);
-            anchor.addEventListener('pointerleave', leave);
-            anchor.addEventListener('focusin', focusIn);
-            anchor.addEventListener('focusout', focusOut);
+            void anchor.motif.on('pointerenter', enter);
+            void anchor.motif.on('pointerleave', leave);
+            void anchor.motif.on('focusin', focusIn);
+            void anchor.motif.on('focusout', focusOut);
             this.unlink = () => {
-                anchor.removeEventListener('pointerenter', enter);
-                anchor.removeEventListener('pointerleave', leave);
-                anchor.removeEventListener('focusin', focusIn);
-                anchor.removeEventListener('focusout', focusOut);
+                void anchor.motif.off('pointerenter', enter);
+                void anchor.motif.off('pointerleave', leave);
+                void anchor.motif.off('focusin', focusIn);
+                void anchor.motif.off('focusout', focusOut);
             };
         }
     }
@@ -449,7 +478,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         this.clearTimers();
         this.hideTimer = setTimeout(() => {
             // Focus inside keeps it: the pointer only wandered off.
-            if (!this.element.contains(deepActiveElement(this.element))) this.close('hover');
+            if (!holdsFocus(this)) this.close('hover');
         }, this.hideDelay);
     }
 
@@ -459,52 +488,42 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         this.showTimer = this.hideTimer = null;
     }
 
-    listen(doc: Document): void {
-        if (this.watched) {
+    listen(anchor: ComponentBase): void {
+        if (this.stopPage.length) {
             return;
         }
-        this.watched = doc;
-        doc.addEventListener('pointerdown', this.onPointerDown, true);
-        doc.defaultView?.addEventListener('scroll', this.onScroll, true);
-        doc.defaultView?.addEventListener('resize', this.schedule);
+        // A press outside, focus landing, and the page scrolling or changing size, while it is open. Its own content
+        // scrolling moves nothing.
+        this.stopPage = [
+            onDocument(anchor, 'pointerdown', this.onPointerDown, true),
+            onDocument(anchor, 'focusin', this.onFocusIn, true),
+            onLayout(this, 'scroll', () => this.place(), { except: this }),
+            onLayout(this, 'page', () => this.place()),
+        ];
     }
 
     stopListening(): void {
-        const doc = this.watched;
-        this.watched = null;
-        if (!doc) {
-            return;
-        }
-        doc.removeEventListener('pointerdown', this.onPointerDown, true);
-        doc.defaultView?.cancelAnimationFrame?.(this.frame);
-        doc.defaultView?.removeEventListener('scroll', this.onScroll, true);
-        doc.defaultView?.removeEventListener('resize', this.schedule);
+        this.leaving = null;
+        for (const stop of this.stopPage.splice(0)) stop();
+        this.stopPlace?.();
+        this.stopPlace = null;
     }
 
-    schedule = (): void => {
-        const view = this.watched?.defaultView;
-        if (typeof view?.requestAnimationFrame !== 'function') {
-            this.place();
-            return;
-        }
-        view.cancelAnimationFrame(this.frame);
-        this.frame = view.requestAnimationFrame(() => this.place());
-    };
-
-    // Its own content scrolling moves nothing.
-    onScroll = (e: Event): void => {
-        if (isNode(e.target) && this.element.contains(e.target)) {
-            return;
-        }
-        this.schedule();
-    };
-
     onPointerDown = (e: PointerEvent): void => {
-        const target = e.target as Node;
-        if (this.element.contains(target) || this.anchor?.contains(target)) {
+        if (this.motif.isEventFrom(e) || this.anchor?.motif.isEventFrom(e)) {
             return;
         }
         if (this.peekProperty<boolean | undefined>('closeOnOutside') !== false) this.close('outside');
+    };
+
+    // Focus that left the popover may land in it or on its target; focus that left the target, only in the popover.
+    onFocusIn = (e: FocusEvent): void => {
+        const from = this.leaving;
+        this.leaving = null;
+        if (!from || this.motif.isEventFrom(e) || (from === 'popover' && this.anchor?.motif.isEventFrom(e))) {
+            return;
+        }
+        this.close('focus');
     };
 
     keyDown(e: KeyboardEvent): void {
@@ -517,9 +536,9 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         this.close('escape');
     }
 
+    // Focus that goes nowhere keeps it open; focus that goes somewhere closes it unless it lands here or on the target (onFocusIn).
     focusOut(e: FocusEvent): void {
-        const to = e.relatedTarget as Node | null;
-        if (to && !this.element.contains(to) && !this.anchor?.contains(to)) this.close('focus');
+        if (e.relatedTarget && this.opened) this.leaving = 'popover';
     }
 
     protected override applyProperty(name: string, value: unknown): void {

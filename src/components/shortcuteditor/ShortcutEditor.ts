@@ -1,9 +1,11 @@
 import { Component, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, shown } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
+import { onWindow } from "../../core/window-events";
 import { fillTemplate } from "../../core/fill-template";
 import { functionValue } from "../../core/function-value";
 import { onLanguage } from "../../core/on-language";
+import { css, put, shown, text } from "../../core/part-writes";
 import { shortcuts } from "../../core/shortcut-registry";
 import type { ShortcutInfo } from "../../core/shortcut-info";
 import { shortcutText } from "../../core/shortcut-text";
@@ -62,9 +64,8 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
     constructor(props?: IBaseProp<ShortcutEditorProps>) {
         super('div', props);
         const own = (this.props ?? {}) as ShortcutEditorProps;
-        const el = this.element;
-        el.classList.add('mx-shortcut-editor');
-        el.setAttribute('role', 'group');
+        this.class.add('mx-shortcut-editor');
+        this.attr.add({ role: 'group' });
 
         const button = (click: () => void): ToolbarItem => ({ text: '', click: () => untracked(click) });
         this.assignItem = button(() => this.give(this.pressed ? [this.pressed] : null));
@@ -72,14 +73,14 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
         this.resetItem = button(() => this.give(null));
         this.resetAllItem = button(() => this.resetAll());
         this.bar = new Toolbar({ size: 'sm', items: [this.assignItem, this.removeItem, this.resetItem, this.resetAllSeparator, this.resetAllItem] });
-        this.bar.element.classList.add('mx-shortcut-editor__tools');
+        this.bar.class.add('mx-shortcut-editor__tools');
 
         this.capture = new TextBox({ labelMode: 'hidden', readOnly: true });
-        this.capture.element.classList.add('mx-shortcut-editor__capture');
+        this.capture.class.add('mx-shortcut-editor__capture');
         this.status = new Component<HTMLOutputElement>('output');
-        this.status.element.className = 'mx-shortcut-editor__status';
+        this.status.class.add('mx-shortcut-editor__status');
         const keysRow = new Component<HTMLDivElement>('div');
-        keysRow.element.className = 'mx-shortcut-editor__keys';
+        keysRow.class.add('mx-shortcut-editor__keys');
         keysRow.controls.add(this.capture, this.status);
 
         this.list = new ListBox<ShortcutRow, string>({
@@ -89,9 +90,11 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
             labelMode: 'hidden',
             stretch: true,
             height: '100%',
-            itemTemplate: (row, host) => this.drawRow(row, host),
+            itemTemplate: (row, holder) => {
+                this.drawRow(row, holder);
+            },
         });
-        this.list.element.classList.add('mx-shortcut-editor__list');
+        this.list.class.add('mx-shortcut-editor__list');
         this.list.onValueChanged(() => this.drawTools());
         this.controls.add(this.bar, keysRow, this.list);
 
@@ -103,7 +106,7 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
         this.observeProperty('grouped', () => this.drawGroups());
         this.observeProperty<boolean | undefined>('searchEnabled', on => (this.list.searchEnabled = on !== false));
         this.observeProperty('resetAllEnabled', () => this.drawTools());
-        this.observeProperty<string | null | undefined>('height', height => css(el, 'block-size', height ?? ''));
+        this.observeProperty<string | null | undefined>('height', height => css(this, 'block-size', height ?? ''));
         this.observeProperty('label', () => this.drawTexts());
         onLanguage(this, () => {
             this.drawTexts();
@@ -228,12 +231,10 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
         queueMicrotask(() => this.refreshQueued && this.refresh());
     }
 
-    drawRow(row: ShortcutRow, host: HTMLElement): void {
-        const doc = host.ownerDocument;
+    /** The list's template: the row's texts as parts of the row's text part. */
+    drawRow(row: ShortcutRow, holder: ComponentBase): void {
         const add = (className: string, text: string) => {
-            const span = host.appendChild(doc.createElement('span'));
-            span.className = className;
-            span.textContent = text;
+            part<HTMLSpanElement>(holder, 'span', className).setText(text);
         };
         add('mx-shortcut-editor__text', row.text);
         if (row.changed) add('mx-shortcut-editor__changed', uiLocale.strings.shortcutEditorChanged);
@@ -248,7 +249,7 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
     drawTexts(): void {
         const s = uiLocale.strings;
         const label = this.label || s.shortcutEditorLabel;
-        this.element.setAttribute('aria-label', label);
+        put(this, 'aria-label', label);
         this.list.label = label;
         this.bar.label = label;
         this.capture.label = s.shortcutEditorPressKeys;
@@ -271,9 +272,9 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
         this.resetAllSeparator.visible = this.resetAllEnabled;
         this.resetAllItem.enabled = Object.keys(shortcuts.keymap).length > 0;
         this.bar.refresh();
-        shown(this.status.element, !!this.pressed);
+        shown(this.status, !!this.pressed);
         if (!this.pressed) {
-            this.status.element.textContent = '';
+            text(this.status, '');
             return;
         }
         // Who uses the keys already, in the places the selected shortcut works; with none selected, app-wide.
@@ -282,16 +283,15 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
         for (const scope of row?.scopes ?? [null]) {
             for (const info of shortcuts.takenBy(keys, scope)) if (info.name !== row?.name) others.set(info.name ?? info.keys.join(), info);
         }
-        this.status.element.textContent = others.size
+        text(this.status, others.size
             ? fillTemplate(s.shortcutEditorUsedBy, { keys: shortcutText(keys), names: [...others.values()].map(info => info.text).join(', ') })
-            : fillTemplate(s.shortcutEditorFree, { keys: shortcutText(keys) });
+            : fillTemplate(s.shortcutEditorFree, { keys: shortcutText(keys) }));
     }
 
     // The field takes the keys before the app's shortcuts see them; Tab and Escape still move on and close.
     listenKeys(): void {
-        const input = () => this.capture.element.querySelector('input');
         const onKey = (e: KeyboardEvent) => {
-            if (e.target !== input() || MODIFIERS.has(e.key)) return;
+            if (!this.capture.motif.isEventFrom(e) || MODIFIERS.has(e.key)) return;
             const plain = !e.ctrlKey && !e.altKey && !e.metaKey;
             if (plain && (e.key === 'Tab' || e.key === 'Escape')) return;
             e.preventDefault();
@@ -307,16 +307,17 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
                 this.drawTools();
             });
         };
-        let view: Window | null = null;
-        this.capture.element.addEventListener('focusin', () => {
-            view = this.capture.element.ownerDocument.defaultView;
-            view?.addEventListener('keydown', onKey, true);
+        // While the box has focus, every key of its window is taken, before the page's own keys.
+        let stopKeys: (() => void) | null = null;
+        this.capture.motif.on('focusin', () => {
+            stopKeys?.();
+            stopKeys = onWindow(this.capture, 'keydown', onKey, true);
         });
-        this.capture.element.addEventListener('focusout', () => {
-            view?.removeEventListener('keydown', onKey, true);
-            view = null;
+        this.capture.motif.on('focusout', () => {
+            stopKeys?.();
+            stopKeys = null;
         });
-        this.motif.setDisposable(() => view?.removeEventListener('keydown', onKey, true));
+        this.motif.setDisposable(() => stopKeys?.());
     }
 }
 

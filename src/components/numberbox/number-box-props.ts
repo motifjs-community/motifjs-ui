@@ -19,7 +19,7 @@ export interface NumberBoxProps extends FieldProps<number | null> {
   wheel?: Bind<boolean>;
   /** The display format without focus: currency, percent, digits… */
   format?: Bind<Intl.NumberFormatOptions>;
-  /** The locale of the format and of the input. The default is the page's `lang`. */
+  /** The locale of the format and of the input. The default is the kit's language (`uiLocale.locale`). */
   locale?: Bind<string>;
   /**
    * The number of digits after the decimal point. Every value is rounded to this precision (entered, provided or set

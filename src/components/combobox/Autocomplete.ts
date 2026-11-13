@@ -12,7 +12,7 @@ import type { ComboBoxProps } from './combo-box-props';
 export class Autocomplete<T = unknown> extends ComboBox<T, string> {
   constructor(props?: IBaseProp<ComboBoxProps<T, string>>) {
     super(props);
-    this.element.classList.add('mx-autocomplete');
+    this.class.add('mx-autocomplete');
     const own = (this.props ?? {}) as ComboBoxProps<T, string>;
     if (own.acceptCustomValue === undefined) this.acceptCustomValue = true;
     if (own.showDropDownButton === undefined) this.showDropDownButton = false;

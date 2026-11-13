@@ -1,19 +1,18 @@
-import type { Bind, IBaseProp } from "@motifx/core";
+import type { Bind, Component, IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
 import { functionValue } from "../../core/function-value";
-import { css, put, shown, text } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
 import { givenList } from "../../core/given-field";
-import { onLookChanged } from "../../core/look-watch";
+import { boxOf, canMeasure, isInPage, lengthOf, measure, onLayout, probeLengths, rectOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { ResizeWatch } from "../../core/resize-watch";
+import { css, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { areaPath, barPath, circlesPath, linePath, smoothPath, type Place } from "../../parts/chart/chart-paths";
 import { linearScale } from "../../parts/chart/chart-scale";
 import { formatNumber, surfaceBehind, type ChartFormat } from "../../parts/chart/chart-text";
-import { svgPart, svgPut } from "../../parts/chart/svg-parts";
+import { svgComponent } from "../../parts/chart/svg-parts";
 import { thinOut } from "../../parts/chart/thin-out";
-import { TokenLengths } from "../../core/token-lengths";
 import type { ChartField } from "../chart/chart-field";
 import type { SparklineHighlight } from "./sparkline-highlight";
 import type { SparklineProps } from "./sparkline-props";
@@ -21,6 +20,8 @@ import type { SparklineType } from "./sparkline-type";
 
 const OWN = ['data', 'yField', 'type', 'highlight', 'reference', 'min', 'max', 'smooth', 'color', 'label', 'format', 'tooltip', 'height'] as const;
 const FUNCTIONS: readonly string[] = ['yField', 'format'];
+
+const LOOK_TOKENS = ['--_sparkline-line-width', '--_sparkline-marker-size', '--_sparkline-bar-gap', '--_sparkline-bar-radius'];
 
 /** Sizes for where nothing is laid out, as in a test without a browser. */
 const UNMEASURED = { width: 96, height: 24, line: 1.5, marker: 6, gap: 1, radius: 1 };
@@ -41,74 +42,53 @@ interface Look {
  * <Sparkline data={[3, -1, 2, -2, 4]} type="winloss" />
  */
 export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<T>> {
-    svg: SVGSVGElement;
-    area: SVGPathElement;
-    referenceLine: SVGPathElement;
-    marks: SVGPathElement;
-    rise: SVGPathElement;
-    fall: SVGPathElement;
-    dots: SVGPathElement;
-    active: SVGPathElement;
-    tip: HTMLSpanElement;
+    svg: Component<SVGSVGElement>;
+    area: Component<SVGPathElement>;
+    referenceLine: Component<SVGPathElement>;
+    marks: Component<SVGPathElement>;
+    rise: Component<SVGPathElement>;
+    fall: Component<SVGPathElement>;
+    dots: Component<SVGPathElement>;
+    active: Component<SVGPathElement>;
+    tip: Component<HTMLSpanElement>;
     values: (number | null)[] = [];
     places: { x: number; y: number }[] = [];
     look: Look | null = null;
-    tokens: TokenLengths;
-    placed = false;
-    queued = false;
-    watch: ResizeWatch | null = null;
-    stopLook: (() => void) | null = null;
 
     constructor(props?: IBaseProp<SparklineProps<T>>) {
         super('span', props);
         const own = (this.props ?? {}) as SparklineProps<T>;
-        const el = this.element;
-        el.classList.add('mx-sparkline');
-        el.setAttribute('role', 'img');
-        const svg = svgPart(el, 'svg', 'mx-sparkline__svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
+        this.class.add('mx-sparkline');
+        this.attr.add({ role: 'img' });
+        const svg = svgComponent(this, 'svg', 'mx-sparkline__svg');
+        svg.attr.add({ 'aria-hidden': 'true', focusable: 'false' });
         this.svg = svg;
-        this.referenceLine = svgPart(svg, 'path', 'mx-sparkline__reference');
-        this.area = svgPart(svg, 'path', 'mx-sparkline__area');
-        this.marks = svgPart(svg, 'path', 'mx-sparkline__line');
-        this.rise = svgPart(svg, 'path', 'mx-sparkline__rise');
-        this.fall = svgPart(svg, 'path', 'mx-sparkline__fall');
-        this.dots = svgPart(svg, 'path', 'mx-sparkline__dot');
-        this.active = svgPart(svg, 'path', 'mx-sparkline__active');
-        this.tip = el.ownerDocument.createElement('span');
-        this.tip.className = 'mx-sparkline__tip';
-        this.tip.setAttribute('aria-hidden', 'true');
-        el.append(this.tip);
+        this.referenceLine = svgComponent(svg, 'path', 'mx-sparkline__reference');
+        this.area = svgComponent(svg, 'path', 'mx-sparkline__area');
+        this.marks = svgComponent(svg, 'path', 'mx-sparkline__line');
+        this.rise = svgComponent(svg, 'path', 'mx-sparkline__rise');
+        this.fall = svgComponent(svg, 'path', 'mx-sparkline__fall');
+        this.dots = svgComponent(svg, 'path', 'mx-sparkline__dot');
+        this.active = svgComponent(svg, 'path', 'mx-sparkline__active');
+        this.tip = part<HTMLSpanElement>(this, 'span', 'mx-sparkline__tip');
+        this.tip.attr.add({ 'aria-hidden': 'true' });
         shown(this.tip, false);
 
         // A function that takes a value is the value itself, not a live one.
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, FUNCTIONS.includes(name) ? functionValue(own[name]) : own[name]);
         for (const name of OWN) {
-            if (name === 'height') this.observeProperty<number | null>(name, height => css(el, '--_height', height ? `${height}px` : ''));
-            else if (name === 'color') this.observeProperty<string | null>(name, color => css(el, '--_mark', color ?? ''));
+            if (name === 'height') this.observeProperty<number | null>(name, height => css(this, '--_height', height ? `${height}px` : ''));
+            else if (name === 'color') this.observeProperty<string | null>(name, color => css(this, '--_mark', color ?? ''));
             else this.observeProperty(name, () => this.again());
         }
         onLanguage(this, () => this.again());
         onReState(this, () => this.again());
-        el.addEventListener('pointermove', e => this.pointed(e));
-        el.addEventListener('pointerleave', () => this.leave());
-        this.tokens = new TokenLengths(el, ['--_sparkline-line-width', '--_sparkline-marker-size', '--_sparkline-bar-gap', '--_sparkline-bar-radius'], () => this.again());
-        this.motif.setDisposable(() => {
-            this.tokens.dispose();
-            this.watch?.disconnect();
-            this.stopLook?.();
-        });
-    }
-
-    // In the page now: it has a width to draw in.
-    override onMounted(): void {
-        if (this.placed) return;
-        this.placed = true;
-        this.watch = new ResizeWatch(() => this.again());
-        this.watch.observe(this.element);
-        this.stopLook = onLookChanged(() => this.again());
-        this.draw();
+        this.motif.on('pointermove', (_, e) => this.pointed(e));
+        this.motif.on('pointerleave', () => this.leave());
+        probeLengths(this, LOOK_TOKENS);
+        // Told once it is in the page, then on each change of its room or of the look.
+        onLayout(this, 'size', () => this.again());
+        onLayout(this, 'look', () => this.again());
     }
 
     // Properties (see SparklineProps).
@@ -198,13 +178,9 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
         this.again();
     }
 
+    // Out of the page there is nothing to draw in: the first size notice draws it when it comes in.
     again(): void {
-        if (this.queued || !this.placed) return;
-        this.queued = true;
-        queueMicrotask(() => {
-            this.queued = false;
-            if (!this.isDisposed) this.draw();
-        });
+        if (isInPage(this)) measure(this, this.readRoom, this.draw);
     }
 
     /** The values, read from numbers or from rows; anything else is an empty value. */
@@ -218,43 +194,48 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
     }
 
     readLook(): Look {
-        const t = this.tokens;
         return {
-            line: t.get('--_sparkline-line-width', UNMEASURED.line),
-            marker: t.get('--_sparkline-marker-size', UNMEASURED.marker),
-            gap: t.get('--_sparkline-bar-gap', UNMEASURED.gap),
-            radius: t.get('--_sparkline-bar-radius', UNMEASURED.radius)
+            line: lengthOf(this, '--_sparkline-line-width', UNMEASURED.line),
+            marker: lengthOf(this, '--_sparkline-marker-size', UNMEASURED.marker),
+            gap: lengthOf(this, '--_sparkline-bar-gap', UNMEASURED.gap),
+            radius: lengthOf(this, '--_sparkline-bar-radius', UNMEASURED.radius)
         };
     }
+
+    // The room to draw in, the lengths of the look and the color behind, read with the window's other reads.
+    readRoom = () => {
+        const box = boxOf(this);
+        const measured = canMeasure(this);
+        const width = box.clientWidth || (measured ? 0 : UNMEASURED.width);
+        const height = box.clientHeight || (measured ? 0 : UNMEASURED.height);
+        const drawn = width > 0 && height > 0;
+        return { width, height, look: drawn ? this.readLook() : null, surface: drawn ? surfaceBehind(this) : '' };
+    };
 
     valueText(value: number): string {
         return formatNumber(value, this.format ?? undefined, uiLocale.locale);
     }
 
-    draw(): void {
-        const el = this.element;
+    draw = (room: ReturnType<Sparkline['readRoom']>): void => {
         const values = this.read();
         this.values = values;
         const known = values.filter((v): v is number => v !== null);
         this.drawName(known);
-        const measured = typeof ResizeObserver !== 'undefined';
-        const width = el.clientWidth || (measured ? 0 : UNMEASURED.width);
-        const height = el.clientHeight || (measured ? 0 : UNMEASURED.height);
-        if (!width || !height) return;
-        this.look = this.readLook();
-        const look = this.look;
-        css(el, '--_surface', surfaceBehind(el));
-        svgPut(this.svg, 'viewBox', `0 0 ${width} ${height}`);
-        svgPut(this.svg, 'width', width);
-        svgPut(this.svg, 'height', height);
+        const { width, height, look } = room;
+        if (!look) return;
+        this.look = look;
+        css(this, '--_surface', room.surface);
+        put(this.svg, 'viewBox', `0 0 ${width} ${height}`);
+        put(this.svg, 'width', String(width));
+        put(this.svg, 'height', String(height));
         const clear = () => {
-            for (const path of [this.area, this.marks, this.rise, this.fall, this.dots, this.referenceLine, this.active]) svgPut(path, 'd', null);
+            for (const path of [this.area, this.marks, this.rise, this.fall, this.dots, this.referenceLine, this.active]) put(path, 'd', null);
             this.places = [];
         };
         if (!known.length) return clear();
 
         const type = this.type;
-        put(el, 'data-type', type);
+        put(this, 'data-type', type);
         const pad = type === 'line' || type === 'area' ? look.marker / 2 + look.line : look.line;
         const reference = this.reference === 'average' ? known.reduce((a, b) => a + b, 0) / known.length : this.reference;
         let low = this.min ?? Math.min(...known, ...(reference === null ? [] : [reference]));
@@ -289,10 +270,10 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
                     else fall += shape;
                 } else bars += shape;
             });
-            svgPut(this.marks, 'd', null);
-            svgPut(this.area, 'd', bars || null);
-            svgPut(this.rise, 'd', rise || null);
-            svgPut(this.fall, 'd', fall || null);
+            put(this.marks, 'd', null);
+            put(this.area, 'd', bars || null);
+            put(this.rise, 'd', rise || null);
+            put(this.fall, 'd', fall || null);
         } else {
             const x = linearScale(0, Math.max(1, count - 1), pad, width - pad);
             let line = '';
@@ -314,10 +295,10 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
                 else run.push(place);
             });
             flush();
-            svgPut(this.marks, 'd', line || null);
-            svgPut(this.area, 'd', area || null);
-            svgPut(this.rise, 'd', null);
-            svgPut(this.fall, 'd', null);
+            put(this.marks, 'd', line || null);
+            put(this.area, 'd', area || null);
+            put(this.rise, 'd', null);
+            put(this.fall, 'd', null);
         }
 
         // The values asked for get a dot, the latest one first among them.
@@ -332,21 +313,21 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
             const i = index(wanted);
             if (i >= 0 && this.places[i] && Number.isFinite(this.places[i].y)) dots.push({ x: this.places[i].x, y: this.places[i].y, r: look.marker / 2 });
         }
-        svgPut(this.dots, 'd', dots.length ? circlesPath(dots) : null);
+        put(this.dots, 'd', dots.length ? circlesPath(dots) : null);
         if (reference !== null && type !== 'winloss') {
             const at = Math.round(y.at(reference)) + 0.5;
-            svgPut(this.referenceLine, 'd', `M0 ${at}H${width}`);
-        } else svgPut(this.referenceLine, 'd', null);
-        svgPut(this.active, 'd', null);
-    }
+            put(this.referenceLine, 'd', `M0 ${at}H${width}`);
+        } else put(this.referenceLine, 'd', null);
+        put(this.active, 'd', null);
+    };
 
     drawName(known: number[]): void {
         const name = this.label || uiLocale.strings.sparklineName;
         if (!known.length) {
-            this.element.setAttribute('aria-label', name);
+            put(this, 'aria-label', name);
             return;
         }
-        this.element.setAttribute('aria-label', uiLocale.text('sparklineSummary', {
+        put(this, 'aria-label', uiLocale.text('sparklineSummary', {
             name,
             count: known.length,
             first: this.valueText(known[0]),
@@ -358,7 +339,7 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
 
     pointed(e: PointerEvent): void {
         if (!this.tooltip || !this.places.length) return;
-        const box = this.svg.getBoundingClientRect();
+        const box = rectOf(this.svg);
         const x = e.clientX - box.left;
         let best = -1;
         let distance = Infinity;
@@ -372,14 +353,14 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
         });
         if (best < 0) return this.leave();
         const p = this.places[best];
-        svgPut(this.active, 'd', circlesPath([{ x: p.x, y: p.y, r: (this.look?.marker ?? UNMEASURED.marker) / 2 }]));
+        put(this.active, 'd', circlesPath([{ x: p.x, y: p.y, r: (this.look?.marker ?? UNMEASURED.marker) / 2 }]));
         text(this.tip, this.valueText(this.values[best] as number));
         shown(this.tip, true);
         css(this.tip, 'left', `${Math.round(p.x)}px`);
     }
 
     leave(): void {
-        svgPut(this.active, 'd', null);
+        put(this.active, 'd', null);
         shown(this.tip, false);
     }
 }

@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { AppMenu } from './AppMenu';
@@ -24,6 +25,9 @@ function page(...children: Parameters<typeof mountHost>) {
 async function settle() {
     for (let i = 0; i < 5; i++) await tick();
     await new Promise(r => setTimeout(r, 0));
+    // The room is read with the window's next measuring round.
+    for (const host of hosts) await whenMeasured(host);
+    for (let i = 0; i < 5; i++) await tick();
 }
 
 /** A page of its own, counting how often it is made. */
@@ -65,10 +69,28 @@ describe('AppMenu', () => {
         menu.open();
         await settle();
         expect(texts(menu)).toEqual([]);
-        expect(menu.panelElement.getAttribute('role')).toBe('dialog');
-        expect(menu.panelElement.getAttribute('aria-label')).toBe('Menu');
+        expect(menu.panelPart.element.getAttribute('role')).toBe('dialog');
+        expect(menu.panelPart.element.getAttribute('aria-label')).toBe('Menu');
         expect(menu.element.querySelector('.mx-app-menu__close')!.getAttribute('aria-label')).toBe('Close the menu');
         expect(menu.element.querySelector('.mx-app-menu__list--bottom')!.hasAttribute('hidden')).toBe(true);
+    });
+
+    it('keeps the parts of the items that stay when the items change, and puts them in the new order', async () => {
+        const menu = await make({ items: items() });
+        const home = item(menu, 'home');
+        const options = item(menu, 'options');
+        const [, , save, exp, account, opts] = items();
+        menu.items = [exp, { key: 'new', text: 'New' }, items({ home: { text: 'Start' } })[0], save, opts, account];
+        await settle();
+        expect(item(menu, 'home')).toBe(home);
+        expect(item(menu, 'options')).toBe(options);
+        expect(texts(menu)).toEqual(['Export', 'New', 'Start', 'Save', 'Options', 'Account']);
+        expect(item(menu, 'open')).toBeNull();
+        // An item that goes to the other list gets a part there.
+        menu.items = [{ ...items()[0], bottom: true }];
+        await settle();
+        expect(menu.element.querySelector('.mx-app-menu__list--bottom')!.contains(item(menu, 'home'))).toBe(true);
+        expect(menu.element.querySelectorAll('.mx-app-menu__item').length).toBe(1);
     });
 
     it('lists the items in two lists with lines between groups, and shows the first page once it opens', async () => {
@@ -87,7 +109,7 @@ describe('AppMenu', () => {
         expect(shownPage(menu)).toEqual(['Home page']);
         expect(item(menu, 'home').getAttribute('aria-current')).toBe('page');
         expect(document.activeElement).toBe(item(menu, 'home'));
-        expect(menu.panelElement.getAttribute('aria-label')).toBe('File');
+        expect(menu.panelPart.element.getAttribute('aria-label')).toBe('File');
     });
 
     it('keeps a page once made, and asks onSelecting before another page shows', async () => {
@@ -188,6 +210,28 @@ describe('AppMenu', () => {
         await settle();
         expect(home.isDisposed).toBe(true);
         expect(shownPage(menu)).toEqual(['Open page']);
+    });
+
+    it('rewrites only the label of the item whose text changed', async () => {
+        const s = reactive({ home: 'Home' });
+        let openReads = 0;
+        const menu = await make({ items: items({ home: { text: () => s.home }, open: { text: () => (openReads++, '&Open') } }) });
+        menu.open();
+        await settle();
+        const home = item(menu, 'home');
+        const label = item(menu, 'open').querySelector('.mx-app-menu__label')!;
+        const nodes = Array.from(label.childNodes);
+        const reads = openReads;
+        s.home = 'Start';
+        await settle();
+        expect(texts(menu)[0]).toBe('Start');
+        expect(item(menu, 'home')).toBe(home);
+        // The other item's text is not read again, and its label keeps its nodes.
+        expect(openReads).toBe(reads);
+        expect(item(menu, 'open').querySelector('.mx-app-menu__label')).toBe(label);
+        expect(label.childNodes.length).toBe(nodes.length);
+        expect(Array.from(label.childNodes).every((node, i) => node === nodes[i])).toBe(true);
+        expect(label.textContent).toBe('Open');
     });
 
     it('takes half the window, the whole of it when that is too narrow, and the list and the page in turns when they do not fit', async () => {

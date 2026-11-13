@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { Drawer } from './Drawer';
@@ -16,15 +17,15 @@ afterEach(async () => {
 });
 
 /** A container at 0,0 of 400 x 600, its panel 300 wide (jsdom lays nothing out). */
-function room(): HTMLDivElement {
-  const el = document.createElement('div');
-  el.getBoundingClientRect = () => new DOMRect(0, 0, 400, 600);
-  document.body.append(el);
-  return el;
+function room(): Component<HTMLDivElement> {
+  const box = new Component<HTMLDivElement>('div');
+  box.element.getBoundingClientRect = () => new DOMRect(0, 0, 400, 600);
+  page(box);
+  return box;
 }
 
 function sized(drawer: Drawer, width = 300) {
-  drawer.panelElement.getBoundingClientRect = () => new DOMRect(0, 0, width, 600);
+  drawer.panelPart.element.getBoundingClientRect = () => new DOMRect(0, 0, width, 600);
   return drawer;
 }
 
@@ -50,7 +51,7 @@ function touch(el: Element, type: string, x: number, y: number, at?: number) {
   return e;
 }
 
-const shift = (d: Drawer) => d.panelElement.style.getPropertyValue('--_shift-x');
+const shift = (d: Drawer) => d.panelPart.element.style.getPropertyValue('--_shift-x');
 
 describe('Drawer', () => {
   it('leaves an iframe out of the focus on open, so that Escape still closes it', async () => {
@@ -64,15 +65,17 @@ describe('Drawer', () => {
     await settle();
     state.open = true;
     await settle();
-    expect(document.activeElement).toBe(drawer.panelElement);
-    drawer.panelElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(drawer.panelPart.element);
+    drawer.panelPart.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     expect(state.open).toBe(false);
   });
 
   it('slides in from the start over its container, modal, and closes with Escape and the scrim', async () => {
+    // What it makes inert are the container's components.
     const box = room();
-    const before = document.createElement('button');
-    box.append(before);
+    const beforePart = new Component<HTMLButtonElement>('button');
+    box.controls.add(beforePart);
+    const before = beforePart.element;
     before.focus();
     const state = reactive({ open: false });
     const reasons: string[] = [];
@@ -85,10 +88,10 @@ describe('Drawer', () => {
     await settle();
     expect(drawer.isOpen).toBe(true);
     expect(drawer.modal).toBe(true);
-    expect(drawer.panelElement.getAttribute('aria-modal')).toBe('true');
+    expect(drawer.panelPart.element.getAttribute('aria-modal')).toBe('true');
     expect(before.hasAttribute('inert')).toBe(true);
     expect(drawer.focusWithin).toBe(true);
-    drawer.panelElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    drawer.panelPart.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     expect(state.open).toBe(false);
     expect(document.activeElement).toBe(before);
     drawer.open();
@@ -123,24 +126,28 @@ describe('Drawer', () => {
     drawer.side = 'bottom';
     expect(drawer.element.dataset.side).toBe('bottom');
     drawer.size = '18rem';
-    expect(drawer.panelElement.style.getPropertyValue('--_size')).toBe('18rem');
+    expect(drawer.panelPart.element.style.getPropertyValue('--_size')).toBe('18rem');
     drawer.size = 280;
-    expect(drawer.panelElement.style.getPropertyValue('--_size')).toBe('280px');
-    expect(drawer.panelElement.getAttribute('aria-label')).toBe('Side panel');
+    expect(drawer.panelPart.element.style.getPropertyValue('--_size')).toBe('280px');
+    expect(drawer.panelPart.element.getAttribute('aria-label')).toBe('Side panel');
     await uiLocale.use('tr');
     drawer.side = 'top';
-    expect(drawer.panelElement.getAttribute('aria-label')).toBe('Yan panel');
+    expect(drawer.panelPart.element.getAttribute('aria-label')).toBe('Yan panel');
   });
 
   it('pushes its target aside in push mode, and is not modal there unless asked', async () => {
+    // What it makes inert are the container's components.
     const box = room();
-    const content = document.createElement('main');
-    box.append(content);
-    const drawer = sized(new Drawer({ container: box, mode: 'push', pushTarget: content }));
+    const contentPart = new Component<HTMLElement>('main');
+    box.controls.add(contentPart);
+    const content = contentPart.element;
+    const drawer = sized(new Drawer({ container: box, mode: 'push', pushTarget: contentPart }));
     page(drawer);
     await settle();
     expect(drawer.modal).toBe(false);
     drawer.open();
+    // It pushes by the panel's size, read in the next measuring round.
+    await whenMeasured(drawer);
     expect(content.hasAttribute('data-mx-drawer-push')).toBe(true);
     expect(content.style.getPropertyValue('--_mx-push')).toBe('300px 0px');
     expect(content.hasAttribute('inert')).toBe(false);
@@ -157,24 +164,29 @@ describe('Drawer', () => {
     const drawer = sized(new Drawer({ container: box, edgeSwipe: true, modal: false }));
     page(drawer);
     await settle();
+    const area = box.element;
     // Away from the edge: nothing.
-    touch(box, 'touchstart', 60, 300, 1000);
-    expect(touch(box, 'touchmove', 120, 300).defaultPrevented).toBe(false);
-    touch(box, 'touchend', 120, 300);
+    touch(area, 'touchstart', 60, 300, 1000);
+    expect(touch(area, 'touchmove', 120, 300).defaultPrevented).toBe(false);
+    touch(area, 'touchend', 120, 300);
     expect(drawer.isOpen).toBe(false);
     // From the edge, slowly to 100: it follows, then goes back (less than half).
-    touch(box, 'touchstart', 10, 300, 2000);
-    expect(touch(box, 'touchmove', 30, 302, 2100).defaultPrevented).toBe(true);
+    touch(area, 'touchstart', 10, 300, 2000);
+    expect(touch(area, 'touchmove', 30, 302, 2100).defaultPrevented).toBe(true);
     expect(drawer.isOpen).toBe(true);
-    touch(box, 'touchmove', 110, 302, 2300);
+    // The panel opened for the finger follows it once it is measured.
+    await whenMeasured(drawer);
+    touch(area, 'touchmove', 110, 302, 2300);
     expect(shift(drawer)).toBe('-200px');
-    touch(box, 'touchend', 110, 302, 2600);
+    touch(area, 'touchend', 110, 302, 2600);
     expect(drawer.isOpen).toBe(false);
     // Far enough: it stays open.
-    touch(box, 'touchstart', 10, 300, 3000);
-    touch(box, 'touchmove', 40, 300, 3100);
-    touch(box, 'touchmove', 220, 300, 3400);
-    touch(box, 'touchend', 220, 300, 3700);
+    touch(area, 'touchstart', 10, 300, 3000);
+    touch(area, 'touchmove', 40, 300, 3100);
+    touch(area, 'touchmove', 220, 300, 3400);
+    touch(area, 'touchend', 220, 300, 3700);
+    // Let go before the panel was measured: it ends once it is.
+    await whenMeasured(drawer);
     expect(drawer.isOpen).toBe(true);
     expect(shift(drawer)).toBe('');
   });
@@ -186,7 +198,7 @@ describe('Drawer', () => {
     page(drawer);
     await settle();
     drawer.open();
-    const panel = drawer.panelElement;
+    const panel = drawer.panelPart.element;
     // A little way back, slowly: it stays.
     touch(panel, 'touchstart', 250, 300, 1000);
     touch(panel, 'touchmove', 230, 300, 1100);
@@ -213,8 +225,8 @@ describe('Drawer', () => {
     const drawer = sized(new Drawer({ container: box, edgeSwipe: true, onOpening: (e) => (e.cancel = true) }));
     page(drawer);
     await settle();
-    touch(box, 'touchstart', 5, 300, 1000);
-    expect(touch(box, 'touchmove', 40, 300, 1100).defaultPrevented).toBe(false);
+    touch(box.element, 'touchstart', 5, 300, 1000);
+    expect(touch(box.element, 'touchmove', 40, 300, 1100).defaultPrevented).toBe(false);
     expect(drawer.isOpen).toBe(false);
     expect(drawer.element.hasAttribute('data-dragging')).toBe(false);
   });

@@ -1,25 +1,34 @@
+import type { Component, ComponentBase } from '@motifx/core';
 import { circlesPath, polar } from '../../parts/chart/chart-paths';
-import { formatNumber, textWidth } from '../../parts/chart/chart-text';
+import { formatNumber } from '../../parts/chart/chart-text';
 import { niceTicks } from '../../parts/chart/nice-ticks';
-import { svgPart, svgPut, TextPool } from '../../parts/chart/svg-parts';
+import { svgComponent } from '../../parts/chart/svg-parts';
+import { removePart } from '../../core/draw-parts';
+import { css, kept, put } from '../../core/part-writes';
 import type { ModelPoint, ModelSlot } from './chart-model';
 import { markOf } from './ChartPlot';
 import { pointText, positionText } from './plot-text';
 import type { PlotInput, PlotView, Rect } from './plot-view';
+import { TextParts } from './text-parts';
 
 const TURN = Math.PI * 2;
 
 /** Values around a center: a spoke for each category, rings for the values, and a shape for each series. */
 export class RadarPlot implements PlotView {
     svg: SVGSVGElement;
-    grid: SVGPathElement;
-    axis: SVGPathElement;
-    marks: SVGGElement;
-    ticks: TextPool;
-    names: TextPool;
-    cross: SVGPathElement;
-    activeDots: SVGPathElement;
+    svgPart: Component<SVGSVGElement>;
+    grid: Component<SVGPathElement>;
+    axis: Component<SVGPathElement>;
+    marksPart: Component<SVGGElement>;
+    /** Each series' shape, by its place among the series. */
+    shapes: { group: Component<SVGGElement>; area: Component<SVGPathElement>; line: Component<SVGPathElement>; dots: Component<SVGPathElement> }[] = [];
+    ticks: TextParts;
+    names: TextParts;
+    cross: Component<SVGPathElement>;
+    activeDots: Component<SVGPathElement>;
     input: PlotInput | null = null;
+    /** The size of the last drawing. */
+    size = { width: 0, height: 0 };
     box: Rect = { left: 0, top: 0, width: 0, height: 0 };
     order: ModelSlot[] = [];
     cx = 0;
@@ -28,19 +37,19 @@ export class RadarPlot implements PlotView {
     min = 0;
     max = 1;
 
-    constructor(host: Element) {
-        const svg = svgPart(host, 'svg', 'mx-chart__svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-        this.svg = svg;
-        this.grid = svgPart(svg, 'path', 'mx-chart__grid');
-        this.axis = svgPart(svg, 'path', 'mx-chart__axis');
-        this.marks = svgPart(svg, 'g', 'mx-chart__marks');
+    constructor(host: ComponentBase) {
+        const svg = svgComponent(host, 'svg', 'mx-chart__svg');
+        svg.attr.add({ 'aria-hidden': 'true', focusable: 'false' });
+        this.svg = svg.element;
+        this.svgPart = svg;
+        this.grid = svgComponent(svg, 'path', 'mx-chart__grid');
+        this.axis = svgComponent(svg, 'path', 'mx-chart__axis');
+        this.marksPart = svgComponent(svg, 'g', 'mx-chart__marks');
         // The ring values sit over the shapes: they get the halo of the value labels.
-        this.ticks = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks mx-chart__ring-values'));
-        this.names = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks'));
-        this.cross = svgPart(svg, 'path', 'mx-chart__crosshair');
-        this.activeDots = svgPart(svg, 'path', 'mx-chart__active-dot');
+        this.ticks = new TextParts(svgComponent(svg, 'g', 'mx-chart__ticks mx-chart__ring-values'));
+        this.names = new TextParts(svgComponent(svg, 'g', 'mx-chart__ticks'));
+        this.cross = svgComponent(svg, 'path', 'mx-chart__crosshair');
+        this.activeDots = svgComponent(svg, 'path', 'mx-chart__active-dot');
     }
 
     xText(key: unknown): string {
@@ -67,11 +76,12 @@ export class RadarPlot implements PlotView {
     draw(input: PlotInput): void {
         this.input = input;
         const { width, height, look, model, yAxis, locale } = input;
-        svgPut(this.svg, 'viewBox', `0 0 ${width} ${height}`);
-        svgPut(this.svg, 'width', width);
-        svgPut(this.svg, 'height', height);
+        this.size = { width, height };
+        put(this.svgPart, 'viewBox', `0 0 ${width} ${height}`);
+        put(this.svgPart, 'width', String(width));
+        put(this.svgPart, 'height', String(height));
         this.box = { left: 0, top: 0, width, height };
-        const measure = (text: string) => textWidth(text, look.font, this.svg.ownerDocument);
+        const measure = (text: string) => input.texts.width(text, look.font);
         const names = model.categories.map(key => this.xText(key));
         const wide = Math.max(0, ...names.map(measure));
         this.cx = width / 2;
@@ -93,13 +103,13 @@ export class RadarPlot implements PlotView {
             }
             if (count) grid += 'Z';
         }
-        svgPut(this.grid, 'd', grid);
+        put(this.grid, 'd', grid);
         let spokes = '';
         for (let i = 0; i < count; i++) {
             const [x, y] = this.at(i, this.max);
             spokes += `M${this.cx.toFixed(1)} ${this.cy.toFixed(1)}L${x.toFixed(1)} ${y.toFixed(1)}`;
         }
-        svgPut(this.axis, 'd', spokes);
+        put(this.axis, 'd', spokes);
         // The outer ring's value would sit on the name of the first spoke: the rings below it say enough.
         if (yAxis.labels !== false) for (const value of values.slice(1, -1)) this.ticks.add(formatNumber(value, yAxis.format, locale), this.cx + look.tickPad / 2, this.at(0, value)[1] - look.tickPad / 2, 'start');
         this.ticks.done();
@@ -112,12 +122,23 @@ export class RadarPlot implements PlotView {
         });
         this.names.done();
 
-        this.marks.replaceChildren();
-        for (const s of model.series) {
-            if (!s.shown) continue;
-            const group = svgPart(this.marks, 'g', 'mx-chart__series');
-            group.setAttribute('data-type', 'radar');
-            group.style.setProperty('--_mark', markOf(s));
+        // Each series keeps its shape, in its place: a new drawing writes the paths, a hidden series is kept out.
+        while (this.shapes.length > model.series.length) removePart(this.shapes.pop()!.group);
+        while (this.shapes.length < model.series.length) {
+            const group = svgComponent(this.marksPart, 'g', 'mx-chart__series');
+            group.attr.add({ 'data-type': 'radar' });
+            this.shapes.push({
+                group,
+                area: svgComponent(group, 'path', 'mx-chart__area'),
+                line: svgComponent(group, 'path', 'mx-chart__line'),
+                dots: svgComponent(group, 'path', 'mx-chart__dots'),
+            });
+        }
+        model.series.forEach((s, at) => {
+            const own = this.shapes[at];
+            kept(own.group, s.shown);
+            if (!s.shown) return;
+            css(own.group, '--_mark', markOf(s));
             let shape = '';
             const dots: { x: number; y: number; r: number }[] = [];
             s.points.forEach((p, i) => {
@@ -128,10 +149,10 @@ export class RadarPlot implements PlotView {
                 if (s.source.markers) dots.push({ x, y, r: look.markerSize / 2 });
             });
             if (shape) shape += 'Z';
-            svgPut(svgPart(group, 'path', 'mx-chart__area'), 'd', shape);
-            svgPut(svgPart(group, 'path', 'mx-chart__line'), 'd', shape);
-            svgPut(svgPart(group, 'path', 'mx-chart__dots'), 'd', circlesPath(dots));
-        }
+            put(own.area, 'd', shape);
+            put(own.line, 'd', shape);
+            put(own.dots, 'd', circlesPath(dots));
+        });
         for (const slot of model.slots) slot.at = slot.x;
         this.order = [...model.slots].sort((a, b) => a.x - b.x);
         this.showActive(null, null, false);
@@ -159,14 +180,14 @@ export class RadarPlot implements PlotView {
 
     showActive(slot: ModelSlot | null, point: ModelPoint | null, crosshair: boolean): void {
         if (!slot || !this.input) {
-            svgPut(this.cross, 'd', null);
-            svgPut(this.activeDots, 'd', null);
+            put(this.cross, 'd', null);
+            put(this.activeDots, 'd', null);
             return;
         }
         const [x, y] = this.at(slot.x, this.max);
-        svgPut(this.cross, 'd', crosshair ? `M${this.cx.toFixed(1)} ${this.cy.toFixed(1)}L${x.toFixed(1)} ${y.toFixed(1)}` : null);
+        put(this.cross, 'd', crosshair ? `M${this.cx.toFixed(1)} ${this.cy.toFixed(1)}L${x.toFixed(1)} ${y.toFixed(1)}` : null);
         const p = point ?? slot.points[0];
-        this.activeDots.style.setProperty('--_mark', this.markOfPoint(p));
-        svgPut(this.activeDots, 'd', circlesPath([{ x: p.px, y: p.py, r: this.input.look.markerSize / 2 + 1 }]));
+        css(this.activeDots, '--_mark', this.markOfPoint(p));
+        put(this.activeDots, 'd', circlesPath([{ x: p.px, y: p.py, r: this.input.look.markerSize / 2 + 1 }]));
     }
 }

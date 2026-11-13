@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { Draggable } from './Draggable';
 import { DropTarget } from './DropTarget';
@@ -46,7 +47,7 @@ describe('Draggable', () => {
         d.handle = '.grip';
         await settle();
         const grip = el.querySelector<HTMLElement>('.grip')!;
-        expect(d.handleElement).toBe(grip);
+        expect(d.handlePart?.element).toBe(grip);
         expect(grip.classList.contains('mx-draggable__handle')).toBe(true);
         expect(grip.getAttribute('role')).toBe('button');
         expect(grip.tabIndex).toBe(0);
@@ -105,26 +106,28 @@ describe('Draggable', () => {
         );
         await settle();
         rect(d.element, 0, 0, 50, 50);
-        let under: Element | null = null;
-        document.elementFromPoint = () => under;
+        // The targets are where the drag reads their boxes: the other one around (40, 40), this one from (45, 45).
+        rect(other.element, 35, 35, 9, 9);
+        rect(t.element, 45, 45, 55, 55);
+        // Each move is aimed in the next measuring round.
+        const move = (x: number, y: number) => {
+            pointer(window, 'pointermove', x, y);
+            measureNow(d);
+        };
         pointer(d.element, 'pointerdown', 10, 10);
-        pointer(window, 'pointermove', 12, 12);
+        move(12, 12);
         expect(d.isDragging).toBe(false);
-        pointer(window, 'pointermove', 30, 30);
+        move(30, 30);
         expect(d.isDragging).toBe(true);
         expect(d.element.hasAttribute('data-dragging')).toBe(true);
         expect(t.element.hasAttribute('data-drop-active')).toBe(true);
         expect(other.element.hasAttribute('data-drop-active')).toBe(false);
-        under = other.element;
-        pointer(window, 'pointermove', 40, 40);
-        under = t.element;
-        pointer(window, 'pointermove', 50, 50);
+        move(40, 40);
+        move(50, 50);
         expect(t.element.hasAttribute('data-drop-over')).toBe(true);
-        under = null;
-        pointer(window, 'pointermove', 60, 60);
+        move(60, 20);
         expect(t.element.hasAttribute('data-drop-over')).toBe(false);
-        under = t.element;
-        pointer(window, 'pointermove', 70, 70);
+        move(70, 70);
         pointer(window, 'pointerup', 70, 70);
         expect(d.isDragging).toBe(false);
         expect(d.currentPosition).toEqual({ x: 60, y: 60 });
@@ -134,7 +137,7 @@ describe('Draggable', () => {
         told.length = 0;
         t.onDragEntering(e => (e.cancel = true));
         pointer(d.element, 'pointerdown', 70, 70);
-        pointer(window, 'pointermove', 90, 90);
+        move(90, 90);
         expect(t.element.hasAttribute('data-drop-refused')).toBe(true);
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
         expect(d.isDragging).toBe(false);

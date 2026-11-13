@@ -1,18 +1,21 @@
 import { LanguageLook } from '../../core/language-look';
-import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, ComponentBase, createSignal, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { afterPress } from '../../core/after-press';
 import { Control } from '../../core/control';
+import { holdsFocus } from '../../core/focus';
 import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import { givenField, givenList, givenValue } from '../../core/given-field';
-import { dismissMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { clearParts, glyphPart, loose, part, partBefore, removePart, textPart } from '../../core/draw-parts';
+import { flag, mark, put, shown, text as writeText } from '../../core/part-writes';
+import { showsPresses } from '../../core/press-origin';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
+import { onDocument } from '../../core/window-events';
 import { checkRules } from '../validation/check-rules';
-import { VALIDATES } from '../validation/validate-fields';
 import type { ValidationGroup } from '../validation/ValidationGroup';
 import type { ValidationMessage } from '../validation/validation-message';
 import type { ValidationRule } from '../validation/validation-rule';
@@ -22,6 +25,7 @@ import type { FieldButton } from './field-button';
 import type { FieldLabelMode } from './field-label-mode';
 import type { FieldProps } from './field-props';
 import type { FieldVariant } from './field-variant';
+import { pressedFocusable } from './pressed-focusable';
 import { sameAsWritten } from './same-as-written';
 import type { ValidateOn } from './validate-on';
 import type { ValidatedEventArgs } from './validated-event-args';
@@ -56,25 +60,42 @@ const NONE = Symbol('none');
 const PARTS = Symbol('mx.field');
 
 interface Parts {
-  label: HTMLLabelElement;
-  labelText: HTMLSpanElement;
-  requiredMark: HTMLSpanElement | null;
-  box: HTMLDivElement;
+  /** The control's id; the label, the message, the prefix and the suffix take theirs from it. */
+  id: string;
+  /** The tag of the control's element (see `labelable`). */
+  tag: string;
+  labelPart: Component<HTMLLabelElement>;
+  labelText: Component<HTMLSpanElement>;
+  /** The label shows a text, and so names the control. */
+  labelShown: boolean;
+  requiredMark: Component<HTMLSpanElement> | null;
+  boxPart: Component<HTMLDivElement>;
+  footPart: Component<HTMLDivElement>;
   /** The notch of the frame, where a language cuts one for the label: it carries the label's text for CSS to draw. */
-  notch: HTMLSpanElement;
-  control: HTMLElement;
+  notch: Component<HTMLSpanElement>;
+  controlPart: ComponentBase;
   /** The design language's defaults for a variant and a label mode not given (`--mx-field-variant`, `--mx-field-label-mode`). */
   look: LanguageLook<'variant' | 'labelMode' | 'notch' | 'size'>;
-  areas: Map<BoxArea, HTMLElement>;
-  message: HTMLSpanElement;
-  counter: HTMLSpanElement | null;
-  clear: HTMLButtonElement | null;
+  areas: Map<BoxArea, Component<HTMLSpanElement>>;
+  message: Component<HTMLSpanElement>;
+  /** The text written into the message. */
+  messageText: string;
+  counter: Component<HTMLSpanElement> | null;
+  /** The text written into the counter. */
+  counterText: string;
+  clear: Component<HTMLButtonElement> | null;
   stopClearLabel: (() => void) | null;
   releaseIcon: () => void;
-  releaseButtons: (() => void)[];
-  stopButtons: (() => void) | null;
+  /** The buttons given, as they are now (see `renderButtons`). */
+  buttons: Signal<readonly FieldButton[]>;
+  /** The parts of the buttons given, while they are shown. */
+  buttonParts: Map<FieldButton, Component<HTMLButtonElement>>;
+  /** The places (`start`, `end`) that list the buttons given. */
+  buttonAreas: WeakSet<ComponentBase>;
   stopMessage: (() => void) | null;
   leaveGroup: (() => void) | null;
+  /** Stops waiting to see where focus that left the field lands (see `focusLeft`). */
+  stopLanding: (() => void) | null;
   lastValue: unknown;
   userChange: boolean;
   /** The value just written to `x-model`, which hands it back once, as the model holds it. */
@@ -88,8 +109,9 @@ interface Parts {
   validated: Emitter<ValidatedEventArgs>;
 }
 
-function labelable(el: HTMLElement): boolean {
-  return ['input', 'textarea', 'select', 'button'].includes(el.localName);
+/** A `<label for>` names a control of this tag and hands it its clicks. */
+function labelable(tag: string): boolean {
+  return ['input', 'textarea', 'select', 'button'].includes(tag);
 }
 
 function emptyLike(value: unknown): boolean {
@@ -105,7 +127,6 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   constructor(props?: IBaseProp<TProps>) {
     super('div', props);
     const own = (this.props ?? {}) as FieldProps<T>;
-    this.element.setAttribute(VALIDATES, '');
 
     this.observeProperty<string>('text', (text) => this.renderLabel(text));
     for (const name of LOOK) this.observeProperty(name, () => this.renderLook());
@@ -129,17 +150,13 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     if (own.onValidated) this.onValidated(own.onValidated);
 
     const parts = this.parts;
-    this.element.addEventListener('focusout', (e) => this.focusLeft(e));
-    parts.label.addEventListener('click', () => {
-      if (!labelable(parts.control)) this.focus();
+    this.motif.on('focusout', (_, e) => this.focusLeft(e));
+    parts.labelPart.motif.on('click', () => {
+      if (!labelable(parts.tag)) this.focus();
     });
     // A click anywhere in the box, outside the editor and its buttons, puts focus in the editor.
-    parts.box.addEventListener('mousedown', (e) => {
-      const target = e.target as Element;
-      if (e.button !== 0 || parts.control.contains(target)) return;
-      // Only what sits inside the box counts: a page container around the field may have a tabindex too.
-      const own = target.closest('button, a[href], input, textarea, select, [tabindex]');
-      if (own && parts.box.contains(own)) return;
+    parts.boxPart.motif.on('mousedown', (_, e) => {
+      if (e.button !== 0 || parts.controlPart.motif.isEventFrom(e) || pressedFocusable(parts.boxPart, e)) return;
       e.preventDefault();
       this.focus();
     });
@@ -150,10 +167,9 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     this.motif.setDisposable(() => {
       parts.stopMessage?.();
       parts.stopClearLabel?.();
-      parts.stopButtons?.();
       parts.leaveGroup?.();
+      parts.stopLanding?.();
       parts.releaseIcon();
-      for (const release of parts.releaseButtons) release();
       parts.valueChanged.dispose();
       parts.validated.dispose();
     });
@@ -286,6 +302,11 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
 
   // Validation.
 
+  /** The field itself, as a `ValidationTarget`'s part: what a `ValidationSummary` and a group's order go by. */
+  get part(): ComponentBase {
+    return this;
+  }
+
   /** `false` while a failed validation or an `error` is shown. */
   get isValid(): boolean {
     return !this.getProperty<boolean>('invalid');
@@ -340,8 +361,8 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
 
   // For subclasses.
 
-  /** The element that holds the value and takes focus. Called once, before the subclass's fields exist. */
-  protected abstract createControl(): HTMLElement;
+  /** The component whose element holds the value and takes focus, a child of the box. Called once, before the subclass's fields exist. */
+  protected abstract createControl(): ComponentBase;
 
   /** Draws the value into the control. */
   protected abstract renderValue(value: T): void;
@@ -409,19 +430,50 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     this.renderButtons();
   }
 
-  /** A place in the box for the subclass's own parts (a clear button, a drop-down arrow). */
-  protected area(name: BoxArea): HTMLElement {
+  /** The id of the control; the label, the message, the prefix and the suffix take theirs from it. */
+  protected get controlId(): string {
+    return this.parts.id;
+  }
+
+  /** The id of the message under the box (help text or error): what describes the control. */
+  protected get messageId(): string {
+    return `${this.parts.id}-message`;
+  }
+
+  /** The component of the control (see `createControl`): its events are listened to through it (`motif.on`). */
+  protected get controlPart(): ComponentBase {
+    return this.parts.controlPart;
+  }
+
+  /** The id of the label above the box while it shows a text, else `''`: what names the control. */
+  protected get labelId(): string {
     const parts = this.parts;
-    let area = parts.areas.get(name);
-    if (area) return area;
-    area = document.createElement('span');
-    area.className = `mx-field__${name}`;
+    return parts.labelShown ? `${parts.id}-label` : '';
+  }
+
+  /** The box as a component: a subclass's own components shown in the box are added to it. */
+  protected get boxPart(): ComponentBase {
+    return this.parts.boxPart;
+  }
+
+  /** The buttons the field draws in the box: the clear button while it shows, then the buttons given. */
+  protected get boxButtons(): readonly ComponentBase[] {
+    const parts = this.parts;
+    const shown = [...parts.buttonParts.values()];
+    return parts.clear ? [parts.clear, ...shown] : shown;
+  }
+
+  /** A place in the box for the subclass's own parts (a clear button, a drop-down arrow): a component they are added to. */
+  protected area(name: BoxArea): Component<HTMLSpanElement> {
+    const parts = this.parts;
+    const known = parts.areas.get(name);
+    if (known) return known;
+    // In the box's order: before the next place there is, or before the control for the places at its start.
     const later = ORDER.slice(ORDER.indexOf(name) + 1)
       .map((n) => parts.areas.get(n))
       .find(Boolean);
-    if (later) parts.box.insertBefore(area, later);
-    else if (ORDER.indexOf(name) <= ORDER.indexOf('start')) parts.box.insertBefore(area, parts.control);
-    else parts.box.append(area);
+    const before = later ?? (ORDER.indexOf(name) <= ORDER.indexOf('start') ? parts.controlPart : null);
+    const area = partBefore<HTMLSpanElement>(parts.boxPart, before, 'span', `mx-field__${name}`);
     parts.areas.set(name, area);
     return area;
   }
@@ -429,7 +481,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   /** Takes a place out of the box; `area` makes a new one when it is wanted again. */
   protected removeArea(name: BoxArea): void {
     const parts = this.parts;
-    parts.areas.get(name)?.remove();
+    removePart(parts.areas.get(name));
     parts.areas.delete(name);
   }
 
@@ -437,12 +489,10 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   protected setCounter(text: string): void {
     const parts = this.parts;
     if (!text && !parts.counter) return;
-    if (!parts.counter) {
-      parts.counter = document.createElement('span');
-      parts.counter.className = 'mx-field__counter';
-      parts.message.after(parts.counter);
-    }
-    parts.counter.textContent = text;
+    // After the message.
+    parts.counter ??= part<HTMLSpanElement>(parts.footPart, 'span', 'mx-field__counter');
+    writeText(parts.counter, text);
+    parts.counterText = text;
     this.markMessage();
   }
 
@@ -454,42 +504,50 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const parts = this.parts;
     if (!on) {
       parts.stopClearLabel?.();
-      parts.clear?.remove();
+      removePart(parts.clear);
       parts.clear = parts.stopClearLabel = null;
       return;
     }
     if (parts.clear) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.tabIndex = -1;
-    button.className = `mx-field__button mx-field__clear ${className}`;
-    button.append(dismissMark());
-    button.addEventListener('mousedown', (e) => e.preventDefault());
-    button.addEventListener('click', (e) => {
+    // First among the tools.
+    const tools = this.area('tools');
+    const clearPart = partBefore<HTMLButtonElement>(tools, tools.controls.items[0] ?? null, 'button', `mx-field__button mx-field__clear ${className}`);
+    clearPart.attr.add({ type: 'button' });
+    put(clearPart, 'tabindex', '-1');
+    glyphPart(clearPart, 'dismiss');
+    clearPart.motif.on('mousedown', (_, e) => e.preventDefault());
+    clearPart.motif.on('click', (_, e) => {
       e.stopPropagation();
       clear(e);
       this.focus();
     });
-    parts.stopClearLabel = onLanguage(this, () => button.setAttribute('aria-label', uiLocale.strings.clear));
-    this.area('tools').prepend(button);
-    parts.clear = button;
+    parts.stopClearLabel = onLanguage(this, () => put(clearPart, 'aria-label', uiLocale.strings.clear));
+    parts.clear = clearPart;
   }
 
   protected renderReadOnly(on: boolean): void {
-    const control = this.parts.control;
-    this.element.toggleAttribute('data-readonly', on);
-    if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) control.readOnly = on;
-    else if (on && this.formRole) control.setAttribute('aria-readonly', 'true');
-    else control.removeAttribute('aria-readonly');
+    const tag = this.parts.tag;
+    mark(this, 'data-readonly', on);
+    if (tag === 'input' || tag === 'textarea') mark(this.controlPart, 'readonly', on);
+    else flag(this.controlPart, 'aria-readonly', on && this.formRole);
   }
 
-  protected override get focusElement(): HTMLElement {
-    return this.parts.control;
+  override get focusPart(): ComponentBase {
+    return this.parts.controlPart;
   }
 
   /** Whether the role of the control carries `aria-required` and `aria-readonly`. A control with another role says no. */
   protected get formRole(): boolean {
     return true;
+  }
+
+  /**
+   * The tag of the element `createControl` makes (`'input'`, `'textarea'`, `'button'`, `'div'`): a native field takes the
+   * label's `for` and its own `readonly`. Read once, before the subclass's fields exist, so it returns a constant.
+   * `null`: not a native field.
+   */
+  protected get controlTag(): string | null {
+    return null;
   }
 
   // Drawing.
@@ -501,57 +559,60 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
 
   private createParts(): Parts {
     const id = nextId('field');
-    this.element.classList.add('mx-field');
-    const label = document.createElement('label');
-    label.className = 'mx-field__label';
-    label.id = `${id}-label`;
-    label.hidden = true;
-    const labelText = label.appendChild(document.createElement('span'));
-    const box = document.createElement('div');
-    box.className = 'mx-field__box';
-    box.setAttribute('data-mx-press', '');
+    this.class.add('mx-field');
+    // Every part is a component of the field, in order: the label, the box, the line under it.
+    const labelPart = new Component<HTMLLabelElement>('label');
+    labelPart.class.add('mx-field__label');
+    labelPart.attr.add({ id: `${id}-label`, hidden: true });
+    const labelText = part<HTMLSpanElement>(labelPart, 'span', '');
+    // The box and the foot are components of the field after the label, so a control that is a component is the box's child.
+    const boxPart = new Component<HTMLDivElement>('div');
+    boxPart.class.add('mx-field__box');
+    showsPresses(boxPart);
     // The frame and the line under the box are parts of their own, so a design language can shape them: a frame
     // with a notch for the label (its start, the notch with the label's text, its end), an indicator that grows.
-    const frame = box.appendChild(document.createElement('span'));
-    frame.className = 'mx-field__frame';
-    frame.setAttribute('aria-hidden', 'true');
-    const pieces = ['start', 'notch', 'end'].map((part) => {
-      const piece = frame.appendChild(document.createElement('span'));
-      piece.className = `mx-field__frame-${part}`;
-      return piece;
-    });
-    const control = this.createControl();
-    control.id = id;
-    control.classList.add('mx-field__control');
-    if (labelable(control)) label.htmlFor = id;
-    box.append(control);
-    const indicator = frame.appendChild(document.createElement('span'));
-    indicator.className = 'mx-field__indicator';
-    const foot = document.createElement('div');
-    foot.className = 'mx-field__foot';
-    const message = foot.appendChild(document.createElement('span'));
-    message.className = 'mx-field__message';
-    message.id = `${id}-message`;
-    message.setAttribute('aria-live', 'polite');
-    this.element.append(label, box, foot);
+    const frame = part<HTMLSpanElement>(boxPart, 'span', 'mx-field__frame');
+    frame.attr.add({ 'aria-hidden': 'true' });
+    const pieces = ['start', 'notch', 'end'].map((name) => part<HTMLSpanElement>(frame, 'span', `mx-field__frame-${name}`));
+    part(frame, 'span', 'mx-field__indicator');
+    const controlPart = this.createControl();
+    // What the subclass made, known once here: a native field takes the label's `for` and its own `readonly`.
+    const tag = this.controlTag ?? '';
+    controlPart.attr.add({ id });
+    controlPart.class.add('mx-field__control');
+    if (labelable(tag)) labelPart.attr.add({ for: id });
+    boxPart.controls.add(controlPart);
+    const footPart = new Component<HTMLDivElement>('div');
+    footPart.class.add('mx-field__foot');
+    const message = part<HTMLSpanElement>(footPart, 'span', 'mx-field__message');
+    message.attr.add({ id: `${id}-message`, 'aria-live': 'polite' });
+    this.controls.add(labelPart, boxPart, footPart);
     return {
-      label,
+      id,
+      tag,
+      labelPart,
       labelText,
+      labelShown: false,
       requiredMark: null,
-      box,
+      boxPart,
+      footPart,
       notch: pieces[1],
-      control,
-      look: new LanguageLook(this.element, { variant: '--_field-variant', labelMode: '--_field-label-mode', notch: '--_field-notch', size: '--_field-size' }, () => this.renderLook()),
+      controlPart,
+      look: new LanguageLook(this, { variant: '--_field-variant', labelMode: '--_field-label-mode', notch: '--_field-notch', size: '--_field-size' }, () => this.renderLook()),
       areas: new Map(),
       message,
+      messageText: '',
       counter: null,
+      counterText: '',
       clear: null,
       stopClearLabel: null,
       releaseIcon: () => {},
-      releaseButtons: [],
-      stopButtons: null,
+      buttons: createSignal<readonly FieldButton[]>([]),
+      buttonParts: new Map(),
+      buttonAreas: new WeakSet(),
       stopMessage: null,
       leaveGroup: null,
+      stopLanding: null,
       lastValue: NONE,
       userChange: false,
       echo: null,
@@ -579,29 +640,42 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const previous = parts.lastValue;
     parts.lastValue = current;
     this.renderValue(current);
-    this.element.toggleAttribute('data-filled', !this.isEmptyValue(current));
+    mark(this, 'data-filled', !this.isEmptyValue(current));
     if (parts.userChange || previous === NONE || this.sameValue(current, previous as T)) return;
     parts.valueChanged.fire({ value: current, previousValue: previous, byUser: false, source: this });
     if (parts.shown) void this.validate();
   }
 
   private focusLeft(e: FocusEvent): void {
-    const to = e.relatedTarget as Node | null;
-    if (to && this.element.contains(to)) return;
     const parts = this.parts;
-    if (this.peekProperty('validateOn') !== 'manual' && this.peekProperty('validateOn') !== 'input' && (parts.dirty || parts.shown)) {
-      afterPress(() => {
-        if (!this.isDisposed && !this.element.contains(this.element.ownerDocument.activeElement)) void this.validate();
-      });
+    parts.stopLanding?.();
+    parts.stopLanding = null;
+    if (this.peekProperty('validateOn') === 'manual' || this.peekProperty('validateOn') === 'input' || !(parts.dirty || parts.shown)) return;
+    if (!e.relatedTarget) {
+      this.validateWhenLeft();
+      return;
     }
+    // Focus going somewhere: where it went is known once it is there, and that may be inside the field again.
+    const land = () => {
+      parts.stopLanding?.();
+      parts.stopLanding = null;
+      if (!holdsFocus(this)) this.validateWhenLeft();
+    };
+    parts.stopLanding = onDocument(this, 'focusin', land, true);
+  }
+
+  /** Checks the field once the press in progress has ended, if focus is out of it then. */
+  private validateWhenLeft(): void {
+    afterPress(() => {
+      if (!this.isDisposed && !holdsFocus(this)) void this.validate();
+    });
   }
 
   private refreshValidity(): void {
     const invalid = !!this.peekProperty('failure') || !!this.peekProperty('error');
     this.setProperty('invalid', invalid);
-    this.element.toggleAttribute('data-invalid', invalid);
-    if (invalid) this.parts.control.setAttribute('aria-invalid', 'true');
-    else this.parts.control.removeAttribute('aria-invalid');
+    mark(this, 'data-invalid', invalid);
+    flag(this.parts.controlPart, 'aria-invalid', invalid);
   }
 
   private joinGroup(group: ValidationGroup | null | undefined): void {
@@ -614,26 +688,26 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const parts = this.parts;
     const parsed = parseAccessKey(text ?? '');
     renderAccessKey(parts.labelText, parsed);
-    parts.notch.dataset.label = parsed.text;
-    parts.label.hidden = !parsed.text;
+    put(parts.notch, 'data-label', parsed.text);
+    mark(parts.labelPart, 'hidden', !parsed.text);
+    parts.labelShown = !!parsed.text;
     this.setAccessKey(parsed.key);
-    if (labelable(parts.control)) return;
-    if (parsed.text) parts.control.setAttribute('aria-labelledby', parts.label.id);
-    else parts.control.removeAttribute('aria-labelledby');
+    if (labelable(parts.tag)) return;
+    put(parts.controlPart, 'aria-labelledby', this.labelId);
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
     const look = this.parts.look;
-    data.labelMode = this.peekProperty<FieldLabelMode>('labelMode') ?? look.get('labelMode') ?? 'top';
-    data.size = this.peekProperty<ControlSize>('size') ?? look.get('size') ?? 'md';
-    data.variant = this.peekProperty<FieldVariant>('variant') ?? look.get('variant') ?? 'outline';
-    this.element.toggleAttribute('data-stretch', !!this.peekProperty('stretch'));
-    this.element.toggleAttribute('data-notch', look.get('notch') === 'cut');
+    put(this, 'data-label-mode', this.peekProperty<FieldLabelMode>('labelMode') ?? look.get('labelMode') ?? 'top');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? look.get('size') ?? 'md');
+    put(this, 'data-variant', this.peekProperty<FieldVariant>('variant') ?? look.get('variant') ?? 'outline');
+    mark(this, 'data-stretch', !!this.peekProperty('stretch'));
+    mark(this, 'data-notch', look.get('notch') === 'cut');
   }
 
-  /** Re-reads what the design language sets for the field (variant, label mode, size). The field does this once
-   *  it is in the page, and a field placed outside the component tree receives this call when it is placed. */
+  /** Re-reads what the design language sets for the field (variant, label mode, size), with the next reads of its
+   *  window. The field does this once it is in the page, and a field placed outside the component tree receives this
+   *  call when it is placed. */
   readLook(): void {
     this.parts.look.read();
   }
@@ -643,38 +717,31 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   }
 
   private renderHint(hint: string | undefined): void {
-    const control = this.parts.control;
-    if (hint) control.title = hint;
-    else control.removeAttribute('title');
+    put(this.parts.controlPart, 'title', hint);
   }
 
   private renderRequired(on: boolean): void {
     const parts = this.parts;
-    this.element.toggleAttribute('data-required', on);
-    if (on && this.formRole) parts.control.setAttribute('aria-required', 'true');
-    else parts.control.removeAttribute('aria-required');
+    mark(this, 'data-required', on);
+    flag(parts.controlPart, 'aria-required', on && this.formRole);
     if (on && !parts.requiredMark) {
-      parts.requiredMark = parts.label.appendChild(document.createElement('span'));
-      parts.requiredMark.className = 'mx-field__required';
-      parts.requiredMark.setAttribute('aria-hidden', 'true');
-      parts.requiredMark.textContent = '*';
+      parts.requiredMark = part<HTMLSpanElement>(parts.labelPart, 'span', 'mx-field__required');
+      parts.requiredMark.attr.add({ 'aria-hidden': 'true' });
+      parts.requiredMark.setText('*');
     } else if (!on && parts.requiredMark) {
-      parts.requiredMark.remove();
+      removePart(parts.requiredMark);
       parts.requiredMark = null;
     }
   }
 
   private renderAffix(name: 'prefix' | 'suffix', text: string | undefined): void {
     const parts = this.parts;
-    this.element.toggleAttribute(`data-${name}`, !!text);
+    mark(this, `data-${name}`, !!text);
     if (text) {
       const area = this.area(name);
-      area.id = `${parts.control.id}-${name}`;
-      area.textContent = text;
-    } else {
-      parts.areas.get(name)?.remove();
-      parts.areas.delete(name);
-    }
+      put(area, 'id', `${parts.id}-${name}`);
+      writeText(area, text);
+    } else this.removeArea(name);
     this.renderDescribedBy();
   }
 
@@ -683,92 +750,113 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const icon = this.peekProperty<IconSource | null>('icon');
     parts.releaseIcon();
     parts.releaseIcon = () => {};
-    this.element.toggleAttribute('data-icon', !!icon);
+    mark(this, 'data-icon', !!icon);
     if (!icon) {
-      parts.areas.get('icon')?.remove();
-      parts.areas.delete('icon');
+      this.removeArea('icon');
       return;
     }
     const area = this.area('icon');
-    area.setAttribute('aria-hidden', 'true');
-    const shown = iconNode(icon);
-    area.replaceChildren(shown.node);
-    parts.releaseIcon = shown.release;
+    put(area, 'aria-hidden', 'true');
+    clearParts(area);
+    parts.releaseIcon = showIcon(icon, area);
   }
 
+  /**
+   * Gives the places the buttons now. Each place lists its buttons once (`start`, `end`): a field of a button changes
+   * only what shows it, and the list keeps the buttons it keeps. A place goes when no button is given for it.
+   */
   private renderButtons(): void {
     const parts = this.parts;
-    parts.stopButtons?.();
-    parts.stopButtons = null;
     const list = givenList(this.peekProperty<readonly FieldButton[]>('buttons'));
-    if (!list.length) {
-      this.drawButtons([]);
-      return;
+    parts.buttons.value = list;
+    for (const name of ['start', 'end'] as const) {
+      const wanted = list.some((button) => (givenField(button, 'position') === 'start') === (name === 'start'));
+      const known = parts.areas.get(name);
+      if (!wanted) {
+        // A place that holds the subclass's own parts as well stays.
+        if (known && parts.buttonAreas.has(known) && known.controls.items.length <= 1) this.removeArea(name);
+        continue;
+      }
+      const area = this.area(name);
+      if (parts.buttonAreas.has(area)) {
+        // Read again now: a plain list changed in place, and plain fields under functions.
+        area.reState();
+        continue;
+      }
+      parts.buttonAreas.add(area);
+      const shownHere = () => parts.buttons.value.filter((button) => (givenField(button, 'position') === 'start') === (name === 'start') && givenField(button, 'visible') !== false);
+      area.bindings.list(shownHere, (button: FieldButton) => this.makeButton(button));
+      area.bindings.watch(() => {
+        const any = shownHere().length > 0;
+        untracked(() => shown(area, any || area.controls.items.length > 1));
+      });
     }
-    // The buttons' own functions are tracked; the list, the fields and drawing are not.
-    parts.stopButtons = follow(this, 'buttons', () => {
-      const looks = givenList(list).map((button) => ({
-        button,
-        visible: givenField(button, 'visible') !== false,
-        enabled: givenField(button, 'enabled') !== false,
-        tabStop: givenField(button, 'tabStop') !== false,
-        start: givenField(button, 'position') === 'start',
-        text: givenField<string | undefined>(button, 'text') ?? '',
-        hint: givenField<string | undefined>(button, 'hint') ?? '',
-        icon: givenField<IconSource | undefined>(button, 'icon'),
-      }));
-      return looks.filter((look) => look.visible);
-    }, (looks) => this.drawButtons(looks));
   }
 
-  private drawButtons(
-    looks: { button: FieldButton; enabled: boolean; tabStop: boolean; start: boolean; text: string; hint: string; icon: IconSource | undefined }[],
-  ): void {
+  /** A given button's part, built once: each field changes only what shows it. */
+  private makeButton(button: FieldButton): Component<HTMLButtonElement> {
     const parts = this.parts;
-    for (const release of parts.releaseButtons.splice(0)) release();
-    for (const name of ['start', 'end'] as const) {
-      parts.areas.get(name)?.remove();
-      parts.areas.delete(name);
-    }
-    for (const look of looks) {
-      const element = document.createElement('button');
-      element.type = 'button';
-      element.className = 'mx-field__button';
-      if (!look.tabStop) element.tabIndex = -1;
-      if (!look.enabled) element.disabled = true;
-      if (look.hint) {
-        element.title = look.hint;
-        if (!look.text) element.setAttribute('aria-label', look.hint);
-      }
-      if (look.icon !== undefined) {
-        const shown = iconNode(look.icon);
-        const icon = element.appendChild(document.createElement('span'));
-        icon.className = 'mx-field__button-icon';
-        icon.setAttribute('aria-hidden', 'true');
-        icon.append(shown.node);
-        parts.releaseButtons.push(shown.release);
-      }
-      if (look.text) element.append(look.text);
-      element.addEventListener('click', (event) => givenValue<FieldButton['click']>(look.button, 'click')?.({ button: look.button, source: this, event }));
-      this.area(look.start ? 'start' : 'end').append(element);
-    }
+    const buttonPart = loose<HTMLButtonElement>('button', 'mx-field__button');
+    buttonPart.attr.add({ type: 'button' });
+    parts.buttonParts.set(button, buttonPart);
+    const icon = part<HTMLSpanElement>(buttonPart, 'span', 'mx-field__button-icon');
+    icon.attr.add({ 'aria-hidden': 'true' });
+    // A text node takes its text when it is built: a new text is a new node.
+    let caption: ComponentBase | null = null;
+    let captionText = '';
+    let source: IconSource | undefined;
+    let release: (() => void) | null = null;
+    const bind = <T>(read: () => T, write: (value: T) => void) =>
+      buttonPart.bindings.watch(() => {
+        const value = read();
+        untracked(() => write(value));
+      });
+    bind(() => givenField(button, 'tabStop') !== false, (tabStop) => put(buttonPart, 'tabindex', tabStop ? null : '-1'));
+    bind(() => givenField(button, 'enabled') !== false, (enabled) => mark(buttonPart, 'disabled', !enabled));
+    bind(
+      () => ({ text: givenField<string | undefined>(button, 'text') ?? '', hint: givenField<string | undefined>(button, 'hint') ?? '' }),
+      ({ text, hint }) => {
+        put(buttonPart, 'title', hint);
+        put(buttonPart, 'aria-label', text ? null : hint);
+        if (text === captionText) return;
+        captionText = text;
+        removePart(caption);
+        caption = text ? textPart(buttonPart, text) : null;
+      },
+    );
+    bind(() => givenField<IconSource | undefined>(button, 'icon'), (next) => {
+      shown(icon, next !== undefined);
+      if (Object.is(next, source) && (release || next === undefined)) return;
+      source = next;
+      release?.();
+      release = next !== undefined ? showIcon(next, icon) : null;
+    });
+    buttonPart.motif.on('click', (_, event) => givenValue<FieldButton['click']>(button, 'click')?.({ button, source: this, event }));
+    buttonPart.motif.setDisposable(() => {
+      release?.();
+      if (parts.buttonParts.get(button) === buttonPart) parts.buttonParts.delete(button);
+    });
+    return buttonPart;
   }
 
   private renderMessage(text: string): void {
-    this.parts.message.textContent = text;
+    const parts = this.parts;
+    writeText(parts.message, text);
+    parts.messageText = text;
     this.markMessage();
     this.renderDescribedBy();
   }
 
   private markMessage(): void {
     const parts = this.parts;
-    this.element.toggleAttribute('data-message', !!parts.message.textContent || !!parts.counter?.textContent);
+    mark(this, 'data-message', !!parts.messageText || !!parts.counterText);
   }
 
   private renderDescribedBy(): void {
     const parts = this.parts;
-    const ids = [parts.areas.get('prefix')?.id, parts.areas.get('suffix')?.id, parts.message.textContent ? parts.message.id : undefined].filter(Boolean);
-    if (ids.length) parts.control.setAttribute('aria-describedby', ids.join(' '));
-    else parts.control.removeAttribute('aria-describedby');
+    // The prefix and the suffix while they show a text (see renderAffix), then the message while it has one.
+    const ids = (['prefix', 'suffix'] as const).filter((name) => this.peekProperty(name)).map((name) => `${parts.id}-${name}`);
+    if (parts.messageText) ids.push(this.messageId);
+    put(parts.controlPart, 'aria-describedby', ids.length ? ids.join(' ') : null);
   }
 }

@@ -1,10 +1,13 @@
-import { Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { homeOf } from '../../core/flow-home';
-import { focusableIn, isFocusable } from '../../core/focus';
+import { partBefore } from '../../core/draw-parts';
+import { placeInTree } from '../../core/flow-home';
+import { canTakeFocus } from '../../core/focus';
+import { isInPage } from '../../core/measure';
 import { nextId } from '../../core/next-id';
 import { isElement } from '../../core/node-kind';
-import { placePopup } from '../../parts/popup/place-popup';
+import { mark, put, text as writeText } from '../../core/part-writes';
+import { placeNear } from '../../parts/popup/place-near';
 import type { PopupPlacement } from '../../parts/popup/popup-placement';
 import { hideTooltip, isTooltipShown, linkTooltip, showTooltip, tooltipTiming, unlinkTooltip } from './tooltip-hub';
 import type { TooltipProps } from './tooltip-props';
@@ -17,37 +20,59 @@ const hasPopover = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prot
 
 /** The parts of a tooltip. On one object made on first use: the base constructor already renders. */
 interface Parts {
-  /** The element, kept for disposal (core lets go of it). */
-  bubble: HTMLDivElement;
-  label: HTMLSpanElement | null;
+  id: string;
+  label: Component<HTMLSpanElement> | null;
   content: ComponentBase | null;
-  /** The target's element, linked to the shared listeners. */
-  anchor: Element | null;
-  /** The element that carries `aria-describedby` while it is shown. */
-  described: Element | null;
+  /** The target, linked in the hub. */
+  anchor: ComponentBase | null;
+  /** The part that carries `aria-describedby` while it is shown. */
+  described: ComponentBase | null;
+  /** Shown in the page's top layer (`showPopover`). */
+  inTopLayer: boolean;
   /** Created programmatically and put into the page by the tooltip itself. */
   placedItself: boolean;
+  /** Takes back the placement asked for last. */
+  stopPlace: (() => void) | null;
   opened: Emitter<void>;
   closed: Emitter<void>;
 }
 
 const PARTS = Symbol('mx.tooltip');
 
-function elementOf(target: TooltipTarget | null | undefined): Element | null {
-  if (!target) return null;
-  if (isElement(target)) return target;
-  return isElement(target.element) ? target.element : null;
+/** The tooltips given each component target, which go with it. */
+const onTarget = new WeakMap<ComponentBase, Set<Tooltip>>();
+
+/**
+ * The part a target is described on: the target when it takes focus, else the focus part of a target control, else
+ * the first part inside it that takes focus.
+ */
+function describedPart(anchor: ComponentBase): ComponentBase {
+  if (canTakeFocus(anchor)) return anchor;
+  if (anchor instanceof Control) {
+    const part = anchor.focusPart;
+    if (part && part !== anchor) return describedPart(part);
+  }
+  return firstFocusable(anchor) ?? anchor;
 }
 
-function addToken(el: Element, name: string, token: string): void {
-  const tokens = (el.getAttribute(name) ?? '').split(/\s+/).filter(Boolean);
-  if (!tokens.includes(token)) el.setAttribute(name, [...tokens, token].join(' '));
+/** The first part inside `part`, in order, that takes focus. */
+function firstFocusable(part: ComponentBase): ComponentBase | null {
+  for (const child of part.controls.items) {
+    const found = canTakeFocus(child) ? child : firstFocusable(child);
+    if (found) return found;
+  }
+  return null;
 }
 
-function removeToken(el: Element, name: string, token: string): void {
-  const tokens = (el.getAttribute(name) ?? '').split(/\s+/).filter((t) => t && t !== token);
-  if (tokens.length) el.setAttribute(name, tokens.join(' '));
-  else el.removeAttribute(name);
+/** Adds `token` to the list in attribute `name`, keeping what others put there. */
+function addToken(part: ComponentBase, name: string, token: string): void {
+  const tokens = (part.attr.get(name) ?? '').split(/\s+/).filter(Boolean);
+  if (!tokens.includes(token)) put(part, name, [...tokens, token].join(' '));
+}
+
+function removeToken(part: ComponentBase, name: string, token: string): void {
+  const tokens = (part.attr.get(name) ?? '').split(/\s+/).filter((t) => t && t !== token);
+  put(part, name, tokens.length ? tokens.join(' ') : null);
 }
 
 /**
@@ -75,12 +100,10 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
 
   constructor(props?: IBaseProp<TooltipProps>) {
     super(props);
-    const el = this.element;
-    el.classList.add('mx-tooltip');
-    el.id = nextId('tooltip');
-    el.setAttribute('role', 'tooltip');
-    if (hasPopover) el.popover = 'manual';
-    else el.hidden = true;
+    this.class.add('mx-tooltip');
+    this.attr.add({ id: this.parts.id, role: 'tooltip' });
+    if (hasPopover) this.attr.add({ popover: 'manual' });
+    else mark(this, 'hidden', true);
 
     const own = (this.props ?? {}) as TooltipProps;
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
@@ -101,7 +124,6 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
       const parts = this.parts;
       hideTooltip(this);
       this.attach(null);
-      if (parts.placedItself) parts.bubble.remove();
       parts.opened.dispose();
       parts.closed.dispose();
     });
@@ -169,7 +191,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
    */
   open(): boolean {
     const anchor = this.parts.anchor;
-    if (!anchor?.isConnected || !this.enabled) return false;
+    if (!anchor || !isInPage(anchor) || !this.enabled) return false;
     showTooltip(this, anchor, 'code');
     return true;
   }
@@ -180,28 +202,33 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
 
   /** Repositions it relative to its target, for example after the target moves. */
   place(): void {
-    const anchor = this.parts.anchor;
-    if (isTooltipShown(this) && anchor) placePopup(this.element, anchor, this.peekProperty<PopupPlacement>('placement') ?? 'top', false);
+    const parts = this.parts;
+    if (!isTooltipShown(this) || !parts.anchor) return;
+    parts.stopPlace = placeNear(this, parts.anchor, { placement: this.peekProperty<PopupPlacement>('placement') ?? 'top' });
   }
 
-  /** @internal Called by the shared listeners: puts it on the screen next to `anchor`. */
-  present(anchor: Element, described?: Element): void {
+  /**
+   * @internal Called by the shared listeners: puts it on the screen next to `anchor`. `described` is the part of the
+   * target focus went to, when focus opened it.
+   */
+  present(anchor: ComponentBase, described?: ComponentBase): void {
     const parts = this.parts;
-    const el = this.element;
-    if (!el.isConnected) {
+    if (!isInPage(this)) {
       if (!this.isBuilt) this.build();
-      homeOf(anchor).append(el);
+      placeInTree(anchor, this);
       parts.placedItself = true;
     }
     this.renderContent();
     if (hasPopover) {
-      if (!el.matches(':popover-open')) el.showPopover();
+      // The browser shows it a moment later; it is placed with the next measuring of its window, after that.
+      if (!parts.inTopLayer) this.attr.add({ showPopover: true });
+      parts.inTopLayer = true;
     } else {
-      el.hidden = false;
+      mark(this, 'hidden', false);
     }
     this.place();
-    parts.described = described ?? (isFocusable(anchor) ? anchor : (focusableIn(anchor)[0] ?? anchor));
-    addToken(parts.described, 'aria-describedby', el.id);
+    parts.described = described && canTakeFocus(described) ? described : describedPart(anchor);
+    addToken(parts.described, 'aria-describedby', parts.id);
     this.setProperty('opened', true);
     parts.opened.fire();
   }
@@ -209,10 +236,16 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
   /** @internal Called by the shared listeners: takes it off the screen. */
   dismiss(): void {
     const parts = this.parts;
-    const el = parts.bubble;
-    if (hasPopover && el.matches(':popover-open')) el.hidePopover();
-    else el.hidden = true;
-    if (parts.described) removeToken(parts.described, 'aria-describedby', el.id);
+    parts.stopPlace?.();
+    parts.stopPlace = null;
+    if (parts.inTopLayer) {
+      parts.inTopLayer = false;
+      this.attr.add({ showPopover: false });
+    } else {
+      mark(this, 'hidden', true);
+    }
+    // A described part disposed before it (the target's) has nothing left to take the token from.
+    if (parts.described && !parts.described.isDisposed) removeToken(parts.described, 'aria-describedby', parts.id);
     parts.described = null;
     this.setProperty('opened', false);
     parts.closed.fire();
@@ -228,46 +261,70 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
   private get parts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
     return (self[PARTS] ??= {
-      bubble: this.element,
+      id: nextId('tooltip'),
       label: null,
       content: null,
       anchor: null,
       described: null,
+      inTopLayer: false,
       placedItself: false,
+      stopPlace: null,
       opened: new Emitter(),
       closed: new Emitter(),
     });
   }
 
+  /** The target given, when it has an element to describe (a fragment has none). */
+  private takeIn(target: TooltipTarget | null | undefined): ComponentBase | null {
+    return target && isElement(target.element) ? target : null;
+  }
+
   private attach(target: TooltipTarget | null): void {
     const parts = this.parts;
-    const anchor = elementOf(target);
+    const anchor = this.takeIn(target);
     if (anchor === parts.anchor) return;
     if (parts.anchor) {
       hideTooltip(this);
       unlinkTooltip(parts.anchor, this);
+      onTarget.get(parts.anchor)?.delete(this);
     }
     parts.anchor = anchor;
     if (!anchor) return;
     linkTooltip(anchor, this);
     // Created programmatically for a component: it goes with the component.
-    if (target && !isElement(target)) {
-      target.motif.setDisposable(() => {
-        if (!this.parent && this.peekProperty('target') === target) void this.dispose();
-      });
-    }
+    Tooltip.goWith(anchor).add(this);
+  }
+
+  /** The tooltips that go with `target`, which is watched once however many tooltips it is given. */
+  private static goWith(target: ComponentBase): Set<Tooltip> {
+    const known = onTarget.get(target);
+    if (known) return known;
+    const tooltips = new Set<Tooltip>();
+    onTarget.set(target, tooltips);
+    target.motif.setDisposable(() => {
+      onTarget.delete(target);
+      for (const tooltip of [...tooltips]) tooltip.leaveWith(target);
+    });
+    return tooltips;
+  }
+
+  private leaveWith(target: ComponentBase): void {
+    // Placed by nobody but itself (where its target was when it opened).
+    const own = !this.parent || this.parts.placedItself;
+    if (!own || this.peekProperty('target') !== target) return;
+    if (this.parent) this.parent.controls.remove(this);
+    else void this.dispose();
   }
 
   private renderText(text: string): void {
     const parts = this.parts;
     if (!parts.label) {
       if (!text) return;
-      parts.label = this.element.ownerDocument.createElement('span');
-      parts.label.className = 'mx-tooltip__text';
-      this.element.prepend(parts.label);
+      // First, before a content given.
+      parts.label = partBefore<HTMLSpanElement>(this, this.controls.items[0] ?? null, 'span', 'mx-tooltip__text');
     }
-    parts.label.textContent = text ?? '';
-    parts.label.hidden = !text;
+    writeText(parts.label, text ?? '');
+    mark(parts.label, 'hidden', !text);
     this.place();
   }
 

@@ -1,6 +1,7 @@
 import { Component } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
@@ -85,6 +86,8 @@ function pointer(type: string, target: EventTarget, x: number, y: number, init: 
   Object.defineProperty(e, 'pointerId', { value: 1 });
   Object.defineProperty(e, 'pointerType', { value: 'mouse' });
   target.dispatchEvent(e);
+  // A frame between pointer events, as in a browser: what the event asked to measure lands now.
+  if (hosts.length) measureNow(hosts[0]);
   return e;
 }
 
@@ -201,9 +204,9 @@ describe('TabDocumentManager: floating windows', () => {
     expect(w.documents).toEqual([a]);
     expect(a.window).toBe(w);
     expect(m.contentOf(a)).toBe(content);
-    expect(w.element.parentElement).toBe(m.element);
-    expect(w.element.getAttribute('role')).toBe('dialog');
-    expect(w.element.getAttribute('aria-label')).toBe('Floating window 1');
+    expect(w.part.element.parentElement).toBe(m.element);
+    expect(w.part.element.getAttribute('role')).toBe('dialog');
+    expect(w.part.element.getAttribute('aria-label')).toBe('Floating window 1');
     expect(log).toEqual(['floating A', 'floated A']);
     expect(changes).toContain('float');
     await settle();
@@ -229,7 +232,7 @@ describe('TabDocumentManager: floating windows', () => {
     expect(right.window).toBe(w);
     expect(w.groups.map(titles)).toEqual([['A'], ['B']]);
     // The group at the top end of a window is its title: it has the window's buttons.
-    expect(w.element.querySelectorAll('.mx-tabdocs__group')[1]).toBe(right.element);
+    expect(w.part.element.querySelectorAll('.mx-tabdocs__group')[1]).toBe(right.element);
     // A group of a split window floats into a window of its own; alone there, it does not float again.
     const v = m.float(right)!;
     expect(v.groups).toEqual([right]);
@@ -254,7 +257,7 @@ describe('TabDocumentManager: floating windows', () => {
     // Its strip's empty part is its title: the window follows the pointer, nothing else moves.
     const g = w.groups[0];
     layGroup(g, new DOMRect(w.rect.x, w.rect.y, w.rect.width, w.rect.height));
-    rects.set(w.element, new DOMRect(w.rect.x, w.rect.y, w.rect.width, w.rect.height));
+    rects.set(w.part.element, new DOMRect(w.rect.x, w.rect.y, w.rect.width, w.rect.height));
     const from = w.rect;
     const bar = g.element.querySelector('.mx-tabdocs__strip')!;
     drag(bar, [[w.rect.x + 300, w.rect.y + 15], [w.rect.x + 250, w.rect.y - 85]], { at: [w.rect.x + 300, w.rect.y + 15] });
@@ -272,7 +275,7 @@ describe('TabDocumentManager: floating windows', () => {
     lay(m);
     const log = record(m);
     const w = m.float(m.findDocument('c')!, { x: 500, y: 450, width: 300, height: 200 })!;
-    rects.set(w.element, new DOMRect(500, 450, 300, 200));
+    rects.set(w.part.element, new DOMRect(500, 450, 300, 200));
     layGroup(w.groups[0], new DOMRect(500, 450, 300, 200));
     log.length = 0;
     drag(w.groups[0].element.querySelector('.mx-tabdocs__strip')!, [[700, 465], [100, 15]], { at: [700, 465] });
@@ -295,7 +298,7 @@ describe('TabDocumentManager: floating windows', () => {
     expect(w.rect).toEqual({ x: 40, y: 60, width: 320, height: 240 });
     expect(w.maximize()).toBe(true);
     expect(w.isMaximized).toBe(true);
-    expect(w.element.hasAttribute('data-maximized')).toBe(true);
+    expect(w.part.element.hasAttribute('data-maximized')).toBe(true);
     expect(w.restore()).toBe(true);
     expect(w.rect).toEqual({ x: 40, y: 60, width: 320, height: 240 });
     changes.push('stop');
@@ -307,6 +310,18 @@ describe('TabDocumentManager: floating windows', () => {
     m.keepFloatingInView = false;
     w.move(5000, -50);
     expect([w.rect.x, w.rect.y]).toEqual([5000, -50]);
+  });
+
+  it('keeps a window inside the room a measure read, reading none itself', async () => {
+    const m = managerWith([['A', 'B']]);
+    lay(m);
+    const w = m.float(m.findDocument('a')!, { x: 600, y: 10, width: 300, height: 200 })!;
+    await settle();
+    const room = vi.spyOn(w, 'room');
+    // The write of the window's page watch hands over the room its read found.
+    m.keepWindowInView(w, { w: 800, h: 600 });
+    expect([w.rect.x, w.rect.y]).toEqual([800 - 300, 10]);
+    expect(room).not.toHaveBeenCalled();
   });
 
   it('closeWindow closes its documents (each asks) and then the window; the last tab closing closes it too', async () => {
@@ -406,8 +421,8 @@ describe('TabDocumentManager: dock areas', () => {
     expect(left.documents.map((d) => d.title)).toEqual(['A']);
     expect(left.size).toBe(240);
     expect(m.findDocument('a')!.dockArea).toBe(left);
-    expect(left.element.getAttribute('aria-label')).toBe('Left dock area');
-    expect(left.sash.element.getAttribute('role')).toBe('separator');
+    expect(left.part.element.getAttribute('aria-label')).toBe('Left dock area');
+    expect(left.sash.part.element.getAttribute('role')).toBe('separator');
     m.dock(m.findDocument('b')!, 'left');
     expect(left.groups.map(titles)).toEqual([['A', 'B']]);
     m.dock(m.findDocument('c')!, 'bottom', '30%');
@@ -433,12 +448,12 @@ describe('TabDocumentManager: dock areas', () => {
     m.dock(m.findDocument('b')!, 'bottom');
     m.dock(m.findDocument('c')!, 'right');
     const [left, bottom, right] = m.dockAreas;
-    expect(left.element.style.gridArea).toBe('2 / 2 / 7 / 3');
-    expect(left.sash.element.style.gridArea).toBe('2 / 3 / 7 / 4');
-    expect(bottom.element.style.gridArea).toBe('6 / 4 / 7 / 7');
-    expect(right.element.style.gridArea).toBe('2 / 6 / 5 / 7');
-    expect(left.element.style.inlineSize).toBe('240px');
-    expect(bottom.element.style.blockSize).toBe('200px');
+    expect(left.part.element.style.gridArea).toBe('2 / 2 / 7 / 3');
+    expect(left.sash.part.element.style.gridArea).toBe('2 / 3 / 7 / 4');
+    expect(bottom.part.element.style.gridArea).toBe('6 / 4 / 7 / 7');
+    expect(right.part.element.style.gridArea).toBe('2 / 6 / 5 / 7');
+    expect(left.part.element.style.inlineSize).toBe('240px');
+    expect(bottom.part.element.style.blockSize).toBe('200px');
   });
 
   it('resizes by its splitter, with the mouse and the keys, within its smallest and the documents\' smallest', async () => {
@@ -446,7 +461,7 @@ describe('TabDocumentManager: dock areas', () => {
     lay(m);
     m.dock(m.findDocument('a')!, 'left');
     const area = m.dockArea('left')!;
-    const sash = area.sash.element;
+    const sash = area.sash.part.element;
     const changes: string[] = [];
     m.onLayoutChanged((e) => changes.push(`${e.change}${e.area === area ? ' area' : ''}`));
     pointer('pointerdown', sash, 240, 100);
@@ -520,8 +535,8 @@ describe('TabDocumentManager: auto hide', () => {
     expect(m.autoHide(m.findDocument('a')!)).toBe(true);
     await settle();
     expect(area.autoHidden).toBe(true);
-    expect(area.element.hasAttribute('data-auto-hide')).toBe(true);
-    expect(area.sash.element.hidden).toBe(true);
+    expect(area.part.element.hasAttribute('data-auto-hide')).toBe(true);
+    expect(area.sash.part.element.hidden).toBe(true);
     const s = strip(m, 'left');
     expect(s.hidden).toBe(false);
     expect(s.getAttribute('role')).toBe('toolbar');
@@ -529,13 +544,35 @@ describe('TabDocumentManager: auto hide', () => {
     const tab = s.querySelector<HTMLButtonElement>('.mx-tabdocs__autohide-tab')!;
     expect(tab.textContent).toBe('A');
     expect(tab.getAttribute('aria-expanded')).toBe('false');
-    expect(tab.getAttribute('aria-controls')).toBe(area.element.id);
+    expect(tab.getAttribute('aria-controls')).toBe(area.part.element.id);
     expect(log).toEqual(['autoHiding left true', 'autoHidden left true']);
     expect(live(m)).toBe('Left dock area folded to its edge');
     expect(m.autoHide(area, false)).toBe(true);
     await settle();
     expect(s.hidden).toBe(true);
-    expect(area.sash.element.hidden).toBe(false);
+    expect(area.sash.part.element.hidden).toBe(false);
+  });
+
+  it('keeps the strip titles in place: a title or an icon changed writes only its own', async () => {
+    const { area } = await folded();
+    const s = area.strip!.part.element;
+    const tabs = () => [...s.querySelectorAll<HTMLButtonElement>('.mx-tabdocs__autohide-tab')];
+    const before = tabs();
+    const otherTitle = before[1].querySelector('.mx-tabdocs__autohide-title')!;
+    const writes: MutationRecord[] = [];
+    const watcher = new MutationObserver((list) => writes.push(...list));
+    watcher.observe(before[1], { subtree: true, childList: true, characterData: true });
+    const a = area.groups[0].documents[0];
+    a.title = 'A2';
+    a.icon = 'save';
+    await settle();
+    expect(tabs()).toEqual(before);
+    expect(before[0].textContent).toBe('A2');
+    expect(before[0].querySelector('.mx-tabdocs__icon')).not.toBeNull();
+    watcher.disconnect();
+    expect(writes).toEqual([]);
+    expect(before[1].querySelector('.mx-tabdocs__autohide-title')).toBe(otherTitle);
+    expect(tabs().map((t) => t.textContent)).toEqual(['A2', 'B']);
   });
 
   it('a click on a title slides the area out with that document; a click outside slides it back', async () => {
@@ -546,10 +583,10 @@ describe('TabDocumentManager: auto hide', () => {
     tabs[0].click();
     await settle();
     expect(area.isOpen).toBe(true);
-    expect(area.element.hasAttribute('data-open')).toBe(true);
+    expect(area.part.element.hasAttribute('data-open')).toBe(true);
     expect(area.groups[0].activeDocument?.title).toBe('A');
     expect(tabs[0].getAttribute('aria-expanded')).toBe('true');
-    expect(area.element.contains(document.activeElement)).toBe(true);
+    expect(area.part.element.contains(document.activeElement)).toBe(true);
     expect(log).toEqual(['slideChanging A true', 'slideChanged A true']);
     // Another title shows its document in the same area.
     tabs[1].click();
@@ -569,7 +606,7 @@ describe('TabDocumentManager: auto hide', () => {
     (document.activeElement as HTMLButtonElement).click();
     await settle();
     expect(area.isOpen).toBe(true);
-    expect(area.element.contains(document.activeElement)).toBe(true);
+    expect(area.part.element.contains(document.activeElement)).toBe(true);
     key('Escape');
     await settle();
     expect(area.isOpen).toBe(false);
@@ -581,7 +618,7 @@ describe('TabDocumentManager: auto hide', () => {
     expect(m.showAutoHidden(m.findDocument('b')!)).toBe(true);
     expect(area.isOpen).toBe(true);
     const outside = header(m, 'C');
-    area.element.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
+    area.part.element.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
     expect(area.isOpen).toBe(false);
     const stop = m.onSlideChanging((e) => (e.cancel = !e.open));
     m.showAutoHidden(m.findDocument('a')!);
@@ -617,7 +654,7 @@ describe('TabDocumentManager: auto hide', () => {
     m.dock(m.findDocument('a')!, 'bottom');
     const area = m.dockArea('bottom')!;
     await settle();
-    const pin = area.element.querySelector<HTMLElement>('.mx-tabdocs__auto-hide')!;
+    const pin = area.part.element.querySelector<HTMLElement>('.mx-tabdocs__auto-hide')!;
     expect(pin.getAttribute('aria-label') ?? pin.title).toContain('Auto hide');
     pin.click();
     expect(area.autoHidden).toBe(true);
@@ -731,6 +768,18 @@ describe('TabDocumentManager: dock guides', () => {
     // Away from the one guide left (the middle), with nothing to float: nowhere.
     expect(log).toEqual(['over strip']);
     expect(m.groups.map(titles)).toEqual([['A', 'B'], ['C']]);
+  });
+
+  it('a manager that has shown the guides is disposed without an error', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const m = guided();
+    drag(header(m, 'B'), [
+      [100, 15],
+      [600, 250],
+    ], { hold: true });
+    expect(guides(m).length).toBeGreaterThan(0);
+    await hosts.pop()!.dispose();
+    expect(errors).not.toHaveBeenCalled();
   });
 
   it('off, the edge zones of milestone 3 work as before and nothing shows', async () => {

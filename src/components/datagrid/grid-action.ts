@@ -7,8 +7,8 @@ import type { RowState } from './row-state';
 
 /**
  * A button among a row's actions. `text` is required: it is the button's accessible name even when
- * only the icon is displayed. Provide an element icon as a function (`() => myIcon()`), so that every
- * row has its own.
+ * only the icon is displayed. Provide a component icon as a function (`() => myIcon()`), so that
+ * every row has its own.
  *
  * An action appears in its row, or in the toolbar or the bottom bar for the selected rows (`location`),
  * where several rows share the actions they all have. On several rows, `onclickMany` runs once with

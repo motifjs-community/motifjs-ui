@@ -1,7 +1,7 @@
 import { read, type Bind, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { put, shown } from "../../core/draw-parts";
 import type { IconSource } from "../../core/icon-source";
+import { put, shown } from "../../core/part-writes";
 import { PanelContent } from "../tabs/PanelContent";
 import type { Wizard } from "./Wizard";
 import type { WizardStepProps } from "./wizard-step-props";
@@ -27,14 +27,14 @@ export class WizardStep extends Control<HTMLDivElement, WizardStepProps> {
     constructor(props?: IBaseProp<WizardStepProps>) {
         super('div', props);
         const own = (this.props ?? {}) as WizardStepProps;
-        this.element.classList.add('mx-wizard__page');
-        this.element.setAttribute('role', 'group');
-        shown(this.element, false);
+        this.class.add('mx-wizard__page');
+        this.attr.add({ role: 'group' });
+        shown(this, false);
         this.content = new PanelContent(this, this.childs ?? [], own.content);
         this.validate = own.validate ?? null;
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.title !== undefined) this.bindProperty('text', own.title);
-        this.observeProperty<string>('text', title => put(this.element, 'aria-label', title || null));
+        this.observeProperty<string>('text', title => put(this, 'aria-label', title || null));
         for (const name of TOLD) this.observeProperty(name, () => this.owner?.stepsChanged());
     }
 

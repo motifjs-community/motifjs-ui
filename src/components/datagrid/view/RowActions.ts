@@ -1,6 +1,10 @@
-import { moreMark } from '../../../core/glyphs';
+import type { Component, ComponentBase } from '@motifx/core';
+import { glyphPart, part } from '../../../core/draw-parts';
+import { mark, put } from '../../../core/part-writes';
+import { orderControls } from '../../../core/order-controls';
 import { createActionButton, fillActionButton } from './action-button';
 import type { ActionWidths } from './ActionWidths';
+import type { CellTipTarget } from './cell-tip-target';
 import type { ResolvedAction } from './resolved-action';
 
 /**
@@ -14,11 +18,12 @@ export class RowActions<T> {
   shown: ResolvedAction<T>[] = [];
   /** Actions of the "more" menu. */
   overflow: ResolvedAction<T>[] = [];
-  private readonly buttons: HTMLButtonElement[] = [];
-  private more: HTMLButtonElement | null = null;
+  private readonly buttons: Component<HTMLButtonElement>[] = [];
+  private more: Component<HTMLButtonElement> | null = null;
+  private moreHint = '';
 
   constructor(
-    readonly cell: HTMLElement,
+    readonly cell: Component<HTMLDivElement>,
     private readonly widths: ActionWidths,
   ) {}
 
@@ -26,48 +31,64 @@ export class RowActions<T> {
     const shown = this.fit(list, width, display);
     this.shown = list.filter((a) => shown.has(a));
     this.overflow = list.filter((a) => !shown.has(a));
-    while (this.buttons.length < this.shown.length) {
-      const button = createActionButton();
-      this.buttons.push(button);
-      this.cell.insertBefore(button, this.more);
+    if (this.buttons.length < this.shown.length) {
+      while (this.buttons.length < this.shown.length) this.buttons.push(createActionButton());
+      // The buttons first, in order, the "more" button after them.
+      orderControls(this.cell, this.buttons);
     }
     this.buttons.forEach((button, i) => {
       const a = this.shown[i];
-      button.hidden = !a;
+      mark(button, 'hidden', !a);
       if (a) fillActionButton(button, a);
     });
     if (this.overflow.length && !this.more) this.more = this.createMore();
+    this.moreHint = more.hint;
     if (this.more) {
-      this.more.hidden = !this.overflow.length;
-      this.more.setAttribute('aria-label', more.label);
-      this.more.dataset.hint = more.hint;
+      mark(this.more, 'hidden', !this.overflow.length);
+      put(this.more, 'aria-label', more.label);
+      put(this.more, 'data-hint', more.hint);
     }
   }
 
-  /** The buttons that show, the "more" button last: what Left and Right move between. */
-  focusables(): HTMLButtonElement[] {
-    const out = this.buttons.filter((b) => !b.hidden);
-    if (this.more && !this.more.hidden) out.push(this.more);
+  /** The buttons that show, in order, the "more" button last: what Left and Right move between. */
+  buttonParts(): Component<HTMLButtonElement>[] {
+    const out = this.buttons.slice(0, this.shown.length);
+    if (this.more && this.overflow.length) out.push(this.more);
     return out;
   }
 
   /** The action of a button; `'more'` for the "more" button. */
-  actionOf(el: Element): ResolvedAction<T> | 'more' | null {
-    if (el === this.more) return 'more';
-    const i = this.buttons.indexOf(el as HTMLButtonElement);
+  actionOfPart(part: ComponentBase): ResolvedAction<T> | 'more' | null {
+    if (part === this.more) return 'more';
+    const i = this.buttons.indexOf(part as Component<HTMLButtonElement>);
     return i >= 0 ? (this.shown[i] ?? null) : null;
   }
 
-  private createMore(): HTMLButtonElement {
+  /** What the cell tip shows for a button of the cell: its hint, read when the tip opens; `null` for a part that is no shown button or has no hint. */
+  tipOf(part: ComponentBase): CellTipTarget | null {
+    return this.hintOf(part) ? { part, hint: () => this.hintOf(part) } : null;
+  }
+
+  /** The tip of the button an event came from; `null` when it came from none, or from one with no hint. */
+  tipFrom(e: Event): CellTipTarget | null {
+    const button = this.buttonParts().find((b) => b.motif.isEventFrom(e));
+    return button ? this.tipOf(button) : null;
+  }
+
+  private hintOf(part: ComponentBase): string {
+    const action = this.actionOfPart(part);
+    if (action === 'more') return this.overflow.length ? this.moreHint : '';
+    return action?.hint ?? '';
+  }
+
+  private createMore(): Component<HTMLButtonElement> {
     const more = createActionButton();
-    more.classList.add('mx-data-grid__more');
-    more.setAttribute('aria-haspopup', 'menu');
-    const icon = document.createElement('span');
-    icon.className = 'mx-button__icon';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.append(moreMark());
-    more.append(icon);
-    this.cell.append(more);
+    more.class.add('mx-data-grid__more');
+    more.attr.add({ 'aria-haspopup': 'menu' });
+    const icon = part<HTMLSpanElement>(more, 'span', 'mx-button__icon');
+    icon.attr.add({ 'aria-hidden': 'true' });
+    glyphPart(icon, 'more');
+    this.cell.controls.add(more);
     return more;
   }
 

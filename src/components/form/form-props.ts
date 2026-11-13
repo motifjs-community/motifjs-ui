@@ -41,7 +41,7 @@ export interface FormProps extends ControlProps {
   /** The button Escape clicks. */
   cancelButton?: Bind<Control | null>;
   /** Where a minimized form leaves a chip that restores it. Without it, the form collapses to its title bar. */
-  minimizeTarget?: Bind<HTMLElement | ComponentBase | null>;
+  minimizeTarget?: Bind<ComponentBase | null>;
   /** The state of the window. The default is `'normal'`. */
   windowState?: Bind<FormWindowState>;
   /** Where the form opens. The default is `'center'`. */

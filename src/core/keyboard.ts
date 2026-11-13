@@ -1,11 +1,24 @@
-import { Emitter, type ComponentBase } from '@motifx/core';
-import { accessKeyModifiers } from './access-key';
-import { closestControl, controlOf } from './control-map';
-import { deepActiveElement, isShown } from './focus';
-import { documentOf, isNode } from './node-kind';
-import { eachDocument, pageDocuments } from './page-documents';
+import { Emitter, read, untracked, type Bind, type ComponentBase } from '@motifx/core';
+import { accessKeyEntries, accessKeyModifiers, hideAccessKeyMarks, isAccessKeyToken, showAccessKeyMarks } from './access-key';
+import type { AccessKeyEntry } from './access-key-entry';
+import type { Chord } from './chord';
+import { compareTreeOrder, isWithin, treeDepth } from './component-tree';
+import type { Control } from './control';
+import { controlFor, focusedWindow, focusInTextField, focusOn, holdsFocus, isRendered, windowOfEvent } from './focus';
+import { isLiveControl } from './live-controls';
+import { eachDocument, windowOf } from './page-documents';
 import { isApplePlatform } from './platform';
+import type { ShortcutHandler } from './shortcut-handler';
+import type { ShortcutOptions } from './shortcut-options';
+import type { ShortcutRegistration } from './shortcut-registration';
+import type { KeyWindows } from './key-windows';
 import { windowStack } from './window-stack';
+import { onDocument, onWindow } from './window-events';
+
+export type { Chord } from './chord';
+export type { ShortcutHandler } from './shortcut-handler';
+export type { ShortcutOptions } from './shortcut-options';
+export type { ShortcutRegistration } from './shortcut-registration';
 
 // One capture-phase keydown listener on the document serves every shortcut
 // and every access key of the app. Capture, because windows stop key events
@@ -19,76 +32,24 @@ import { windowStack } from './window-stack';
 //      platforms) of the active window, else of the page.
 // A shortcut may be two chords in a row (`Ctrl+K W`): the first one waits for
 // the second, and the key after it is taken either way.
-
-/** The options of `addShortcut`, besides the chord and the handler. */
-export interface ShortcutOptions {
-  /**
-   * Limits the shortcut to times when focus is inside this component and it is
-   * enabled. Without it, the shortcut is application-wide.
-   */
-  scope?: ComponentBase;
-  /**
-   * Also enables the shortcut in text fields. By default, a chord without Ctrl, Alt
-   * or Meta (Delete, a letter, Escape…) does not fire in text fields. Function keys
-   * and chords with those modifiers always work.
-   */
-  inEditable?: boolean;
-  /**
-   * What it does: the key of a command, or a component's own name for it (`tabDocuments.closeTab`). A shortcut with a
-   * name takes the keys the user gave to that name (`shortcuts.keymap`) in place of its own, and shortcuts with the same
-   * name share them.
-   */
-  name?: string;
-  /** How it reads in a list of shortcuts. The default is `name`. */
-  text?: string | (() => string);
-  /** The heading a list of shortcuts groups it under, such as `File`. */
-  category?: string | (() => string);
-  /** Whether the user's keys take the place of its own. The default is `true`; without a name it never is. */
-  customizable?: boolean;
-}
-
-/** Return `false` from a handler to pass the key on, to a less specific shortcut and then the page. */
-export type ShortcutHandler = (e: KeyboardEvent) => void | boolean;
-
-export interface Chord {
-  ctrl: boolean;
-  alt: boolean;
-  shift: boolean;
-  meta: boolean;
-  /** Lower-case `KeyboardEvent.key`, or a single lower-case character. */
-  key: string;
-}
-
-export interface Registration {
-  /** The keys it was given. */
-  defaults: readonly string[];
-  /** The keys that run it now: the user's for its name, else `defaults`. */
-  keys: readonly string[];
-  /** Each of `keys` read, in the same order: one chord, or the chords pressed one after the other. */
-  sequences: Chord[][];
-  handler: ShortcutHandler;
-  scope: ComponentBase | null;
-  inEditable: boolean;
-  name: string | null;
-  text: string | (() => string) | null;
-  category: string | (() => string) | null;
-  customizable: boolean;
-}
+//
+// Where focus is and which window a key is in come from the focus layer; which
+// control a scope is and what a key does come from the component tree.
 
 /** A shortcut and one of its key sequences, as a key press finds it. */
 interface Hit {
-  reg: Registration;
+  reg: ShortcutRegistration;
   chords: Chord[];
 }
 
-const registrations = new Set<Registration>();
+const registrations = new Set<ShortcutRegistration>();
 /** The keys the user gave, by the name of the shortcut. */
 let userKeys: Readonly<Record<string, readonly string[]>> = {};
 /** @internal Tells `shortcuts` that one was added (the registration) or taken away (`null`). */
-export const shortcutChanges = new Emitter<Registration | null>();
+export const shortcutChanges = new Emitter<ShortcutRegistration | null>();
 
 /** @internal The shortcuts registered now, in the order they came. */
-export function registered(): readonly Registration[] {
+export function registered(): readonly ShortcutRegistration[] {
   return [...registrations];
 }
 /** @internal The keys the user gave, by name (`shortcuts.keymap`). */
@@ -104,7 +65,7 @@ export function setGivenKeys(map: Readonly<Record<string, readonly string[]>>): 
 }
 
 /** The keys of a shortcut now: the user's for its name, else its own. Keys of the user's that read as none are left out. */
-function readKeys(reg: Registration): void {
+function readKeys(reg: ShortcutRegistration): void {
   const given = reg.name !== null && reg.customizable ? userKeys[reg.name] : undefined;
   const keys: string[] = [];
   reg.sequences = [];
@@ -235,12 +196,13 @@ export function addShortcut(keys: string | readonly string[], handler: ShortcutH
   const defaults = typeof keys === 'string' ? [keys] : [...keys];
   // Keys without a key are a slip of the code: said at once.
   for (const text of defaults) parseShortcut(text);
-  const reg: Registration = {
+  const reg: ShortcutRegistration = {
     defaults,
     keys: defaults,
     sequences: [],
     handler,
     scope: options.scope ?? null,
+    within: options.within ?? null,
     inEditable: !!options.inEditable,
     name: options.name ?? null,
     text: options.text ?? null,
@@ -275,42 +237,32 @@ export function installKeyboard(): void {
   if (installed || typeof document === 'undefined') return;
   installed = true;
   eachDocument((doc) => {
-    const view = doc.defaultView;
-    doc.addEventListener('keydown', onKeyDown, true);
-    doc.addEventListener('keyup', onKeyUp, true);
-    doc.addEventListener('pointerdown', hideAccessKeys, true);
-    view?.addEventListener('blur', hideAccessKeys);
+    const stops = [onDocument(doc, 'keydown', onKeyDown, true), onDocument(doc, 'keyup', onKeyUp, true), onDocument(doc, 'pointerdown', hideAccessKeys, true)];
+    if (doc.defaultView) stops.push(onWindow(doc, 'blur', hideAccessKeys));
     return () => {
-      doc.removeEventListener('keydown', onKeyDown, true);
-      doc.removeEventListener('keyup', onKeyUp, true);
-      doc.removeEventListener('pointerdown', hideAccessKeys, true);
-      view?.removeEventListener('blur', hideAccessKeys);
+      for (const stop of stops) stop();
     };
   });
 }
 
-/** The document a key event came from: the listener sits on it. */
-function eventDocument(e: Event): Document {
-  const at = e.currentTarget;
-  return isNode(at) ? documentOf(at) : document;
+function windowsOf(e: KeyboardEvent, view: Window | null): KeyWindows {
+  // The window stack knows the front-most modal window; the page is not asked.
+  const top = windowStack.top(view);
+  const modal = top?.modal ? top.part : null;
+  let active: { window: ComponentBase | null } | null = modal ? { window: modal } : null;
+  return {
+    modal,
+    get active() {
+      active ??= { window: focusedWindow(e) };
+      return active.window;
+    },
+  };
 }
 
-function isEditable(el: Element | null): boolean {
-  if (!el) return false;
-  if ((el as HTMLElement).isContentEditable) return true;
-  if (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
-  return el.tagName === 'INPUT' && !['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file'].includes((el as HTMLInputElement).type);
-}
-
-/** The window keys go to: the modal one when there is one, else the one holding focus. */
-function activeWindow(focus: Element | null, doc: Document): Element | null {
-  return topModal(doc) ?? focus?.closest('dialog') ?? null;
-}
-
-/** The front-most modal window of a document: the window stack knows it (and jsdom has no `:modal`). */
-function topModal(doc: Document): Element | null {
-  const top = windowStack.top(doc);
-  return top?.modal ? top.element : null;
+/** Whether a part lies inside any window of the kit (a Control that is one), itself included. */
+function inAnyWindow(part: ComponentBase): boolean {
+  for (let c: ComponentBase | null = part; c; c = c.parent) if (isLiveControl(c) && c.isWindow) return true;
+  return false;
 }
 
 // Showing the access keys. Elsewhere than on Apple platforms, holding Alt
@@ -327,33 +279,32 @@ let altChord = false;
 let altLatched = false;
 
 function onKeyDown(e: KeyboardEvent): void {
-  const doc = eventDocument(e);
+  const view = windowOfEvent(e);
   if (isApplePlatform()) {
     if (e.key === 'Alt' || e.key === 'Control') {
-      if (e.ctrlKey && e.altKey && !e.metaKey) showAccessKeys(doc);
+      if (e.ctrlKey && e.altKey && !e.metaKey) showAccessKeyMarks(view);
       return;
     }
   } else if (e.key === 'Alt') {
     if (e.ctrlKey || e.metaKey) return; // AltGr and friends
     if (!altDown) altChord = false;
     altDown = true;
-    showAccessKeys(doc);
-    if (pageHasAccessKeys(doc)) e.preventDefault();
+    showAccessKeyMarks(view);
+    if (hasAccessKeys(e, view)) e.preventDefault();
     return;
   }
   if (altDown) altChord = true;
   else if (altLatched) hideAccessKeys();
   if (e.defaultPrevented || e.isComposing) return;
-  const focus = deepActiveElement(doc);
-  const win = activeWindow(focus, doc);
+  const windows = windowsOf(e, view);
   if (pending) {
     if (MODIFIERS.has(e.key)) return;
-    continueShortcut(e, focus, win);
+    continueShortcut(e, windows);
     e.preventDefault();
     e.stopPropagation();
     return;
   }
-  if (runShortcuts(e, focus, win) || runAccessKey(e, focus, win, doc)) {
+  if (runShortcuts(e, windows) || runAccessKey(e, view, windows)) {
     e.preventDefault();
     e.stopPropagation();
   }
@@ -367,7 +318,7 @@ function onKeyUp(e: KeyboardEvent): void {
   if (e.key !== 'Alt') return;
   const tap = altDown && !altChord;
   altDown = false;
-  if (tap && pageHasAccessKeys(eventDocument(e))) e.preventDefault();
+  if (tap && hasAccessKeys(e, windowOfEvent(e))) e.preventDefault();
   if (tap && !altLatched) {
     altLatched = true; // stays shown
     return;
@@ -375,28 +326,24 @@ function onKeyUp(e: KeyboardEvent): void {
   hideAccessKeys();
 }
 
-function showAccessKeys(doc: Document): void {
-  doc.documentElement.setAttribute('data-mx-alt', '');
-}
-
 function hideAccessKeys(): void {
   pending = null;
   altLatched = false;
-  for (const doc of pageDocuments()) doc.documentElement.removeAttribute('data-mx-alt');
+  hideAccessKeyMarks();
 }
 
-/** Whether the keys would reach anything: an access key in the active window or the page. */
-function pageHasAccessKeys(doc: Document): boolean {
-  const scope = activeWindow(deepActiveElement(doc), doc) ?? doc.body;
-  return !!scope.querySelector('[aria-keyshortcuts*="Alt+" i]');
+/** Whether the keys would reach anything: an access key drawn in the page, in the active window, else outside any window. */
+function hasAccessKeys(e: KeyboardEvent, view: Window | null): boolean {
+  const { active } = windowsOf(e, view);
+  return accessKeyEntries().some((entry) => isAccessKeyToken(entry.token) && inPlace(entry.part, view, active) && isRendered(entry.part));
 }
 
 const MODIFIERS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph']);
 
-function runShortcuts(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): boolean {
+function runShortcuts(e: KeyboardEvent, windows: KeyWindows): boolean {
   const hits: Hit[] = [];
   for (const reg of registrations) for (const chords of reg.sequences) hits.push({ reg, chords });
-  const candidates = findShortcuts(hits, 0, e, focus, win);
+  const candidates = findShortcuts(hits, 0, e, windows);
   const waiting = candidates.filter((hit) => hit.chords.length > 1);
   if (waiting.length) {
     pending = { hits: waiting, step: 1 };
@@ -406,10 +353,10 @@ function runShortcuts(e: KeyboardEvent, focus: HTMLElement | null, win: Element 
 }
 
 /** The key after the first chords of some shortcuts: the one it ends runs, a longer one waits again. */
-function continueShortcut(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): void {
+function continueShortcut(e: KeyboardEvent, windows: KeyWindows): void {
   const { hits, step } = pending!;
   pending = null;
-  const candidates = findShortcuts(hits, step, e, focus, win);
+  const candidates = findShortcuts(hits, step, e, windows);
   const waiting = candidates.filter((hit) => hit.chords.length > step + 1);
   if (waiting.length) {
     pending = { hits: waiting, step: step + 1 };
@@ -420,7 +367,7 @@ function continueShortcut(e: KeyboardEvent, focus: HTMLElement | null, win: Elem
 
 /** Runs the shortcuts found, each once, until one takes the key. */
 function runFirst(candidates: Hit[], e: KeyboardEvent): boolean {
-  const asked = new Set<Registration>();
+  const asked = new Set<ShortcutRegistration>();
   for (const { reg } of candidates) {
     if (asked.has(reg)) continue;
     asked.add(reg);
@@ -430,9 +377,10 @@ function runFirst(candidates: Hit[], e: KeyboardEvent): boolean {
 }
 
 /** The shortcuts whose chord at `step` the key is and that may run here, the most specific scope first. */
-function findShortcuts(hits: Iterable<Hit>, step: number, e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): Hit[] {
+function findShortcuts(hits: Iterable<Hit>, step: number, e: KeyboardEvent, windows: KeyWindows): Hit[] {
   const plain = !e.ctrlKey && !e.altKey && !e.metaKey;
   const fKey = /^F\d{1,2}$/.test(e.key);
+  let typing: boolean | undefined;
   const candidates: { hit: Hit; depth: number }[] = [];
   for (const hit of hits) {
     const { reg } = hit;
@@ -441,18 +389,20 @@ function findShortcuts(hits: Iterable<Hit>, step: number, e: KeyboardEvent, focu
     const chord = hit.chords[step];
     if (!chord || !matches(chord, e)) continue;
     // A plain key ends a shortcut in a text field too; it does not start one there.
-    if (step === 0 && plain && !fKey && !reg.inEditable && isEditable(focus)) continue;
-    if (reg.scope) {
-      const el = reg.scope.element as Element | null;
-      if (reg.scope.isDisposed || !el?.isConnected || !focus || !holds(reg.scope, el, focus)) continue;
-      if (win && !win.contains(el)) continue;
-      const control = controlOf(el);
-      if (control && !control.isEnabled) continue;
-      candidates.push({ hit, depth: depthOf(el) });
+    if (step === 0 && plain && !fKey && !reg.inEditable && (typing ??= focusInTextField(e))) continue;
+    // A shortcut of one part (a tab, a splitter) runs only while focus is in that part.
+    if (reg.within && !holdsAny(reg.within, e)) continue;
+    const scope = reg.scope;
+    if (scope) {
+      if (scope.isDisposed || !holdsFocus(scope, e)) continue;
+      const win = windows.active;
+      if (win && !isWithin(scope, win)) continue;
+      if (isLiveControl(scope) && !untracked(() => scope.isEnabled)) continue;
+      candidates.push({ hit, depth: treeDepth(scope) });
     } else {
       // App-wide: never across a modal form; plain keys belong to a focused window.
-      if (win && topModal(win.ownerDocument) === win) continue;
-      if (step === 0 && win && plain && !fKey) continue;
+      if (windows.modal) continue;
+      if (step === 0 && plain && !fKey && windows.active) continue;
       candidates.push({ hit, depth: -1 });
     }
   }
@@ -460,41 +410,44 @@ function findShortcuts(hits: Iterable<Hit>, step: number, e: KeyboardEvent, focu
   return candidates.map((c) => c.hit);
 }
 
-/**
- * Whether focus is inside a scope: in its element, or, for a part of it moved into another window
- * (a group of documents, say), in one of its components.
- */
-function holds(scope: ComponentBase, el: Element, focus: Element): boolean {
-  if (el.contains(focus)) return true;
-  if (el.ownerDocument === focus.ownerDocument) return false;
-  for (let c: ComponentBase | null | undefined = closestControl(focus); c; c = c.parent) if (c === scope) return true;
-  return false;
-}
-
-function depthOf(el: Element): number {
-  let d = 0;
-  for (let n: Element | null = el; n; n = n.parentElement) d++;
-  return d;
+/** Whether focus, as a key saw it, is inside one of the parts a shortcut is limited to. */
+function holdsAny(within: Bind<ComponentBase | readonly ComponentBase[]>, e: KeyboardEvent): boolean {
+  const parts = untracked(() => read(within));
+  if (Array.isArray(parts)) return (parts as readonly ComponentBase[]).some((part) => holdsFocus(part, e));
+  return holdsFocus(parts as ComponentBase, e);
 }
 
 // Access keys.
 
-function runAccessKey(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null, doc: Document): boolean {
+function runAccessKey(e: KeyboardEvent, view: Window | null, windows: KeyWindows): boolean {
   if (!isAccessKeyPress(e)) return false;
+  const win = windows.active;
   const modifiers = accessKeyModifiers().toLowerCase();
-  const scope = win ?? doc.body;
-  const targets = Array.from(scope.querySelectorAll<HTMLElement>('[aria-keyshortcuts]')).filter(
-    (el) => hasAccessKey(el, modifiers, e) && usable(el) && (win ? true : !el.closest('dialog')),
-  );
+  const targets: AccessKeyEntry[] = [];
+  for (const entry of accessKeyEntries()) {
+    if (targets.some((t) => t.part === entry.part)) continue;
+    if (hasAccessKey(entry.token, modifiers, e) && inPlace(entry.part, view, win) && usable(entry.part)) targets.push(entry);
+  }
   if (!targets.length) return false;
   if (targets.length === 1) {
-    activate(targets[0]);
+    targets[0].run();
     return true;
   }
-  // Several controls share the key: each press moves focus to the next one, activating none.
-  const current = targets.findIndex((t) => t === focus || t.contains(focus));
-  targets[(current + 1) % targets.length].focus();
+  // Several controls share the key: each press moves focus to the next one in the order of the component tree,
+  // activating none.
+  targets.sort((a, b) => compareTreeOrder(a.part, b.part));
+  const current = targets.findIndex((t) => holdsFocus(t.part, e));
+  focusOn(targets[(current + 1) % targets.length].part);
   return true;
+}
+
+/**
+ * Whether a part's keys count here: in the browser window of the key, and inside the active window, or outside every
+ * window while none is active.
+ */
+function inPlace(part: ComponentBase, view: Window | null, win: ComponentBase | null): boolean {
+  if (windowOf(part) !== view) return false;
+  return win ? isWithin(part, win) : !inAnyWindow(part);
 }
 
 /**
@@ -508,40 +461,26 @@ function isAccessKeyPress(e: KeyboardEvent): boolean {
   return !e.ctrlKey && !e.getModifierState?.('AltGraph');
 }
 
-/** Whether `el` declares the pressed key with these modifiers (`Alt+S`, `Control+Alt+S`). */
-function hasAccessKey(el: Element, modifiers: string, e: KeyboardEvent): boolean {
+/** Whether a key the kit declared is the pressed one with these modifiers (`Alt+S`, `Control+Alt+S`). */
+function hasAccessKey(token: string, modifiers: string, e: KeyboardEvent): boolean {
+  const at = token.lastIndexOf('+');
+  if (at <= 0 || token.slice(0, at).toLowerCase() !== modifiers) return false;
+  const key = token.slice(at + 1).toLocaleLowerCase();
   const pressed = e.key.length === 1 ? e.key.toLocaleLowerCase() : '';
-  return (el.getAttribute('aria-keyshortcuts') ?? '').split(/\s+/).some((token) => {
-    const at = token.lastIndexOf('+');
-    if (at <= 0 || token.slice(0, at).toLowerCase() !== modifiers) return false;
-    const key = token.slice(at + 1).toLocaleLowerCase();
-    return key === pressed || physicalKeyMatches(key, e);
-  });
+  return key === pressed || physicalKeyMatches(key, e);
 }
 
-function usable(el: HTMLElement): boolean {
-  // A disabled Control's key is not consumed (one that is not a form element is never natively disabled).
-  if (controlOf(el)?.isEnabled === false) return false;
-  return (
-    !(el as HTMLButtonElement).disabled &&
-    el.getAttribute('aria-disabled') !== 'true' &&
-    !el.closest('[inert], [hidden]') &&
-    isShown(el)
-  );
-}
-
-/** A Control decides (`onAccessKey`); a plain element is clicked if it is button-like, else focused. */
-function activate(el: HTMLElement): void {
-  const control = controlOf(el);
-  if (control) {
-    control.onAccessKey();
-    return;
+/**
+ * Whether a part's key can be used now: it and every component above it are shown and none is inert or hidden in its
+ * place, it is drawn in the page (not taken out with a kept page, not hidden by CSS), and the control it belongs to (or
+ * stands for) is enabled. A disabled control's key is not taken.
+ */
+function usable(part: ComponentBase): boolean {
+  let owner: Control | null = null;
+  for (let c: ComponentBase | null = part; c; c = c.parent) {
+    if (c.isDisposed || !c.isVisible || c.attr.has('inert') || c.attr.has('hidden')) return false;
+    owner ??= controlFor(c);
   }
-  const label = el as HTMLLabelElement;
-  if (el.localName === 'label' && label.control) {
-    label.control.focus();
-    return;
-  }
-  el.focus();
-  if (el.matches('button, [role=button], a[href], input[type=checkbox], input[type=radio], summary')) el.click();
+  const control = owner;
+  return isRendered(part) && (!control || untracked(() => control.isEnabled));
 }

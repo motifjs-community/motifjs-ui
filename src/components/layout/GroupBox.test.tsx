@@ -46,10 +46,10 @@ describe('GroupBox', () => {
     coded.controls.add(new TextBox({ label: 'Note' }));
     page(coded);
     await tick();
-    expect(coded.legendElement.textContent).toBe('Delivery');
+    expect(coded.legendPart.element.textContent).toBe('Delivery');
     expect(coded.element.dataset.variant).toBe('plain');
     coded.title = 'Shipping';
-    expect(coded.legendElement.textContent).toBe('Shipping');
+    expect(coded.legendPart.element.textContent).toBe('Shipping');
     expect(coded.element.lastElementChild?.querySelector('label')?.textContent).toContain('Note');
   });
 
@@ -117,7 +117,7 @@ describe('GroupBox', () => {
     s.collapsible = false;
     await tick();
     expect(box.element.querySelector('.mx-group-box__toggle')).toBe(null);
-    expect(box.legendElement.textContent).toBe('More');
+    expect(box.legendPart.element.textContent).toBe('More');
     box.collapsed = true;
     expect(box.element.hasAttribute('data-collapsed')).toBe(false);
   });

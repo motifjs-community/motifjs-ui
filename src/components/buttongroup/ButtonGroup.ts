@@ -2,9 +2,10 @@ import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp
 import { Control } from '../../core/control';
 import { follow } from '../../core/follow';
 import { givenField, givenList } from '../../core/given-field';
-import { mark, put } from '../../core/draw-parts';
 import type { IconSource } from '../../core/icon-source';
 import { LanguageLook } from '../../core/language-look';
+import { isRtl } from '../../core/measure';
+import { mark, put } from '../../core/part-writes';
 import type { ItemField } from '../../parts/list/item-field';
 import { readItemField } from '../../parts/list/read-item-field';
 import { Button } from '../button/Button';
@@ -41,7 +42,7 @@ interface Look {
  */
 export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGroupProps<T>> {
   /** Attached or not, when not told, is the design language's. */
-  private readonly look = new LanguageLook(this.element, { attached: '--_button-group-attached' }, () => this.renderLook());
+  private readonly look = new LanguageLook(this,{ attached: '--_button-group-attached' }, () => this.renderLook());
   private readonly valueChanged = new Emitter<ButtonGroupValueChangedEventArgs<T>>();
   private readonly itemClicked = new Emitter<ButtonGroupItemClickEventArgs<T>>();
   private readonly buttonList: Button[] = [];
@@ -55,9 +56,8 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
   constructor(props?: IBaseProp<ButtonGroupProps<T>>) {
     super('div', props);
     const own = (this.props ?? {}) as ButtonGroupProps<T>;
-    const el = this.element;
-    el.classList.add('mx-button-group');
-    el.setAttribute('role', 'group');
+    this.class.add('mx-button-group');
+    this.attr.add({ role: 'group' });
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     // Readers, not bindings: a function here reads the item.
     for (const name of ['itemText', 'itemValue'] as const) if (own[name] !== undefined) this.setProperty(name, own[name]);
@@ -70,10 +70,10 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
       if (this.ready) this.valueChanged.fire({ value: value as T | T[] | null, byUser: this.byUser, source: this });
     });
     for (const name of ['variant', 'size', 'stretch', 'attached'] as const) this.observeProperty(name, () => this.renderLook());
-    this.observeProperty<string>('label', (label) => put(el, 'aria-label', label || null));
-    el.addEventListener('keydown', (e) => this.keyDown(e));
-    el.addEventListener('focusin', (e) => {
-      const button = this.buttonAt(e.target);
+    this.observeProperty<string>('label', (label) => put(this, 'aria-label', label || null));
+    this.motif.on('keydown', (_, e) => this.keyDown(e));
+    this.motif.on('focusin', (_, e) => {
+      const button = this.buttonFrom(e);
       if (button) {
         this.current = button;
         this.renderStops();
@@ -191,8 +191,9 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
     this.renderLook();
   }
 
-  private buttonAt(target: EventTarget | null): Button | null {
-    return this.buttonList.find((button) => button.element.contains(target as Node)) ?? null;
+  /** The button an event came from. */
+  private buttonFrom(e: Event): Button | null {
+    return this.buttonList.find((button) => button.motif.isEventFrom(e)) ?? null;
   }
 
   private renderItems(): void {
@@ -232,7 +233,7 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
       let button = this.buttonList[index];
       if (!button) {
         button = new Button({ toggle: this.peekProperty('selection') !== 'none' });
-        button.element.classList.add('mx-button-group__item');
+        button.class.add('mx-button-group__item');
         void button.motif.on('click', () => this.pressed(index));
         this.controls.add(button);
         this.buttonList.push(button);
@@ -279,12 +280,12 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
 
   private keyDown(e: KeyboardEvent): void {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    const from = this.buttonAt(e.target);
+    const rtl = isRtl(this);
+    const from = this.buttonFrom(e);
     if (!from) return;
     const usable = this.buttonList.filter((button) => button.visible && button.isEnabled);
     const at = usable.indexOf(from);
     if (at < 0) return;
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
     const steps: Record<string, number> = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 };
     let to: Button | undefined;
     if (e.key === 'Home') to = usable[0];
@@ -319,10 +320,9 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
   }
 
   private renderLook(): void {
-    const el = this.element;
     const attached = this.peekProperty<boolean | undefined>('attached') ?? this.look.get('attached') !== 'false';
-    mark(el, 'data-attached', attached);
-    mark(el, 'data-stretch', !!this.peekProperty('stretch'));
+    mark(this, 'data-attached', attached);
+    mark(this, 'data-stretch', !!this.peekProperty('stretch'));
     const variant = this.peekProperty<ButtonVariant | undefined>('variant');
     const size = this.peekProperty<ButtonSize | undefined>('size');
     for (const button of this.buttonList) {

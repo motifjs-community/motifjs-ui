@@ -1,10 +1,12 @@
-import { Component } from '@motifx/core';
+import { Component, type ComponentBase } from '@motifx/core';
 import { onReState } from '../../../core/on-re-state';
 import type { AgendaDay } from '../model/agenda-day';
 import type { AgendaPiece } from '../model/agenda-piece';
-import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
+import { part } from '../../../core/draw-parts';
+import { css, flag, put, shown, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
+import type { ShownView } from './shown-view';
 
 interface Props<T> {
   host: SchedulerHost<T>;
@@ -15,11 +17,11 @@ interface Props<T> {
 /** A day of the list as last drawn: its parts and its rows. */
 interface DayDrawn<T> {
   day: AgendaDay<T>;
-  resource: HTMLElement;
-  head: HTMLElement;
-  number: HTMLElement;
-  weekday: HTMLElement;
-  month: HTMLElement;
+  resource: Component<HTMLElement>;
+  head: Component<HTMLElement>;
+  number: Component<HTMLElement>;
+  weekday: Component<HTMLElement>;
+  month: Component<HTMLElement>;
   rows: KeyedParts<AgendaPiece<T>, Component<HTMLDivElement>>;
 }
 
@@ -30,10 +32,10 @@ interface RowDrawn<T> {
   content: Component<HTMLDivElement>;
   template: unknown;
   version: number;
-  time: HTMLElement | null;
-  text: HTMLElement | null;
-  details: HTMLElement | null;
-  mark: HTMLElement | null;
+  time: Component<HTMLElement> | null;
+  text: Component<HTMLElement> | null;
+  details: Component<HTMLElement> | null;
+  mark: Component<HTMLElement> | null;
 }
 
 /**
@@ -44,7 +46,7 @@ interface RowDrawn<T> {
  * It follows nothing: whatever the model tells, and when the focus moves, it draws itself again (each part only what
  * it shows), as it does on `reState()` and when an option or a text it shows changes.
  */
-export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
+export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> implements ShownView {
   /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private list!: Component<HTMLDivElement>;
@@ -65,10 +67,10 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
     const host = this.host;
     this.class.add('mx-scheduler__agenda-view');
     const scroll = part<HTMLDivElement>(this, 'div', 'mx-scheduler__scroll mx-scheduler__agenda');
-    host.setScroller(scroll.element);
+    host.setScroller(scroll);
     this.list = part<HTMLDivElement>(scroll, 'div', 'mx-scheduler__agenda-list');
-    this.list.element.setAttribute('role', 'listbox');
-    this.list.element.addEventListener('keydown', (e) => host.agendaKey(e));
+    this.list.attr.add({ role: 'listbox' });
+    this.list.motif.on('keydown', (_, e) => host.agendaKey(e));
     this.empty = part<HTMLDivElement>(scroll, 'div', 'mx-scheduler__agenda-empty');
     this.days = new KeyedParts<AgendaDay<T>, Component<HTMLDivElement>>(
       this.list,
@@ -92,15 +94,30 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
     this.host.setScroller(null);
   }
 
+  /** No cells: the agenda is a list of rows. */
+  cellAt(): ComponentBase | null {
+    return null;
+  }
+
+  /** The row of a piece, while its day is shown. */
+  boxOf(id: string): ComponentBase | null {
+    if (!this.made) return null;
+    for (const c of this.list.controls.items) {
+      const row = this.dayDrawn.get(c as Component<HTMLDivElement>)?.rows.get(id);
+      if (row) return row;
+    }
+    return null;
+  }
+
   /** All of the list, as the model has it now. */
   draw(): void {
     if (this.isDisposed || !this.made) return;
     const host = this.host;
     const agenda = host.model.state.agenda;
-    put(this.list.element, 'aria-label', host.text('schedulerAgenda'));
-    shown(this.list.element, agenda.length > 0);
-    shown(this.empty.element, agenda.length === 0);
-    text(this.empty.element, host.text('schedulerNoAppointments'));
+    put(this.list, 'aria-label', host.text('schedulerAgenda'));
+    shown(this.list, agenda.length > 0);
+    shown(this.empty, agenda.length === 0);
+    text(this.empty, host.text('schedulerNoAppointments'));
     this.days.show(agenda);
   }
 
@@ -119,23 +136,23 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
 
   private makeDay(day: AgendaDay<T>): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
-    c.element.className = 'mx-scheduler__agenda-group';
-    c.element.setAttribute('role', 'group');
+    c.class.add('mx-scheduler__agenda-group');
+    c.attr.add({ role: 'group' });
     const resource = part(c, 'div', 'mx-scheduler__agenda-resource');
-    resource.element.setAttribute('aria-hidden', 'true');
+    resource.attr.add({ 'aria-hidden': 'true' });
     const head = part(c, 'div', 'mx-scheduler__agenda-day');
-    head.element.setAttribute('aria-hidden', 'true');
+    head.attr.add({ 'aria-hidden': 'true' });
     const number = part(head, 'span', 'mx-scheduler__day-number');
     const date = part(head, 'span', 'mx-scheduler__agenda-date');
     const weekday = part(date, 'span', 'mx-scheduler__agenda-weekday');
     const month = part(date, 'span', 'mx-scheduler__agenda-month');
     this.dayDrawn.set(c, {
       day,
-      resource: resource.element,
-      head: head.element,
-      number: number.element,
-      weekday: weekday.element,
-      month: month.element,
+      resource,
+      head,
+      number,
+      weekday,
+      month,
       rows: new KeyedParts<AgendaPiece<T>, Component<HTMLDivElement>>(
         c,
         (piece) => piece.id,
@@ -152,8 +169,8 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
     const drawn = this.dayDrawn.get(c)!;
     drawn.day = day;
     const format = this.host.format;
-    put(c.element, 'aria-label', `${day.label ? `${day.label}, ` : ''}${format.fullDate(day.day.date)}`);
-    flag(c.element, 'data-today', day.day.today);
+    put(c, 'aria-label', `${day.label ? `${day.label}, ` : ''}${format.fullDate(day.day.date)}`);
+    flag(c, 'data-today', day.day.today);
     shown(drawn.resource, day.first && !!day.group);
     text(drawn.resource, day.label);
     flag(drawn.head, 'data-today', day.day.today);
@@ -166,16 +183,15 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
   private makeRow(piece: AgendaPiece<T>, day: AgendaDay<T>): Component<HTMLDivElement> {
     const host = this.host;
     const c = new Component<HTMLDivElement>('div');
-    const el = c.element;
-    el.className = 'mx-scheduler__agenda-row';
-    el.setAttribute('role', 'option');
+    c.class.add('mx-scheduler__agenda-row');
+    c.attr.add({ role: 'option' });
     const now = () => this.rowDrawn.get(c)!.piece;
-    el.addEventListener('focus', () => this.choose(now().id));
-    el.addEventListener('click', (e) => {
+    c.motif.on('focus', () => this.choose(now().id));
+    c.motif.on('click', (_, e) => {
       this.choose(now().id);
       host.appointmentClick(now(), e);
     });
-    el.addEventListener('dblclick', (e) => host.appointmentDblClick(now(), e));
+    c.motif.on('dblclick', (_, e) => host.appointmentDblClick(now(), e));
     const content = part<HTMLDivElement>(c, 'div', 'mx-scheduler__agenda-content');
     this.rowDrawn.set(c, { piece, day, content, template: undefined, version: -1, time: null, text: null, details: null, mark: null });
     this.fillRow(c);
@@ -194,16 +210,16 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
     drawn.time = drawn.text = drawn.mark = null;
     if (template) {
       content.controls.add(template(this.rowContext(c)));
-      drawn.details = part(content, 'span', 'mx-sr-only').element;
+      drawn.details = part(content, 'span', 'mx-sr-only');
       return;
     }
-    drawn.time = part(content, 'span', 'mx-scheduler__agenda-time').element;
-    part(content, 'span', 'mx-scheduler__agenda-dot').element.setAttribute('aria-hidden', 'true');
-    drawn.text = part(content, 'span', 'mx-scheduler__agenda-text').element;
-    drawn.details = part(content, 'span', 'mx-sr-only').element;
+    drawn.time = part(content, 'span', 'mx-scheduler__agenda-time');
+    part(content, 'span', 'mx-scheduler__agenda-dot').attr.add({ 'aria-hidden': 'true' });
+    drawn.text = part(content, 'span', 'mx-scheduler__agenda-text');
+    drawn.details = part(content, 'span', 'mx-sr-only');
     const mark = part(content, 'span', 'mx-glyph mx-scheduler__mark');
-    mark.element.setAttribute('aria-hidden', 'true');
-    drawn.mark = mark.element;
+    mark.attr.add({ 'aria-hidden': 'true' });
+    drawn.mark = mark;
   }
 
   private drawRow(c: Component<HTMLDivElement>, piece: AgendaPiece<T>, day: AgendaDay<T>): void {
@@ -214,17 +230,16 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
     drawn.day = day;
     const template = host.agendaTemplate();
     if (template !== drawn.template || (template && piece.version !== drawn.version)) this.fillRow(c);
-    const el = c.element;
-    put(el, 'data-piece', piece.id);
-    flag(el, 'data-past', host.dimPast() && piece.end.getTime() <= model.state.now);
-    flag(el, 'data-disabled', piece.disabled);
-    flag(el, 'data-open', host.isOpen(model.itemOf(piece)));
-    flag(el, 'data-series', piece.series);
-    flag(el, 'data-exception', piece.exception);
-    put(el, 'aria-selected', String(this.props.focus.id === piece.id));
-    flag(el, 'aria-disabled', piece.disabled);
-    el.tabIndex = this.focused(piece) ? 0 : -1;
-    css(el, '--_color', piece.color ?? '');
+    put(c, 'data-piece', piece.id);
+    flag(c, 'data-past', host.dimPast() && piece.end.getTime() <= model.state.now);
+    flag(c, 'data-disabled', piece.disabled);
+    flag(c, 'data-open', host.isOpen(model.itemOf(piece)));
+    flag(c, 'data-series', piece.series);
+    flag(c, 'data-exception', piece.exception);
+    put(c, 'aria-selected', String(this.props.focus.id === piece.id));
+    flag(c, 'aria-disabled', piece.disabled);
+    put(c, 'tabindex', this.focused(piece) ? '0' : '-1');
+    css(c, '--_color', piece.color ?? '');
     if (drawn.time) text(drawn.time, this.time(piece));
     if (drawn.text) text(drawn.text, this.text(piece));
     if (drawn.details) text(drawn.details, this.details(piece));

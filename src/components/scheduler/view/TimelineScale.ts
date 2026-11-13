@@ -1,7 +1,7 @@
 import { Component } from '@motifx/core';
 import { onReState } from '../../../core/on-re-state';
 import type { ScaleCell } from '../model/scale-cell';
-import { put, text } from '../../../core/draw-parts';
+import { put, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 import { TimelineScaleCell } from './TimelineScaleCell';
@@ -33,30 +33,29 @@ export class TimelineScale<T> extends Component<HTMLDivElement, Props<T>> {
 
   override onConfigured(): void {
     const { host } = this.props;
-    const el = this.element;
-    el.className = 'mx-scheduler__scale';
-    el.setAttribute('aria-hidden', 'true');
+    this.class.add('mx-scheduler__scale');
+    this.attr.add({ 'aria-hidden': 'true' });
     const corner = new Component<HTMLDivElement>('div');
-    corner.element.className = 'mx-scheduler__corner';
+    corner.class.add('mx-scheduler__corner');
     this.controls.add(corner);
     this.corner = new KeyedParts<Kind, Component<HTMLDivElement>>(
       corner,
       (kind) => kind.field,
       (kind) => {
         const label = new Component<HTMLDivElement>('div');
-        label.element.className = 'mx-scheduler__corner-label';
-        text(label.element, kind.label);
+        label.class.add('mx-scheduler__corner-label');
+        text(label, kind.label);
         return label;
       },
-      (label, kind) => (label.element.textContent = kind.label),
+      (label, kind) => text(label, kind.label),
     );
     const area = new Component<HTMLDivElement>('div');
-    area.element.className = 'mx-scheduler__scale-area';
+    area.class.add('mx-scheduler__scale-area');
     this.controls.add(area);
     for (const tier of ['upper', 'lower'] as const) {
       const row = new Component<HTMLDivElement>('div');
-      row.element.className = 'mx-scheduler__scale-tier';
-      put(row.element, 'data-tier', tier);
+      row.class.add('mx-scheduler__scale-tier');
+      put(row, 'data-tier', tier);
       area.controls.add(row);
       this.tiers.push(
         new KeyedParts<ScaleCell, TimelineScaleCell<T>>(

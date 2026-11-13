@@ -19,8 +19,8 @@ export interface OverlayPanelProps extends ControlProps {
   /** Shows a dimmed layer behind it. By default, this applies when modal. */
   scrim?: Bind<boolean>;
   /**
-   * Opens over this element, which must be positioned (a static element is made relative while open). `null` opens
-   * over the page. The default is `null`.
+   * Opens over this component, whose element must be positioned (a static one is made relative while open). `null`
+   * opens over the page. The default is `null`.
    */
   container?: Bind<OverlayContainer>;
   /** Its content, in addition to JSX children. */

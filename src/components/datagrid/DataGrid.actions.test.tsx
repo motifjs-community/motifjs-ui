@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mount } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -29,6 +30,9 @@ function layout(grid: DataGrid<any>, viewport = 360) {
 async function make(props: Partial<DataGridProps<Row>>, rows: Row[] = makeRows(5)) {
   const grid = mount(new DataGrid<Row>({ rowKey: 'id', columns, rows, ...props } as DataGridProps<Row>));
   layout(grid);
+  await settle();
+  // The buttons' widths are read with the window's next measuring round; the rows fit them after it.
+  await whenMeasured(grid);
   await settle();
   return grid;
 }
@@ -179,6 +183,14 @@ describe('DataGrid row actions', () => {
     const grid = await make({ actions: ['remove'] });
     expect(buttons(grid, 0)[0].getAttribute('aria-label')).toBe('Sil');
     expect(grid.element.querySelector('[role="columnheader"][data-field="mx:actions"]')!.textContent).toContain('İşlemler');
+    // Another text is written on the same button, its icon left as it is.
+    const button = buttons(grid, 0)[0];
+    const icon = button.querySelector('.mx-button__icon > *');
+    await uiLocale.use('en');
+    await settle();
+    expect(buttons(grid, 0)[0]).toBe(button);
+    expect(button.getAttribute('aria-label')).toBe('Delete');
+    expect(button.querySelector('.mx-button__icon > *')).toBe(icon);
     await grid.dispose();
   });
 });

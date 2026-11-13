@@ -39,6 +39,32 @@ const popupShown = (d: { element: HTMLElement }) => !!d.element.querySelector('.
 const CITIES = ['Ankara', 'Bursa', 'İstanbul', 'İzmir', 'Konya'];
 
 describe('DropDown', () => {
+  it('keeps what shows the value on a reState that finds it the same', async () => {
+    const host = page(<DropDown label="City" items={CITIES} value="Bursa" />);
+    await settle();
+    const before = host.element.querySelector('.mx-drop-down__text')!.firstChild;
+    host.reState();
+    await settle();
+    expect(host.element.querySelector('.mx-drop-down__text')!.firstChild).toBe(before);
+    expect(host.element.querySelector('.mx-drop-down__text')!.textContent).toBe('Bursa');
+  });
+
+  it('writes a new value into the same part', async () => {
+    let d!: DropDown<string, string>;
+    page(<DropDown ref={(x: DropDown<string, string>) => (d = x)} label="City" items={CITIES} placeholder="Pick" />);
+    await settle();
+    const value = d.element.querySelector('.mx-drop-down__value')!;
+    expect(value.textContent).toBe('Pick');
+    d.value = 'Konya';
+    await settle();
+    expect(d.element.querySelector('.mx-drop-down__value')).toBe(value);
+    expect(shownText(d)).toBe('Konya');
+    d.value = 'İzmir';
+    await settle();
+    expect(d.element.querySelector('.mx-drop-down__value')).toBe(value);
+    expect(shownText(d)).toBe('İzmir');
+  });
+
   it('is a labelled combobox showing the chosen item, the same in JSX and programmatically', async () => {
     const s = reactive({ city: 'Bursa' as string | null });
     let jsx!: DropDown<string, string>;
@@ -99,6 +125,7 @@ describe('DropDown', () => {
     await settle();
     display(d).focus();
     expect(press(display(d), 'ArrowDown')).toBe(true);
+    await settle();
     expect(popupShown(d)).toBe(true);
     expect(d.opened).toBe(true);
     expect(display(d).getAttribute('aria-expanded')).toBe('true');
@@ -144,6 +171,7 @@ describe('DropDown', () => {
     await settle();
     display(d).focus();
     press(display(d), 'k');
+    await settle();
     expect(d.opened).toBe(true);
     expect(active(d)).toBe('Konya');
     // Letters typed close together search together: "ki" finds nothing, the highlight stays.
@@ -165,6 +193,7 @@ describe('DropDown', () => {
     page(<DropDown ref={(x: DropDown<string, string>) => (d = x)} items={CITIES} onClosed={onClosed} />);
     await settle();
     d.element.querySelector<HTMLElement>('.mx-drop-down__chevron')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await settle();
     expect(d.opened).toBe(true);
     options(d)[3].click();
     expect(d.value).toBe('İzmir');
@@ -194,7 +223,8 @@ describe('DropDown', () => {
     await settle();
     expect(shownText(d)).toBe('Linus');
     d.open();
-    const groups = Array.from(d.element.querySelectorAll('[role="listbox"] > [role="group"]'));
+    await settle();
+    const groups =Array.from(d.element.querySelectorAll('[role="listbox"] > [role="group"]'));
     expect(groups.map((g) => g.querySelector('.mx-list__header')!.textContent)).toEqual(['Core', 'Tools']);
     expect(options(d)[1].getAttribute('aria-disabled')).toBe('true');
     expect(options(d)[0].querySelector('.mx-list__icon img')).not.toBeNull();
@@ -217,12 +247,14 @@ describe('DropDown', () => {
     expect(search.getAttribute('aria-controls')).toBe(d.element.querySelector('[role="listbox"]')!.id);
     search.value = 'zm';
     search.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    await settle();
     expect(options(d).map((o) => o.textContent)).toEqual(['İzmir']);
     expect(search.getAttribute('aria-activedescendant')).toBe(options(d)[0].id);
     press(search, 'Enter');
     expect(d.value).toBe('İzmir');
     expect(document.activeElement).toBe(display(d));
     d.open();
+    await settle();
     expect(options(d).length).toBe(5);
   });
 
@@ -231,6 +263,7 @@ describe('DropDown', () => {
     page(<DropDown ref={(x: DropDown<string, string>) => (d = x)} items={[]} />);
     await settle();
     d.open();
+    await settle();
     expect(d.element.querySelector('.mx-list__empty')!.textContent).toBe('No items');
     await uiLocale.use('tr');
     await settle();
@@ -256,6 +289,7 @@ describe('DropDown', () => {
       await settle();
       expect(d.selectedItem).toBe(items[1]);
       d.open();
+      await settle();
       options(d)[0].click();
       await settle();
       expect(d.value).toBe(1);
@@ -269,6 +303,7 @@ describe('DropDown', () => {
       await settle();
       expect(shownText(d)).toBe('Un');
       d.open();
+      await settle();
       expect(options(d).map((o) => o.textContent)).toEqual(['Un', 'Two', 'Three']);
     });
 
@@ -280,6 +315,7 @@ describe('DropDown', () => {
       page(<DropDown ref={(x: DropDown<{ name: string }, { name: string }>) => (d = x)} items={items} textField="name" x-model={() => form.person} onValueChanged={changed} />);
       await settle();
       d.open();
+      await settle();
       options(d)[1].click();
       await settle();
       expect(d.value).toBe(items[1]);
@@ -325,10 +361,12 @@ describe('DropDown', () => {
     page(<DropDown ref={(x: DropDown<(typeof items)[number], number>) => (d = x)} items={items} value={1500} />);
     await settle();
     d.open();
+    await settle();
     expect(options(d).length).toBeLessThan(100);
     expect(active(d)).toBe('Item 1500');
     expect(options(d).find((o) => o.textContent === 'Item 1500')!.getAttribute('aria-posinset')).toBe('1501');
     press(display(d), 'End');
+    await settle();
     expect(active(d)).toBe('Item 1999');
   });
 
@@ -351,5 +389,27 @@ describe('DropDown', () => {
     finish();
     await settle();
     expect(empty()).toBe('No items');
+  });
+
+  it('takes an empty text as no value with a data source: it shows an empty field and asks for nothing', async () => {
+    type Item = { id: string; name: string };
+    const source = new data.DataSource<Item, unknown>({ adapter: new data.ArrayAdapter<Item>({ data: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }], key: 'id' }) });
+    const proto = DropDown.prototype as unknown as { lookUp: (...args: unknown[]) => void };
+    const original = proto.lookUp;
+    let asked = 0;
+    // A loop would ask again and again: the spy stops it after a few rounds so the test ends either way.
+    const spy = vi.spyOn(proto, 'lookUp').mockImplementation(function (this: unknown, ...args: unknown[]) {
+      if (++asked < 20) original.apply(this, args);
+    });
+    try {
+      const dd = new DropDown<Item, string>({ label: 'Item', dataSource: source, textField: 'name', valueField: 'id', value: '' });
+      page(dd);
+      await settle();
+      expect(asked).toBe(0);
+      expect(dd.element.hasAttribute('data-loading')).toBe(false);
+      expect(dd.element.querySelector('[data-placeholder]')).not.toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

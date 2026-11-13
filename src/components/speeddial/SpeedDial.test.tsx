@@ -28,6 +28,20 @@ const actions = (d: SpeedDial) => Array.from(d.element.querySelectorAll<HTMLButt
 const key = (el: HTMLElement, key: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 
 describe('SpeedDial', () => {
+    it('keeps the buttons of the actions that stay when the actions change, in the new order', async () => {
+        const note = { text: 'Note', glyph: 'pencil' };
+        let d!: SpeedDial;
+        page(<SpeedDial ref={(x: SpeedDial) => (d = x)} position="inline" actions={[note, { key: 'photo', text: 'Photo' }, { text: 'Plain' }]} />);
+        await settle();
+        const [noteButton, photoButton] = actions(d);
+        d.actions = [{ key: 'photo', text: 'Picture' }, { text: 'New' }, note];
+        await settle();
+        const now = actions(d);
+        expect(now.map(b => b.textContent)).toEqual(['Picture', 'New', 'Note']);
+        expect(now[0]).toBe(photoButton);
+        expect(now[2]).toBe(noteButton);
+    });
+
     it('a main button that opens a menu of actions with their labels; a press on one runs it and closes the fan', async () => {
         const s = reactive({ open: false, told: '' });
         let d!: SpeedDial;
@@ -46,7 +60,7 @@ describe('SpeedDial', () => {
             />
         );
         await settle();
-        const main = d.mainElement;
+        const main = d.main.element;
         expect(main.getAttribute('aria-haspopup')).toBe('menu');
         expect(main.getAttribute('aria-expanded')).toBe('false');
         expect(main.getAttribute('aria-label')).toBe(enStrings.actions);
@@ -90,7 +104,7 @@ describe('SpeedDial', () => {
         const told: string[] = [];
         page(<SpeedDial ref={(x: SpeedDial) => (d = x)} position="inline" direction="up" actions={[{ text: 'A' }, { text: 'B', enabled: false }, { text: 'C' }]} onOpened={e => told.push(`open ${e.byUser}`)} onClosed={e => told.push(`close ${e.byUser}`)} />);
         await settle();
-        const main = d.mainElement;
+        const main = d.main.element;
         main.focus();
         key(main, 'ArrowUp');
         expect(d.isOpen).toBe(true);
@@ -218,7 +232,7 @@ describe('SpeedDial', () => {
         const items = [{ text: 'Only', glyph: 'save', click: () => told.push('only') }, { text: 'Hidden', visible: false }];
         page(<SpeedDial ref={(x: SpeedDial) => (d = x)} position="inline" text="New" extended actions={items} />);
         await settle();
-        const main = d.mainElement;
+        const main = d.main.element;
         expect(main.getAttribute('aria-haspopup')).toBe(null);
         expect(main.getAttribute('aria-label')).toBe('Only');
         expect(main.querySelector('.mx-speed-dial__main-glyph')!.getAttribute('data-icon')).toBe('save');

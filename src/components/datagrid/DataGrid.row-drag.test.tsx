@@ -1,6 +1,7 @@
-import { reactive } from '@motifx/core';
+import { Component, reactive } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -52,7 +53,11 @@ async function make(props: Partial<DataGridProps<Row>>, place = { left: 0, top: 
   let top = 0;
   Object.defineProperty(vp, 'scrollTop', { configurable: true, get: () => top, set: (v: number) => (top = Math.max(0, Math.min(10_000, v))) });
   Object.defineProperty(vp, 'clientHeight', { configurable: true, get: () => place.height - HEAD });
+  // The edge scroll reads the room it scrolls and how far it can go.
+  Object.defineProperty(vp, 'clientWidth', { configurable: true, get: () => place.width });
+  Object.defineProperty(vp, 'scrollHeight', { configurable: true, get: () => 10_000 + place.height - HEAD });
   places.set(vp, place);
+  lastGrid = grid;
   (grid as any).measure();
   await settle();
   return grid;
@@ -63,10 +68,14 @@ const cellOf = (grid: DataGrid<any>, i: number, field: string) => rowEl(grid, i)
 /** The middle of grid row `i` on the screen, `part` of the way down it. */
 const yOf = (grid: DataGrid<any>, i: number, part = 0.5) => rowEl(grid, i).getBoundingClientRect().top + ROW * part;
 
+/** The grid made last: a drag draws with the window's next measuring round, run at once after each pointer event. */
+let lastGrid: DataGrid<any> | null = null;
+
 function pointer(type: string, target: EventTarget, x: number, y: number) {
   const e = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 });
   Object.defineProperty(e, 'pointerId', { value: 1 });
   target.dispatchEvent(e);
+  if (lastGrid && !lastGrid.isDisposed) measureNow(lastGrid);
   return e;
 }
 
@@ -352,7 +361,9 @@ describe('DataGrid row drag and drop', () => {
   });
 
   it('shows a drag template in the container, at cursorOffset, along dragDirection, inside boundary', async () => {
-    const holder = document.body.appendChild(document.createElement('div'));
+    // The selector is looked up in the grid's component tree.
+    const holderPart = mount(new Component<HTMLDivElement>('div'));
+    const holder = holderPart.element;
     holder.id = 'drag-holder';
     const grid = await make({
       rows: makeRows(10),
@@ -369,6 +380,7 @@ describe('DataGrid row drag and drop', () => {
     drop(200, yOf(grid, 2) + 8);
     expect(holder.querySelector('.mx-data-grid__ghost')).toBe(null);
     await grid.dispose();
+    await holderPart.dispose();
   });
 
   it('scrolls the rows near their edges while dragging', async () => {
@@ -376,6 +388,8 @@ describe('DataGrid row drag and drop', () => {
     const vp = grid.element.querySelector('.mx-data-grid__viewport') as HTMLElement;
     take(grid, 1);
     moveTo(10, 100 + 400 - 5);
+    // The edge scroll steps with the window's frames; each step's scroll is made by core a microtask later.
+    await new Promise((r) => setTimeout(r, 40));
     expect(vp.scrollTop).toBeGreaterThan(0);
     const after = vp.scrollTop;
     await new Promise((r) => setTimeout(r, 40));
@@ -387,6 +401,7 @@ describe('DataGrid row drag and drop', () => {
     grid.rowDragging.autoScroll = false;
     take(grid, (grid.getVisibleRows()[2]?.rowIndex ?? 3));
     moveTo(10, 100 + 400 - 5);
+    await new Promise((r) => setTimeout(r, 40));
     expect(vp.scrollTop).toBe(stopped);
     drop(10, 100 + 400 - 5);
     await grid.dispose();

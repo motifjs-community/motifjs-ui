@@ -1,3 +1,5 @@
+import type { ComponentBase } from '@motifx/core';
+import { isFocused } from '../../core/focus';
 import type { InputMaskOptions } from './input-mask-options';
 import { MaskedText } from './MaskedText';
 import { parseMask } from './parse-mask';
@@ -12,28 +14,46 @@ import { parseMask } from './parse-mask';
  * phone.raw; // '5321234567'
  */
 export class InputMask {
+  /** Whether typing is refused now. A field answers from its own `readOnly`; the default asks the input. */
+  readOnly: () => boolean = () => this.field.attr.has('readonly');
+
   private text: MaskedText;
   private options: InputMaskOptions;
   private writing = false;
-  private readonly abort = new AbortController();
+  private caretTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The input, as the component given. */
+  private readonly field: ComponentBase<HTMLInputElement>;
+  /** Stops listening on the input. */
+  private readonly stop: () => void;
 
-  constructor(
-    readonly input: HTMLInputElement,
-    options: InputMaskOptions,
-  ) {
+  /** `input`: the `<input>` component, such as a field's input part. */
+  constructor(input: ComponentBase<HTMLInputElement>, options: InputMaskOptions) {
+    this.field = input;
     this.options = options;
     this.text = this.create(options);
-    this.text.setText(input.value);
-    const signal = this.abort.signal;
-    input.addEventListener('beforeinput', (e) => this.beforeInput(e), { signal });
-    // Before the app's own listeners: they read the value already in shape.
-    input.addEventListener('input', (e) => this.afterInput(e as InputEvent), { signal, capture: true });
-    input.addEventListener('compositionend', () => this.takeInput(), { signal });
-    input.addEventListener('focus', () => this.focused(), { signal });
-    input.addEventListener('blur', () => this.show(), { signal });
-    input.addEventListener('mouseup', () => this.clampCaret(), { signal });
-    input.addEventListener('keyup', () => this.clampCaret(), { signal });
+    // browser object read: allowed exception
+    this.text.setText(this.input.value);
+    type Handler = (sender: ComponentBase, e: Event) => void;
+    const on: [string, Handler][] = [
+      ['beforeinput', (_, e) => this.beforeInput(e as InputEvent)],
+      // Before the app's own listeners: they read the value already in shape.
+      ['input:capture', (_, e) => this.afterInput(e as InputEvent)],
+      ['compositionend', () => this.takeInput()],
+      ['focus', () => this.focused()],
+      ['blur', () => this.show()],
+      ['mouseup', () => this.clampCaret()],
+      ['keyup', () => this.clampCaret()],
+    ];
+    for (const [name, handler] of on) void this.field.motif.on(name as 'click', handler);
+    this.stop = () => {
+      for (const [name, handler] of on) void this.field.motif.off(name as 'click', handler);
+    };
     this.show();
+  }
+
+  // browser object read: allowed exception (the input's value and selection are read through it)
+  get input(): HTMLInputElement {
+    return this.field.element;
   }
 
   /** The typed characters only: `5321234567`. */
@@ -82,20 +102,18 @@ export class InputMask {
   }
 
   destroy(): void {
-    this.abort.abort();
+    clearTimeout(this.caretTimer);
+    this.stop();
   }
 
   private create(options: InputMaskOptions): MaskedText {
     return new MaskedText(parseMask(options.mask, options.chars), options.placeholder ?? '_');
   }
 
-  private get hasFocus(): boolean {
-    return this.input.ownerDocument.activeElement === this.input;
-  }
-
   private beforeInput(e: InputEvent): void {
-    if (this.input.readOnly || e.isComposing) return;
+    if (this.readOnly() || e.isComposing) return;
     const type = e.inputType;
+    // browser object read: allowed exception
     const from = this.input.selectionStart ?? 0;
     const to = this.input.selectionEnd ?? from;
     const before = this.text.raw;
@@ -121,6 +139,7 @@ export class InputMask {
 
   private takeInput(): void {
     const placeholder = this.text.placeholder;
+    // browser object read: allowed exception
     this.text.setText(placeholder ? this.input.value.split(placeholder).join('') : this.input.value);
     this.show(this.text.positionOf(this.text.raw.length));
   }
@@ -135,21 +154,26 @@ export class InputMask {
   }
 
   private show(caret?: number): void {
-    const hidden = this.options.showMask !== 'always' && this.text.empty && !this.hasFocus;
-    const value = hidden ? '' : this.text.text;
-    if (this.input.value !== value) this.input.value = value;
-    if (caret !== undefined && this.hasFocus) this.input.setSelectionRange(caret, caret);
+    const focused = isFocused(this.field);
+    const hidden = this.options.showMask !== 'always' && this.text.empty && !focused;
+    this.field.attr.add({ value: hidden ? '' : this.text.text });
+    // At once, not a turn later: the next key's `beforeinput` reads the caret.
+    if (caret !== undefined && focused) this.input.setSelectionRange(caret, caret);
   }
 
   private focused(): void {
     this.show();
     // The click that focused the input places the caret after this.
-    setTimeout(() => this.clampCaret());
+    clearTimeout(this.caretTimer);
+    this.caretTimer = setTimeout(() => this.clampCaret());
   }
 
   private clampCaret(): void {
+    // A turn after focus the field may be gone.
+    if (this.field.isDisposed) return;
+    // browser object read: allowed exception
     const { selectionStart: from, selectionEnd: to } = this.input;
-    if (from === null || from !== to || !this.hasFocus) return;
+    if (from === null || from !== to || !isFocused(this.field)) return;
     const caret = this.text.clamp(from);
     if (caret !== from) this.input.setSelectionRange(caret, caret);
   }

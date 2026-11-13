@@ -108,4 +108,26 @@ describe('Timeline', () => {
         expect(t.selectedIndex).toBe(2);
         expect(t.goTo('nowhere')).toBe(false);
     });
+
+    it('keeps the rows of the events that stay: an event added, taken out or changed writes only its own', async () => {
+        let t!: Timeline;
+        const s = reactive({ events: [...EVENTS] as { key: string; title: string; date?: Date | string | number }[] });
+        page(<Timeline ref={(x: Timeline) => (t = x)} items={() => s.events as never} />);
+        await settle();
+        const before = items(t);
+        const writes: MutationRecord[] = [];
+        const watcher = new MutationObserver((list) => writes.push(...list));
+        watcher.observe(before[0], { subtree: true, childList: true, characterData: true });
+        s.events = [...s.events, { key: 'later', title: 'Later' }];
+        await settle();
+        expect(items(t).slice(0, 3)).toEqual(before);
+        expect(items(t)).toHaveLength(4);
+        s.events[1].title = 'Beta 2';
+        s.events = s.events.filter((e) => e.key !== 'ship');
+        await settle();
+        expect(items(t)).toEqual([before[0], before[1], items(t)[2]]);
+        expect(before[1].querySelector('.mx-timeline__title')!.textContent).toBe('Beta 2');
+        watcher.disconnect();
+        expect(writes).toEqual([]);
+    });
 });

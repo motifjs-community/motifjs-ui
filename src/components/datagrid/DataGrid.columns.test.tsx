@@ -37,7 +37,7 @@ async function make(props: Partial<DataGridProps<Row>> = {}) {
 
 const headers = (grid: DataGrid<any>) =>
   [...grid.element.querySelectorAll<HTMLElement>('[role="columnheader"][aria-colindex]')].sort((a, b) => Number(a.getAttribute('aria-colindex')) - Number(b.getAttribute('aria-colindex'))).map((h) => h.dataset.field);
-const cell = (grid: DataGrid<any>, row: number, field: string) => grid.getCellElement(row, field);
+const cell = (grid: DataGrid<any>, row: number, field: string) => grid.getCellPart(row, field)?.element;
 const shownIds = (grid: DataGrid<Row>) => grid.getVisibleRows().filter((r) => r.rowType === 'data').map((r) => r.row!.id);
 
 afterEach(() => {

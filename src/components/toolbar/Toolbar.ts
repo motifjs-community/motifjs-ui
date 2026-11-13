@@ -1,19 +1,20 @@
-import { onLookChanged } from '../../core/look-watch';
-import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { controlOf } from '../../core/control-map';
 import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import type { IconSource } from '../../core/icon-source';
-import { deepActiveElement, focusableIn, isShown } from '../../core/focus';
+import { focusInArrowField, rememberFocus } from '../../core/focus';
 import { givenField, givenList, givenValue } from '../../core/given-field';
 import { commands } from '../../core/command-registry';
 import { namesCommands, runItem, valueOf } from '../../core/command-fields';
 import { moreMark } from '../../core/glyphs';
-import { ResizeWatch } from '../../core/resize-watch';
+import { isElement } from '../../core/node-kind';
+import { boxOf, isRendered, isRtl, measure, onLayout, readAgain, rectOf, styleOf } from '../../core/measure';
+import { mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
+import { Popup } from '../../parts/popup/Popup';
 import { Button } from '../button/Button';
 import { menuItemOf } from '../button/menu-item-of';
 import type { ButtonProps } from '../button/button-props';
@@ -38,12 +39,24 @@ interface Made {
 
 /** A control of the bar and how it can leave it for the "more" menu. */
 interface Kid {
-  element: HTMLElement;
+  part: ComponentBase;
   control: Control | undefined;
   overflow: ToolbarItemOverflow;
   separator: boolean;
   /** A button: it has a menu item to become. */
   movable: boolean;
+}
+
+/** The bar as read for the overflow: its room along the bar, the gap between parts, and the size of each part that shows. */
+interface Bar {
+  kids: readonly Kid[];
+  room: number;
+  gap: number;
+  sizes: Map<Kid, number>;
+  /** The bar's own size along it, as its size watch reports it. */
+  length: number;
+  /** The bar is laid out on the page (no hidden part holds it). */
+  shown: boolean;
 }
 
 interface Parts {
@@ -52,14 +65,19 @@ interface Parts {
   stopItems: (() => void) | null;
   /** The controls given the toolbar's size and variant. */
   styled: WeakSet<Control>;
-  /** The element Tab reaches. */
-  current: HTMLElement | null;
+  /** The control Tab reaches. */
+  current: Control | null;
+  /** The controls the overflow calculation put in the "more" menu. */
+  overflowed: Set<Control>;
   more: Button | null;
   stopMoreLabel: (() => void) | null;
   restyleQueued: boolean;
-  layoutQueued: boolean;
-  /** The size the overflow was calculated for. */
+  /** The bar's parts as put back for the next overflow reading. */
+  laying: readonly Kid[];
+  /** The size along the bar the last size change was laid out for. */
   laidOut: number;
+  /** The "more" button's size along the bar as last measured; null until it is, and after a change of look. */
+  moreLength: number | null;
   itemClick: Emitter<ToolbarItemClickEventArgs>;
 }
 
@@ -89,11 +107,11 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     super(props);
     const own = (this.props ?? {}) as ToolbarProps;
     const parts = this.parts;
-    this.element.setAttribute('role', 'toolbar');
+    this.attr.add({ role: 'toolbar' });
     this.observeProperty<string>('text', (text) => {
       const label = parseAccessKey(text ?? '').text;
-      if (label) this.element.setAttribute('aria-label', label);
-      else this.element.removeAttribute('aria-label');
+      if (label) put(this, 'aria-label', label);
+      else put(this, 'aria-label', null);
     });
     this.observeProperty('orientation', () => this.renderLook());
     this.observeProperty('size', () => this.renderLook());
@@ -183,9 +201,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     this.followItems();
   }
 
-  /** The control Tab reaches. */
-  protected override get focusElement(): HTMLElement {
-    return this.parts.current ?? this.stops()[0] ?? this.element;
+  override get focusPart(): Control | null {
+    return this.parts.current ?? this.stops()[0] ?? null;
   }
 
   protected override applyProperty(name: string, value: unknown): void {
@@ -204,18 +221,20 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   }
 
   private createParts(): Parts {
-    this.element.classList.add('mx-toolbar');
+    this.class.add('mx-toolbar');
     return {
       made: new Map(),
       overflowOf: new Map(),
       stopItems: null,
       styled: new WeakSet(),
       current: null,
+      overflowed: new Set(),
       more: null,
       stopMoreLabel: null,
       restyleQueued: false,
-      layoutQueued: false,
+      laying: [],
       laidOut: -1,
+      moreLength: null,
       itemClick: new Emitter(),
     };
   }
@@ -259,11 +278,11 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       index++;
     }
     this.queueRestyle();
-    this.queueLayout();
+    this.layout();
   }
 
   private make(item: ToolbarItem, type: ToolbarItemType): Control {
-    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this.element, name === 'pressed' ? 'checked' : name);
+    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this, name === 'pressed' ? 'checked' : name);
     if (type === 'separator') return new ToolbarSeparator({ visible: field('visible') });
     const props: ButtonProps = { text: field('text'), icon: field('icon'), hint: field('hint'), tone: field('tone'), enabled: field('enabled'), visible: field('visible') };
     if (type === 'toggle') {
@@ -273,13 +292,13 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     if (type === 'menu') props.menu = field('menu') ?? [];
     const button = new Button(props);
     this.adopt(button);
-    if (type !== 'menu') button.element.addEventListener('click', (e) => this.itemPressed(item, button, e));
+    if (type !== 'menu') button.motif.on('click', (_, e) => this.itemPressed(item, button, e));
     return button;
   }
 
   /** Gives a made control the item's fields again, as they are now. */
   private fill(item: ToolbarItem, made: Made): void {
-    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this.element, name === 'pressed' ? 'checked' : name);
+    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this, name === 'pressed' ? 'checked' : name);
     made.control.visible = field('visible') ?? true;
     if (!(made.control instanceof Button)) return;
     const button = made.control;
@@ -298,9 +317,9 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   private itemPressed(item: ToolbarItem, button: Button, event: Event): void {
     const args: ToolbarItemClickEventArgs = { item, source: this, event };
-    runItem(item, args, this, event, this.element);
+    runItem(item, args, this, event, this);
     // A click set the toggle's own state; one bound to the app follows the app again.
-    const pressed = valueOf<ToolbarItem['pressed']>(item, 'pressed', this.element, 'checked');
+    const pressed = valueOf<ToolbarItem['pressed']>(item, 'pressed', this, 'checked');
     if (typeof pressed === 'function') button.pressed = pressed;
     this.parts.itemClick.fire(args);
   }
@@ -335,23 +354,52 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   private kids(): Kid[] {
     const parts = this.parts;
     const kids: Kid[] = [];
-    for (const element of Array.from(this.element.children) as HTMLElement[]) {
-      if (element === parts.more?.element) continue;
-      const control = controlOf(element);
+    for (const part of this.barContent()) {
+      const control = part instanceof Control ? part : undefined;
       const item = control && [...parts.made].find(([, made]) => made.control === control)?.[0];
-      const overflow = (item ? parts.overflowOf.get(item) : (element.dataset.overflow as ToolbarItemOverflow | undefined)) ?? 'auto';
+      // A JSX child says it with `data-overflow`.
+      const overflow = (item ? parts.overflowOf.get(item) : (part.attr.get('data-overflow') as ToolbarItemOverflow | null)) ?? 'auto';
       const button = control instanceof Button && !(control.hasMenu && control.dropDown);
-      kids.push({ element, control, overflow, separator: control instanceof ToolbarSeparator, movable: button });
+      kids.push({ part, control, overflow, separator: control instanceof ToolbarSeparator, movable: button });
     }
     return kids;
   }
 
-  /** The elements the arrow keys visit, in order; the "more" button last. */
-  private stops(): HTMLElement[] {
-    const all = focusableIn(this.element).filter((el) => !(el as HTMLButtonElement).disabled && !el.closest('.mx-popup, [data-overflowed], [data-idle]'));
-    const more = this.parts.more?.element;
-    if (!more) return all;
-    return [...all.filter((el) => !more.contains(el)), ...all.filter((el) => more.contains(el))];
+  /** The parts in the bar in order, without the "more" button. For a list or a condition, the parts it holds. */
+  private barContent(from: ComponentBase = this, found: ComponentBase[] = []): ComponentBase[] {
+    for (const part of from.controls.items) {
+      if (part === this.parts.more) continue;
+      if (isElement(part.element)) found.push(part);
+      else this.barContent(part, found);
+    }
+    return found;
+  }
+
+  /** The controls the arrow keys visit, in order; the "more" button last. Read from the controls, not from the page. */
+  private stops(): Control[] {
+    const parts = this.parts;
+    const more = parts.more;
+    const stops = this.barContent().filter(
+      (c): c is Control =>
+        c instanceof Control && !(c instanceof ToolbarSeparator) && c.visible && c.enabled && this.shownInBar(c) && !parts.overflowed.has(c),
+    );
+    if (more && more.visible && parts.overflowed.size) stops.push(more);
+    return stops;
+  }
+
+  /** Neither the part nor a list or condition holding it in the bar is hidden or waiting (`x-wait`, `x-display`, `motif.hide`). */
+  private shownInBar(part: ComponentBase): boolean {
+    for (let c: ComponentBase | null = part; c && c !== this; c = c.parent) if (!c.isVisible || c.isWait) return false;
+    return true;
+  }
+
+  private childrenChanged(): void {
+    this.queueRestyle();
+    this.layout();
+  }
+
+  protected override childEnabledChanged(): void {
+    this.queueRestyle();
   }
 
   private queueRestyle(): void {
@@ -366,12 +414,14 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   private restyle(): void {
     const parts = this.parts;
-    const more = parts.more?.element;
-    if (more && this.element.lastElementChild !== more) this.element.append(more);
+    // The "more" button stays last among its children.
+    const more = parts.more;
+    const items = this.controls.items;
+    if (more && more.parent === this && items[items.length - 1] !== more) this.controls.move(more, null);
     const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
     for (const kid of this.kids()) {
       if (kid.control) this.adopt(kid.control);
-      if (kid.separator) setAttribute(kid.element, 'aria-orientation', vertical ? 'horizontal' : 'vertical');
+      if (kid.separator) put(kid.part, 'aria-orientation', vertical ? 'horizontal' : 'vertical');
     }
     this.renderRoving();
   }
@@ -379,86 +429,111 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   private renderRoving(): void {
     const parts = this.parts;
     const stops = this.stops();
-    let current: HTMLElement | undefined = parts.current && stops.includes(parts.current) ? parts.current : stops[0];
+    let current: Control | undefined = parts.current && stops.includes(parts.current) ? parts.current : stops[0];
     parts.current = current ?? null;
     if (this.peekProperty('tabStop') === false) current = undefined;
-    for (const el of stops) setAttribute(el, 'tabindex', el === current ? '0' : '-1');
+    for (const c of stops) c.tabStop = c === current;
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
     const orientation = this.peekProperty<ToolbarOrientation>('orientation') ?? 'horizontal';
-    data.orientation = orientation;
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
-    data.overflow = this.peekProperty<ToolbarOverflow>('overflow') ?? 'menu';
-    this.element.setAttribute('aria-orientation', orientation);
+    put(this, 'data-orientation', orientation);
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
+    put(this, 'data-overflow', this.peekProperty<ToolbarOverflow>('overflow') ?? 'menu');
+    put(this, 'aria-orientation', orientation);
     this.queueRestyle();
-    this.queueLayout();
+    this.parts.moreLength = null;
+    this.layout();
   }
 
   // Overflow.
 
-  private queueLayout(): void {
-    const parts = this.parts;
-    if (parts.layoutQueued) return;
-    parts.layoutQueued = true;
-    queueMicrotask(() => {
-      parts.layoutQueued = false;
-      if (!this.isDisposed) this.layout();
-    });
-  }
-
-  /** Puts back every item, then moves into the "more" menu what does not fit (and what always goes there). */
+  /** Puts back every item, then has the overflow read with the window's next frame (`menu` mode only). */
   private layout(): void {
     untracked(() => {
       const parts = this.parts;
-      const kids = this.kids();
-      const focused = deepActiveElement();
-      for (const kid of kids) kid.element.removeAttribute('data-overflowed');
-      parts.more?.element.setAttribute('data-idle', '');
-      const menuMode = (this.peekProperty<ToolbarOverflow>('overflow') ?? 'menu') === 'menu';
-      const out = menuMode ? this.findOverflow(kids) : [];
-      for (const kid of out) kid.element.setAttribute('data-overflowed', '');
-      const moved = out.filter((kid) => !kid.separator);
-      if (moved.length) {
-        const more = this.moreButton();
-        more.element.removeAttribute('data-idle');
-        more.menu = this.moreItems(out);
-      } else if (parts.more) {
-        parts.more.menu = [];
-      }
-      this.setProperty(
-        'overflowed',
-        moved.map((kid) => kid.control!),
-      );
-      this.renderRoving();
-      if (focused && out.some((kid) => kid.element.contains(focused))) parts.more?.focus();
+      parts.laying = this.kids();
+      for (const kid of parts.laying) mark(kid.part, 'data-overflowed', false);
+      if (parts.more) mark(parts.more, 'data-idle', true);
+      if (this.menuMode()) measure(this, this.readBar, this.fit);
+      else this.showOverflow([]);
     });
   }
 
-  private findOverflow(kids: readonly Kid[]): Kid[] {
+  private menuMode(): boolean {
+    return (this.peekProperty<ToolbarOverflow>('overflow') ?? 'menu') === 'menu';
+  }
+
+  private readonly readBar = (): Bar => {
+    const kids = this.parts.laying;
+    const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
+    const box = boxOf(this);
+    const style = styleOf(this, ['row-gap', 'column-gap', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right']);
+    const length = (name: keyof typeof style) => parseFloat(style[name]) || 0;
+    const padding = vertical ? length('padding-top') + length('padding-bottom') : length('padding-left') + length('padding-right');
+    const sizes = new Map<Kid, number>();
+    for (const kid of kids) {
+      if (!isRendered(kid.part)) continue;
+      const rect = rectOf(kid.part);
+      sizes.set(kid, vertical ? rect.height : rect.width);
+    }
+    return {
+      kids,
+      room: (vertical ? box.clientHeight : box.clientWidth) - padding,
+      gap: length(vertical ? 'row-gap' : 'column-gap'),
+      sizes,
+      length: vertical ? box.offsetHeight : box.offsetWidth,
+      shown: isRendered(this),
+    };
+  };
+
+  /** Moves into the "more" menu what does not fit (and what always goes there). */
+  private readonly fit = (bar: Bar): void => {
+    this.parts.laidOut = bar.length;
+    // A bar that does not show has no room to fit into: nothing moves, and its size notice fits it once it shows.
+    if (this.menuMode()) untracked(() => this.showOverflow(bar.shown ? this.findOverflow(bar) : []));
+  };
+
+  private showOverflow(out: readonly Kid[]): void {
+    const parts = this.parts;
+    const focused = rememberFocus();
+    for (const kid of out) mark(kid.part, 'data-overflowed', true);
+    const moved = out.filter((kid) => !kid.separator);
+    if (moved.length) {
+      const more = this.moreButton();
+      mark(more, 'data-idle', false);
+      more.menu = this.moreItems(out);
+    } else if (parts.more) {
+      parts.more.menu = [];
+    }
+    parts.overflowed = new Set(moved.map((kid) => kid.control!));
+    this.setProperty(
+      'overflowed',
+      moved.map((kid) => kid.control!),
+    );
+    this.renderRoving();
+    if (focused && out.some((kid) => focused.isIn(kid.part))) parts.more?.focus();
+  }
+
+  /**
+   * Runs in the fit's write: when something has to go, the "more" button is shown, and measured there the first time
+   * (and after a change of look); later fits take the size measured then.
+   */
+  private findOverflow({ kids, room, gap, sizes }: Bar): Kid[] {
     const parts = this.parts;
     const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
-    const sizeOf = (el: Element) => {
-      const box = el.getBoundingClientRect();
-      return vertical ? box.height : box.width;
-    };
-    const style = getComputedStyle(this.element);
-    const gap = parseFloat(vertical ? style.rowGap : style.columnGap) || 0;
-    const padding = vertical
-      ? (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
-      : (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
-    const room = (vertical ? this.element.clientHeight : this.element.clientWidth) - padding;
-    parts.laidOut = vertical ? this.element.clientHeight : this.element.clientWidth;
-    const shown = kids.filter((kid) => isShown(kid.element));
-    const sizes = new Map(shown.map((kid) => [kid, sizeOf(kid.element)]));
+    const shown = kids.filter((kid) => sizes.has(kid));
     const length = (list: readonly Kid[]) => list.reduce((sum, kid) => sum + sizes.get(kid)!, 0) + gap * Math.max(0, list.length - 1);
     const out = new Set(shown.filter((kid) => kid.movable && kid.overflow === 'always'));
     let kept = shown.filter((kid) => !out.has(kid));
     if (!out.size && length(kept) <= room + 0.5) return [];
     const more = this.moreButton();
-    more.element.removeAttribute('data-idle');
-    const left = room - sizeOf(more.element) - gap;
+    mark(more, 'data-idle', false);
+    if (parts.moreLength === null) {
+      const moreBox = readAgain(() => rectOf(more));
+      parts.moreLength = vertical ? moreBox.height : moreBox.width;
+    }
+    const left = room - parts.moreLength - gap;
     while (length(kept) > left + 0.5) {
       const last = [...kept].reverse().find((kid) => kid.movable && kid.overflow !== 'never');
       if (!last) break;
@@ -480,14 +555,14 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     if (parts.more) return parts.more;
     const more = new Button({ menu: [], icon: moreMark(), size: () => this.givenSize(), variant: () => this.givenButtonVariant() });
     parts.styled.add(more);
-    more.element.classList.add('mx-toolbar__more');
-    more.element.setAttribute('data-idle', '');
+    more.class.add('mx-toolbar__more');
+    mark(more, 'data-idle', true);
     this.controls.add(more);
-    const face = more.element.querySelector<HTMLElement>('.mx-button__main') ?? more.element;
+    const face = more.faceComponent;
     parts.stopMoreLabel = onLanguage(this, () => {
       const label = uiLocale.strings.moreOptions;
-      face.setAttribute('aria-label', label);
-      face.title = label;
+      put(face, 'aria-label', label);
+      put(face, 'title', label);
     });
     parts.more = more;
     return more;
@@ -513,47 +588,37 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   private listen(): void {
     const parts = this.parts;
-    this.element.addEventListener('keydown', (e) => untracked(() => this.onKeyDown(e)));
-    this.element.addEventListener('focusin', (e) => {
-      const target = e.target as HTMLElement;
-      if (target === parts.current || !this.stops().includes(target)) return;
-      parts.current = target;
+    this.motif.on('keydown', (_, e) => untracked(() => this.onKeyDown(e)));
+    this.motif.on('focusin', (_, e) => {
+      const stop = this.stops().find((c) => c.motif.isEventFrom(e));
+      if (!stop || stop === parts.current) return;
+      parts.current = stop;
       untracked(() => this.renderRoving());
     });
-    if (typeof MutationObserver === 'function') {
-      // Controls added programmatically, disabled, hidden: the arrows and Tab follow. A control that takes another size
-      // (its look read once it is in the page) changes what fits.
-      const observer = new MutationObserver((records) => {
-        this.queueRestyle();
-        if (records.some((r) => (r.type === 'childList' && r.target === this.element) || r.attributeName === 'data-size' || r.attributeName === 'data-variant')) this.queueLayout();
-      });
-      observer.observe(this.element, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['disabled', 'hidden', 'tabindex', 'aria-disabled', 'data-size', 'data-variant'],
-      });
-      this.motif.setDisposable(() => observer.disconnect());
-    }
+    // A control added or taken away (an item, a JSX child, `controls.add`): the arrows and the room follow.
+    void this.motif.on('controladded', () => this.childrenChanged(), false);
+    void this.motif.on('controlremoved', () => this.childrenChanged(), false);
     // Another design language, theme or density: the controls have other sizes.
-    this.motif.setDisposable(onLookChanged(() => this.queueLayout()));
-    if (typeof ResizeObserver === 'function') {
-      const observer = new ResizeWatch(() => {
+    this.motif.setDisposable(
+      onLayout(this, 'look', () => {
+        parts.moreLength = null;
+        this.layout();
+      }),
+    );
+    this.motif.setDisposable(
+      onLayout(this, 'size', (size) => {
         const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
-        const size = vertical ? this.element.clientHeight : this.element.clientWidth;
-        if (size !== parts.laidOut) this.layout();
-      });
-      observer.observe(this.element);
-      this.motif.setDisposable(() => observer.disconnect());
-    }
+        if ((vertical ? size.height : size.width) !== parts.laidOut) this.layout();
+      }),
+    );
   }
 
   private onKeyDown(e: KeyboardEvent): void {
     if (e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('.mx-popup') || keepsArrows(target)) return;
+    // A control's menu or drop-down, a text field and a slider keep the arrow keys for themselves.
+    if (fromPopup(e, this) || focusInArrowField(e)) return;
     const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
+    const rtl = isRtl(this);
     let step = 0;
     switch (e.key) {
       case 'ArrowRight':
@@ -574,20 +639,15 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     }
     const stops = this.stops();
     if (!stops.length) return;
-    const at = stops.findIndex((el) => el === target || el.contains(target));
+    const at = stops.findIndex((c) => c.motif.isEventFrom(e));
     const next = e.key === 'Home' ? 0 : e.key === 'End' ? stops.length - 1 : (at + step + stops.length) % stops.length;
     e.preventDefault();
     stops[next].focus();
   }
 }
 
-function setAttribute(el: Element, name: string, value: string): void {
-  if (el.getAttribute(name) !== value) el.setAttribute(name, value);
-}
-
-/** A text field (and a slider) keeps the arrow keys and Home and End for itself. */
-function keepsArrows(el: HTMLElement): boolean {
-  if (el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
-  if (el.getAttribute('role') === 'slider') return true;
-  return el.tagName === 'INPUT' && !['button', 'submit', 'reset', 'checkbox', 'radio', 'color', 'file', 'image'].includes((el as HTMLInputElement).type);
+/** Whether an event came from a popup inside `from`: the menu or the drop-down of one of its controls. */
+function fromPopup(e: Event, from: ComponentBase): boolean {
+  const inside = from.controls.items.find((c) => c.motif.isEventFrom(e));
+  return !!inside && (inside instanceof Popup || fromPopup(e, inside));
 }

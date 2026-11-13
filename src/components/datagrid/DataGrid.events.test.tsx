@@ -133,10 +133,10 @@ describe('pointer events', () => {
     expect(more.list.element.textContent).toContain('Open 2');
     more.close();
     const menu = (grid as any).menu;
-    (grid as any).openMenu('name', header(grid, 'name'));
+    (grid as any).openMenu('name', (grid as any).headerAnchor('name'));
     expect(menu.list.element.querySelector('[role^="menuitem"]').textContent).toBe('Mine');
     menu.close();
-    (grid as any).openMenu('amount', header(grid, 'amount'));
+    (grid as any).openMenu('amount', (grid as any).headerAnchor('amount'));
     expect(menu.opened).toBe(false);
     await grid.dispose();
   });
@@ -150,7 +150,7 @@ describe('drawing events', () => {
     const sub = grid.onCellPrepared((e) => {
       if (e.field === 'amount') {
         cells.push(`${e.rowIndex}:${e.value}`);
-        e.element.classList.toggle('big', (e.value as number) > 5);
+        e.part.element.classList.toggle('big', (e.value as number) > 5);
       }
     });
     const rows = vi.fn();

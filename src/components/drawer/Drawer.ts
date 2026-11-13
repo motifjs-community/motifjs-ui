@@ -1,5 +1,7 @@
-import { untracked, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
-import { isHtmlElement } from '../../core/node-kind';
+import { ComponentBase, untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { isRtl, measure, pageOf, rectOf, scrollerUnder, type Rect } from '../../core/measure';
+import { css, mark, put } from '../../core/part-writes';
+import { onDocument } from '../../core/window-events';
 import { uiLocale } from '../../core/ui-locale';
 import type { OverlayCloseReason } from '../../parts/overlay/overlay-close-reason';
 import { OverlayPanel } from '../../parts/overlay/OverlayPanel';
@@ -14,6 +16,12 @@ const OWN = ['side', 'mode', 'size', 'edgeSwipe', 'edgeSize', 'swipeToClose', 'f
 /** How far, in pixels, a finger moves before the drawer decides it is a swipe and which way. */
 const SLOP = 8;
 
+/** Along which axis it moves, and which way is in: +1 from the left or the top, -1 from the right or the bottom. */
+interface Way {
+  axis: 'x' | 'y';
+  inward: 1 | -1;
+}
+
 /** A finger that may open or close the drawer, and once it does, how it goes. */
 interface Swipe {
   id: number;
@@ -23,16 +31,29 @@ interface Swipe {
   opening: boolean;
   decided: boolean;
   taken: boolean;
-  size: number;
+  /** Read as the finger lands. */
+  way: Way;
+  /** The panel's size along its axis; `null` until the panel opened for the swipe is measured. */
+  size: number | null;
+  /** How far the finger has gone inward along the axis. */
+  moved: number;
+  /** Once the finger is lifted before the size is known: how it was lifted. */
+  ended: SwipeEnd | null;
   tracker: SwipeTracker;
+}
+
+interface SwipeEnd {
+  cancelled: boolean;
+  /** Inward, in pixels per millisecond. */
+  speed: number;
 }
 
 interface Parts {
   swipe: Swipe | null;
-  /** Where the edge swipe listens, and how to stop it. */
-  edge: { at: EventTarget; stop: () => void } | null;
-  /** The element pushed aside, while it is. */
-  pushed: HTMLElement | null;
+  /** Where the edge swipe listens (the container, `null` for the page), and how to stop it. */
+  edge: { over: ComponentBase | null; stop: () => void } | null;
+  /** What push mode moves aside, while it does. */
+  pushed: ComponentBase | null;
   stopLabel: (() => void) | null;
 }
 
@@ -51,6 +72,28 @@ const PARTS = Symbol('mx.drawer');
  */
 export class Drawer extends OverlayPanel<DrawerProps> {
   static override overlayClass = 'mx-drawer';
+
+  private readonly readPush = (): { way: Way; size: number } => {
+    const way = this.way();
+    return { way, size: this.sizeAlong(way) };
+  };
+
+  private readonly drawPush = (read: { way: Way; size: number }): void => {
+    if (this.isOpen && !this.drawer.swipe && this.mode === 'push') this.push(read.size, read.way);
+  };
+
+  private readonly readSwipeSize = (): number => {
+    const swipe = this.drawer.swipe;
+    return swipe ? this.sizeAlong(swipe.way) : 0;
+  };
+
+  private readonly swipeSized = (size: number): void => {
+    const swipe = this.drawer.swipe;
+    if (!swipe?.taken || swipe.size !== null) return;
+    swipe.size = size;
+    if (swipe.ended) this.finish(swipe, swipe.ended);
+    else this.follow(swipe);
+  };
 
   constructor(props?: IBaseProp<DrawerProps>) {
     super(props);
@@ -89,12 +132,12 @@ export class Drawer extends OverlayPanel<DrawerProps> {
   set mode(value: Bind<DrawerMode>) {
     this.assignProperty('mode', value);
   }
-  /** The element that push mode moves aside. A function is read each time the drawer opens. */
-  get pushTarget(): HTMLElement | ComponentBase | null {
-    const given = this.getProperty<Bind<HTMLElement | ComponentBase | null> | undefined>('pushTarget');
+  /** The component that push mode moves aside. A function is read each time the drawer opens. */
+  get pushTarget(): ComponentBase | null {
+    const given = this.getProperty<Bind<ComponentBase | null> | undefined>('pushTarget');
     return (typeof given === 'function' ? given() : given) ?? null;
   }
-  set pushTarget(value: Bind<HTMLElement | ComponentBase | null>) {
+  set pushTarget(value: Bind<ComponentBase | null>) {
     this.setProperty('pushTarget', value);
   }
   get size(): number | string | null {
@@ -138,22 +181,28 @@ export class Drawer extends OverlayPanel<DrawerProps> {
 
   protected override placePanel(): void {
     this.renderSide();
-    // A finger bringing it in holds it where it is.
-    if (!this.drawer.swipe) this.setShift(0);
-    if (this.mode === 'push') this.push(this.panelSize());
+    const swipe = this.drawer.swipe;
+    // A finger bringing it in holds it where it is, and moves the content along with it.
+    if (swipe) {
+      if (this.mode === 'push') this.push(0, swipe.way);
+      return;
+    }
+    this.clearShift();
+    if (this.mode === 'push') measure(this, this.readPush, this.drawPush);
   }
 
   protected override closeBy(reason: OverlayCloseReason): boolean {
+    const way = this.way();
     const closed = super.closeBy(reason);
-    if (closed && !this.isOpen) this.pushBy(0);
+    if (closed && !this.isOpen) this.pushBy(0, way);
     return closed;
   }
 
   protected override panelClosed(): void {
     this.unpush();
-    this.setShift(null);
+    this.clearShift();
     this.drawer.swipe = null;
-    this.element.removeAttribute('data-dragging');
+    mark(this, 'data-dragging', false);
   }
 
   private get drawer(): Parts {
@@ -162,74 +211,72 @@ export class Drawer extends OverlayPanel<DrawerProps> {
   }
 
   /** The logical edge it comes from: `left` and `right` turned into start and end for the reading direction. */
-  private logicalSide(): 'start' | 'end' | 'top' | 'bottom' {
+  private logicalSide(rtl = isRtl(this)): 'start' | 'end' | 'top' | 'bottom' {
     const side = this.peekProperty<DrawerSide>('side') ?? 'start';
     if (side !== 'left' && side !== 'right') return side;
-    return (side === 'left') !== this.rtl() ? 'start' : 'end';
+    return (side === 'left') !== rtl ? 'start' : 'end';
   }
 
-  private rtl(): boolean {
-    const view = this.element.ownerDocument.defaultView;
-    return !!view && this.element.isConnected && view.getComputedStyle(this.element).direction === 'rtl';
-  }
-
-  /** Along which axis it moves, and which way is in: +1 from the left or the top, -1 from the right or the bottom. */
-  private axis(): { axis: 'x' | 'y'; inward: 1 | -1 } {
-    const side = this.logicalSide();
+  private way(): Way {
+    const rtl = isRtl(this);
+    const side = this.logicalSide(rtl);
     if (side === 'top') return { axis: 'y', inward: 1 };
     if (side === 'bottom') return { axis: 'y', inward: -1 };
-    const fromLeft = (side === 'start') !== this.rtl();
+    const fromLeft = (side === 'start') !== rtl;
     return { axis: 'x', inward: fromLeft ? 1 : -1 };
   }
 
   private renderSide(): void {
-    const el = this.element;
-    el.dataset.side = this.logicalSide();
-    el.dataset.mode = this.peekProperty<DrawerMode>('mode') ?? 'over';
-    if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', uiLocale.strings.drawerLabel);
+    put(this, 'data-side', this.logicalSide());
+    put(this, 'data-mode', this.peekProperty<DrawerMode>('mode') ?? 'over');
+    if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) put(this.panelPart, 'aria-label', uiLocale.strings.drawerLabel);
   }
 
   private renderSize(): void {
     const size = this.peekProperty<number | string | null>('size');
-    const style = this.panelElement.style;
-    if (size === null || size === undefined || size === '') style.removeProperty('--_size');
-    else style.setProperty('--_size', typeof size === 'number' ? `${size}px` : size);
+    const panel = this.panelPart;
+    if (size === null || size === undefined || size === '') css(panel, '--_size', '');
+    else css(panel, '--_size', typeof size === 'number' ? `${size}px` : size);
   }
 
-  /** The panel's size along its axis, in pixels. */
-  private panelSize(): number {
-    const box = this.panelElement.getBoundingClientRect();
-    return this.axis().axis === 'x' ? box.width : box.height;
+  /** The panel's size along `way`'s axis, in pixels: a read. */
+  private sizeAlong(way: Way): number {
+    const box = rectOf(this.panelPart);
+    return way.axis === 'x' ? box.width : box.height;
   }
 
-  /** How far the panel is from open, signed along its axis; `null` takes the drag position away. */
-  private setShift(px: number | null): void {
-    const style = this.panelElement.style;
-    style.removeProperty('--_shift-x');
-    style.removeProperty('--_shift-y');
-    if (px === null || px === 0) return;
-    style.setProperty(this.axis().axis === 'x' ? '--_shift-x' : '--_shift-y', `${Math.round(px)}px`);
+  /** How far the panel is from open, signed along `way`'s axis. */
+  private setShift(px: number, way: Way): void {
+    this.clearShift();
+    if (Math.round(px) === 0) return;
+    css(this.panelPart, way.axis === 'x' ? '--_shift-x' : '--_shift-y', `${Math.round(px)}px`);
+  }
+
+  /** Takes the drag position away. */
+  private clearShift(): void {
+    const panel = this.panelPart;
+    css(panel, '--_shift-x', '');
+    css(panel, '--_shift-y', '');
   }
 
   // Pushing the content.
 
-  private push(amount: number): void {
+  private push(amount: number, way: Way): void {
     const parts = this.drawer;
-    const given = untracked(() => this.pushTarget);
-    const target = given ? (isHtmlElement(given) ? given : (given.element as HTMLElement | null)) : null;
+    const target = untracked(() => this.pushTarget);
     if (parts.pushed && parts.pushed !== target) this.unpush();
     if (!target) return;
     parts.pushed = target;
-    target.setAttribute('data-mx-drawer-push', '');
-    this.pushBy(amount);
+    mark(target, 'data-mx-drawer-push', true);
+    this.pushBy(amount, way);
   }
 
-  private pushBy(amount: number): void {
+  private pushBy(amount: number, way: Way): void {
     const target = this.drawer.pushed;
     if (!target) return;
-    const { axis, inward } = this.axis();
+    const { axis, inward } = way;
     const px = `${Math.round(amount * inward)}px`;
-    target.style.setProperty('--_mx-push', axis === 'x' ? `${px} 0px` : `0px ${px}`);
+    css(target, '--_mx-push', axis === 'x' ? `${px} 0px` : `0px ${px}`);
   }
 
   private unpush(): void {
@@ -237,9 +284,9 @@ export class Drawer extends OverlayPanel<DrawerProps> {
     const target = parts.pushed;
     if (!target) return;
     parts.pushed = null;
-    target.removeAttribute('data-mx-drawer-push');
-    target.removeAttribute('data-mx-dragging');
-    target.style.removeProperty('--_mx-push');
+    mark(target, 'data-mx-drawer-push', false);
+    mark(target, 'data-mx-dragging', false);
+    css(target, '--_mx-push', '');
   }
 
   // Swipes.
@@ -248,79 +295,89 @@ export class Drawer extends OverlayPanel<DrawerProps> {
   private renderEdge(): void {
     const parts = this.drawer;
     const want = !!this.peekProperty('edgeSwipe') && !this.isDisposed;
-    const given = untracked(() => this.container);
-    const at: EventTarget | null = !want ? null : given ? (isHtmlElement(given) ? given : (given.element as HTMLElement | null)) : this.element.ownerDocument;
-    if (parts.edge?.at === at) return;
+    const over = want ? this.containerPart : null;
+    if (want && parts.edge && parts.edge.over === over) return;
     parts.edge?.stop();
     parts.edge = null;
-    if (!at) return;
-    const start = (e: Event) => this.edgeStart(e as TouchEvent);
-    const move = (e: Event) => this.swipeMove(e as TouchEvent);
-    const end = (e: Event) => this.swipeEnd(e as TouchEvent);
+    if (!want) return;
     // The touchmove listener is there before a finger lands: only then can it keep the page from scrolling.
-    at.addEventListener('touchstart', start, { passive: true });
-    at.addEventListener('touchmove', move, { passive: false });
-    at.addEventListener('touchend', end);
-    at.addEventListener('touchcancel', end);
+    if (over) {
+      const start = (_: ComponentBase, e: TouchEvent | undefined) => e && this.edgeStart(e);
+      const move = (_: ComponentBase, e: TouchEvent | undefined) => e && this.swipeMove(e);
+      const end = (_: ComponentBase, e: TouchEvent | undefined) => e && this.swipeEnd(e);
+      void over.motif.on('touchstart:passive', start);
+      void over.motif.on('touchmove', move);
+      void over.motif.on('touchend', end);
+      void over.motif.on('touchcancel', end);
+      parts.edge = {
+        over,
+        stop: () => {
+          void over.motif.off('touchstart:passive', start);
+          void over.motif.off('touchmove', move);
+          void over.motif.off('touchend', end);
+          void over.motif.off('touchcancel', end);
+        },
+      };
+      return;
+    }
+    const stops = [
+      onDocument(this, 'touchstart', (e) => this.edgeStart(e), { passive: true }),
+      onDocument(this, 'touchmove', (e) => this.swipeMove(e), { passive: false }),
+      onDocument(this, 'touchend', (e) => this.swipeEnd(e)),
+      onDocument(this, 'touchcancel', (e) => this.swipeEnd(e)),
+    ];
     parts.edge = {
-      at,
+      over: null,
       stop: () => {
-        at.removeEventListener('touchstart', start);
-        at.removeEventListener('touchmove', move);
-        at.removeEventListener('touchend', end);
-        at.removeEventListener('touchcancel', end);
+        for (const stop of stops) stop();
       },
     };
   }
 
   private listenSwipe(): void {
-    const el = this.element;
-    el.addEventListener(
-      'touchstart',
-      (e) => {
-        if (!this.isOpen || !this.swipeToClose || e.touches.length !== 1 || this.drawer.swipe) return;
-        if (sideScroller(e.target as Element, this.panelElement)) return;
-        const t = e.touches[0];
-        this.begin(t, false);
-      },
-      { passive: true },
-    );
-    el.addEventListener('touchmove', (e) => this.swipeMove(e), { passive: false });
-    el.addEventListener('touchend', (e) => this.swipeEnd(e));
-    el.addEventListener('touchcancel', (e) => this.swipeEnd(e));
+    this.motif.on('touchstart:passive', (_, e: TouchEvent | undefined) => {
+      if (!e || !this.isOpen || !this.swipeToClose || e.touches.length !== 1 || this.drawer.swipe) return;
+      // Something inside the panel that scrolls sideways itself keeps the finger.
+      const scroller = scrollerUnder(e, this.panelPart, 'x');
+      if (scroller && scroller !== this.panelPart) return;
+      const way = this.way();
+      this.begin(e.touches[0], false, way, this.sizeAlong(way));
+    });
+    this.motif.on('touchmove', (_, e: TouchEvent | undefined) => e && this.swipeMove(e));
+    this.motif.on('touchend', (_, e: TouchEvent | undefined) => e && this.swipeEnd(e));
+    this.motif.on('touchcancel', (_, e: TouchEvent | undefined) => e && this.swipeEnd(e));
   }
 
   private edgeStart(e: TouchEvent): void {
-    if (this.isOpen || !this.isEnabled || e.touches.length !== 1 || this.drawer.swipe) return;
+    const listening = this.drawer.edge;
+    if (!listening || this.isOpen || !this.isEnabled || e.touches.length !== 1 || this.drawer.swipe) return;
     const t = e.touches[0];
-    const at0 = this.drawer.edge?.at;
-    if (!at0) return;
-    const view = this.element.ownerDocument.defaultView;
-    const box = isHtmlElement(at0) ? at0.getBoundingClientRect() : new DOMRect(0, 0, view?.innerWidth ?? 0, view?.innerHeight ?? 0);
-    const { axis, inward } = this.axis();
+    const box = listening.over ? rectOf(listening.over) : pageRect(this);
+    const way = this.way();
+    const { axis, inward } = way;
     const edge = axis === 'x' ? (inward === 1 ? box.left : box.right) : inward === 1 ? box.top : box.bottom;
     const at = axis === 'x' ? t.clientX : t.clientY;
     if (Math.abs(at - edge) > this.edgeSize) return;
     const across = axis === 'x' ? t.clientY : t.clientX;
     const [lo, hi] = axis === 'x' ? [box.top, box.bottom] : [box.left, box.right];
     if (across < lo || across > hi) return;
-    this.begin(t, true);
+    this.begin(t, true, way, null);
   }
 
-  private begin(t: Touch, opening: boolean): void {
+  private begin(t: Touch, opening: boolean, way: Way, size: number | null): void {
     const tracker = new SwipeTracker();
     tracker.start(t.clientX, t.clientY);
-    this.drawer.swipe = { id: t.identifier, x: t.clientX, y: t.clientY, opening, decided: false, taken: false, size: 0, tracker };
+    this.drawer.swipe = { id: t.identifier, x: t.clientX, y: t.clientY, opening, decided: false, taken: false, way, size, moved: 0, ended: null, tracker };
   }
 
   private swipeMove(e: TouchEvent): void {
     const parts = this.drawer;
     const swipe = parts.swipe;
-    if (!swipe) return;
+    if (!swipe || swipe.ended) return;
     const t = Array.from(e.changedTouches).find((c) => c.identifier === swipe.id);
     if (!t) return;
     swipe.tracker.move(t.clientX, t.clientY);
-    const { axis, inward } = this.axis();
+    const { axis, inward } = swipe.way;
     const along = (axis === 'x' ? t.clientX - swipe.x : t.clientY - swipe.y) * inward;
     const across = axis === 'x' ? t.clientY - swipe.y : t.clientX - swipe.x;
     if (!swipe.decided) {
@@ -338,59 +395,74 @@ export class Drawer extends OverlayPanel<DrawerProps> {
     }
     if (!swipe.taken) return;
     if (e.cancelable) e.preventDefault();
-    const shown = Math.min(swipe.size, Math.max(0, swipe.opening ? along : swipe.size + along));
-    this.setShift(-inward * (swipe.size - shown));
-    if (parts.pushed) this.pushBy(shown);
+    swipe.moved = along;
+    // A panel opened for the swipe follows once it is measured.
+    if (swipe.size !== null) this.follow(swipe);
   }
 
   /** The swipe is the drawer's: it opens (out of sight yet) to follow the finger. */
   private take(swipe: Swipe): boolean {
-    const el = this.element;
-    el.toggleAttribute('data-dragging', true);
+    mark(this, 'data-dragging', true);
     if (swipe.opening) {
       // Laid out where it would be open, then held out of sight while the finger brings it in.
-      const style = this.panelElement.style;
-      style.setProperty(this.axis().axis === 'x' ? '--_shift-x' : '--_shift-y', `${this.axis().inward * -100000}px`);
+      this.setShift(swipe.way.inward * -100000, swipe.way);
       if (!this.openBy()) {
-        el.removeAttribute('data-dragging');
+        mark(this, 'data-dragging', false);
         return false;
       }
     }
-    swipe.size = this.panelSize();
     swipe.taken = true;
-    this.drawer.pushed?.setAttribute('data-mx-dragging', '');
+    const pushed = this.drawer.pushed;
+    if (pushed) mark(pushed, 'data-mx-dragging', true);
+    if (swipe.size === null) measure(this, this.readSwipeSize, this.swipeSized);
     return true;
+  }
+
+  /** How much of the panel the finger shows. */
+  private shownBy(swipe: Swipe, size: number): number {
+    return Math.min(size, Math.max(0, swipe.opening ? swipe.moved : size + swipe.moved));
+  }
+
+  private follow(swipe: Swipe): void {
+    const size = swipe.size ?? 0;
+    const shown = this.shownBy(swipe, size);
+    this.setShift(-swipe.way.inward * (size - shown), swipe.way);
+    if (this.drawer.pushed) this.pushBy(shown, swipe.way);
   }
 
   private swipeEnd(e: TouchEvent): void {
     const parts = this.drawer;
     const swipe = parts.swipe;
-    if (!swipe || !Array.from(e.changedTouches).some((c) => c.identifier === swipe.id)) return;
+    if (!swipe || swipe.ended || !Array.from(e.changedTouches).some((c) => c.identifier === swipe.id)) return;
+    if (!swipe.taken) {
+      parts.swipe = null;
+      return;
+    }
+    const end: SwipeEnd = { cancelled: e.type === 'touchcancel', speed: swipe.tracker.velocity(swipe.way.axis) * swipe.way.inward };
+    // Lifted before the panel opened for it is measured: it ends once it is.
+    if (swipe.size === null) swipe.ended = end;
+    else this.finish(swipe, end);
+  }
+
+  private finish(swipe: Swipe, end: SwipeEnd): void {
+    const parts = this.drawer;
+    const size = swipe.size ?? 0;
     parts.swipe = null;
-    if (!swipe.taken) return;
-    const { axis, inward } = this.axis();
-    this.element.removeAttribute('data-dragging');
-    parts.pushed?.removeAttribute('data-mx-dragging');
-    const shift = parseFloat(this.panelElement.style.getPropertyValue(axis === 'x' ? '--_shift-x' : '--_shift-y')) || 0;
-    const shown = swipe.size - Math.abs(shift);
-    const speed = swipe.tracker.velocity(axis) * inward;
+    mark(this, 'data-dragging', false);
+    if (parts.pushed) mark(parts.pushed, 'data-mx-dragging', false);
     const flick = this.flickSpeed;
-    const open = e.type === 'touchcancel' ? !swipe.opening : speed > flick ? true : speed < -flick ? false : shown > swipe.size / 2;
+    const open = end.cancelled ? !swipe.opening : end.speed > flick ? true : end.speed < -flick ? false : this.shownBy(swipe, size) > size / 2;
     if (open) {
-      this.setShift(0);
-      if (parts.pushed) this.pushBy(swipe.size);
+      this.clearShift();
+      if (parts.pushed) this.pushBy(size, swipe.way);
     } else {
       this.close('swipe');
     }
   }
 }
 
-/** Whether the finger is on something inside the panel that scrolls sideways itself. */
-function sideScroller(target: Element | null, panel: HTMLElement): boolean {
-  const view = panel.ownerDocument.defaultView;
-  for (let el = target; el && el !== panel; el = el.parentElement) {
-    const html = el as HTMLElement;
-    if (html.scrollWidth > html.clientWidth + 1 && view && /auto|scroll/.test(view.getComputedStyle(html).overflowX)) return true;
-  }
-  return false;
+/** The viewport of `drawer`'s window as a rect at 0, 0: a read. */
+function pageRect(drawer: ComponentBase): Rect {
+  const page = pageOf(drawer);
+  return { left: 0, top: 0, right: page.width, bottom: page.height, width: page.width, height: page.height };
 }

@@ -1,4 +1,4 @@
-import { Component } from '@motifx/core';
+import { Component, errorHandler } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost } from '../../tests/helpers';
 import { MenuBar } from '../components/menubar/MenuBar';
@@ -70,7 +70,8 @@ describe('shortcuts', () => {
   });
 
   it('tells when a shortcut added takes keys already taken in the same place, not in a narrower one', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Told through the app's error handling (shown in development).
+    const warn = vi.spyOn(errorHandler, 'reportSuppressed').mockImplementation(() => {});
     const told: ShortcutConflict[] = [];
     const listening = shortcuts.onConflict((c) => void told.push(c));
     const panel = new Panel();
@@ -89,8 +90,30 @@ describe('shortcuts', () => {
     expect(shortcuts.conflicts().map((c) => c.reason)).toEqual(['same', 'prefix']);
   });
 
+  it('lets shortcuts of different parts of one place share keys, and runs each only in its part', () => {
+    const warn = vi.spyOn(errorHandler, 'reportSuppressed').mockImplementation(() => {});
+    const told: ShortcutConflict[] = [];
+    const listening = shortcuts.onConflict((c) => void told.push(c));
+    const tab = <button role="tab" />;
+    const sash = <div class="sash" tabindex="0" />;
+    const panel = new Panel({ childs: [tab, sash] });
+    hosts.push(mountHost(panel));
+    const ran: string[] = [];
+    removers.push(addShortcut('Home', () => void ran.push('first tab'), { name: 'stripFirst', scope: panel, within: tab }));
+    removers.push(addShortcut('Home', () => void ran.push('smallest'), { name: 'resizeMin', scope: panel, within: sash }));
+    listening.dispose();
+    expect(told).toEqual([]);
+    expect(warn).not.toHaveBeenCalled();
+    const home = (el: HTMLElement) => el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, cancelable: true }));
+    tab.element.focus();
+    home(tab.element);
+    sash.element.focus();
+    home(sash.element);
+    expect(ran).toEqual(['first tab', 'smallest']);
+  });
+
   it('can keep quiet, and finds an Alt shortcut that takes an access key of the page', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(errorHandler, 'reportSuppressed').mockImplementation(() => {});
     shortcuts.warnings = false;
     removers.push(addShortcut('Alt+F', () => {}, { name: 'find' }));
     removers.push(addShortcut('Alt+F', () => {}, { name: 'again' }));

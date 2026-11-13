@@ -211,7 +211,7 @@ describe('band headers', () => {
     grid.showColumnChooser();
     const tree = (grid as any).menu.tree;
     expect(tree).not.toBeNull();
-    const items = Array.from(tree.treeElement.querySelectorAll('[role="treeitem"]')) as HTMLElement[];
+    const items = Array.from(tree.treePart.element.querySelectorAll('[role="treeitem"]')) as HTMLElement[];
     const text = (el: HTMLElement) => el.querySelector('.mx-tree-view__text')!.textContent;
     expect(items.map(text)).toEqual(['Id', 'Person', 'First', 'Last', 'Contact', 'Email', 'Phone', 'City', 'Amount']);
     const contact = items.find((el) => text(el) === 'Contact')!;

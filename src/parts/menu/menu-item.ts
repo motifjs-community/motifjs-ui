@@ -18,7 +18,7 @@ export interface MenuItem {
   command?: string;
   /** The label. `&` marks the key that selects it while the menu is open (`&Copy`), and `&&` is a literal `&`. */
   text?: Bind<string>;
-  /** An image address, an element or a component. A function is called each time the item is drawn. */
+  /** An image address or a component. A function is called each time the item is drawn. */
   icon?: Bind<IconSource | null | undefined>;
   /** The text shown as a tooltip. */
   hint?: Bind<string>;

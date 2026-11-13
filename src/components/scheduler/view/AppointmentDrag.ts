@@ -1,5 +1,9 @@
+import { ComponentBase } from '@motifx/core';
 import { later } from '../../../core/later';
-import { nextFrame } from '../../../core/next-frame';
+import { measure, shareAlong, type Point } from '../../../core/measure';
+import { onDocument } from '../../../core/window-events';
+import { autoScroll } from '../../../parts/drag/auto-scroll';
+import type { CellPlace } from '../model/cell-place';
 import type { Draft } from '../model/draft';
 import type { ResolvedView } from '../model/resolved-view';
 import type { SchedulerModel } from '../model/SchedulerModel';
@@ -20,8 +24,10 @@ export type DragMode = 'move' | 'start' | 'end';
 
 /** What the drag uses of its scheduler. */
 export interface DragHost<T> {
-  root(): HTMLElement;
-  scroller(): HTMLElement | null;
+  /** The scheduler: the document it is in is listened to while a drag runs. */
+  root(): ComponentBase<HTMLElement>;
+  /** The view's scroll box. Given as an element it is deprecated: give the component. */
+  scroller(): ComponentBase | HTMLElement | null;
   model: SchedulerModel<T>;
   view(): ResolvedView;
   snapMinutes(): number;
@@ -34,6 +40,14 @@ export interface DragHost<T> {
   over(mode: DragMode, draft: Draft<T>): boolean;
   /** Let go: saves it (or not); the draft goes when this settles. */
   drop(mode: DragMode, draft: Draft<T>): Promise<void>;
+}
+
+/** What the drag reads of the view shown. */
+export interface DragView {
+  /** The cell under a point of the screen, from the cells the view keeps, and its place. */
+  cellUnder(point: Point): { place: CellPlace; cell: ComponentBase } | null;
+  /** The view's scroll box: scrolled near its edges when the host gives an element. */
+  scroller(): ComponentBase | null;
 }
 
 interface Press<T> {
@@ -70,7 +84,14 @@ export class AppointmentDrag<T> {
   /** The click that ends a drag is not a click on the appointment. */
   private endedAt = 0;
 
-  constructor(private readonly host: DragHost<T>) {}
+  /** After a scroll near an edge the draft follows the pointer, once the scroll is made. */
+  private readonly readPointer = (): { x: number; y: number } | null => this.last;
+  private readonly followPointer = (): void => this.follow();
+
+  constructor(
+    private readonly host: DragHost<T>,
+    private readonly shown: DragView,
+  ) {}
 
   /** A drag is going on (a finger's then keeps the page from scrolling). */
   get active(): boolean {
@@ -106,11 +127,9 @@ export class AppointmentDrag<T> {
       started: false,
       touch: e.pointerType === 'touch',
     };
-    const doc = this.host.root().ownerDocument;
-    doc.addEventListener('pointermove', this.onMove);
-    doc.addEventListener('pointerup', this.onUp);
-    doc.addEventListener('pointercancel', this.onCancel);
-    doc.addEventListener('keydown', this.onKey, true);
+    // The drag goes on past the scheduler: its document is listened to while it runs.
+    const root = this.host.root();
+    this.stopPage = [onDocument(root, 'pointermove', this.onMove), onDocument(root, 'pointerup', this.onUp), onDocument(root, 'pointercancel', this.onCancel), onDocument(root, 'keydown', this.onKey, true)];
     if (e.pointerType === 'touch' && !now) {
       this.press.touchTimer = later(() => this.start(), LONG_PRESS);
     }
@@ -125,6 +144,9 @@ export class AppointmentDrag<T> {
   dispose(): void {
     this.cancel();
   }
+
+  /** Stops listening to the document while a drag runs. */
+  private stopPage: (() => void)[] = [];
 
   private onMove = (e: PointerEvent) => {
     const press = this.press;
@@ -199,11 +221,7 @@ export class AppointmentDrag<T> {
     this.last = null;
     this.stopScroll?.();
     this.stopScroll = null;
-    const doc = this.host.root().ownerDocument;
-    doc.removeEventListener('pointermove', this.onMove);
-    doc.removeEventListener('pointerup', this.onUp);
-    doc.removeEventListener('pointercancel', this.onCancel);
-    doc.removeEventListener('keydown', this.onKey, true);
+    for (const stop of this.stopPage.splice(0)) stop();
   }
 
   /** Works out where the appointment would go for the pointer now, and shows it there. */
@@ -294,27 +312,16 @@ export class AppointmentDrag<T> {
 
   /** The cell under a point of the screen: its day, and the time there for a cell of the hours. */
   private cellAt(x: number, y: number): CellAt | null {
-    const root = this.host.root();
-    const el = root.ownerDocument.elementsFromPoint(x, y).find((node) => node instanceof HTMLElement && node.dataset.cell && root.contains(node)) as
-      HTMLElement | undefined;
-    if (!el) return null;
-    const [columnIndex, slotIndex] = el.dataset.cell!.split(':').map(Number);
+    const hit = this.shown.cellUnder({ x, y });
+    if (!hit) return null;
+    const { column: columnIndex, slot: slotIndex } = hit.place;
     const model = this.host.model;
     const day = model.state.columns[columnIndex]?.day;
     if (!day) return null;
     const slot = slotIndex >= 0 ? model.state.slots[slotIndex] : undefined;
     if (!slot || dayCells(this.host.view().type)) return { day: day.date, time: null, column: columnIndex };
-    const box = el.getBoundingClientRect();
     // Down the day columns; along a timeline's row (from its end, right to left).
-    const along = model.kind === 'timeline';
-    const rtl = along && getComputedStyle(el).direction === 'rtl';
-    const share = along
-      ? box.width > 0
-        ? Math.max(0, Math.min(1, (rtl ? box.right - x : x - box.left) / box.width))
-        : 0
-      : box.height > 0
-        ? Math.max(0, Math.min(1, (y - box.top) / box.height))
-        : 0;
+    const share = shareAlong(hit.cell, { x, y }, model.kind === 'timeline' ? 'x' : 'y');
     const minutes = slot.minutes + share * this.host.view().cellDuration;
     return { day: day.date, time: model.zone.date(day.wall + minutes * MINUTE), column: columnIndex };
   }
@@ -322,26 +329,20 @@ export class AppointmentDrag<T> {
   /** Near an edge of the scroll box it scrolls, a frame at a time, and the draft follows. */
   private scrollNearEdges(): void {
     if (this.stopScroll) return;
-    const view = this.host.root().ownerDocument.defaultView;
-    const tick = () => {
-      this.stopScroll = null;
-      const scroller = this.host.scroller();
-      const last = this.last;
-      if (!scroller || !last || !this.press?.started) return;
-      const box = scroller.getBoundingClientRect();
-      const by = (near: number) => (near < EDGE ? Math.ceil(((EDGE - near) / EDGE) * SPEED) : 0);
-      const down = by(box.bottom - last.y) - by(last.y - box.top);
-      const right = by(box.right - last.x) - by(last.x - box.left);
-      if (!down && !right) return;
-      const top = scroller.scrollTop;
-      const left = scroller.scrollLeft;
-      scroller.scrollTop += down;
-      scroller.scrollLeft += right;
-      if (scroller.scrollTop === top && scroller.scrollLeft === left) return;
-      this.follow();
-      this.stopScroll = nextFrame(tick, view);
-    };
-    this.stopScroll = nextFrame(tick, view);
+    const root = this.host.root();
+    this.stopScroll = autoScroll(
+      root,
+      () => this.scrollBox(),
+      () => (this.press?.started ? this.last : null),
+      () => measure(root, this.readPointer, this.followPointer),
+      { zone: EDGE, speed: SPEED },
+    );
+  }
+
+  /** The view's scroll box now, as a component (a host giving the deprecated element has the view's). */
+  private scrollBox(): ComponentBase | null {
+    const scroller = this.host.scroller();
+    return scroller instanceof ComponentBase ? scroller : this.shown.scroller();
   }
 }
 

@@ -1,11 +1,12 @@
-import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Emitter, untracked, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { glyphPart, iconPart, mark, part, put, shown, text } from "../../core/draw-parts";
-import { follow } from "../../core/follow";
+import { glyphPart, iconPart, loose, part } from "../../core/draw-parts";
+import { focusOn } from "../../core/focus";
 import { givenField, givenList, givenValue } from "../../core/given-field";
 import type { IconSource } from "../../core/icon-source";
+import { boxOf, isRtl, measure, onLayout, pageOf, scrollerOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
-import { scrollParent, watchScroll } from "../../core/scroll-watch";
+import { mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Badge } from "../badge/Badge";
 import type { BottomNavigationItem } from "./bottom-navigation-item";
@@ -37,8 +38,17 @@ interface Look {
     visible: boolean;
 }
 
+/** An item in the list: a new slot when the item turns between button and link. */
+interface Slot {
+    item: BottomNavigationItem;
+    link: boolean;
+    part: ItemPart | null;
+}
+
 interface ItemPart {
     item: BottomNavigationItem;
+    /** Made as a link (`href`), not a button. */
+    link: boolean;
     host: Component<HTMLElement>;
     iconHost: Component<HTMLSpanElement>;
     glyph: Component<HTMLSpanElement>;
@@ -66,16 +76,20 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
     selectionChanged = new Emitter<BottomNavigationSelectionChangedEventArgs>();
     itemClick = new Emitter<BottomNavigationItemClickEventArgs>();
     list: Component<HTMLDivElement>;
-    parts: ItemPart[] = [];
-    looks: Look[] = [];
-    stopItems: (() => void) | null = null;
+    /** The slot of each item, the same while the item stays a button or a link. */
+    slots = new WeakMap<BottomNavigationItem, Slot>();
+    /** The item Tab reaches, null for none. */
+    stop: Slot | null = null;
+    /** What `hideOnScroll` watches when the app gives it (`scrollTarget`). */
+    scrollPart: ComponentBase | null = null;
+    /** Where the scroll `hideOnScroll` follows was last read; null before the first read. */
+    lastTop: number | null = null;
     stopScroll: (() => void) | null = null;
 
     constructor(props?: IBaseProp<BottomNavigationProps>) {
         super('nav', props);
         const own = (this.props ?? {}) as BottomNavigationProps;
-        const el = this.element;
-        el.classList.add('mx-bottom-navigation');
+        this.class.add('mx-bottom-navigation');
         this.list = part<HTMLDivElement>(this, 'div', 'mx-bottom-navigation__list');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.label !== undefined) this.bindProperty('text', own.label);
@@ -83,26 +97,23 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
         if (own.onSelectionChanged) this.onSelectionChanged(own.onSelectionChanged);
         if (own.onItemClick) this.onItemClick(own.onItemClick);
 
-        this.observeProperty('items', () => this.renderItems());
-        this.observeProperty('value', () => this.drawSelection());
+        // Built once: an item stays while it is given, and a changed value or item changes only what shows it.
+        this.list.bindings.list(() => this.slotList(), (slot: Slot) => this.makeItem(slot));
         this.observeProperty('text', () => this.drawName());
         for (const name of ['labelMode', 'position'] as const) this.observeProperty(name, () => this.drawLook());
-        for (const name of ['hideOnScroll', 'scrollTarget'] as const) this.observeProperty(name, () => this.followScroll());
+        this.observeProperty('hideOnScroll', () => this.followScroll());
+        this.observeProperty<ComponentBase | null | undefined>('scrollTarget', target => {
+            this.scrollPart = target ?? null;
+            this.followScroll();
+        });
         onLanguage(this, () => this.drawName());
-        this.list.element.addEventListener('click', e => this.listClick(e));
-        this.list.element.addEventListener('keydown', e => this.listKeyDown(e));
+        this.list.motif.on('click', (_, e) => this.listClick(e));
+        this.list.motif.on('keydown', (_, e) => this.listKeyDown(e));
         // A hidden bar comes back for the keyboard, or focus would be out of sight.
-        el.addEventListener('focusin', () => mark(el, 'data-hidden', false));
+        this.motif.on('focusin', () => mark(this, 'data-hidden', false));
         this.motif.setDisposable(() => {
-            this.stopItems?.();
-            this.stopScroll?.();
             for (const emitter of [this.selecting, this.selectionChanged, this.itemClick]) emitter.dispose();
         });
-    }
-
-    // In the page now: what scrolls around the bar can be found.
-    override onMounted(): void {
-        this.followScroll();
     }
 
     // Properties (see BottomNavigationProps).
@@ -143,10 +154,10 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
     set hideOnScroll(value: Bind<boolean>) {
         this.assignProperty('hideOnScroll', value);
     }
-    get scrollTarget(): HTMLElement | null {
-        return this.getProperty<HTMLElement | null | undefined>('scrollTarget') ?? null;
+    get scrollTarget(): ComponentBase | null {
+        return this.getProperty<ComponentBase | null | undefined>('scrollTarget') ?? null;
     }
-    set scrollTarget(value: Bind<HTMLElement | null>) {
+    set scrollTarget(value: Bind<ComponentBase | null>) {
         this.assignProperty('scrollTarget', value);
     }
     get onSelecting(): MotifEvent<BottomNavigationSelectingEventArgs> {
@@ -166,24 +177,38 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
 
     /** Moves focus to the item Tab reaches. */
     override focus(): boolean {
-        const target = this.parts.find(p => p.host.element.tabIndex === 0);
-        target?.host.element.focus();
+        // A disabled bar has no Tab stop: its items are out of the Tab order.
+        const target = this.isEnabled ? this.stop?.part?.host : undefined;
+        if (target) focusOn(target);
         return !!target;
     }
 
-    renderItems(): void {
-        this.stopItems?.();
-        const items = givenList(this.peekProperty<readonly BottomNavigationItem[]>('items'));
-        // The items' own functions are tracked; the list and the drawing are not.
-        this.stopItems = follow(
-            this,
-            'items',
-            () => items.map((item, index) => this.lookOf(item, index)),
-            looks => {
-                this.looks = looks;
-                this.drawItems();
-            }
-        );
+    /** The items in order, each with its slot: a new slot (and item) only when an item turns between button and link. */
+    slotList(): Slot[] {
+        return givenList(this.getProperty<readonly BottomNavigationItem[]>('items')).map(item => {
+            const link = !!givenField(item, 'href');
+            let slot = this.slots.get(item);
+            if (!slot || slot.link !== link) this.slots.set(item, (slot = { item, link, part: null }));
+            return slot;
+        });
+    }
+
+    /** What the items say now, in order; read without being followed. */
+    looksNow(): { slot: Slot; look: Look }[] {
+        return untracked(() => this.slotList().map((slot, i) => ({ slot, look: this.lookOf(slot.item, i) })));
+    }
+
+    /** The item Tab reaches: the selected one, or the first usable one. */
+    stopSlot(): Slot | null {
+        const value = this.getProperty<Value | null | undefined>('value') ?? null;
+        const usable = this.slotList()
+            .map((slot, i) => ({ slot, look: this.lookOf(slot.item, i) }))
+            .filter(x => x.look.visible && x.look.enabled);
+        return (usable.find(x => x.look.value === value) ?? usable[0])?.slot ?? null;
+    }
+
+    lookOfSlot(slot: Slot): Look {
+        return this.lookOf(slot.item, this.slotList().indexOf(slot));
     }
 
     lookOf(item: BottomNavigationItem, index: number): Look {
@@ -205,52 +230,60 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
         };
     }
 
-    // The items are recreated when they are others or change between button and link; otherwise written in place.
-    drawItems(): void {
-        const tagOf = (look: Look) => (look.href ? 'A' : 'BUTTON');
-        const stale = this.parts.length !== this.looks.length || this.parts.some((p, i) => p.item !== this.looks[i].item || p.host.element.tagName !== tagOf(this.looks[i]));
-        if (stale) {
-            for (const p of this.parts) void p.host.dispose();
-            this.parts = this.looks.map(look => this.makeItem(look));
-        }
-        this.looks.forEach((look, i) => {
-            const p = this.parts[i];
-            const host = p.host.element;
-            text(p.label.element, look.text);
-            shown(host, look.visible);
-            put(host, 'aria-disabled', look.enabled ? null : 'true');
-            put(host, 'data-value', String(look.value));
-            if (look.href) {
-                put(host, 'href', look.enabled ? look.href : null);
-                put(host, 'rel', look.rel || null);
-                put(host, 'target', look.target || null);
-            }
-            this.drawBadge(p, look);
-        });
-        this.drawSelection();
-    }
-
-    makeItem(look: Look): ItemPart {
-        const host = part<HTMLElement>(this.list, look.href ? 'a' : 'button', 'mx-bottom-navigation__item');
-        if (!look.href) (host.element as HTMLButtonElement).type = 'button';
+    /** An item, built once: what it says and whether it is selected change only what shows them. */
+    makeItem(slot: Slot): Component<HTMLElement> {
+        const host = loose<HTMLElement>(slot.link ? 'a' : 'button', 'mx-bottom-navigation__item');
+        if (!slot.link) host.attr.add({ type: 'button' });
         part<HTMLSpanElement>(host, 'span', 'mx-bottom-navigation__indicator');
         const iconHost = part<HTMLSpanElement>(host, 'span', 'mx-bottom-navigation__icon-host');
         const itemGlyph = glyphPart(iconHost, '', 'mx-bottom-navigation__glyph');
         const label = part<HTMLSpanElement>(host, 'span', 'mx-bottom-navigation__label');
-        return { item: look.item, host, iconHost, glyph: itemGlyph, icon: null, iconSource: null, label, badge: null };
+        const p: ItemPart = { item: slot.item, link: slot.link, host, iconHost, glyph: itemGlyph, icon: null, iconSource: null, label, badge: null };
+        slot.part = p;
+        host.motif.setDisposable(() => {
+            if (slot.part === p) slot.part = null;
+        });
+        host.bindings.watch(() => {
+            const look = this.lookOfSlot(slot);
+            untracked(() => {
+                text(label, look.text);
+                shown(host, look.visible);
+                put(host, 'aria-disabled', look.enabled ? null : 'true');
+                put(host, 'data-value', String(look.value));
+                if (slot.link) {
+                    put(host, 'href', look.enabled ? look.href : null);
+                    put(host, 'rel', look.rel || null);
+                    put(host, 'target', look.target || null);
+                }
+                this.drawBadge(p, look);
+            });
+        });
+        host.bindings.watch(() => {
+            const look = this.lookOfSlot(slot);
+            const selected = look.value === (this.getProperty<Value | null | undefined>('value') ?? null);
+            const stop = this.stopSlot();
+            untracked(() => {
+                this.stop = stop;
+                mark(host, 'data-selected', selected);
+                put(host, 'aria-current', selected ? 'page' : null);
+                put(host, 'tabindex', stop === slot ? '0' : '-1');
+                this.drawIcon(p, look, selected);
+            });
+        });
+        return host;
     }
 
     drawBadge(p: ItemPart, look: Look): void {
         const on = look.dot || look.badge !== null;
         if (on && !p.badge) {
             p.badge = new Badge({ size: 'sm', position: 'top-end' });
-            p.badge.element.classList.add('mx-bottom-navigation__badge');
+            p.badge.class.add('mx-bottom-navigation__badge');
             p.iconHost.controls.add(p.badge);
         }
         if (!p.badge) return;
         p.badge.dot = look.dot;
         p.badge.count = look.badge;
-        shown(p.badge.element, on);
+        shown(p.badge, on);
     }
 
     drawIcon(p: ItemPart, look: Look, selected: boolean): void {
@@ -258,61 +291,56 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
         if (source !== p.iconSource) {
             void p.icon?.dispose();
             p.icon = source ? iconPart(p.iconHost, source) : null;
-            p.icon?.element.classList.add('mx-bottom-navigation__icon');
+            p.icon?.class.add('mx-bottom-navigation__icon');
             p.iconSource = source;
         }
         const name = selected ? look.activeGlyph || look.glyph : look.glyph;
-        put(p.glyph.element, 'data-icon', name || null);
-        shown(p.glyph.element, !source && name !== '');
-    }
-
-    drawSelection(): void {
-        const value = this.peekProperty<Value | null | undefined>('value') ?? null;
-        const stop = this.looks.findIndex(look => look.value === value && look.visible && look.enabled);
-        const first = stop >= 0 ? stop : this.looks.findIndex(look => look.visible && look.enabled);
-        this.looks.forEach((look, i) => {
-            const p = this.parts[i];
-            const selected = look.value === value;
-            mark(p.host.element, 'data-selected', selected);
-            put(p.host.element, 'aria-current', selected ? 'page' : null);
-            p.host.element.tabIndex = i === first ? 0 : -1;
-            this.drawIcon(p, look, selected);
-        });
+        put(p.glyph, 'data-icon', name || null);
+        shown(p.glyph, !source && name !== '');
     }
 
     drawName(): void {
-        this.element.setAttribute('aria-label', this.text || uiLocale.strings.navigation);
+        put(this, 'aria-label', this.text || uiLocale.strings.navigation);
     }
 
     drawLook(): void {
-        put(this.element, 'data-label-mode', this.labelMode);
-        put(this.element, 'data-position', this.position);
+        put(this, 'data-label-mode', this.labelMode);
+        put(this, 'data-position', this.position);
     }
 
     followScroll(): void {
         this.stopScroll?.();
         this.stopScroll = null;
-        const el = this.element;
-        mark(el, 'data-hidden', false);
-        if (!this.hideOnScroll || !el.isConnected) return;
-        this.stopScroll = watchScroll(this.scrollTarget ?? scrollParent(el), (top, moved) => {
-            if (moved !== 0) mark(el, 'data-hidden', moved > 0 && top > el.offsetHeight);
-        });
+        this.lastTop = null;
+        mark(this, 'data-hidden', false);
+        if (!this.hideOnScroll) return;
+        this.stopScroll = onLayout(this, 'scroll', () => measure(this, this.readScroll, this.drawScroll));
     }
+
+    // What scrolls is the app's `scrollTarget`, else the nearest scroller around the bar, else the page.
+    readonly readScroll = (): { top: number; height: number } => {
+        const source = this.scrollPart ?? (this.parent ? scrollerOf(this.parent) : null);
+        return { top: source ? boxOf(source).scrollTop : pageOf(this).scrollTop, height: boxOf(this).offsetHeight };
+    };
+
+    readonly drawScroll = (at: { top: number; height: number }): void => {
+        const moved = this.lastTop === null ? 0 : at.top - this.lastTop;
+        this.lastTop = at.top;
+        if (moved !== 0) mark(this, 'data-hidden', moved > 0 && at.top > at.height);
+    };
 
     lookOfValue(value: Value | null): Look | null {
-        return this.looks.find(look => look.value === value) ?? null;
+        return this.looksNow().find(x => x.look.value === value)?.look ?? null;
     }
 
-    indexOfElement(target: EventTarget | null): number {
-        const host = (target as Element | null)?.closest?.('.mx-bottom-navigation__item');
-        return this.parts.findIndex(p => p.host.element === host);
+    /** The item an event came from, or null. */
+    entryOfEvent(e: Event): { slot: Slot; look: Look } | null {
+        return this.looksNow().find(x => !!x.slot.part?.host.motif.isEventFrom(e)) ?? null;
     }
 
     listClick(e: MouseEvent): void {
-        const index = this.indexOfElement(e.target);
-        if (index < 0) return;
-        const look = this.looks[index];
+        const look = this.entryOfEvent(e)?.look;
+        if (!look) return;
         if (!look.enabled || !this.isEnabled) {
             e.preventDefault();
             return;
@@ -338,17 +366,18 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
     }
 
     listKeyDown(e: KeyboardEvent): void {
-        const index = this.indexOfElement(e.target);
+        const entries = this.looksNow();
+        const index = entries.findIndex(x => !!x.slot.part?.host.motif.isEventFrom(e));
         if (index < 0) return;
-        if (e.key === ' ' && this.looks[index].href) {
+        const rtl = isRtl(this);
+        if (e.key === ' ' && entries[index].look.href) {
             e.preventDefault();
-            this.parts[index].host.element.click();
+            entries[index].slot.part?.host.attr.add({ click: true });
             return;
         }
-        const stops = this.looks.flatMap((look, i) => (look.visible && look.enabled ? [i] : []));
+        const stops = entries.flatMap((x, i) => (x.look.visible && x.look.enabled ? [i] : []));
         if (!stops.length) return;
         const at = stops.indexOf(index);
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
         const next = rtl ? 'ArrowLeft' : 'ArrowRight';
         const previous = rtl ? 'ArrowRight' : 'ArrowLeft';
         let to: number;
@@ -358,9 +387,11 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
         else if (e.key === 'End') to = stops[stops.length - 1];
         else return;
         e.preventDefault();
-        for (const p of this.parts) p.host.element.tabIndex = -1;
-        const host = this.parts[to].host.element;
-        host.tabIndex = 0;
-        host.focus();
+        for (const x of entries) if (x.slot.part) put(x.slot.part.host, 'tabindex', '-1');
+        this.stop = entries[to].slot;
+        const host = this.stop.part?.host;
+        if (!host) return;
+        put(host, 'tabindex', '0');
+        focusOn(host);
     }
 }

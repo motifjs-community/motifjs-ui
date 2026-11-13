@@ -135,8 +135,11 @@ describe('Card', () => {
     await settle();
     expect(card.element.getAttribute('tabindex')).toBe('0');
     expect(card.element.hasAttribute('data-pressable')).toBe(true);
+    // The press is a click core makes a moment later.
     card.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await settle();
     card.element.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await settle();
     expect(clicks).toBe(2);
     card.clickable = false;
     expect(card.element.hasAttribute('tabindex')).toBe(false);

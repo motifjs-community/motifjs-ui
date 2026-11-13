@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { pageBody } from '../../core/page-layer';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { LoadPanel } from './LoadPanel';
 
@@ -60,8 +61,8 @@ describe('LoadPanel', () => {
 
     it('waits for its delay, and a hide before that shows nothing', async () => {
         vi.useFakeTimers();
-        const box = document.createElement('div');
-        document.body.append(box);
+        const box = new Component<HTMLDivElement>('div');
+        page(box);
         const panel = new LoadPanel({ target: box, delay: 200 });
         hosts.push(panel);
         expect(panel.show()).toBe(true);
@@ -75,14 +76,17 @@ describe('LoadPanel', () => {
         await vi.advanceTimersByTimeAsync(200);
         expect(panel.isShown).toBe(true);
         panel.hide();
-        box.remove();
     });
 
     it('covers the page without a target, and Cancel tells and hides', async () => {
-        const app = document.createElement('main');
-        const button = document.createElement('button');
-        app.append(button);
-        document.body.append(app);
+        // What it makes inert are the page's components around it.
+        const appPart = new Component<HTMLElement>('main');
+        const buttonPart = new Component<HTMLButtonElement>('button');
+        appPart.controls.add(buttonPart);
+        pageBody(document).controls.add(appPart);
+        hosts.push(appPart);
+        const app = appPart.element;
+        const button = buttonPart.element;
         button.focus();
         const told: string[] = [];
         const panel = new LoadPanel({ cancelable: true, onCancel: () => told.push('cancel'), onHidden: () => told.push('hidden'), onShown: () => told.push('shown') });
@@ -91,19 +95,21 @@ describe('LoadPanel', () => {
         expect(panel.element.hasAttribute('data-page')).toBe(true);
         expect(panel.element.parentElement).toBe(document.body);
         expect(app.hasAttribute('inert')).toBe(true);
+        // With no app running, the app's root in the page is the body's component: it is busy while the panel shows.
+        expect(document.body.getAttribute('aria-busy')).toBe('true');
         expect(panel.cancelButton.text).toBe(enStrings.cancel);
         expect(document.activeElement).toBe(panel.cancelButton.element);
         panel.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
         expect(panel.isShown).toBe(false);
         expect(app.hasAttribute('inert')).toBe(false);
+        expect(document.body.hasAttribute('aria-busy')).toBe(false);
         expect(document.activeElement).toBe(button);
         expect(told).toEqual(['shown', 'cancel', 'hidden']);
-        app.remove();
     });
 
     it('says its texts in the kit language, hides the indicator or the pane when told, and closes on an outside press when allowed', async () => {
-        const box = document.createElement('div');
-        document.body.append(box);
+        const box = new Component<HTMLDivElement>('div');
+        page(box);
         const panel = new LoadPanel({ target: box, showIndicator: false, showPane: false, closeOnOutside: true });
         hosts.push(panel);
         panel.show();
@@ -115,6 +121,5 @@ describe('LoadPanel', () => {
         expect(panel.messagePart.element.textContent).not.toBe(enStrings.loading);
         panel.element.click();
         expect(panel.isShown).toBe(false);
-        box.remove();
     });
 });

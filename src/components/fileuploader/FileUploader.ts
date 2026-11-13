@@ -1,8 +1,9 @@
-import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
-import { glyphPart, mark, part, put, shown, text } from "../../core/draw-parts";
+import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { glyphPart, loose, part } from "../../core/draw-parts";
 import { glyph } from "../../core/glyphs";
 import { nextId } from "../../core/next-id";
 import { onLanguage } from "../../core/on-language";
+import { mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Field } from "../../parts/field/Field";
 import type { ValidationRule } from "../../parts/validation/validation-rule";
@@ -20,11 +21,13 @@ const OWN = ['multiple', 'accept', 'maxFileSize', 'minFileSize', 'maxFiles', 'al
 const PARTS = Symbol('mx.fileuploader');
 
 interface Parts {
-    select: HTMLButtonElement;
-    selectText: HTMLSpanElement;
+    selectPart: Component<HTMLButtonElement>;
+    selectText: Component<HTMLSpanElement>;
+    selectTextId: string;
     input: HTMLInputElement;
-    drop: HTMLSpanElement;
-    uploadButton: HTMLButtonElement;
+    inputPart: Component<HTMLInputElement>;
+    dropPart: Component<HTMLSpanElement>;
+    uploadPart: Component<HTMLButtonElement>;
     list: Component<HTMLUListElement> | null;
     rows: Map<UploadItem, Row>;
     items: UploadItem[];
@@ -94,7 +97,7 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
     constructor(props?: IBaseProp<FileUploaderProps>) {
         super(props);
         const own = (this.props ?? {}) as FileUploaderProps;
-        this.element.classList.add('mx-file-uploader');
+        this.class.add('mx-file-uploader');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         this.uploadWith = own.upload ?? null;
         if (own.onFilesAdded) this.filesAdded.event(own.onFilesAdded);
@@ -107,15 +110,15 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
 
         const parts = this.uploadParts;
         this.observeProperty<boolean>('multiple', on => {
-            parts.input.multiple = on !== false;
+            mark(parts.inputPart, 'multiple', on !== false);
             this.drawTexts();
         });
-        this.observeProperty<string>('accept', accept => put(parts.input, 'accept', accept || null));
-        for (const name of ['selectText', 'dropText', 'uploadText', 'uploadMode', 'allowDrop'] as const) this.observeProperty(name, () => this.drawTexts());
+        this.observeProperty<string>('accept', accept => put(parts.inputPart, 'accept', accept || null));
+        for (const name of ['text', 'selectText', 'dropText', 'uploadText', 'uploadMode', 'allowDrop'] as const) this.observeProperty(name, () => this.drawTexts());
         this.observeProperty<boolean>('showFileList', () => this.drawList());
         this.observeProperty<boolean>('readOnly', () => this.drawTexts());
         // A button may not carry aria-required (the field writes it on its control): the list says what is missing.
-        this.observeProperty('required', () => parts.select.removeAttribute('aria-required'));
+        this.observeProperty('required', () => put(parts.selectPart, 'aria-required', null));
         onLanguage(this, () => {
             this.drawTexts();
             this.drawList();
@@ -268,7 +271,7 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
 
     /** Opens the browser's file dialog, the same as the button. */
     openDialog(): void {
-        if (this.isEnabled && !this.peekProperty('readOnly')) this.uploadParts.input.click();
+        if (this.isEnabled && !this.peekProperty('readOnly')) this.uploadParts.inputPart.attr.add({ click: true });
     }
 
     /**
@@ -353,8 +356,12 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         this.drawList();
     }
 
-    protected createControl(): HTMLElement {
-        return this.uploadParts.select;
+    protected override get controlTag(): string {
+        return 'button';
+    }
+
+    protected createControl(): ComponentBase {
+        return this.uploadParts.selectPart;
     }
 
     protected emptyValue(): readonly File[] {
@@ -390,60 +397,66 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
     get uploadParts(): Parts {
         const self = this as unknown as { [PARTS]?: Parts };
         if (!self[PARTS]) {
-            const select = document.createElement('button');
-            select.type = 'button';
-            select.className = 'mx-file-uploader__select';
-            select.append(glyph('upload'));
-            const selectText = document.createElement('span');
-            selectText.className = 'mx-file-uploader__select-text';
-            selectText.id = nextId('file-uploader-text');
-            select.append(selectText);
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.className = 'mx-file-uploader__input';
-            input.tabIndex = -1;
-            input.setAttribute('aria-hidden', 'true');
-            input.hidden = true;
-            const drop = document.createElement('span');
-            drop.className = 'mx-file-uploader__drop';
-            const uploadButton = document.createElement('button');
-            uploadButton.type = 'button';
-            uploadButton.className = 'mx-file-uploader__upload';
-            uploadButton.hidden = true;
-            self[PARTS] = { select, selectText, input, drop, uploadButton, list: null, rows: new Map(), items: [], jobs: new Map(), dragDepth: 0 };
+            // The select button is the field's control; the others join the box after it (`listen`).
+            const selectPart = loose<HTMLButtonElement>('button', 'mx-file-uploader__select');
+            selectPart.attr.add({ type: 'button' });
+            glyphPart(selectPart, 'upload');
+            const selectText = part<HTMLSpanElement>(selectPart, 'span', 'mx-file-uploader__select-text');
+            const selectTextId = nextId('file-uploader-text');
+            selectText.attr.add({ id: selectTextId });
+            const inputPart = loose<HTMLInputElement>('input', 'mx-file-uploader__input');
+            const input = inputPart.element;
+            inputPart.attr.add({ type: 'file', tabindex: '-1', 'aria-hidden': 'true', hidden: true });
+            const dropPart = loose<HTMLSpanElement>('span', 'mx-file-uploader__drop');
+            const uploadPart = loose<HTMLButtonElement>('button', 'mx-file-uploader__upload');
+            uploadPart.attr.add({ type: 'button', hidden: true });
+            self[PARTS] = {
+                selectPart,
+                selectText,
+                selectTextId,
+                input,
+                inputPart,
+                dropPart,
+                uploadPart,
+                list: null,
+                rows: new Map(),
+                items: [],
+                jobs: new Map(),
+                dragDepth: 0
+            };
         }
         return self[PARTS];
     }
 
     listen(): void {
         const parts = this.uploadParts;
-        const box = parts.select.parentElement!;
-        box.append(parts.input, parts.drop, parts.uploadButton);
-        parts.select.addEventListener('click', () => this.openDialog());
-        parts.uploadButton.addEventListener('click', () => void this.upload());
-        parts.input.addEventListener('change', e => {
+        this.boxPart.controls.add(parts.inputPart, parts.dropPart, parts.uploadPart);
+        parts.selectPart.motif.on('click', () => this.openDialog());
+        parts.uploadPart.motif.on('click', () => void this.upload());
+        parts.inputPart.motif.on('change', (_, e) => {
+            // browser object read: allowed exception
             this.addFiles(parts.input.files ?? [], e);
-            parts.input.value = '';
+            parts.inputPart.attr.add({ value: '' });
         });
         const dropping = (e: DragEvent) => this.isEnabled && !this.peekProperty('readOnly') && this.peekProperty<boolean | undefined>('allowDrop') !== false && !!e.dataTransfer?.types.includes('Files');
-        this.element.addEventListener('dragenter', e => {
+        this.motif.on('dragenter', (_, e) => {
             if (!dropping(e)) return;
             e.preventDefault();
             parts.dragDepth++;
-            mark(this.element, 'data-dragover', true);
+            mark(this, 'data-dragover', true);
         });
-        this.element.addEventListener('dragover', e => {
+        this.motif.on('dragover', (_, e) => {
             if (!dropping(e)) return;
             e.preventDefault();
             e.dataTransfer!.dropEffect = 'copy';
         });
-        this.element.addEventListener('dragleave', () => {
+        this.motif.on('dragleave', () => {
             if (parts.dragDepth > 0) parts.dragDepth--;
-            if (parts.dragDepth === 0) mark(this.element, 'data-dragover', false);
+            if (parts.dragDepth === 0) mark(this, 'data-dragover', false);
         });
-        this.element.addEventListener('drop', e => {
+        this.motif.on('drop', (_, e) => {
             parts.dragDepth = 0;
-            mark(this.element, 'data-dragover', false);
+            mark(this, 'data-dragover', false);
             if (!dropping(e)) return;
             e.preventDefault();
             this.addFiles(e.dataTransfer!.files, e);
@@ -456,14 +469,14 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         const single = this.peekProperty<boolean | undefined>('multiple') === false;
         text(parts.selectText, this.peekProperty<string>('selectText') || (single ? strings.fileSelectOne : strings.fileSelect));
         // Named by the field's label and its own text, so a reader hears both and voice control finds it by what it shows.
-        const label = this.element.querySelector<HTMLElement>('.mx-field__label');
-        put(parts.select, 'aria-labelledby', label?.id ? `${label.id} ${parts.selectText.id}` : null);
+        const labelId = this.labelId;
+        put(parts.selectPart, 'aria-labelledby', labelId ? `${labelId} ${parts.selectTextId}` : parts.selectTextId);
         const canDrop = this.peekProperty<boolean | undefined>('allowDrop') !== false && !this.peekProperty('readOnly');
-        text(parts.drop, this.peekProperty<string>('dropText') || (single ? strings.fileDropOne : strings.fileDrop));
-        shown(parts.drop, canDrop);
-        text(parts.uploadButton, this.peekProperty<string>('uploadText') || strings.fileUpload);
-        shown(parts.uploadButton, this.uploadMode === 'button');
-        parts.select.disabled = !!this.peekProperty('readOnly');
+        text(parts.dropPart, this.peekProperty<string>('dropText') || (single ? strings.fileDropOne : strings.fileDrop));
+        shown(parts.dropPart, canDrop);
+        text(parts.uploadPart, this.peekProperty<string>('uploadText') || strings.fileUpload);
+        shown(parts.uploadPart, this.uploadMode === 'button');
+        mark(parts.selectPart, 'disabled', !!this.peekProperty('readOnly'));
     }
 
     // The list is drawn again from the items: a row per file, kept by the item.
@@ -471,13 +484,13 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         const parts = this.uploadParts;
         const show = this.peekProperty<boolean | undefined>('showFileList') !== false && parts.items.length > 0;
         if (!show) {
-            if (parts.list) shown(parts.list.element, false);
+            if (parts.list) shown(parts.list, false);
             return;
         }
         if (!parts.list) {
             parts.list = part<HTMLUListElement>(this, 'ul', 'mx-file-uploader__list');
         }
-        shown(parts.list.element, true);
+        shown(parts.list, true);
         const seen = new Set<UploadItem>();
         parts.items.forEach((item, index) => {
             let row = parts.rows.get(item);
@@ -499,43 +512,43 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
 
     makeRow(item: UploadItem): Row {
         const li = new Component<HTMLLIElement>('li');
-        li.element.className = 'mx-file-uploader__item';
+        li.class.add('mx-file-uploader__item');
         glyphPart(li, 'file', 'mx-file-uploader__icon');
         const texts = part(li, 'span', 'mx-file-uploader__texts');
         const name = part<HTMLSpanElement>(texts, 'span', 'mx-file-uploader__name');
         const size = part<HTMLSpanElement>(texts, 'span', 'mx-file-uploader__size');
         const state = part<HTMLSpanElement>(texts, 'span', 'mx-file-uploader__state');
         const bar = new ProgressBar({ size: 'sm', labelPosition: 'top' });
-        bar.element.classList.add('mx-file-uploader__progress');
+        bar.class.add('mx-file-uploader__progress');
         texts.controls.add(bar);
         const actions = part(li, 'span', 'mx-file-uploader__actions');
         const abort = new Button({ icon: glyph('dismiss'), variant: 'ghost', size: 'sm', onclick: () => this.abort(item) });
         const retry = new Button({ icon: glyph('undo'), variant: 'ghost', size: 'sm', onclick: () => void this.uploadItem(item) });
         // The press finishes (every listener of it) before the row goes: a microtask would run between the listeners.
         const remove = new Button({ icon: glyph('trash'), variant: 'ghost', size: 'sm', onclick: () => setTimeout(() => this.remove(item), 0) });
-        for (const button of [abort, retry, remove]) button.element.classList.add('mx-file-uploader__action');
+        for (const button of [abort, retry, remove]) button.class.add('mx-file-uploader__action');
         actions.controls.add(abort, retry, remove);
-        text(name.element, item.file.name);
+        text(name, item.file.name);
         return { li, name, size, state, bar, abort, retry, remove };
     }
 
     drawRow(item: UploadItem, row: Row): void {
         const strings = uiLocale.strings;
         const locale = uiLocale.locale;
-        put(row.li.element, 'data-status', item.status);
-        text(row.size.element, sizeText(item.file.size, locale));
+        put(row.li, 'data-status', item.status);
+        text(row.size, sizeText(item.file.size, locale));
         const stateText = item.status === 'uploading' ? uiLocale.text('fileUploading', { percent: Math.round(item.progress * 100) }) : item.status === 'done' ? strings.fileUploaded : item.status === 'aborted' ? strings.fileAborted : item.status === 'error' ? item.message || strings.fileFailed : item.status === 'invalid' ? item.message : '';
-        text(row.state.element, stateText);
-        shown(row.state.element, stateText !== '');
-        shown(row.bar.element, item.status === 'uploading');
+        text(row.state, stateText);
+        shown(row.state, stateText !== '');
+        shown(row.bar, item.status === 'uploading');
         if (item.status === 'uploading') {
             row.bar.value = Math.round(item.progress * 100);
             row.bar.label = item.file.name;
         }
         const canUpload = item.status !== 'invalid' && (this.peekProperty('uploadUrl') || this.uploadWith);
-        shown(row.abort.element, item.status === 'uploading');
-        shown(row.retry.element, !!canUpload && (item.status === 'error' || item.status === 'aborted'));
-        shown(row.remove.element, item.status !== 'uploading' && !this.peekProperty('readOnly'));
+        shown(row.abort, item.status === 'uploading');
+        shown(row.retry, !!canUpload && (item.status === 'error' || item.status === 'aborted'));
+        shown(row.remove, item.status !== 'uploading' && !this.peekProperty('readOnly'));
         const abortName = uiLocale.text('fileAbort', { name: item.file.name });
         if (row.abort.hint !== abortName) row.abort.hint = abortName;
         if (row.retry.hint !== strings.retry) row.retry.hint = strings.retry;

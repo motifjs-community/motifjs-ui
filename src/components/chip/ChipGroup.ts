@@ -1,7 +1,9 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { isWithin } from '../../core/component-tree';
 import { Control } from '../../core/control';
-import { controlOf } from '../../core/control-map';
-import { mark, put } from '../../core/draw-parts';
+import { isRtl } from '../../core/measure';
+import { isElement } from '../../core/node-kind';
+import { put } from '../../core/part-writes';
 import { Chip } from './Chip';
 import type { ChipGroupProps } from './chip-group-props';
 import type { ChipGroupSelection } from './chip-group-selection';
@@ -22,16 +24,17 @@ const OWN = ['selection', 'value', 'wrap', 'label'] as const;
  */
 export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
   private readonly valueChanged = new Emitter<ChipGroupValueChangedEventArgs>();
+  /** The chips listened to, and the lists and conditions around them. */
+  private readonly heard = new WeakSet<ComponentBase>();
   /** The chip focused last: Tab comes back to it. */
-  private current: HTMLElement | null = null;
+  private current: Chip | null = null;
   private byUser = false;
   private ready = false;
 
   constructor(props?: IBaseProp<ChipGroupProps>) {
     super('div', props);
     const own = (this.props ?? {}) as ChipGroupProps;
-    const el = this.element;
-    el.classList.add('mx-chip-group');
+    this.class.add('mx-chip-group');
     if (this.childs?.length) this.controls.add(...this.childs);
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onValueChanged) this.onValueChanged(own.onValueChanged);
@@ -40,22 +43,18 @@ export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
     this.observeProperty('value', (value) => {
       if (this.ready) this.valueChanged.fire({ value, byUser: this.byUser, source: this });
     });
-    this.observeProperty('wrap', (wrap) => put(el, 'data-wrap', wrap === false ? 'false' : null));
-    this.observeProperty<string>('label', (label) => put(el, 'aria-label', label || null));
-    void this.motif.on('controladded', () => this.renderChips(), false);
-    void this.motif.on('controlremoved', () => this.renderChips(), false);
-    // Chips from a JSX list come and go inside the list: only the group's own children are watched.
-    if (typeof MutationObserver === 'function') {
-      const rows = new MutationObserver(() => this.renderChips());
-      rows.observe(el, { childList: true });
-      this.motif.setDisposable(() => rows.disconnect());
-    }
-    el.addEventListener('click', (e) => this.pressed(e));
-    el.addEventListener('keydown', (e) => this.keyDown(e));
-    el.addEventListener('focusin', (e) => {
-      const chip = this.chipAt(e.target);
+    this.observeProperty('wrap', (wrap) => put(this, 'data-wrap', wrap === false ? 'false' : null));
+    this.observeProperty<string>('label', (label) => put(this, 'aria-label', label || null));
+    // Chips come and go as the group's children, and inside the JSX lists and conditions among them.
+    void this.motif.on('controladded', this.contentAdded, false);
+    void this.motif.on('controlremoved', this.contentRemoved, false);
+    for (const child of this.controls.items) this.listen(child);
+    this.motif.on('click', (_, e) => this.pressed(e));
+    this.motif.on('keydown', (_, e) => this.keyDown(e));
+    this.motif.on('focusin', (_, e) => {
+      const chip = this.chipOf(e);
       if (chip) {
-        this.current = chip.element;
+        this.current = chip;
         this.renderStops();
       }
     });
@@ -97,12 +96,7 @@ export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
 
   /** The chips in order, including those from JSX lists. */
   get chips(): Chip[] {
-    const chips: Chip[] = [];
-    for (const el of Array.from(this.element.children)) {
-      const control = controlOf(el);
-      if (control instanceof Chip) chips.push(control);
-    }
-    return chips;
+    return chipsIn(this, []);
   }
 
   /** Indicates whether the chip for `value` is selected. */
@@ -114,18 +108,70 @@ export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
     return false;
   }
 
-  private chipAt(target: EventTarget | null): Chip | null {
-    const el = target instanceof Element ? target.closest('.mx-chip') : null;
-    if (!el || el.parentElement !== this.element) return null;
-    const control = controlOf(el);
-    return control instanceof Chip ? control : null;
+  /** The chip an event came from. */
+  private chipOf(e: Event): Chip | null {
+    return this.chips.find((chip) => chip.motif.isEventFrom(e)) ?? null;
   }
 
+  /** Listens to a part of the group's content: a chip, or a list or condition that brings chips. */
+  private listen(component: ComponentBase): void {
+    if (component.isDisposed || this.heard.has(component)) return;
+    if (component instanceof Chip) {
+      this.heard.add(component);
+      void component.motif.on('x:built', this.chipChanged);
+      void component.motif.on('x:visibilityChanged', this.chipChanged);
+      void component.motif.on('x:disposed', this.chipChanged);
+    } else if (!isElement(component.element)) {
+      this.heard.add(component);
+      void component.motif.on('controladded', this.contentAdded, false);
+      void component.motif.on('controlremoved', this.contentRemoved, false);
+      for (const child of component.controls.items) this.listen(child);
+    }
+  }
+
+  /** Stops listening to what left the group's content; a chip that left is given back. */
+  private forget(component: ComponentBase): void {
+    if (!this.heard.has(component)) return;
+    this.heard.delete(component);
+    if (component.isDisposed) return;
+    if (component instanceof Chip) {
+      void component.motif.off('x:built', this.chipChanged);
+      void component.motif.off('x:visibilityChanged', this.chipChanged);
+      void component.motif.off('x:disposed', this.chipChanged);
+      if (this.current === component) this.current = null;
+      component.leaveGroup(this);
+      return;
+    }
+    void component.motif.off('controladded', this.contentAdded);
+    void component.motif.off('controlremoved', this.contentRemoved);
+    for (const child of component.controls.items) this.forget(child);
+  }
+
+  /** A chip, or a list or condition that may hold chips, came into the group's content. */
+  private readonly contentAdded = (_sender: ComponentBase, e: { control: ComponentBase }): void => {
+    this.listen(e.control);
+    this.renderChips();
+  };
+
+  /** Something left the group's content: moved elsewhere in the group, or out of it. */
+  private readonly contentRemoved = (_sender: ComponentBase, e: { control: ComponentBase }): void => {
+    if (!isWithin(e.control, this)) this.forget(e.control);
+    this.renderChips();
+  };
+
+  /** A chip was built, showed, hid or went away: the Tab stop may move. */
+  private readonly chipChanged = (): void => {
+    if (this.isDisposed) return;
+    if (this.current?.isDisposed) this.current = null;
+    this.renderStops();
+  };
+
   private pressed(e: MouseEvent): void {
-    const chip = this.chipAt(e.target);
     const selection = this.peekProperty<ChipGroupSelection>('selection') ?? 'none';
-    if (!chip || selection === 'none' || !chip.isEnabled) return;
-    if ((e.target as Element).closest('.mx-chip__remove')) return;
+    if (selection === 'none') return;
+    // A press on a chip's remove button stops at the chip.
+    const chip = this.chipOf(e);
+    if (!chip || !chip.isEnabled) return;
     const value = chip.value;
     const on = this.isSelected(value);
     let next: unknown;
@@ -145,12 +191,13 @@ export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
 
   private keyDown(e: KeyboardEvent): void {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    const from = this.chipAt(e.target);
-    if (!from || e.target !== from.element) return;
-    const chips = this.chips.filter((chip) => chip.focusable && chip.isEnabled && !chip.element.hidden);
+    const from = this.chipOf(e);
+    // Keys go where focus is: on the chip itself, not on its remove button.
+    if (!from?.focused) return;
+    const chips = this.chips.filter((chip) => chip.focusable && isUsable(chip));
     const at = chips.indexOf(from);
     if (at < 0) return;
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
+    const rtl = isRtl(this);
     const steps: Record<string, number> = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 };
     let to: Chip | undefined;
     if (e.key === 'Home') to = chips[0];
@@ -158,45 +205,38 @@ export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
     else if (steps[e.key]) to = chips[(at + steps[e.key] + chips.length) % chips.length];
     if (!to) return;
     e.preventDefault();
-    to.element.focus();
+    to.focus();
   }
 
   private renderChips(): void {
-    const el = this.element;
     const selection = this.peekProperty<ChipGroupSelection>('selection') ?? 'none';
-    put(el, 'role', selection === 'none' ? 'group' : 'listbox');
-    put(el, 'aria-multiselectable', selection === 'multiple' ? 'true' : null);
-    put(el, 'aria-orientation', selection === 'none' ? null : 'horizontal');
-    for (const chip of this.chips) {
-      const chipEl = chip.element;
-      mark(chipEl, 'data-in-group', true);
-      const option = selection !== 'none';
-      const was = chipEl.hasAttribute('data-option');
-      mark(chipEl, 'data-option', option);
-      if (option) {
-        const on = this.isSelected(chip.value);
-        put(chipEl, 'role', 'option');
-        put(chipEl, 'aria-selected', String(on));
-        put(chipEl, 'aria-pressed', null);
-        if (chip.selected !== on) chip.selected = on;
-      } else if (was) {
-        put(chipEl, 'aria-selected', null);
-      }
-      // Taken over or given back: the chip draws its role and look again.
-      if (was !== option) chip.drawState();
-    }
+    put(this, 'role', selection === 'none' ? 'group' : 'listbox');
+    put(this, 'aria-multiselectable', selection === 'multiple' ? 'true' : null);
+    put(this, 'aria-orientation', selection === 'none' ? null : 'horizontal');
+    const option = selection !== 'none';
+    for (const chip of this.chips) chip.joinGroup(this, option, option && this.isSelected(chip.value));
     this.renderStops();
   }
 
   /** One Tab stop: the chip focused last, else the first selected, else the first that takes focus. */
   private renderStops(): void {
     const chips = this.chips.filter((chip) => chip.focusable);
-    const usable = chips.filter((chip) => chip.isEnabled);
-    const stop =
-      usable.find((chip) => chip.element === this.current) ?? usable.find((chip) => chip.selected) ?? usable[0] ?? null;
-    for (const chip of chips) {
-      if (chip.element.hasAttribute('data-disabled')) continue;
-      put(chip.element, 'tabindex', chip === stop ? '0' : '-1');
-    }
+    const usable = chips.filter(isUsable);
+    const stop = usable.find((chip) => chip === this.current) ?? usable.find((chip) => chip.selected) ?? usable[0] ?? null;
+    for (const chip of chips) put(chip, 'tabindex', chip === stop ? '0' : '-1');
   }
+}
+
+/** The chips among the children of `component`, and inside those without an element of their own (JSX lists, conditions). */
+function chipsIn(component: ComponentBase, found: Chip[]): Chip[] {
+  for (const child of component.controls.items) {
+    if (child instanceof Chip) found.push(child);
+    else if (!child.isDisposed && !isElement(child.element)) chipsIn(child, found);
+  }
+  return found;
+}
+
+/** A chip in the row now: enabled, built, and not hidden (`visible`, or held back by `x-wait` / `x-display`). */
+function isUsable(chip: Chip): boolean {
+  return chip.isEnabled && chip.isBuilt && chip.visible && !chip.isWait;
 }

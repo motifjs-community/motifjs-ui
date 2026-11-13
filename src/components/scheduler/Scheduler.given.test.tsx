@@ -2,6 +2,7 @@ import { reactive, type ComponentBase } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { windowStack } from '../../core/window-stack';
 import type { AppointmentTemplateContext } from './appointment-template-context';
 import { Scheduler } from './Scheduler';
@@ -177,6 +178,9 @@ for (const kind of ['plain', 'reactive'] as const) {
       title.value = 'Daily';
       title.dispatchEvent(new InputEvent('input', { bubbles: true }));
       button('Save').click();
+      await settle();
+      // The form closes with the window's next frame; what it says is written then.
+      await whenMeasured(s);
       await settle();
       expect(list[0]).toBe(first);
       expect(first.text).toBe('Daily');

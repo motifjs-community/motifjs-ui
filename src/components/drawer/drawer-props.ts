@@ -9,8 +9,8 @@ export interface DrawerProps extends OverlayPanelProps {
   side?: Bind<DrawerSide>;
   /** Whether it covers the content or pushes it aside. The default is `'over'`. */
   mode?: Bind<DrawerMode>;
-  /** In `push` mode, the element or component that moves aside. Without it, `push` behaves like `over`. */
-  pushTarget?: Bind<HTMLElement | ComponentBase | null>;
+  /** In `push` mode, the component that moves aside. Without it, `push` behaves like `over`. */
+  pushTarget?: Bind<ComponentBase | null>;
   /**
    * Its width, or its height from the top or bottom, in pixels or as a CSS length. `null` uses `drawer.size`.
    * It never exceeds 85% of the available space. The default is `null`.

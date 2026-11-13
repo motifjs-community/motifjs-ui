@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { RibbonMenu } from './RibbonMenu';
 import type { RibbonCommand } from './ribbon-command';
@@ -135,7 +136,7 @@ describe('RibbonMenu', () => {
     it('opens more options of a group from the button beside its name', async () => {
         ran.length = 0;
         const told: string[] = [];
-        const menu = await make({ items: tabs(), onGroupMore: (e: { target: HTMLElement }) => told.push(e.target.className.includes('mx-ribbon-menu__more') ? 'more' : '?') });
+        const menu = await make({ items: tabs(), onGroupMore: (e: { part: { element: HTMLElement } }) => told.push(e.part.element.className.includes('mx-ribbon-menu__more') ? 'more' : '?') });
         const more = menu.element.querySelectorAll<HTMLElement>('.mx-ribbon-menu__more');
         expect(more.length).toBe(1);
         expect(more[0].getAttribute('title') ?? more[0].getAttribute('aria-label')).toContain('Clipboard');
@@ -205,6 +206,7 @@ describe('RibbonMenu', () => {
         expect(button.getAttribute('title') ?? button.getAttribute('aria-label')).toBe('Show the simplified layout');
         button.click();
         await settle();
+        await whenMeasured(menu);
         expect(menu.layout).toBe('simple');
         expect(menu.element.getAttribute('data-layout')).toBe('simple');
         expect(menu.element.querySelector('[data-ribbon-size="large"].mx-ribbon-menu__command:not(.mx-ribbon-menu__fold)')).toBeNull();
@@ -228,6 +230,7 @@ describe('RibbonMenu', () => {
         await settle();
         menu.adaptive = true;
         await settle();
+        await whenMeasured(menu);
         expect(groups().map(g => g.hasAttribute('data-folded'))).toEqual([false, true]);
         const fold = groups()[1].querySelector<HTMLElement>('.mx-ribbon-menu__fold')!;
         expect(fold.textContent).toContain('Font');
@@ -343,7 +346,15 @@ describe('RibbonMenu', () => {
         const panel = shownPanel(menu)[0];
         expect(Array.from(panel.querySelectorAll('.mx-ribbon-menu__group-label')).map(l => l.textContent)).toEqual(['Font', 'Clipboard']);
         const clipboard = panel.querySelectorAll<HTMLElement>(':scope > .mx-ribbon-menu__group')[1];
-        expect(Array.from(clipboard.querySelectorAll<HTMLElement>('.mx-ribbon-menu__commands > .mx-ribbon-menu__command')).map(b => b.textContent || b.getAttribute('title'))).toEqual(['Cut', 'Paste']);
+        // The command the user hid is kept out of sight.
+        expect(Array.from(clipboard.querySelectorAll<HTMLElement>('.mx-ribbon-menu__commands > .mx-ribbon-menu__command:not([hidden])')).map(b => b.textContent || b.getAttribute('title'))).toEqual(['Cut', 'Paste']);
+        const copy = clipboard.querySelector<HTMLElement>('.mx-ribbon-menu__commands > .mx-ribbon-menu__command[hidden]')!;
+        expect(copy).not.toBeNull();
+        menu.customization = {};
+        await settle();
+        expect(copy.isConnected && !copy.hidden).toBe(true);
+        menu.customization = { hidden: ['home/clipboard/copy'], order: { home: ['font', 'clipboard'], 'home/clipboard': ['cut', 'paste'] }, quick: ['home/clipboard/cut'], layout: 'simple' };
+        await settle();
         expect(menu.layout).toBe('simple');
         expect(menu.element.querySelectorAll('.mx-ribbon-menu__quick:not([hidden]) > .mx-button').length).toBe(1);
         expect(menu.findCommand('home/clipboard/paste')!.text).toBe('Paste');
@@ -394,11 +405,31 @@ describe('RibbonMenu', () => {
         expect(Array.from(gallery.querySelectorAll<HTMLElement>('.mx-ribbon-menu__gallery-grid > .mx-ribbon-menu__tile')).map(t => t.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true']);
     });
 
+    it('gives each gallery tile its own icon: a function is called again, a component given as is goes to the grid', async () => {
+        const kept = new Component('i');
+        const items = tabs();
+        (items[1].groups as unknown as { commands: RibbonCommand[] }[])[0].commands = [
+            { key: 'styles', type: 'gallery', text: 'Styles', columns: 2, items: [{ key: 'a', text: 'A', icon: () => <svg class="drawn" /> }, { key: 'b', text: 'B', icon: kept }] }
+        ];
+        const menu = await make({ items, value: 'insert' });
+        const gallery = menu.element.querySelector<HTMLElement>('.mx-ribbon-menu__gallery')!;
+        const tiles = (place: string) => Array.from(gallery.querySelectorAll<HTMLElement>(`.mx-ribbon-menu__gallery-${place} > .mx-ribbon-menu__tile`));
+        const [rowA, rowB] = tiles('row');
+        const [gridA, gridB] = tiles('grid');
+        const drawn = [rowA.querySelector('svg.drawn'), gridA.querySelector('svg.drawn')];
+        expect(drawn[0]).not.toBeNull();
+        expect(drawn[1]).not.toBeNull();
+        expect(drawn[0]).not.toBe(drawn[1]);
+        expect(rowB.contains(kept.element)).toBe(false);
+        expect(gridB.contains(kept.element)).toBe(true);
+    });
+
     it('turns compact when it is narrow: a tab picker in place of the tabs, the simplified layout', async () => {
         const menu = await make({ items: tabs() });
         Object.defineProperty(menu.element, 'clientWidth', { configurable: true, get: () => 320 });
         menu.adaptive = false;
         await settle();
+        await whenMeasured(menu);
         expect(menu.isCompact).toBe(true);
         expect(menu.element.hasAttribute('data-compact')).toBe(true);
         expect(menu.element.getAttribute('data-layout')).toBe('simple');
@@ -445,6 +476,37 @@ describe('RibbonMenu', () => {
         expect(menu.findGroup('home/font')!.text).toBe('Font');
         expect(JSON.stringify(given)).toBe(snapshot);
         expect(told.length).toBe(7);
+    });
+
+    it('keeps its tabs, groups and commands when they change: a command changed by path is the same button', async () => {
+        const menu = await make({ items: tabs() });
+        const tabNodes = () => Array.from(menu.element.querySelectorAll<HTMLElement>('.mx-ribbon-menu__tab'));
+        const groupNodes = () => Array.from(shownPanel(menu)[0].querySelectorAll<HTMLElement>(':scope > .mx-ribbon-menu__group'));
+        const commandNodes = () => Array.from(shownPanel(menu)[0].querySelectorAll<HTMLElement>('.mx-ribbon-menu__commands > .mx-ribbon-menu__command'));
+        const allTabs = tabNodes();
+        const [home, insert] = allTabs;
+        const groups = groupNodes();
+        const commands = commandNodes();
+        const cut = commands[1];
+
+        menu.update('home/clipboard/cut', { text: 'Cut out' });
+        await settle();
+        expect(commandNodes()).toEqual(commands);
+        expect(cut.querySelector('.mx-button__text')?.textContent || cut.getAttribute('title')).toBe('Cut out');
+        menu.move('home/clipboard/cut', 0);
+        await settle();
+        expect(commandNodes()[0]).toBe(cut);
+        menu.update('home/clipboard', { text: 'Board' });
+        await settle();
+        expect(groupNodes()).toEqual(groups);
+        menu.addTab({ key: 'review', text: '&Review', groups: [] }, 0);
+        await settle();
+        expect(tabNodes()[1]).toBe(home);
+        expect(tabNodes()[2]).toBe(insert);
+        menu.remove('review');
+        await settle();
+        expect(tabNodes()).toEqual(allTabs);
+        expect(groupNodes()).toEqual(groups);
     });
 
     it('holds changes by path between beginUpdate and endUpdate, and applies them at once', async () => {

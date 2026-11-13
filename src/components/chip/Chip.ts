@@ -1,10 +1,11 @@
 import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { glyphPart, iconPart, mark, part, put, shown, text } from '../../core/draw-parts';
+import { glyphPart, iconPart, part } from '../../core/draw-parts';
 import type { IconSource } from '../../core/icon-source';
 import { LanguageLook } from '../../core/language-look';
 import { onLanguage } from '../../core/on-language';
+import { mark, put, shown, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Avatar } from '../avatar/Avatar';
 import type { AvatarProps } from '../avatar/avatar-props';
@@ -30,7 +31,7 @@ const STATE = ['selectable', 'selected', 'clickable', 'removable', 'tabStop'] as
  */
 export class Chip extends Control<HTMLSpanElement, ChipProps> {
   /** An appearance that is not set comes from the design language. */
-  private readonly look = new LanguageLook(this.element, { variant: '--_chip-variant', check: '--_chip-check' }, () => this.renderLook());
+  private readonly look = new LanguageLook(this, { variant: '--_chip-variant', check: '--_chip-check' }, () => this.renderLook());
   private readonly removed = new Emitter<ChipRemoveEventArgs>();
   private readonly selectedChanged = new Emitter<ChipSelectedChangedEventArgs>();
   private readonly checkPart: Component<HTMLSpanElement>;
@@ -40,22 +41,25 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
   private avatarPart: Avatar | null = null;
   /** The icon shown, a child of the icon part. */
   private iconShown: ComponentBase | null = null;
+  /** The group that took the chip over: it owns the Tab stop (arrow keys move between chips). */
+  private group: ComponentBase | null = null;
+  /** In a group that selects: the group owns the selection and the role. */
+  private asOption = false;
   private byUser = false;
   private ready = false;
 
   constructor(props?: IBaseProp<ChipProps>) {
     super(props);
     const own = (this.props ?? {}) as ChipProps;
-    const el = this.element;
-    el.classList.add('mx-chip');
+    this.class.add('mx-chip');
     this.checkPart = part(this, 'span', 'mx-chip__check');
     glyphPart(this.checkPart, 'check');
     this.iconPart = part(this, 'span', 'mx-chip__icon');
     this.textPart = part(this, 'span', 'mx-chip__text');
     this.removePart = part(this, 'span', 'mx-chip__remove');
     glyphPart(this.removePart, 'dismiss');
-    this.removePart.element.setAttribute('role', 'button');
-    this.removePart.element.tabIndex = -1;
+    this.removePart.attr.add({ role: 'button' });
+    put(this.removePart, 'tabindex', '-1');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onRemove) this.onRemove(own.onRemove);
     if (own.onSelectedChanged) this.onSelectedChanged(own.onSelectedChanged);
@@ -71,7 +75,8 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     // The remove button's name is a kit text.
     onLanguage(this, () => this.renderText());
     void this.motif.on('click', (_sender, e) => this.pressed(e));
-    void this.motif.on('keydown', (_sender, e) => this.keyDown(e));
+    // Keys pressed on the chip itself, not on its remove button.
+    void this.motif.on('keydown:self', (_sender, e) => this.keyDown(e));
     this.motif.setDisposable(this.look.watch());
     this.motif.setDisposable(() => {
       this.removed.dispose();
@@ -170,20 +175,38 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     this.renderState();
   }
 
-  /** @internal Draws again what a group took over or gave back (selection, role, Tab stop). */
-  drawState(): void {
-    this.renderState();
-    this.renderLook();
+  /**
+   * @internal Taken over by `group`: it owns the Tab stop, and when it selects (`option`) the selection and the role
+   * too, with `selected` as its choice.
+   */
+  joinGroup(group: ComponentBase, option: boolean, selected: boolean): void {
+    const was = this.asOption;
+    this.group = group;
+    this.asOption = option;
+    mark(this, 'data-in-group', true);
+    mark(this, 'data-option', option);
+    if (option) {
+      put(this, 'role', 'option');
+      put(this, 'aria-selected', String(selected));
+      put(this, 'aria-pressed', null);
+      if (!!this.peekProperty('selected') !== selected) this.selected = selected;
+    } else if (was) {
+      put(this, 'aria-selected', null);
+    }
+    // Taken over or given back: the role and the look are drawn again.
+    if (was !== option) this.drawState();
   }
 
-  /** In a group, the group owns the Tab stop (arrow keys move between chips). */
-  private get inGroup(): boolean {
-    return this.element.hasAttribute('data-in-group');
-  }
-
-  /** In a group that selects, the group owns the selection and the role. */
-  private get asOption(): boolean {
-    return this.element.hasAttribute('data-option');
+  /** @internal Given back by `group`, if that group holds it: its Tab stop, selection and role are its own again. */
+  leaveGroup(group: ComponentBase): void {
+    if (this.group !== group) return;
+    const was = this.asOption;
+    this.group = null;
+    this.asOption = false;
+    mark(this, 'data-in-group', false);
+    mark(this, 'data-option', false);
+    if (was) put(this, 'aria-selected', null);
+    this.drawState();
   }
 
   private get pressable(): boolean {
@@ -195,6 +218,17 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     return this.pressable || !!this.peekProperty('removable');
   }
 
+  /** The check mark shows before the text: selected, where the design language draws it there. */
+  private get checkShown(): boolean {
+    return !!this.peekProperty('selected') && this.look.get('check') === 'leading';
+  }
+
+  /** Draws again what a group took over or gave back (selection, role, Tab stop). */
+  private drawState(): void {
+    this.renderState();
+    this.renderLook();
+  }
+
   /** Turns it on or off as the user did. */
   private toggle(): void {
     this.byUser = true;
@@ -204,7 +238,7 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
 
   private pressed(e: MouseEvent): void {
     if (!this.isEnabled) return;
-    if (this.removePart.element.contains(e.target as Node)) {
+    if (this.removePart.motif.isEventFrom(e)) {
       e.stopPropagation();
       this.removed.fire({ byKeyboard: false, source: this });
       return;
@@ -213,10 +247,12 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
   }
 
   private keyDown(e: KeyboardEvent): void {
-    if (e.altKey || e.ctrlKey || e.metaKey || !this.isEnabled || e.target !== this.element) return;
+    if (e.altKey || e.ctrlKey || e.metaKey || !this.isEnabled) return;
     if ((e.key === 'Enter' || e.key === ' ') && this.pressable) {
       e.preventDefault();
-      this.element.click();
+      // A filter turns at once; a clickable chip or a group's option is clicked, for `onclick` and the group.
+      if (this.peekProperty('clickable') || this.asOption) this.attr.add({ click: true });
+      else this.toggle();
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && this.peekProperty('removable')) {
       e.preventDefault();
       this.removed.fire({ byKeyboard: true, source: this });
@@ -225,8 +261,8 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
 
   private renderText(): void {
     const value = this.peekProperty<string>('text') ?? '';
-    text(this.textPart.element, value);
-    put(this.removePart.element, 'aria-label', uiLocale.text('removeItem', { text: value }));
+    text(this.textPart, value);
+    put(this.removePart, 'aria-label', uiLocale.text('removeItem', { text: value }));
   }
 
   private renderIcon(icon: IconSource | null | undefined): void {
@@ -240,7 +276,7 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     this.avatarPart = null;
     if (avatar) {
       const control = new Avatar({ ...avatar, size: 'xs' });
-      control.element.classList.add('mx-chip__avatar');
+      control.class.add('mx-chip__avatar');
       this.controls.insert(this.controls.items.indexOf(this.textPart), control);
       this.avatarPart = control;
     }
@@ -249,41 +285,36 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
 
   /** What stands before the text: the check mark when it shows, else the icon or the avatar. */
   private renderLead(): void {
-    const el = this.element;
-    const check = el.hasAttribute('data-check');
+    const check = this.checkShown;
     const icon = !check && !!this.peekProperty('icon');
     const avatar = !check && !icon && !!this.avatarPart;
-    shown(this.iconPart.element, icon);
-    if (this.avatarPart) shown(this.avatarPart.element, avatar);
-    put(el, 'data-lead', check || icon ? 'icon' : avatar ? 'avatar' : null);
+    shown(this.iconPart, icon);
+    if (this.avatarPart) shown(this.avatarPart, avatar);
+    put(this, 'data-lead', check || icon ? 'icon' : avatar ? 'avatar' : null);
   }
 
   private renderState(): void {
-    const el = this.element;
     const removable = !!this.peekProperty('removable');
-    mark(el, 'data-removable', removable);
-    shown(this.removePart.element, removable);
-    mark(el, 'data-pressable', this.pressable);
+    mark(this, 'data-removable', removable);
+    shown(this.removePart, removable);
+    mark(this, 'data-pressable', this.pressable);
     if (!this.asOption) {
       const selectable = !!this.peekProperty('selectable');
-      put(el, 'role', selectable || this.peekProperty('clickable') ? 'button' : null);
-      put(el, 'aria-pressed', selectable ? String(!!this.peekProperty('selected')) : null);
+      put(this, 'role', selectable || this.peekProperty('clickable') ? 'button' : null);
+      put(this, 'aria-pressed', selectable ? String(!!this.peekProperty('selected')) : null);
     }
-    // While disabled, the Tab stop is the disabling's (it gives it back as it was).
-    if (!this.inGroup && !el.hasAttribute('data-disabled')) {
-      put(el, 'tabindex', this.focusable ? (this.peekProperty('tabStop') === false ? '-1' : '0') : null);
-    }
+    // While disabled, the disabled control holds the Tab stop out; this value comes back when it is enabled.
+    if (!this.group) put(this, 'tabindex', this.focusable ? (this.peekProperty('tabStop') === false ? '-1' : '0') : null);
   }
 
   private renderLook(): void {
-    const el = this.element;
-    put(el, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
-    put(el, 'data-variant', this.peekProperty<ChipVariant>('variant') ?? (this.look.get('variant') as ChipVariant | null) ?? 'filled');
-    put(el, 'data-tone', this.peekProperty<ChipTone>('tone') ?? 'standard');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
+    put(this, 'data-variant', this.peekProperty<ChipVariant>('variant') ?? (this.look.get('variant') as ChipVariant | null) ?? 'filled');
+    put(this, 'data-tone', this.peekProperty<ChipTone>('tone') ?? 'standard');
     const selected = !!this.peekProperty('selected');
-    mark(el, 'data-selected', selected);
-    mark(el, 'data-check', selected && this.look.get('check') === 'leading');
-    if (!this.asOption) put(el, 'aria-pressed', this.peekProperty('selectable') ? String(selected) : null);
+    mark(this, 'data-selected', selected);
+    mark(this, 'data-check', this.checkShown);
+    if (!this.asOption) put(this, 'aria-pressed', this.peekProperty('selectable') ? String(selected) : null);
     this.renderLead();
   }
 }

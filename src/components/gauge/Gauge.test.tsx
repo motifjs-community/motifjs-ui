@@ -1,6 +1,7 @@
 import { reactive, type ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { Gauge } from './Gauge';
 import type { GaugeProps } from './gauge-props';
 
@@ -9,6 +10,7 @@ function make(props: GaugeProps): Gauge {
     const gauge = new Gauge(props);
     hosts.push(mountHost(gauge));
     gauge.onMounted();
+    measureNow(gauge);
     return gauge;
 }
 const settle = () => Promise.resolve().then(() => Promise.resolve());

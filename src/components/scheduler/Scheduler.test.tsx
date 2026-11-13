@@ -1,6 +1,6 @@
 import { errorHandler, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../../../tests/helpers';
 import { Scheduler } from './Scheduler';
 
@@ -271,5 +271,23 @@ describe('Scheduler', () => {
     stop();
     expect(errors).toEqual([]);
     expect(cells()).toBe((before / 20) * 8);
+  });
+
+  it("print() marks the app's root in its window while the window prints, and takes the mark away after", async () => {
+    const s = make();
+    await tick();
+    const seen: boolean[] = [];
+    // With no app running, the app's root in the page is the body's component.
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {
+      seen.push(document.body.hasAttribute('data-mx-print-one'), s.element.hasAttribute('data-print-one'));
+    });
+    try {
+      expect(await s.print()).toBe(true);
+      expect(print).toHaveBeenCalledTimes(1);
+      expect(seen).toEqual([true, true]);
+      expect([document.body.hasAttribute('data-mx-print-one'), s.element.hasAttribute('data-print-one'), document.documentElement.hasAttribute('data-mx-print-one')]).toEqual([false, false, false]);
+    } finally {
+      print.mockRestore();
+    }
   });
 });

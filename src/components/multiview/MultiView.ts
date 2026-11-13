@@ -1,7 +1,8 @@
 import { Emitter, type Bind, type Component, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { mark, part, put } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
 import { onLanguage } from "../../core/on-language";
+import { mark, put } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { SlideTrack } from "../../parts/slide/slide-track";
 import type { MultiViewProps } from "./multi-view-props";
@@ -37,19 +38,19 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
     constructor(props?: IBaseProp<MultiViewProps>) {
         super('div', props);
         const own = (this.props ?? {}) as MultiViewProps;
-        this.element.classList.add('mx-multi-view');
-        this.element.setAttribute('role', 'group');
+        this.class.add('mx-multi-view');
+        this.attr.add({ role: 'group' });
         this.viewport = part(this, 'div', 'mx-multi-view__viewport');
         this.track = part(this.viewport, 'div', 'mx-multi-view__track');
-        this.slide = new SlideTrack(this.viewport.element, this.track.element, {
+        this.slide = new SlideTrack(this.viewport, this.track, {
             count: () => this.lane().length,
             index: () => this.laneIndex(this.selectedIndex),
             perView: () => 1,
             loop: () => this.loop,
-            pane: i => this.lane()[i]?.element ?? null,
+            panePart: i => this.lane()[i] ?? null,
             canDrag: () => this.swipeEnabled && this.isEnabled && this.lane().length > 1,
             swipeTo: to => void this.go(this.views.indexOf(this.lane()[to]), true),
-            dragged: on => mark(this.element, 'data-dragging', on)
+            dragged: on => mark(this, 'data-dragging', on)
         });
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onSelecting) this.onSelecting(own.onSelecting);
@@ -64,7 +65,7 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
             this.previousIndex = index;
         });
         for (const name of ['loop', 'swipeEnabled', 'lazy', 'keepAlive'] as const) this.observeProperty(name, () => this.drawStates());
-        this.observeProperty<boolean>('animated', on => mark(this.element, 'data-still', on === false));
+        this.observeProperty<boolean>('animated', on => mark(this, 'data-still', on === false));
         this.observeProperty<string>('label', () => this.renderName());
         onLanguage(this, () => {
             this.renderName();
@@ -260,7 +261,7 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
     }
 
     renderName(): void {
-        put(this.element, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.multiView);
+        put(this, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.multiView);
     }
 
     drawStates(): void {
@@ -268,10 +269,10 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         const lane = this.lane();
         this.views.forEach((view, i) => {
             view.reveal(i === index, this.keepAliveOf(view));
-            put(view.element, 'aria-label', view.title || uiLocale.text('multiViewPageOf', { index: lane.indexOf(view) + 1, count: lane.length }));
+            put(view, 'aria-label', view.title || uiLocale.text('multiViewPageOf', { index: lane.indexOf(view) + 1, count: lane.length }));
             if (!this.lazyOf(view)) view.buildContent();
         });
-        mark(this.element, 'data-swipe', this.swipeEnabled && lane.length > 1);
+        mark(this, 'data-swipe', this.swipeEnabled && lane.length > 1);
     }
 
     lazyOf(view: View): boolean {

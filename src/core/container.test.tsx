@@ -4,6 +4,7 @@ import { mountHost, tick } from '../../tests/helpers';
 import { TestButton } from '../../tests/controls';
 import { FocusContainer, tabOrder } from './container';
 import { Control } from './control';
+import { controlsWithTabIndex } from './live-controls';
 
 let hosts: Component[] = [];
 
@@ -54,9 +55,9 @@ describe('Control: disabled alias and tabIndex', () => {
 
   it('writes a non-default tabIndex where containers look for it', () => {
     const b = new TestButton({ text: 'B', tabIndex: 3 });
-    expect(b.element.getAttribute('data-mx-tabindex')).toBe('3');
+    expect(controlsWithTabIndex().has(b)).toBe(true);
     b.tabIndex = 0;
-    expect(b.element.hasAttribute('data-mx-tabindex')).toBe(false);
+    expect(controlsWithTabIndex().has(b)).toBe(false);
   });
 });
 
@@ -109,7 +110,7 @@ describe('FocusContainer', () => {
     });
     page(box);
     await settle();
-    const names = tabOrder(box.element).map((el) => el.textContent || el.getAttribute('name'));
+    const names = tabOrder(box).map((el) => el.textContent || el.getAttribute('name'));
     expect(names).toEqual(['plain', 'zero', 'g-a', 'g-b', 'last']);
   });
 
@@ -151,6 +152,6 @@ describe('FocusContainer', () => {
     });
     page(box);
     await settle();
-    expect(tabOrder(box.element).map((el) => (el as HTMLInputElement).value)).toEqual(['m', 'red']);
+    expect(tabOrder(box).map((el) => (el as HTMLInputElement).value)).toEqual(['m', 'red']);
   });
 });

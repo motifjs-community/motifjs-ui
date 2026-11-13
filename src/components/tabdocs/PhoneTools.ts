@@ -1,94 +1,114 @@
-import { untracked } from '@motifx/core';
-import { iconNode } from '../../core/icon-node';
-import { isElement } from '../../core/node-kind';
+import { untracked, type Component } from '@motifx/core';
+import { loose, part, removePart } from '../../core/draw-parts';
+import { focusOn } from '../../core/focus';
+import { isRtl } from '../../core/measure';
+import { orderControls } from '../../core/order-controls';
+import { mark as markPart, put, text as writeText } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabPresenter } from './TabPresenter';
 import { uiLocale } from '../../core/ui-locale';
+
+interface Entry {
+  button: Component<HTMLButtonElement>;
+  /** The icon, or the title's first letter without one. */
+  mark: Component<HTMLSpanElement>;
+  label: Component<HTMLSpanElement>;
+  release: () => void;
+  icon: unknown;
+  title: string;
+}
 
 /**
  * The bar at the bottom of a phone: a button for each tool of the dock areas, which opens its area in
  * a bottom sheet (or a drawer) with that tool, and closes it again. The arrow keys go along it.
  */
 export class PhoneTools {
-  readonly element: HTMLDivElement;
-  private readonly buttons = new Map<TabDocument, { button: HTMLButtonElement; release: () => void; icon: unknown; title: string }>();
+  /** The bar as a component of the manager: its buttons are its children. */
+  readonly part: Component<HTMLDivElement>;
+  private readonly buttons = new Map<TabDocument, Entry>();
+  private hasTools = false;
 
   constructor(
     private readonly manager: TabDocumentManager,
     private readonly presenter: TabPresenter,
   ) {
-    const el = (this.element = manager.element.ownerDocument.createElement('div'));
-    el.className = 'mx-tabdocs__phone-tools';
-    el.setAttribute('role', 'toolbar');
-    el.addEventListener('click', (e) => untracked(() => this.toggle(this.documentAt(e.target))));
-    el.addEventListener('keydown', (e) => this.key(e));
-    manager.element.append(el);
+    this.part = loose<HTMLDivElement>('div', 'mx-tabdocs__phone-tools');
+    this.part.attr.add({ role: 'toolbar' });
+    this.part.motif.on('click', (_, e) => untracked(() => this.toggle(this.documentAt(e))));
+    this.part.motif.on('keydown', (_, e) => this.key(e));
+    manager.controls.add(this.part);
+  }
+
+  /** Whether the bar shows: it hides itself when no dock area has a tool to give. */
+  get isShown(): boolean {
+    return this.hasTools;
   }
 
   render(): void {
     const m = this.manager;
     const tools = m.dockAreas.filter((a) => this.presenter.dockMode(a) !== 'hidden').flatMap((a) => a.documents);
-    this.element.hidden = !tools.length;
-    this.element.setAttribute('aria-label', m.textOf('tabDocsPhoneTools'));
+    this.hasTools = tools.length > 0;
+    markPart(this.part, 'hidden', !this.hasTools);
+    put(this.part, 'aria-label', m.textOf('tabDocsPhoneTools'));
     for (const [doc, entry] of this.buttons) {
       if (tools.includes(doc)) continue;
       entry.release();
-      entry.button.remove();
+      removePart(entry.button);
       this.buttons.delete(doc);
     }
-    let stop: HTMLButtonElement | null = null;
-    tools.forEach((doc, i) => {
+    let stop: Component<HTMLButtonElement> | null = null;
+    const wanted = tools.map((doc, i) => {
       const entry = this.entryOf(doc);
       const area = doc.group?.dockArea;
       const open = !!area && this.presenter.isToolOpen(area) && doc.group?.activeDocument === doc;
-      entry.button.setAttribute('aria-pressed', String(open));
-      entry.button.toggleAttribute('data-open', open);
+      put(entry.button, 'aria-pressed', String(open));
+      markPart(entry.button, 'data-open', open);
       if (open || (!stop && i === 0)) stop = entry.button;
-      if (this.element.children[i] !== entry.button) this.element.insertBefore(entry.button, this.element.children[i] ?? null);
+      return entry.button;
     });
-    for (const { button } of this.buttons.values()) button.tabIndex = button === stop ? 0 : -1;
+    orderControls(this.part, wanted);
+    for (const { button } of this.buttons.values()) put(button, 'tabindex', button === stop ? '0' : '-1');
   }
 
   dispose(): void {
     for (const entry of this.buttons.values()) entry.release();
     this.buttons.clear();
-    this.element.remove();
+    removePart(this.part);
   }
 
-  private entryOf(doc: TabDocument): { button: HTMLButtonElement; release: () => void; icon: unknown; title: string } {
-    let entry = this.buttons.get(doc);
+  /** A tool's button, made the first time (and placed by `render`); its mark and label written in place when they change. */
+  private entryOf(doc: TabDocument): Entry {
     const icon = doc.icon;
     const title = doc.title;
-    if (entry && entry.icon === icon && entry.title === title) return entry;
-    const owner = this.element.ownerDocument;
-    const button = entry?.button ?? owner.createElement('button');
-    entry?.release();
-    button.type = 'button';
-    button.className = 'mx-tabdocs__phone-tool';
-    const mark = owner.createElement('span');
-    mark.className = 'mx-tabdocs__phone-tool-icon';
-    mark.setAttribute('aria-hidden', 'true');
-    let release = () => {};
-    if (icon) {
-      const shown = iconNode(icon, owner);
-      mark.append(shown.node);
-      release = shown.release;
-    } else {
-      mark.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase(uiLocale.locale) ?? '';
+    let entry = this.buttons.get(doc);
+    if (!entry) {
+      const button = loose<HTMLButtonElement>('button', 'mx-tabdocs__phone-tool');
+      put(button, 'type', 'button');
+      const mark = part<HTMLSpanElement>(button, 'span', 'mx-tabdocs__phone-tool-icon');
+      mark.attr.add({ 'aria-hidden': 'true' });
+      const label = part<HTMLSpanElement>(button, 'span', 'mx-tabdocs__phone-tool-label');
+      entry = { button, mark, label, release: () => {}, icon: undefined, title: '' };
+      this.buttons.set(doc, entry);
+    } else if (entry.icon === icon && entry.title === title) return entry;
+    // The icon is shown again only when it is another one; without one, the mark is the title's first letter.
+    if (entry.icon !== icon) {
+      entry.release();
+      entry.release = () => {};
+      entry.mark.setText('');
+      if (icon) entry.release = showIcon(icon, entry.mark);
     }
-    const label = owner.createElement('span');
-    label.className = 'mx-tabdocs__phone-tool-label';
-    label.textContent = title;
-    button.replaceChildren(mark, label);
-    entry = { button, release, icon, title };
-    this.buttons.set(doc, entry);
+    if (!icon && (entry.icon !== icon || entry.title !== title)) entry.mark.setText(Array.from(title.trim())[0]?.toLocaleUpperCase(uiLocale.locale) ?? '');
+    writeText(entry.label, title);
+    entry.icon = icon;
+    entry.title = title;
     return entry;
   }
 
-  private documentAt(target: EventTarget | null): TabDocument | null {
-    const button = isElement(target) ? target.closest('.mx-tabdocs__phone-tool') : null;
-    for (const [doc, entry] of this.buttons) if (entry.button === button) return doc;
+  /** The tool whose button an event started on, `null` when none. */
+  private documentAt(e: Event): TabDocument | null {
+    for (const [doc, entry] of this.buttons) if (entry.button.motif.isEventFrom(e)) return doc;
     return null;
   }
 
@@ -102,18 +122,18 @@ export class PhoneTools {
   }
 
   private key(e: KeyboardEvent): void {
-    const buttons = [...this.element.querySelectorAll<HTMLButtonElement>('.mx-tabdocs__phone-tool')];
-    const at = buttons.indexOf(e.target as HTMLButtonElement);
+    // The buttons in their order on the bar.
+    const buttons = this.part.controls.items;
+    const at = buttons.findIndex((button) => button.motif.isEventFrom(e));
     if (at < 0 || e.ctrlKey || e.altKey || e.metaKey) return;
-    const rtl = this.element.ownerDocument.defaultView?.getComputedStyle(this.element).direction === 'rtl';
+    const rtl = isRtl(this.part);
     let next = -1;
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') next = (at + ((e.key === 'ArrowRight') !== rtl ? 1 : -1) + buttons.length) % buttons.length;
     else if (e.key === 'Home') next = 0;
     else if (e.key === 'End') next = buttons.length - 1;
     if (next < 0) return;
     e.preventDefault();
-    for (const button of buttons) button.tabIndex = -1;
-    buttons[next].tabIndex = 0;
-    buttons[next].focus();
+    for (const button of buttons) put(button, 'tabindex', button === buttons[next] ? '0' : '-1');
+    focusOn(buttons[next]);
   }
 }

@@ -74,6 +74,28 @@ describe('ColorPicker', () => {
     key(alpha, 'Home');
     expect(picker.value).toBe('#e0313100');
   });
+
+  it('writes a new palette into the swatches it has', async () => {
+    const picker = new ColorPicker({ palette: ['#2b8a3e', '#e03131'], value: '#1971c2' });
+    page(picker);
+    await settle();
+    const before = Array.from(picker.element.querySelectorAll<HTMLButtonElement>('.mx-color-picker__swatch'));
+    picker.palette = ['#1971c2', '#f08c00', '#000000'];
+    await settle();
+    const now = Array.from(picker.element.querySelectorAll<HTMLButtonElement>('.mx-color-picker__swatch'));
+    expect(now.slice(0, 2)).toEqual(before);
+    expect(now[0]).toBe(before[0]);
+    expect(now.map((s) => s.dataset.color)).toEqual(['#1971c2', '#f08c00', '#000000']);
+    expect(now.map((s) => s.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+    now[1].click();
+    expect(picker.value).toBe('#f08c00');
+    picker.palette = ['#e03131'];
+    await settle();
+    expect(picker.element.querySelectorAll('.mx-color-picker__swatch')).toHaveLength(1);
+    expect(picker.element.querySelector('.mx-color-picker__swatch')).toBe(before[0]);
+    before[0].click();
+    expect(picker.value).toBe('#e03131');
+  });
 });
 
 describe('ColorBox', () => {
@@ -82,12 +104,12 @@ describe('ColorBox', () => {
     page(box);
     await settle();
     expect(box.value).toBe('#3b5bdb');
-    expect(box.inputElement.value).toBe('#3b5bdb');
-    box.inputElement.value = 'f80';
-    box.inputElement.dispatchEvent(new Event('change'));
+    expect(box.inputPart.element.value).toBe('#3b5bdb');
+    box.inputPart.element.value = 'f80';
+    box.inputPart.element.dispatchEvent(new Event('change'));
     expect(box.value).toBe('#ff8800');
-    box.inputElement.value = 'not a colour';
-    box.inputElement.dispatchEvent(new Event('change'));
+    box.inputPart.element.value = 'not a colour';
+    box.inputPart.element.dispatchEvent(new Event('change'));
     expect(box.value).toBe('#ff8800');
     expect(await box.validate()).toBe(false);
     expect(box.open()).toBe(true);

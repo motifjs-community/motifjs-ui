@@ -1,4 +1,7 @@
-import { watchDocument } from '../../../core/document-watch';
+import type { Component, ComponentBase } from '@motifx/core';
+import { part, removePart } from '../../../core/draw-parts';
+import { onLayout } from '../../../core/measure';
+import { text } from '../../../core/part-writes';
 import type { ColumnModel } from '../model/ColumnModel';
 import type { StickyOffset } from '../model/sticky-offset';
 
@@ -17,7 +20,7 @@ export class ColumnStyles<T> {
   private written: string | null = null;
   private sheet: CSSStyleSheet | null = null;
   private root: Document | ShadowRoot | null = null;
-  private styleEl: HTMLStyleElement | null = null;
+  private style: Component<HTMLStyleElement> | null = null;
   private stopWatch: (() => void) | null = null;
 
   constructor(
@@ -64,7 +67,9 @@ export class ColumnStyles<T> {
     this.apply();
   }
 
-  attach(host: HTMLElement) {
+  attach(owner: ComponentBase) {
+    // Page-level stylesheet: allowed exception (owner's decision) to reading the element, its root and its window here.
+    const host = owner.element as HTMLElement;
     const root = host.getRootNode() as Document | ShadowRoot;
     // A sheet is adopted only by documents of the window that made it.
     const Sheet = host.ownerDocument.defaultView?.CSSStyleSheet;
@@ -78,16 +83,15 @@ export class ColumnStyles<T> {
         this.sheet = null;
       }
     }
-    if (!this.sheet) {
-      this.styleEl = host.ownerDocument.createElement('style');
-      host.appendChild(this.styleEl);
-    }
+    if (!this.sheet) this.style = part<HTMLStyleElement>(owner, 'style', '');
     this.apply();
     // The grid moved into a window the app opened, or back: the sheet goes along.
     this.stopWatch?.();
-    this.stopWatch = watchDocument(host, () => {
+    const doc = host.ownerDocument;
+    this.stopWatch = onLayout(owner, 'look', () => {
+      if (host.ownerDocument === doc) return;
       this.drop();
-      this.attach(host);
+      this.attach(owner);
     });
   }
 
@@ -100,16 +104,16 @@ export class ColumnStyles<T> {
   private drop() {
     this.written = null;
     if (this.sheet && this.root) this.root.adoptedStyleSheets = this.root.adoptedStyleSheets.filter((s) => s !== this.sheet);
-    this.styleEl?.remove();
+    removePart(this.style);
     this.sheet = null;
     this.root = null;
-    this.styleEl = null;
+    this.style = null;
   }
 
   private apply() {
-    if (this.css === this.written || (!this.sheet && !this.styleEl)) return;
+    if (this.css === this.written || (!this.sheet && !this.style)) return;
     this.written = this.css;
     if (this.sheet) this.sheet.replaceSync(this.css);
-    else if (this.styleEl) this.styleEl.textContent = this.css;
+    else if (this.style) text(this.style, this.css);
   }
 }

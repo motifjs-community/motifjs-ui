@@ -1,8 +1,10 @@
-import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, ComponentBase, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, mark, part, put, shown, text } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
+import { boxOf, isRtl, measure, onLayout, scrollBy as scrollBoxBy, scrollIntoView as scrollPartIntoView, scrollTo as scrollBoxTo, type Box } from "../../core/measure";
+import { onWindow } from "../../core/window-events";
 import { onLanguage } from "../../core/on-language";
-import { ResizeWatch } from "../../core/resize-watch";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Spinner } from "../progress/Spinner";
 import type { PullDownEventArgs } from "./pull-down-event-args";
@@ -18,9 +20,14 @@ interface Pull {
     pointerId: number;
     startY: number;
     distance: number;
+    /** The pull panel's height, read when the pull starts. */
+    height: number;
     // The finger went down first: the pull is taken, not the page.
     taken: boolean;
 }
+
+/** Where a pull stands: pulled, far enough to let go, or refreshing. */
+type PullState = 'pull' | 'release' | 'refreshing';
 
 /**
  * Content that scrolls in its own box, with scrollbars shown as set by `showScrollbar`, a pull from the top that
@@ -41,11 +48,12 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     bottomSpinner: Spinner;
     bottomText: Component<HTMLSpanElement>;
     pull: Pull | null = null;
+    /** Where the pull stands now, `null` while there is none. */
+    pullState: PullState | null = null;
     refreshing = false;
     loading = false;
     ended = false;
     scrollTimer: ReturnType<typeof setTimeout> | null = null;
-    sizes: ResizeWatch;
     refreshCount = 0;
     pulled = new Emitter<PullDownEventArgs>();
     reached = new Emitter<ReachBottomEventArgs>();
@@ -55,37 +63,36 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     constructor(props?: IBaseProp<ScrollViewProps>) {
         super('div', props);
         const own = (this.props ?? {}) as ScrollViewProps;
-        const el = this.element;
-        el.classList.add('mx-scroll-view');
-        el.tabIndex = 0;
+        this.class.add('mx-scroll-view');
+        put(this, 'tabindex', '0');
         this.content = part<HTMLDivElement>(this, 'div', 'mx-scroll-view__content');
         this.pullPanel = part<HTMLDivElement>(this.content, 'div', 'mx-scroll-view__pull');
-        this.pullPanel.element.setAttribute('aria-live', 'polite');
+        this.pullPanel.attr.add({ 'aria-live': 'polite' });
         this.pullSpinner = new Spinner({ size: 'sm' });
-        this.pullSpinner.element.classList.add('mx-scroll-view__pull-spinner');
-        this.pullSpinner.element.setAttribute('aria-hidden', 'true');
+        this.pullSpinner.class.add('mx-scroll-view__pull-spinner');
+        this.pullSpinner.attr.add({ 'aria-hidden': 'true' });
         this.pullPanel.controls.add(this.pullSpinner);
         this.pullText = part<HTMLSpanElement>(this.pullPanel, 'span', 'mx-scroll-view__pull-text');
         if (this.childs?.length) this.content.controls.add(...this.childs);
         this.bottomPanel = part<HTMLDivElement>(this.content, 'div', 'mx-scroll-view__bottom');
-        this.bottomPanel.element.setAttribute('aria-live', 'polite');
+        this.bottomPanel.attr.add({ 'aria-live': 'polite' });
         this.bottomSpinner = new Spinner({ size: 'sm' });
-        this.bottomSpinner.element.classList.add('mx-scroll-view__bottom-spinner');
-        this.bottomSpinner.element.setAttribute('aria-hidden', 'true');
+        this.bottomSpinner.class.add('mx-scroll-view__bottom-spinner');
+        this.bottomSpinner.attr.add({ 'aria-hidden': 'true' });
         this.bottomPanel.controls.add(this.bottomSpinner);
         this.bottomText = part<HTMLSpanElement>(this.bottomPanel, 'span', 'mx-scroll-view__bottom-text');
-        shown(this.bottomPanel.element, false);
+        shown(this.bottomPanel, false);
 
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onPullDown) this.pulled.event(own.onPullDown);
         if (own.onReachBottom) this.reached.event(own.onReachBottom);
         if (own.onScrolled) this.scrolled.event(own.onScrolled);
 
-        this.observeProperty<ScrollViewDirection>('direction', d => put(el, 'data-direction', d ?? 'vertical'));
-        this.observeProperty<ScrollViewBars>('showScrollbar', bars => put(el, 'data-bars', bars ?? 'onScroll'));
+        this.observeProperty<ScrollViewDirection>('direction', d => put(this, 'data-direction', d ?? 'vertical'));
+        this.observeProperty<ScrollViewBars>('showScrollbar', bars => put(this, 'data-bars', bars ?? 'onScroll'));
         this.observeProperty<boolean>('pullToRefresh', on => {
-            mark(el, 'data-pull', !!on);
-            shown(this.pullPanel.element, !!on);
+            mark(this, 'data-pull', !!on);
+            shown(this.pullPanel, !!on);
             if (!on) this.release();
         });
         this.observeProperty<boolean>('loadOnReachBottom', on => {
@@ -93,18 +100,16 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
             if (on) this.check();
         });
         for (const name of ['pullDownText', 'releaseText', 'refreshingText', 'reachBottomText'] as const) this.observeProperty(name, () => this.drawTexts());
-        this.observeProperty<string>('label', label => put(el, 'aria-label', label || null));
+        this.observeProperty<string>('label', label => put(this, 'aria-label', label || null));
         onLanguage(this, () => this.drawTexts());
 
-        el.addEventListener('scroll', () => this.handleScroll(), { passive: true });
-        el.addEventListener('pointerdown', e => this.pointerDown(e));
+        this.motif.on('scroll:passive', () => this.handleScroll());
+        this.motif.on('pointerdown', (_, e) => this.pointerDown(e));
         // The browser decides at the first touch whether the page scrolls: a listener there, before the finger moves.
-        el.addEventListener('touchmove', e => this.touchMove(e), { passive: false });
+        this.motif.on('touchmove', (_, e: TouchEvent | undefined) => e && this.touchMove(e));
         // Content that grows or shrinks ends nearer or farther: looked at again.
-        this.sizes = new ResizeWatch(() => this.check());
-        this.sizes.observe(this.content.element);
+        onLayout(this.content, 'size', () => this.check());
         this.motif.setDisposable(() => {
-            this.sizes.disconnect();
             for (const stop of this.stops.splice(0)) stop();
             if (this.scrollTimer) clearTimeout(this.scrollTimer);
             this.pulled.dispose();
@@ -189,10 +194,11 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
 
     /** The current scroll position. */
     get scrollTop(): number {
-        return this.element.scrollTop;
+        return boxOf(this).scrollTop;
     }
     get scrollLeft(): number {
-        return this.element.scrollLeft;
+        const box = boxOf(this);
+        return box.rtl ? -box.scrollStart : box.scrollStart;
     }
     /** Indicates that a refresh (a pull) is in progress. */
     get isRefreshing(): boolean {
@@ -205,29 +211,38 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
 
     /** Scrolls to a position: `{ top, left }`, or a top position. */
     scrollTo(where: number | { top?: number; left?: number }, smooth = false): void {
-        const options: ScrollToOptions = typeof where === 'number' ? { top: where } : { top: where.top, left: where.left };
-        options.behavior = smooth ? 'smooth' : 'auto';
-        this.element.scrollTo(options);
+        const place = typeof where === 'number' ? { top: where } : { top: where.top, start: this.startOf(where.left) };
+        scrollBoxTo(this, place, smooth ? 'smooth' : 'auto');
     }
 
     scrollBy(by: { top?: number; left?: number }, smooth = false): void {
-        this.element.scrollBy({ top: by.top ?? 0, left: by.left ?? 0, behavior: smooth ? 'smooth' : 'auto' });
+        scrollBoxBy(this, { top: by.top, start: this.startOf(by.left) }, smooth ? 'smooth' : 'auto');
     }
 
-    /** Scrolls an element of the content into view. */
-    scrollToElement(target: Element | { element: Element }, smooth = false): void {
-        const el = 'element' in target ? target.element : target;
-        el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+    /** Scrolls a part of the content into view. */
+    scrollToElement(target: ComponentBase, smooth = false): void {
+        scrollPartIntoView(target, { motion: smooth ? 'smooth' : 'auto' });
+    }
+
+    /** A left position as the page counts it (below zero right to left) as a distance from the inline start. */
+    startOf(left: number | undefined): number | undefined {
+        return left === undefined || !isRtl(this) ? left : -left;
     }
 
     /** Starts a refresh as a pull would: the panel appears and `onPullDown` is raised. */
     refresh(): void {
-        if (this.refreshing || !this.peekProperty('pullToRefresh')) {
-            return;
-        }
+        if (this.canRefresh()) this.startRefresh(this.pullHeight());
+    }
+
+    canRefresh(): boolean {
+        return !this.refreshing && !!this.peekProperty('pullToRefresh');
+    }
+
+    /** Opens the panel `height` pixels tall and raises `onPullDown`. */
+    startRefresh(height: number): void {
         this.refreshing = true;
-        put(this.element, 'data-pull-state', 'refreshing');
-        css(this.content.element, 'translate', `0 ${this.pullHeight()}px`);
+        this.setPullState('refreshing');
+        css(this.content, 'translate', `0 ${height}px`);
         this.drawTexts();
         const count = ++this.refreshCount;
         const args: PullDownEventArgs = { release: () => this.release(), source: this };
@@ -243,23 +258,36 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     release(): void {
         this.refreshing = false;
         this.pull = null;
-        put(this.element, 'data-pull-state', null);
-        css(this.content.element, 'translate', '');
+        this.setPullState(null);
+        css(this.content, 'translate', '');
         this.drawTexts();
     }
 
     /** Requests more data now, as reaching the end would. */
     loadMore(): boolean {
-        if (this.loading || this.ended || !this.peekProperty('loadOnReachBottom')) {
+        if (!this.canLoad()) {
             return false;
         }
-        const el = this.element;
-        // At the very end the panel would open below the view: the view stays at the end, so it shows.
-        const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight <= 1;
+        this.startLoad(this.roomBelow(boxOf(this)) <= 1);
+        return true;
+    }
+
+    canLoad(): boolean {
+        return !this.loading && !this.ended && !!this.peekProperty('loadOnReachBottom');
+    }
+
+    /** How much of the content is still below the view. */
+    roomBelow(box: Box): number {
+        return box.scrollHeight - box.scrollTop - box.clientHeight;
+    }
+
+    /** Shows the panel at the end and raises `onReachBottom`; `atEnd` when the view stood at the very end. */
+    startLoad(atEnd: boolean): void {
         this.loading = true;
-        mark(el, 'data-loading', true);
-        shown(this.bottomPanel.element, true);
-        if (atEnd) el.scrollTop = el.scrollHeight;
+        mark(this, 'data-loading', true);
+        shown(this.bottomPanel, true);
+        // At the very end the panel would open below the view: the view stays at the end, so it shows.
+        if (atEnd) measure(this, this.readHeight, this.scrollToEnd);
         let open = true;
         // Released once: a promise set beside a `release(true)` must not open the view again.
         const release = (done = false) => {
@@ -267,14 +295,19 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
             open = false;
             this.loading = false;
             this.ended = done;
-            mark(this.element, 'data-loading', false);
-            shown(this.bottomPanel.element, false);
+            mark(this, 'data-loading', false);
+            shown(this.bottomPanel, false);
         };
         const args: ReachBottomEventArgs = { release, source: this };
         this.reached.fire(args);
         if (args.promise) void args.promise.then(() => release(), () => release());
-        return true;
     }
+
+    readonly readHeight = (): number => boxOf(this).scrollHeight;
+
+    readonly scrollToEnd = (height: number): void => {
+        scrollBoxTo(this, { top: height });
+    };
 
     /** Checks the position again after the content changes, and requests more data near the end. */
     update(): void {
@@ -283,59 +316,61 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     }
 
     pullHeight(): number {
-        return this.pullPanel.element.offsetHeight || 48;
+        return boxOf(this.pullPanel).offsetHeight || 48;
+    }
+
+    /** Keeps where the pull stands and writes it on the root for the styles. */
+    setPullState(state: PullState | null): void {
+        this.pullState = state;
+        put(this, 'data-pull-state', state);
     }
 
     drawTexts(): void {
         const strings = uiLocale.strings;
-        const state = this.element.getAttribute('data-pull-state');
+        const state = this.pullState;
         const pullText = state === 'refreshing' ? this.peekProperty<string>('refreshingText') || strings.scrollRefreshing : state === 'release' ? this.peekProperty<string>('releaseText') || strings.scrollRelease : this.peekProperty<string>('pullDownText') || strings.scrollPullDown;
-        text(this.pullText.element, pullText);
-        shown(this.pullSpinner.element, state === 'refreshing');
-        text(this.bottomText.element, this.peekProperty<string>('reachBottomText') || strings.loading);
+        text(this.pullText, pullText);
+        shown(this.pullSpinner, state === 'refreshing');
+        text(this.bottomText, this.peekProperty<string>('reachBottomText') || strings.loading);
     }
 
     handleScroll(): void {
-        const el = this.element;
-        mark(el, 'data-scrolling', true);
+        const box = boxOf(this);
+        mark(this, 'data-scrolling', true);
         if (this.scrollTimer) clearTimeout(this.scrollTimer);
-        this.scrollTimer = setTimeout(() => mark(el, 'data-scrolling', false), 800);
-        this.scrolled.fire({ top: el.scrollTop, left: el.scrollLeft, source: this });
-        this.check();
+        this.scrollTimer = setTimeout(() => mark(this, 'data-scrolling', false), 800);
+        this.scrolled.fire({ top: box.scrollTop, left: box.rtl ? -box.scrollStart : box.scrollStart, source: this });
+        this.checkRoom(box);
     }
 
-    override onMounted(): void {
-        this.check();
-    }
-
+    /** Looks at the position with the next frame, and requests more data near the end. */
     check(): void {
-        const el = this.element;
+        if (this.canLoad()) measure(this, this.readBox, this.checkRoom);
+    }
+
+    readonly readBox = (): Box => boxOf(this);
+
+    readonly checkRoom = (box: Box): void => {
         // Not laid out yet (or hidden): nothing is near anything.
-        if (!this.peekProperty('loadOnReachBottom') || this.loading || this.ended || el.clientHeight === 0) {
+        if (!this.canLoad() || box.clientHeight === 0) {
             return;
         }
         const offset = this.peekProperty<number | undefined>('reachBottomOffset') ?? 100;
-        if (el.scrollHeight - el.scrollTop - el.clientHeight <= offset) this.loadMore();
-    }
+        const below = this.roomBelow(box);
+        if (below <= offset) this.startLoad(below <= 1);
+    };
 
     // A pull starts at the top, with any pointer; it is taken only once the finger goes down.
     pointerDown(e: PointerEvent): void {
-        if (e.button !== 0 || this.pull || this.refreshing || !this.peekProperty('pullToRefresh') || this.element.scrollTop > 0) {
+        if (e.button !== 0 || this.pull || this.refreshing || !this.peekProperty('pullToRefresh') || boxOf(this).scrollTop > 0) {
             return;
         }
-        const pull: Pull = { pointerId: e.pointerId, startY: e.clientY, distance: 0, taken: false };
+        const pull: Pull = { pointerId: e.pointerId, startY: e.clientY, distance: 0, height: this.pullHeight(), taken: false };
         this.pull = pull;
-        const win = this.element.ownerDocument.defaultView ?? window;
         const move = (ev: PointerEvent) => this.pointerMove(ev);
         const up = (ev: PointerEvent) => this.pointerUp(ev);
-        win.addEventListener('pointermove', move);
-        win.addEventListener('pointerup', up);
-        win.addEventListener('pointercancel', up);
-        this.stops.push(() => {
-            win.removeEventListener('pointermove', move);
-            win.removeEventListener('pointerup', up);
-            win.removeEventListener('pointercancel', up);
-        });
+        // The pull goes on past the view: its window is listened to while it runs.
+        this.stops.push(onWindow(this, 'pointermove', move), onWindow(this, 'pointerup', up), onWindow(this, 'pointercancel', up));
     }
 
     pointerMove(e: PointerEvent): void {
@@ -343,19 +378,18 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         if (!pull || e.pointerId !== pull.pointerId) return;
         const dy = e.clientY - pull.startY;
         if (!pull.taken) {
-            if (dy < 6 || this.element.scrollTop > 0) {
+            if (dy < 6 || boxOf(this).scrollTop > 0) {
                 if (dy < -6) this.stopPull();
                 return;
             }
             pull.taken = true;
-            mark(this.element, 'data-pulling', true);
-            if (e.pointerType !== 'touch') this.element.setPointerCapture?.(e.pointerId);
+            mark(this, 'data-pulling', true);
+            if (e.pointerType !== 'touch') this.attr.add({ setPointerCapture: e.pointerId });
         }
         // Harder to pull the farther it goes, up to half again the panel's height.
-        const height = this.pullHeight();
-        pull.distance = Math.min(height * 1.5, dy * 0.5);
-        css(this.content.element, 'translate', `0 ${Math.max(0, pull.distance)}px`);
-        put(this.element, 'data-pull-state', pull.distance >= height ? 'release' : 'pull');
+        pull.distance = Math.min(pull.height * 1.5, dy * 0.5);
+        css(this.content, 'translate', `0 ${Math.max(0, pull.distance)}px`);
+        this.setPullState(pull.distance >= pull.height ? 'release' : 'pull');
         this.drawTexts();
     }
 
@@ -363,10 +397,10 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         const pull = this.pull;
         if (!pull || e.pointerId !== pull.pointerId) return;
         const taken = pull.taken;
-        const far = pull.distance >= this.pullHeight();
+        const far = pull.distance >= pull.height;
         this.stopPull();
-        if (taken && far && e.type === 'pointerup') {
-            this.refresh();
+        if (taken && far && e.type === 'pointerup' && this.canRefresh()) {
+            this.startRefresh(pull.height);
         }
     }
 
@@ -374,10 +408,10 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         for (const stop of this.stops.splice(0)) stop();
         const pull = this.pull;
         this.pull = null;
-        mark(this.element, 'data-pulling', false);
+        mark(this, 'data-pulling', false);
         if (pull?.taken && !this.refreshing) {
-            put(this.element, 'data-pull-state', null);
-            css(this.content.element, 'translate', '');
+            this.setPullState(null);
+            css(this.content, 'translate', '');
             this.drawTexts();
         }
     }

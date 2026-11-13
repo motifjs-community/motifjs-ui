@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost } from '../../../tests/helpers';
+import { measureNow, whenMeasured } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { TextBox } from '../textbox/TextBox';
 import { AppBar } from './AppBar';
@@ -121,17 +122,20 @@ describe('AppBar', () => {
     });
 
     it('lifts over what scrolls, and leaves when scrolling down until focus comes back', async () => {
-        const box = document.createElement('div');
-        box.style.overflow = 'auto';
-        document.body.append(box);
+        const box = new Component<HTMLDivElement>('div');
+        box.element.style.overflow = 'auto';
+        page(box);
         let top = 0;
-        Object.defineProperty(box, 'scrollTop', { get: () => top });
+        Object.defineProperty(box.element, 'scrollTop', { get: () => top });
         const bar = new AppBar({ title: 'Orders', scrollBehavior: 'hide', scrollTarget: box });
         page(bar);
         await tick();
+        // The first read is where the scroll starts from.
+        await whenMeasured(bar);
         const scroll = (to: number) => {
             top = to;
-            box.dispatchEvent(new Event('scroll'));
+            box.element.dispatchEvent(new Event('scroll'));
+            measureNow(bar);
         };
         expect(bar.element.hasAttribute('data-lifted')).toBe(false);
         scroll(200);
@@ -148,25 +152,29 @@ describe('AppBar', () => {
     });
 
     it('stops watching when the behavior is none', async () => {
-        const box = document.createElement('div');
-        document.body.append(box);
-        const remove = vi.spyOn(box, 'removeEventListener');
+        const box = new Component<HTMLDivElement>('div');
+        page(box);
+        Object.defineProperty(box.element, 'scrollTop', { get: () => 200 });
+        const remove = vi.spyOn(document, 'removeEventListener');
         const bar = new AppBar({ scrollBehavior: 'lift', scrollTarget: box });
         page(bar);
         await tick();
         bar.scrollBehavior = 'none';
         await tick();
-        expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function));
+        expect(remove.mock.calls.some(([type]) => type === 'scroll')).toBe(true);
+        box.element.dispatchEvent(new Event('scroll'));
+        measureNow(bar);
+        expect(bar.element.hasAttribute('data-lifted')).toBe(false);
     });
 
     it('stops watching when it is disposed', async () => {
-        const box = document.createElement('div');
-        document.body.append(box);
-        const remove = vi.spyOn(box, 'removeEventListener');
+        const box = new Component<HTMLDivElement>('div');
+        page(box);
+        const remove = vi.spyOn(document, 'removeEventListener');
         const bar = new AppBar({ scrollBehavior: 'lift', scrollTarget: box });
         const host = page(bar);
         await tick();
         await host.dispose();
-        expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function));
+        expect(remove.mock.calls.some(([type]) => type === 'scroll')).toBe(true);
     });
 });

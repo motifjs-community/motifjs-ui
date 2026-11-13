@@ -1,8 +1,9 @@
 import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
 import type { ControlSize } from "../../core/control-size";
-import { part, put, shown } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
 import { onLanguage } from "../../core/on-language";
+import { put, shown } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { validateFields } from "../../parts/validation/validate-fields";
 import { Button } from "../button/Button";
@@ -50,16 +51,16 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
     constructor(props?: IBaseProp<WizardProps>) {
         super('div', props);
         const own = (this.props ?? {}) as WizardProps;
-        this.element.classList.add('mx-wizard');
+        this.class.add('mx-wizard');
         this.stepper = new Stepper({ items: [] });
-        this.stepper.element.classList.add('mx-wizard__stepper');
+        this.stepper.class.add('mx-wizard__stepper');
         this.controls.add(this.stepper);
         this.pages = part(this, 'div', 'mx-wizard__pages');
         this.bar = part(this, 'div', 'mx-wizard__bar');
         this.previousButton = new Button({ text: uiLocale.strings.wizardPrevious });
-        this.previousButton.element.classList.add('mx-wizard__previous');
+        this.previousButton.class.add('mx-wizard__previous');
         this.nextButton = new Button({ text: uiLocale.strings.wizardNext });
-        this.nextButton.element.classList.add('mx-wizard__next');
+        this.nextButton.class.add('mx-wizard__next');
         this.bar.controls.add(this.previousButton, this.nextButton);
         void this.previousButton.motif.on('click', () => void this.previous());
         void this.nextButton.motif.on('click', () => void this.next());
@@ -74,14 +75,14 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         this.observeProperty<boolean>('linear', linear => (this.stepper.linear = linear !== false));
         this.observeProperty<StepperOrientation>('orientation', o => {
             this.stepper.orientation = o ?? 'horizontal';
-            put(this.element, 'data-orientation', o ?? 'horizontal');
+            put(this, 'data-orientation', o ?? 'horizontal');
         });
         this.observeProperty<StepperLabelPosition>('labelPosition', p => (this.stepper.labelPosition = p ?? 'bottom'));
         this.observeProperty<ControlSize>('size', size => (this.stepper.size = size ?? 'md'));
         this.observeProperty<boolean>('clickable', clickable => (this.stepper.clickable = clickable !== false));
         this.observeProperty<string>('label', label => (this.stepper.label = label ?? ''));
-        this.observeProperty<boolean>('showStepper', show => shown(this.stepper.element, show !== false));
-        this.observeProperty<boolean>('showNavigation', show => shown(this.bar.element, show !== false));
+        this.observeProperty<boolean>('showStepper', show => shown(this.stepper, show !== false));
+        this.observeProperty<boolean>('showNavigation', show => shown(this.bar, show !== false));
         for (const name of ['previousText', 'nextText', 'finishText'] as const) this.observeProperty(name, () => this.drawBar());
         onLanguage(this, () => this.drawBar());
 
@@ -365,7 +366,7 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         }
         const step = this.currentStep;
         if (this.shownStep && this.shownStep !== step) {
-            shown(this.shownStep.element, false);
+            shown(this.shownStep, false);
             if (!this.keepAliveOf(this.shownStep)) {
                 this.shownStep.content.release();
             }
@@ -375,7 +376,7 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
             return;
         }
         step.content.build();
-        shown(step.element, true);
+        shown(step, true);
         for (const other of this.steps) {
             if (other !== step && !this.lazyOf(other) && !other.content.isBuilt) {
                 other.content.build();

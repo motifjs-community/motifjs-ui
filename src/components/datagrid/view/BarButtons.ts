@@ -1,5 +1,6 @@
-import { untracked } from '@motifx/core';
+import { untracked, type ComponentBase } from '@motifx/core';
 import { moreMark } from '../../../core/glyphs';
+import { mark, put } from '../../../core/part-writes';
 import type { MenuItem } from '../../../parts/menu/menu-item';
 import { Button } from '../../button/Button';
 import type { GridActionLocation } from '../grid-action-location';
@@ -9,9 +10,8 @@ import { readField } from '../model/read-field';
 
 type Shown<T> = { buttons: ActionEntry<T>[]; menu: ActionEntry<T>[] };
 
-/** The face of a kit button: the element that takes focus and its name. */
-const faceOf = (button: Button): HTMLElement =>
-  button.element.classList.contains('mx-button__face') ? button.element : (button.element.querySelector<HTMLElement>('.mx-button__face') ?? button.element);
+/** The face of a kit button: the part that takes focus and its name. */
+const faceOf = (button: Button): ComponentBase => button.faceComponent;
 
 /**
  * The actions of the target rows in the toolbar or the bottom bar, as kit buttons the bar holds
@@ -45,7 +45,7 @@ export class BarButtons<T> {
     },
   ) {
     this.menuButton = new Button({ icon: moreMark(), menu: [] });
-    this.menuButton.element.classList.add('mx-data-grid__bar-menu');
+    this.menuButton.class.add('mx-data-grid__bar-menu');
     this.draw();
   }
 
@@ -110,8 +110,8 @@ export class BarButtons<T> {
     const model = this.model;
     const i = this.buttons.length;
     const button = new Button({ focusableWhenDisabled: true });
-    button.element.classList.add('mx-data-grid__bar-action');
-    button.element.addEventListener('click', () => {
+    button.class.add('mx-data-grid__bar-action');
+    button.motif.on('click', () => {
       const e = this.current.buttons[i];
       if (e && !e.disabled && !model.state.acting) this.options.run(e);
     });
@@ -125,15 +125,11 @@ export class BarButtons<T> {
    */
   private look(button: Button, shown: boolean, label: string | null, id: string | null) {
     const describedBy = this.options.describedBy;
-    if (button.element.hidden === shown) button.element.hidden = !shown;
+    mark(button, 'hidden', !shown);
     const face = faceOf(button);
-    if (label) {
-      if (face.getAttribute('aria-label') !== label) face.setAttribute('aria-label', label);
-    } else if (face.hasAttribute('aria-label')) face.removeAttribute('aria-label');
-    if (describedBy && face.getAttribute('aria-describedby') !== describedBy) face.setAttribute('aria-describedby', describedBy);
-    if (id) {
-      if (button.element.dataset.action !== id) button.element.dataset.action = id;
-    } else if (button.element.dataset.action !== undefined) delete button.element.dataset.action;
+    put(face, 'aria-label', label);
+    if (describedBy) put(face, 'aria-describedby', describedBy);
+    put(button, 'data-action', id);
   }
 
   private menuItem(e: ActionEntry<T>): MenuItem {

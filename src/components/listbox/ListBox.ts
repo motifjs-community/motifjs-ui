@@ -1,13 +1,15 @@
-import { untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { untracked, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { focusOn, isFocused } from '../../core/focus';
 import { functionValue } from '../../core/function-value';
-import { checkMark, dashMark } from '../../core/glyphs';
+import { css, mark, put, text as writeText } from '../../core/part-writes';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { DataItems } from '../../parts/data/DataItems';
 import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import type { OptionChosenEventArgs } from '../../parts/list/option-chosen-event-args';
+import type { OptionParts } from '../../parts/list/option-parts';
 import { OptionList } from '../../parts/list/OptionList';
 import { itemOwnValue } from '../../parts/list/item-own-value';
 import { readItemField } from '../../parts/list/read-item-field';
@@ -58,6 +60,10 @@ interface Parts<T> {
   ready: boolean;
   /** Rows of the data source drawn last; while it stays, rows that load are drawn in place. */
   sourceCount: number;
+  /** The "Select all" rows drawn: the list draws its rows again when they change or scroll into view. */
+  allRows: Set<OptionParts>;
+  /** The template the rows are drawn with: the list draws its rows again only when it changes. */
+  template?: ItemTemplate<T> | null;
 }
 
 /**
@@ -73,7 +79,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
   constructor(props?: IBaseProp<ListBoxProps<T, V>>) {
     super(props);
     const own = (this.props ?? {}) as ListBoxProps<T, V>;
-    this.element.classList.add('mx-list-box');
+    this.class.add('mx-list-box');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     for (const name of FUNCTIONS) if (own[name] !== undefined) this.bindProperty(name, functionValue(own[name]));
 
@@ -84,7 +90,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     this.observeProperty('searchMode', (mode) => (parts.items.searchMode = mode === 'startswith' ? 'startswith' : 'contains'));
     this.observeProperty('searchEnabled', () => this.renderSearch());
     this.observeProperty<number | string | null>('height', (height) => this.renderHeight(height));
-    this.observeProperty<ListSelectionMode>('selectionMode', (mode) => (this.element.dataset.selectionMode = mode ?? 'single'));
+    this.observeProperty<ListSelectionMode>('selectionMode', (mode) => put(this, 'data-selection-mode', mode ?? 'single'));
     this.observeProperty('valueField', () => {
       parts.known.clear();
       this.renderValue(this.peekValue());
@@ -97,7 +103,6 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     const stopLocale = onLanguage(this, () => this.drawList());
     parts.items.onChanged(() => this.drawList(false));
     this.listen();
-    this.motif.on('x:built', () => this.placeSearch());
     parts.ready = true;
     untracked(() => this.drawList());
     this.motif.setDisposable(() => {
@@ -273,9 +278,9 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     }
   }
 
-  protected createControl(): HTMLElement {
-    const list = this.listParts.list.element;
-    list.tabIndex = 0;
+  protected createControl(): ComponentBase {
+    const list = this.listParts.list;
+    put(list, 'tabindex', '0');
     return list;
   }
 
@@ -311,7 +316,6 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     if (!self[PARTS]) {
       const items = new DataItems<T>();
       const list = new OptionList<T | SelectAllRow>();
-      list.build();
       self[PARTS] = {
         list,
         items,
@@ -323,6 +327,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
         timer: undefined,
         ready: false,
         sourceCount: -1,
+        allRows: new Set(),
       };
       this.setUpList(list);
     }
@@ -334,15 +339,23 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     list.enabledOf = (row) => row === selectAllRow || this.canChoose(row as T);
     list.isSelected = (row) => (row === selectAllRow ? this.allState() === true : this.listParts.chosen.has(this.itemValue(row as T)));
     list.emptyText = () => this.peekProperty<string>('noItemsText') || (this.listParts.items.loading ? uiLocale.strings.loading : uiLocale.strings.noItems);
-    list.draw = (row, host) => {
+  }
+
+  /** Gives the list a drawing for the template now, made anew only when the template changes. */
+  private drawWithTemplate(list: OptionList<T | SelectAllRow>): void {
+    const parts = this.listParts;
+    const template = this.peekProperty<ItemTemplate<T> | null>('itemTemplate') ?? null;
+    if (list.draw && parts.template === template) return;
+    parts.template = template;
+    // Without a template the texts are bound, written in place when the items are given again or refreshed.
+    list.draw = (row, host, option) => {
       if (row === selectAllRow) {
-        host.textContent = uiLocale.strings.selectAll;
-        if (host.parentElement) this.markSelectAllRow(host.parentElement);
-        return;
+        const release = list.bindText(option, () => uiLocale.strings.selectAll);
+        this.keepSelectAllRow(option);
+        return release;
       }
-      const template = this.peekProperty<ItemTemplate<T> | null>('itemTemplate');
       if (template) return template(row as T, host);
-      host.textContent = this.itemText(row as T);
+      return list.bindText(option, () => this.itemText(row as T));
     };
   }
 
@@ -377,14 +390,14 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
   }
 
   private renderHeight(height: number | string | null | undefined): void {
-    const style = this.listParts.list.element.style;
+    const list = this.listParts.list;
     if (height === null || height === undefined || height === '') {
-      style.removeProperty('block-size');
-      style.removeProperty('max-block-size');
+      css(list, 'block-size', '');
+      css(list, 'max-block-size', '');
       return;
     }
-    style.blockSize = typeof height === 'number' ? `calc(${height} * var(--mx-list-item-height))` : height;
-    style.maxBlockSize = 'none';
+    css(list, 'block-size', typeof height === 'number' ? `calc(${height} * var(--mx-list-item-height))` : height);
+    css(list, 'max-block-size', 'none');
   }
 
   private renderSearch(): void {
@@ -393,8 +406,8 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       if (parts.search) {
         clearTimeout(parts.timer);
         void parts.items.search('');
-        void parts.search.dispose();
-        parts.search.element.remove();
+        if (parts.search.parent) parts.search.parent.controls.remove(parts.search);
+        else void parts.search.dispose();
         parts.search = null;
       }
       return;
@@ -405,25 +418,21 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       search.label = uiLocale.strings.search;
       search.placeholder = uiLocale.strings.search;
     });
-    search.element.classList.add('mx-list-box__search');
+    search.class.add('mx-list-box__search');
     search.onValueChanged((e) => this.searchFor(e.value));
-    search.inputElement.setAttribute('aria-controls', parts.list.element.id);
-    search.inputElement.addEventListener('keydown', (e) => {
+    put(search.inputPart, 'aria-controls', parts.list.id);
+    // The input's keys reach the search box.
+    search.motif.on('keydown', (_, e) => {
       if (e.key !== 'ArrowDown') return;
       e.preventDefault();
       this.focus();
       if (parts.list.activeIndex < 0) parts.list.move('first');
       this.pointAt();
     });
-    this.controls.add(search);
+    // Above the list, in the box: before the list among the box's controls.
+    const box = parts.list.parent!;
+    box.controls.insert(box.controls.items.indexOf(parts.list), search);
     parts.search = search;
-    this.placeSearch();
-  }
-
-  /** Above the list, in the box; the build places controls at the end. */
-  private placeSearch(): void {
-    const parts = this.listParts;
-    if (parts.search && parts.search.element.nextElementSibling !== parts.list.element) parts.list.element.before(parts.search.element);
   }
 
   private searchFor(text: string): void {
@@ -448,8 +457,9 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     const icon = this.peekProperty<ItemField<T>>('iconField');
     const group = this.peekProperty<ItemField<T>>('groupField');
     const withAll = multiple && !!this.peekProperty('selectAll');
-    this.element.toggleAttribute('data-check-boxes', multiple && this.peekProperty('showCheckBoxes') !== false);
+    mark(this, 'data-check-boxes', multiple && this.peekProperty('showCheckBoxes') !== false);
     list.multiple = multiple;
+    this.drawWithTemplate(list);
     list.iconOf = icon === undefined ? null : (row) => (row === selectAllRow ? undefined : (readItemField(row as T, icon, 'icon') as IconSource | undefined));
     if (parts.items.dataSource) {
       list.groupOf = null;
@@ -465,50 +475,58 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       const shown = parts.items.loaded;
       list.setItems(withAll && shown.length ? [selectAllRow, ...shown] : shown);
     }
-    // An empty listbox reads as empty; its "No items" is for the eyes.
-    list.element.querySelector('.mx-list__empty')?.setAttribute('aria-hidden', 'true');
     this.pointAt();
   }
 
+  /** Marks the "Select all" rows drawn, letting go of those the list took away. */
   private markSelectAll(): void {
-    const row = this.listParts.list.element.querySelector<HTMLElement>('[data-select-all]');
-    if (row) this.markSelectAllRow(row);
+    const rows = this.listParts.allRows;
+    for (const option of rows) if (option.row.isDisposed) rows.delete(option);
+    if (!rows.size) return;
+    const state = this.allState();
+    for (const option of rows) this.markSelectAllRow(option, state);
+  }
+
+  /** Keeps a "Select all" row the list drew, to mark it again when the selection changes. */
+  private keepSelectAllRow(option: OptionParts): void {
+    this.listParts.allRows.add(option);
+    this.markSelectAll();
   }
 
   /** The "Select all" row is chosen when every item is, and shows a dash when some are. */
-  private markSelectAllRow(row: HTMLElement): void {
-    const state = this.allState();
-    row.setAttribute('data-select-all', '');
-    row.setAttribute('aria-selected', String(state === true));
-    row.toggleAttribute('data-selected', state !== false);
-    row.toggleAttribute('data-mixed', state === 'mixed');
-    row.querySelector('.mx-list__check')?.replaceChildren(state === 'mixed' ? dashMark() : checkMark());
+  private markSelectAllRow(option: OptionParts, state: boolean | 'mixed'): void {
+    const row = option.row;
+    mark(row, 'data-select-all', true);
+    put(row, 'aria-selected', String(state === true));
+    mark(row, 'data-selected', state !== false);
+    mark(row, 'data-mixed', state === 'mixed');
+    // The check's glyph turns into a dash and back.
+    if (option.check) put(option.check, 'data-icon', state === 'mixed' ? 'dash' : 'check');
   }
 
   private pointAt(): void {
     const list = this.listParts.list;
-    if (list.activeIndex >= 0) list.element.setAttribute('aria-activedescendant', list.idOf(list.activeIndex));
-    else list.element.removeAttribute('aria-activedescendant');
+    if (list.activeIndex >= 0) put(list, 'aria-activedescendant', list.idOf(list.activeIndex));
+    else put(list, 'aria-activedescendant', null);
   }
 
   private listen(): void {
     const list = this.listParts.list;
-    const el = list.element;
-    el.addEventListener('keydown', (e) => this.keyDown(e));
-    el.addEventListener('focus', () => this.gotFocus());
+    list.motif.on('keydown', (_, e) => this.keyDown(e));
+    list.motif.on('focus', () => this.gotFocus());
     // The list keeps focus off its options; a click still focuses the list itself, without the
     // keyboard ring (Chrome would show it when the focus before came from the keyboard).
-    el.addEventListener('mousedown', (e) => {
+    list.motif.on('mousedown', (_, e) => {
       if (e.button !== 0 || !this.enabled) return;
-      el.removeAttribute('data-keys');
-      if (el.ownerDocument.activeElement !== el) el.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
+      mark(list, 'data-keys', false);
+      if (!isFocused(list)) focusOn(list, { preventScroll: true, focusVisible: false } as FocusOptions);
     });
     // Keys after a click bring the ring back (`data-keys`); the browser would not.
-    el.addEventListener('keydown', (e) => {
-      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== 'Shift' && e.key !== 'Tab') el.setAttribute('data-keys', '');
+    list.motif.on('keydown', (_, e) => {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== 'Shift' && e.key !== 'Tab') mark(list, 'data-keys', true);
     });
-    el.addEventListener('blur', () => el.removeAttribute('data-keys'));
-    el.addEventListener('pointermove', () => this.pointAt());
+    list.motif.on('blur', () => mark(list, 'data-keys', false));
+    list.motif.on('pointermove', () => this.pointAt());
     list.onChosen((e) => this.chosen(e));
   }
 
@@ -548,9 +566,10 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       return;
     }
     const before = list.activeIndex;
-    if (e.key === 'PageDown' || e.key === 'PageUp') {
+    if ((e.key === 'PageDown' || e.key === 'PageUp') && before < 0) {
+      // Nothing highlighted: Page Down starts at the first item and Page Up at the last, as the arrows do.
       e.preventDefault();
-      list.move((e.key === 'PageDown' ? 1 : -1) * this.pageRows());
+      list.move(e.key === 'PageDown' ? 'first' : 'last');
     } else if (e.key === 'Enter') {
       list.handleKey(e);
       return;
@@ -576,12 +595,6 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     if (!e.shiftKey) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.chooseAt(index, e, 'toggle');
     else if ((e.key === 'Home' || e.key === 'End') && (e.ctrlKey || e.metaKey)) this.chooseRange(before, index, e);
-  }
-
-  private pageRows(): number {
-    const el = this.listParts.list.element;
-    const row = el.querySelector('[role="option"]')?.getBoundingClientRect().height || 1;
-    return Math.max(1, Math.floor(el.clientHeight / row) - 1);
   }
 
   private chosen(e: OptionChosenEventArgs<T | SelectAllRow>): void {

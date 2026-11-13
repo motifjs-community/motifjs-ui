@@ -1,13 +1,17 @@
-import { untracked } from '@motifx/core';
+import { Component, createSignal, untracked } from '@motifx/core';
+import type { IconSource } from '../../core/icon-source';
+import { loose, part } from '../../core/draw-parts';
+import { focusOn } from '../../core/focus';
 import { follow } from '../../core/follow';
-import { iconNode } from '../../core/icon-node';
+import { mark, put, text } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import { isChord } from '../../core/keyboard';
 import { nextId } from '../../core/next-id';
-import { isElement } from '../../core/node-kind';
 import type { UiStrings } from '../../core/ui-strings';
 import type { TabDockArea } from './TabDockArea';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
+import { dropPart, layoutPart } from './place-node';
 
 const AREA_TEXTS = { left: 'tabDocsHiddenLeft', right: 'tabDocsHiddenRight', top: 'tabDocsHiddenTop', bottom: 'tabDocsHiddenBottom' } as const satisfies Record<string, keyof UiStrings>;
 
@@ -17,38 +21,48 @@ const AREA_TEXTS = { left: 'tabDocsHiddenLeft', right: 'tabDocsHiddenRight', top
  * out over the documents with that document shown; the arrow keys go along the titles.
  */
 export class AutoHideStrip {
-  readonly element: HTMLDivElement;
-  private readonly buttons = new Map<TabDocument, HTMLButtonElement>();
-  /** What lets go of each title's icon. */
-  private readonly icons = new Map<TabDocument, () => void>();
+  /** As a component of the layout. */
+  readonly part: Component<HTMLDivElement>;
+  private readonly buttons = new Map<TabDocument, Component<HTMLButtonElement>>();
+  /** The documents whose titles the strip holds, in order: a title is made when its document comes and kept while it stays. */
+  private readonly docs = createSignal<readonly TabDocument[]>([]);
   private readonly stops: (() => void)[] = [];
   private hoverTimer: ReturnType<typeof setTimeout> | undefined;
   private leaveTimer: ReturnType<typeof setTimeout> | undefined;
   private current: TabDocument | null = null;
+  /** Shown along the edge: the area is folded. */
+  private folded = false;
 
   constructor(
     private readonly manager: TabDocumentManager,
     private readonly area: TabDockArea,
   ) {
-    const el = (this.element = manager.element.ownerDocument.createElement('div'));
-    el.className = 'mx-tabdocs__autohide';
-    el.dataset.side = area.side;
-    el.setAttribute('role', 'toolbar');
-    el.setAttribute('aria-orientation', area.orientation === 'horizontal' ? 'vertical' : 'horizontal');
-    el.hidden = true;
-    el.addEventListener('click', (e) => {
-      const doc = this.documentAt(e.target);
+    this.part = new Component<HTMLDivElement>('div');
+    layoutPart(this.part);
+    this.part.class.add('mx-tabdocs__autohide');
+    this.part.attr.add({ 'data-side': area.side, role: 'toolbar', 'aria-orientation': area.orientation === 'horizontal' ? 'vertical' : 'horizontal', hidden: true });
+    const strip = this.part;
+    strip.bindings.list(() => this.docs.value, (doc: TabDocument) => this.buttonOf(doc));
+    strip.motif.on('click', (_, e) => {
+      const doc = this.documentFrom(e);
       if (doc) manager.slideByUser(doc, false);
     });
-    el.addEventListener('keydown', (e) => untracked(() => this.key(e)));
-    el.addEventListener('mousedown', (e) => {
+    strip.motif.on('keydown', (_, e) => untracked(() => this.key(e)));
+    strip.motif.on('mousedown', (_, e) => {
       // A click slides the area out; focus goes into it from there.
-      if (this.documentAt(e.target)) e.preventDefault();
+      if (this.documentFrom(e)) e.preventDefault();
     });
-    el.addEventListener('pointerover', (e) => untracked(() => this.hoverOn(this.documentAt(e.target))));
-    el.addEventListener('pointerleave', () => untracked(() => this.hoverOff()));
-    area.element.addEventListener('pointerenter', () => clearTimeout(this.leaveTimer));
-    area.element.addEventListener('pointerleave', () => untracked(() => this.hoverOff()));
+    strip.motif.on('pointerover', (_, e) => untracked(() => this.hoverOn(this.documentFrom(e))));
+    strip.motif.on('pointerleave', () => untracked(() => this.hoverOff()));
+    // The area slid out keeps it open while the pointer is over it; the strip stops listening when it goes.
+    const enter = () => clearTimeout(this.leaveTimer);
+    const leave = () => untracked(() => this.hoverOff());
+    void area.part.motif.on('pointerenter', enter);
+    void area.part.motif.on('pointerleave', leave);
+    this.stops.push(() => {
+      void area.part.motif.off('pointerenter', enter);
+      void area.part.motif.off('pointerleave', leave);
+    });
     this.stops.push(
       follow(
         manager,
@@ -68,9 +82,10 @@ export class AutoHideStrip {
 
   /** Focuses the title of the document shown last (the one slid out), else the first. */
   focusActive(): boolean {
-    const button = (this.current && this.buttons.get(this.current)) ?? this.element.querySelector<HTMLButtonElement>('button');
-    if (!button || this.element.hidden) return false;
-    button.focus();
+    const first = untracked(() => this.docs.value[0]);
+    const button = (this.current && this.buttons.get(this.current)) ?? (first && this.buttons.get(first));
+    if (!button || !this.folded) return false;
+    focusOn(button);
     return true;
   }
 
@@ -78,87 +93,79 @@ export class AutoHideStrip {
     clearTimeout(this.hoverTimer);
     clearTimeout(this.leaveTimer);
     for (const stop of this.stops.splice(0)) stop();
-    for (const release of this.icons.values()) release();
-    this.icons.clear();
-    this.element.remove();
+    dropPart(this.part);
   }
 
   private render(folded: boolean, groups: { docs: readonly TabDocument[]; active: TabDocument | null }[], open: boolean, label: string): void {
-    const el = this.element;
-    el.hidden = !folded;
-    el.setAttribute('aria-label', label);
+    this.folded = folded;
+    mark(this.part, 'hidden', !folded);
+    put(this.part, 'aria-label', label);
     if (!folded) return;
     const shown = open ? (groups.find((g) => g.active?.group?.isActive)?.active ?? groups[0]?.active ?? null) : null;
     if (shown) this.current = shown;
-    const wanted: HTMLButtonElement[] = [];
+    const wanted: Component<HTMLButtonElement>[] = [];
     const docs = groups.flatMap((g) => g.docs);
-    for (const [doc, button] of this.buttons) {
-      if (!docs.includes(doc)) {
-        button.remove();
-        this.buttons.delete(doc);
-        this.icons.get(doc)?.();
-        this.icons.delete(doc);
-      }
-    }
+    // The titles come and go with the documents; the ones that stay keep their buttons.
+    const before = untracked(() => this.docs.value);
+    if (before.length !== docs.length || docs.some((d, i) => d !== before[i])) this.docs.value = docs;
     groups.forEach((g, i) =>
       g.docs.forEach((doc, j) => {
         const button = this.buttonOf(doc);
-        button.toggleAttribute('data-group-start', i > 0 && j === 0);
+        mark(button, 'data-group-start', i > 0 && j === 0);
         const on = open && g.active === doc;
-        button.setAttribute('aria-expanded', String(on));
-        button.toggleAttribute('data-open', on);
+        put(button, 'aria-expanded', String(on));
+        mark(button, 'data-open', on);
         wanted.push(button);
       }),
     );
-    wanted.forEach((button, i) => {
-      if (el.children[i] !== button) el.insertBefore(button, el.children[i] ?? null);
-    });
     // A roving tab stop: the document shown last, else the first.
     const stop = (this.current && this.buttons.get(this.current)) ?? wanted[0];
-    for (const button of wanted) button.tabIndex = button === stop ? 0 : -1;
+    for (const button of wanted) put(button, 'tabindex', button === stop ? '0' : '-1');
   }
 
-  private buttonOf(doc: TabDocument): HTMLButtonElement {
-    let button = this.buttons.get(doc);
-    const owner = this.element.ownerDocument;
-    if (!button) {
-      button = owner.createElement('button');
-      button.type = 'button';
-      button.className = 'mx-tabdocs__autohide-tab';
-      button.id = nextId('tabdocs-hidden');
-      button.setAttribute('aria-controls', this.area.element.id);
-      this.buttons.set(doc, button);
-    }
-    const icon = doc.icon;
-    const title = owner.createElement('span');
-    title.className = 'mx-tabdocs__autohide-title';
-    title.textContent = doc.title;
-    const parts: Node[] = [];
-    this.icons.get(doc)?.();
-    this.icons.delete(doc);
-    if (icon) {
-      const holder = owner.createElement('span');
-      holder.className = 'mx-tabdocs__icon';
-      holder.setAttribute('aria-hidden', 'true');
-      const shown = iconNode(icon);
-      holder.append(shown.node);
-      this.icons.set(doc, shown.release);
-      parts.push(holder);
-    }
-    button.replaceChildren(...parts, title);
+  /** The title of a document, made once (and placed by the strip's list): its icon and its text follow the document. */
+  private buttonOf(doc: TabDocument): Component<HTMLButtonElement> {
+    const made = this.buttons.get(doc);
+    if (made && !made.isDisposed) return made;
+    const button = loose<HTMLButtonElement>('button', 'mx-tabdocs__autohide-tab');
+    button.attr.add({ type: 'button', id: nextId('tabdocs-hidden') });
+    put(button, 'aria-controls', this.area.id);
+    this.buttons.set(doc, button);
+    // The icon's part comes and goes with the icon; it lets go of the icon when it goes.
+    button.bindings.list(
+      () => {
+        const icon = doc.icon;
+        return icon ? [icon] : [];
+      },
+      (icon: IconSource) => {
+        const holder = loose<HTMLSpanElement>('span', 'mx-tabdocs__icon');
+        holder.attr.add({ 'aria-hidden': 'true' });
+        holder.motif.setDisposable(showIcon(icon, holder));
+        return holder;
+      },
+    );
+    const title = part<HTMLSpanElement>(button, 'span', 'mx-tabdocs__autohide-title');
+    button.bindings.watch(() => {
+      const now = doc.title;
+      untracked(() => text(title, now));
+    });
+    button.motif.setDisposable(() => {
+      if (this.buttons.get(doc) === button) this.buttons.delete(doc);
+    });
     return button;
   }
 
-  private documentAt(target: EventTarget | null): TabDocument | null {
-    const button = isElement(target) ? target.closest('.mx-tabdocs__autohide-tab') : null;
-    for (const [doc, b] of this.buttons) if (b === button) return doc;
+  /** The document whose title an event started on. */
+  private documentFrom(e: Event): TabDocument | null {
+    for (const [doc, button] of this.buttons) if (button.motif.isEventFrom(e)) return doc;
     return null;
   }
 
   private key(e: KeyboardEvent): void {
     const keys = this.manager.keys;
-    const buttons = [...this.element.querySelectorAll<HTMLButtonElement>('.mx-tabdocs__autohide-tab')];
-    const at = buttons.indexOf(e.target as HTMLButtonElement);
+    // The titles, in the strip's order.
+    const buttons = this.docs.value.map((doc) => this.buttons.get(doc)).filter((b): b is Component<HTMLButtonElement> => !!b);
+    const at = buttons.findIndex((button) => button.motif.isEventFrom(e));
     if (at < 0) return;
     let next = -1;
     if (isChord(keys.autoHideNext, e)) next = (at + 1) % buttons.length;
@@ -173,9 +180,9 @@ export class AutoHideStrip {
     if (next < 0) return;
     e.preventDefault();
     e.stopPropagation();
-    for (const button of buttons) button.tabIndex = -1;
-    buttons[next].tabIndex = 0;
-    buttons[next].focus();
+    const to = buttons[next];
+    for (const button of buttons) put(button, 'tabindex', button === to ? '0' : '-1');
+    focusOn(to);
   }
 
   /** Resting on a title slides the area out after `autoHideDelay`. */

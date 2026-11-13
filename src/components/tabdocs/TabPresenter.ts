@@ -1,6 +1,9 @@
-import { createSignal, untracked } from '@motifx/core';
+import { createSignal, untracked, type ComponentBase } from '@motifx/core';
 import { holdBackButton, type BackButtonHold } from '../../core/back-button';
-import { deepActiveElement } from '../../core/focus';
+import { rememberFocus } from '../../core/focus';
+import { keepScroll, measure, onLayout, rectOf } from '../../core/measure';
+import { windowOf } from '../../core/page-documents';
+import { css, put } from '../../core/part-writes';
 import { Drawer } from '../drawer/Drawer';
 import { BottomSheet } from '../sheet/BottomSheet';
 import type { DocumentTab } from './DocumentTab';
@@ -8,11 +11,12 @@ import type { LayoutItem } from './layout-item';
 import { PhoneBar } from './PhoneBar';
 import { PhoneList } from './PhoneList';
 import { PhoneTools } from './PhoneTools';
-import { placeNode } from './place-node';
+import { placePart } from './place-node';
 import type { TabDockArea } from './TabDockArea';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
+import type { TabHeader } from './tab-header';
 import type { TabPresentationKind } from './tab-presentation-kind';
 import { TabSplit } from './TabSplit';
 import type { TabWindow } from './TabWindow';
@@ -46,7 +50,7 @@ export class TabPresenter {
   kind: TabPresentationKind = 'desktop';
   private slots: Slot[] = [];
   /** For each group shown on a tablet: the headers of the groups folded into it, before and after its own. */
-  private guests = new Map<TabGroup, { before: HTMLElement[]; after: HTMLElement[] }>();
+  private guests = new Map<TabGroup, { before: TabHeader[]; after: TabHeader[] }>();
   private readonly overlays = new Map<TabDockArea | TabWindow, Overlay>();
   private bar: PhoneBar | null = null;
   private tools: PhoneTools | null = null;
@@ -56,14 +60,22 @@ export class TabPresenter {
   /** The manager's events this presentation follows while it is not a desktop. */
   private listening: { dispose(): void }[] = [];
   private rendering = false;
+  private readTools = (): number => (this.tools ? rectOf(this.tools.part).height : 0);
+  private writeTools = (height: number): void => css(this.manager, '--_tools-height', `${Math.round(height)}px`);
   /** Going back through the documents: the tools passed on the way do not come up. */
   private travelling = false;
   /** A drawing asked for, or under way: more asks are not needed. */
   busy = false;
   /** Counts the changes of the folded groups, for readers that follow them. */
   private readonly folding = createSignal(0);
+  /** The manager's width as last laid out: whether a tablet has room for two groups side by side. */
+  private width = 0;
+  /** While a change of presentation takes down the last one: the scrolls `readScrolls` noted of what goes back home. */
+  private kept: ReadonlyMap<ComponentBase, () => void> | null = null;
 
-  constructor(private readonly manager: TabDocumentManager) {}
+  constructor(private readonly manager: TabDocumentManager) {
+    onLayout(manager, 'size', (size) => this.resized(size.width));
+  }
 
   /** The document a phone shows: the active one among the documents, else the last one used there. */
   get phoneDocument(): TabDocument | null {
@@ -84,34 +96,50 @@ export class TabPresenter {
     return [...m.groups.filter(isMain), ...m.floatingWindows.flatMap((w) => w.groups)];
   }
 
-  /** Shows the layout the way `kind` says; what the one before had moved goes back first. */
-  apply(kind: TabPresentationKind): void {
+  /**
+   * Notes, in a measure's read, how far what this presentation moved into drawers and sheets is scrolled: a change of
+   * presentation in the write (`apply` with what this returns) moves it back home without reading.
+   */
+  readonly readScrolls = (): ReadonlyMap<ComponentBase, () => void> =>
+    new Map(
+      [...this.overlays.keys()].map((holder) => {
+        const part = isArea(holder) ? holder.part : holder.bodyPart;
+        return [part, keepScroll(part)];
+      }),
+    );
+
+  /** Shows the layout the way `kind` says; what the one before had moved goes back first (`kept`: its scrolls, from `readScrolls`). */
+  apply(kind: TabPresentationKind, kept: ReadonlyMap<ComponentBase, () => void> | null = null): void {
     if (kind === this.kind) return;
-    const focus = deepActiveElement(this.manager.element);
-    this.takeDown();
+    const focus = rememberFocus();
+    this.kept = kept;
+    try {
+      this.takeDown();
+    } finally {
+      this.kept = null;
+    }
     this.kind = kind;
-    const el = this.manager.element;
-    if (kind === 'desktop') el.removeAttribute('data-presentation');
-    else el.dataset.presentation = kind;
+    if (kind === 'desktop') put(this.manager, 'data-presentation', null);
+    else put(this.manager, 'data-presentation', kind);
     if (kind !== 'desktop') this.listen();
     this.render();
-    if (focus?.isConnected && deepActiveElement(focus) !== focus) focus.focus({ preventScroll: true });
+    focus?.restore({ preventScroll: true });
   }
 
   /** Puts everything where this presentation shows it; called whenever the layout or the active document changes. */
   render(): void {
-    if (this.kind === 'desktop' || this.rendering) return;
+    if (this.kind === 'desktop' || this.rendering || this.manager.isDisposed) return;
     this.rendering = true;
     const asked = this.busy;
     this.busy = true;
     try {
       untracked(() => {
-        const focus = deepActiveElement(this.manager.element);
+        const focus = rememberFocus();
         this.renderMain();
         this.renderAreas();
         this.renderWindows();
         if (this.kind === 'phone') this.renderPhone();
-        if (focus?.isConnected && deepActiveElement(focus) !== focus) focus.focus({ preventScroll: true });
+        focus?.restore({ preventScroll: true });
       });
     } finally {
       this.rendering = false;
@@ -142,6 +170,14 @@ export class TabPresenter {
     });
   }
 
+  /** A tablet draws again when the manager gains or loses the room for two groups side by side. */
+  private resized(width: number): void {
+    const two = (w: number) => w >= 2 * this.manager.minGroupWidth;
+    const changed = two(width) !== two(this.width);
+    this.width = width;
+    if (changed && this.kind === 'tablet') this.renderSoon();
+  }
+
   /** Every change of documents and layout draws the presentation again. */
   private listen(): void {
     const m = this.manager;
@@ -161,7 +197,7 @@ export class TabPresenter {
   }
 
   /** The headers shown in a group's strip besides its own, on a tablet. */
-  guestsOf(group: TabGroup): { before: HTMLElement[]; after: HTMLElement[] } | null {
+  guestsOf(group: TabGroup): { before: TabHeader[]; after: TabHeader[] } | null {
     return this.guests.get(group) ?? null;
   }
 
@@ -274,28 +310,26 @@ export class TabPresenter {
       slots = shown ? [{ shown, groups: [shown] }] : [];
     } else {
       const maximized = m.maximizedGroup;
-      const width = m.element.getBoundingClientRect().width;
-      const columns = maximized || !(root instanceof TabSplit) || width < 2 * m.minGroupWidth ? [groups] : [groupsIn(root.children[0]), root.children.slice(1).flatMap(groupsIn)];
+      const columns = maximized || !(root instanceof TabSplit) || this.width < 2 * m.minGroupWidth ? [groups] : [groupsIn(root.children[0]), root.children.slice(1).flatMap(groupsIn)];
       slots = columns.filter((c) => c.length).map((c) => ({ shown: maximized && c.includes(maximized) ? maximized : first(c), groups: c }));
       // The share of each column, from the layout's own sizes.
-      const style = m.element.style;
       if (slots.length === 2 && root instanceof TabSplit) {
         const a = root.sizes[0] ?? 0.5;
-        style.setProperty('--_share-a', `${Math.max(0.2, a).toFixed(3)}fr`);
-        style.setProperty('--_share-b', `${Math.max(0.2, 1 - a).toFixed(3)}fr`);
+        css(m, '--_share-a', `${Math.max(0.2, a).toFixed(3)}fr`);
+        css(m, '--_share-b', `${Math.max(0.2, 1 - a).toFixed(3)}fr`);
       } else {
-        style.removeProperty('--_share-a');
-        style.removeProperty('--_share-b');
+        css(m, '--_share-a', '');
+        css(m, '--_share-b', '');
       }
     }
     this.slots = slots;
-    const guests = new Map<TabGroup, { before: HTMLElement[]; after: HTMLElement[] }>();
+    const guests = new Map<TabGroup, { before: TabHeader[]; after: TabHeader[] }>();
     for (const slot of slots) {
       if (this.kind !== 'tablet' || slot.groups.length < 2) continue;
       const at = slot.groups.indexOf(slot.shown);
       guests.set(slot.shown, {
-        before: slot.groups.slice(0, at).flatMap((g) => g.tabs.map((t) => t.header)),
-        after: slot.groups.slice(at + 1).flatMap((g) => g.tabs.map((t) => t.header)),
+        before: slot.groups.slice(0, at).flatMap((g) => g.tabs.map((t) => t.headerPart)),
+        after: slot.groups.slice(at + 1).flatMap((g) => g.tabs.map((t) => t.headerPart)),
       });
     }
     const changed = guests.size !== this.guests.size || [...guests.keys()].some((g) => !this.guests.has(g));
@@ -303,7 +337,7 @@ export class TabPresenter {
     if (changed) this.folding.value = this.folding.peek() + 1;
     for (const group of groups) {
       const index = slots.findIndex((s) => s.shown === group);
-      group.element.dataset.slot = index < 0 ? 'none' : slots.length === 1 ? 'solo' : String(index + 1);
+      put(group, 'data-slot', index < 0 ? 'none' : slots.length === 1 ? 'solo' : String(index + 1));
     }
     // Folded groups give their headers to the one shown first, then the shown ones take them.
     for (const group of groups) if (!guests.has(group)) group.placeHeaders();
@@ -320,14 +354,13 @@ export class TabPresenter {
       if (mode === 'hidden') {
         if (overlay) this.dropOverlay(area);
         this.home(area);
-        area.element.dataset.presented = 'hidden';
+        put(area.part, 'data-presented', 'hidden');
         continue;
       }
       const wanted = overlay && overlay.mode === mode ? overlay : this.makeAreaOverlay(area, mode);
-      if (!area.element.isConnected || area.element.parentElement !== wanted.panel.contentElement) {
-        placeNode(wanted.panel.contentElement, area.element, null);
-      }
-      area.element.dataset.presented = mode;
+      // A child of the panel's content area.
+      if (area.part.parent !== wanted.panel.contentPart) wanted.panel.contentPart.controls.add(area.part);
+      put(area.part, 'data-presented', mode);
     }
     for (const holder of [...this.overlays.keys()]) {
       if (isArea(holder) && !m.dockAreas.includes(holder)) this.dropOverlay(holder);
@@ -339,7 +372,7 @@ export class TabPresenter {
     const m = this.manager;
     const label = () => m.textOf(AREA_NAMES[area.side]);
     const common = {
-      container: m.element,
+      container: m,
       label,
       onOpened: () => untracked(() => area.markOpen(true)),
       onClosed: () => untracked(() => area.markOpen(false)),
@@ -348,8 +381,8 @@ export class TabPresenter {
       mode === 'drawer'
         ? new Drawer({ ...common, side: area.side === 'left' ? 'start' : area.side === 'right' ? 'end' : area.side, edgeSwipe: () => m.edgeSwipe && this.kind !== 'desktop' })
         : new BottomSheet({ ...common, modal: false, detents: ['peek', 'half', 'full'], detent: 'half' });
-    panel.element.classList.add('mx-tabdocs__tool-panel');
-    panel.element.dataset.side = area.side;
+    panel.class.add('mx-tabdocs__tool-panel');
+    put(panel, 'data-side', area.side);
     m.controls.add(panel);
     const overlay: Overlay = { panel, mode };
     this.overlays.set(area, overlay);
@@ -362,19 +395,19 @@ export class TabPresenter {
       let overlay = this.overlays.get(w);
       if (!overlay) {
         const sheet = new BottomSheet({
-          container: m.element,
+          container: m,
           label: () => w.groups[0]?.activeDocument?.title ?? m.textOf('tabDocsWindow', { n: w.index + 1 }),
           detents: ['full'],
           topGap: () => (this.kind === 'phone' ? 0 : null),
           modal: true,
         });
-        sheet.element.classList.add('mx-tabdocs__window-sheet');
+        sheet.class.add('mx-tabdocs__window-sheet');
         m.controls.add(sheet);
         overlay = { panel: sheet, mode: 'sheet' };
         this.overlays.set(w, overlay);
       }
-      if (w.body.parentElement !== overlay.panel.contentElement) placeNode(overlay.panel.contentElement, w.body, null);
-      w.body.dataset.presented = 'sheet';
+      if (w.bodyPart.parent !== overlay.panel.contentPart) overlay.panel.contentPart.controls.add(w.bodyPart);
+      put(w.bodyPart, 'data-presented', 'sheet');
     }
     for (const holder of [...this.overlays.keys()]) {
       if (!isArea(holder) && !m.floatingWindows.includes(holder)) this.dropOverlay(holder);
@@ -390,17 +423,21 @@ export class TabPresenter {
     if (!overlay.panel.isDisposed) void overlay.panel.dispose();
   }
 
-  /** A dock area back among the manager's parts. */
+  /** A dock area back among the manager's parts, before its splitter when that is there. */
   private home(area: TabDockArea): void {
     const m = this.manager;
-    delete area.element.dataset.presented;
-    if (area.element.parentElement !== m.element) placeNode(m.element, area.element, area.sash.element.isConnected && area.sash.element.parentElement === m.element ? area.sash.element : null);
+    put(area.part, 'data-presented', null);
+    if (area.part.parent !== m) placePart(m, area.part, area.sash.part, this.kept?.get(area.part));
     area.markOpen(false);
   }
 
+  /** A window's body back in the window, first, where the window made it. */
   private homeWindow(w: TabWindow): void {
-    delete w.body.dataset.presented;
-    if (w.body.parentElement !== w.element) placeNode(w.element, w.body, w.element.firstChild);
+    put(w.bodyPart, 'data-presented', null);
+    if (w.bodyPart.parent === w.part) return;
+    const restore = this.kept?.get(w.bodyPart) ?? keepScroll(w.bodyPart);
+    w.part.controls.insert(0, w.bodyPart);
+    restore();
   }
 
   // Phone.
@@ -411,9 +448,8 @@ export class TabPresenter {
     this.tools ??= new PhoneTools(m, this);
     this.bar.render();
     this.tools.render();
-    // A tool's sheet opens above the bar of tools, which stays in reach.
-    const tools = this.tools.element;
-    m.element.style.setProperty('--_tools-height', `${tools.hidden ? 0 : Math.round(tools.getBoundingClientRect().height)}px`);
+    // A tool's sheet opens above the bar of tools, which stays in reach; a bar with no tools is hidden and measures 0.
+    measure(this.tools.part, this.readTools, this.writeTools);
     this.list?.render();
     this.holdBack();
   }
@@ -423,7 +459,7 @@ export class TabPresenter {
     const m = this.manager;
     const want = this.kind === 'phone' && m.backButton && m.canGoBack;
     if (want && !this.releaseBack) {
-      this.releaseBack = holdBackButton(m.element.ownerDocument.defaultView, () => {
+      this.releaseBack = holdBackButton(windowOf(m), () => {
         this.releaseBack = null;
         untracked(() => this.goBack());
         this.holdBack();
@@ -481,12 +517,12 @@ export class TabPresenter {
     this.guests = new Map();
     this.slots = [];
     for (const group of groups) {
-      delete group.element.dataset.slot;
+      put(group, 'data-slot', null);
       group.placeHeaders();
     }
-    m.element.style.removeProperty('--_share-a');
-    m.element.style.removeProperty('--_share-b');
-    m.element.style.removeProperty('--_tools-height');
+    css(m, '--_share-a', '');
+    css(m, '--_share-b', '');
+    css(m, '--_tools-height', '');
   }
 }
 

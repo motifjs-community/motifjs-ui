@@ -1,17 +1,16 @@
-import { Emitter, type Bind, type Component, type Event as MotifEvent, type IBaseProp, type IDisposable } from "@motifx/core";
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp, type IDisposable } from "@motifx/core";
 import type { data } from "@motifx-community/data";
 import { Control } from "../../core/control";
-import { css, mark, part, put, shown, text } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
 import { givenList } from "../../core/given-field";
 import { glyph } from "../../core/glyphs";
-import { onLookChanged } from "../../core/look-watch";
+import { focusIsVisible } from "../../core/focus";
+import { boxOf, canMeasure, isRtl, measure, onLayout, probeLengths, rectOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { onFontsLoaded } from "../../core/fonts-loaded";
-import { ResizeWatch } from "../../core/resize-watch";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
-import { surfaceBehind } from "../../parts/chart/chart-text";
-import { TokenLengths } from "../../core/token-lengths";
+import { DrawnTexts, surfaceBehind } from "../../parts/chart/chart-text";
 import { Button } from "../button/Button";
 import type { ChartAxis } from "./chart-axis";
 import type { ChartDataErrorEventArgs } from "./chart-data-error-event-args";
@@ -41,6 +40,7 @@ import { ChartTable } from "./ChartTable";
 import { ChartTooltip } from "./ChartTooltip";
 import type { LegendEntry } from "./legend-entry";
 import { PartsPlot } from "./PartsPlot";
+import type { PlotRoom } from "./plot-room";
 import type { PlotView } from "./plot-view";
 import { RadarPlot } from "./RadarPlot";
 import { formatNumber } from "../../parts/chart/chart-text";
@@ -94,21 +94,19 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     plots = new Map<ChartFamily, PlotView>();
     hiddenParts = new Set<number>();
     legendEntries: LegendEntry[] = [];
+    legendOn = false;
     legendPart: ChartLegend;
     tooltipPart: ChartTooltip;
     tablePart: ChartTable;
     model: ChartModel | null = null;
     look: ChartLook | null = null;
+    /** The plot's texts, measured in the chart's font; one that comes out another size than estimated draws again. */
+    readonly texts: DrawnTexts = new DrawnTexts(this, () => this.again());
     hidden = new Set<number>();
     activeSlot: ModelSlot | null = null;
     activePoint: ModelPoint | null = null;
-    queued = false;
     placed = false;
     drawnOnce = false;
-    watch: ResizeWatch | null = null;
-    stopLook: (() => void) | null = null;
-    stopFonts: (() => void) | null = null;
-    tokens: TokenLengths;
     listening: IDisposable | null = null;
     source: data.DataSource<T, any> | null = null;
     failedWith: unknown = null;
@@ -116,9 +114,8 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     constructor(props?: IBaseProp<ChartProps<T>>) {
         super('div', props);
         const own = (this.props ?? {}) as ChartProps<T>;
-        const el = this.element;
-        el.classList.add('mx-chart');
-        el.setAttribute('role', 'figure');
+        this.class.add('mx-chart');
+        this.attr.add({ role: 'figure' });
 
         this.head = part<HTMLDivElement>(this, 'div', 'mx-chart__head');
         this.titles = part<HTMLDivElement>(this.head, 'div', 'mx-chart__titles');
@@ -141,20 +138,17 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
 
         this.area = part<HTMLDivElement>(this, 'div', 'mx-chart__area-box');
         this.surface = part<HTMLDivElement>(this.area, 'div', 'mx-chart__plot');
-        const surface = this.surface.element;
-        surface.tabIndex = 0;
-        surface.setAttribute('role', 'group');
-        this.cartesian = new ChartPlot(surface);
+        put(this.surface, 'tabindex', '0');
+        this.surface.attr.add({ role: 'group' });
+        this.cartesian = new ChartPlot(this.surface);
         this.plot = this.cartesian;
         this.plots.set('cartesian', this.cartesian);
         this.message = part<HTMLDivElement>(this.surface, 'div', 'mx-chart__message');
-        this.tooltipPart = new ChartTooltip(el.ownerDocument);
-        surface.append(this.tooltipPart.element);
-        this.legendPart = new ChartLegend(el.ownerDocument, id => this.toggleEntry(id));
-        el.append(this.legendPart.element);
+        this.tooltipPart = new ChartTooltip(this.surface);
+        this.legendPart = new ChartLegend(this, id => this.toggleEntry(id));
         this.tablePart = new ChartTable(this);
         this.status = part<HTMLDivElement>(this, 'div', 'mx-sr-only');
-        this.status.element.setAttribute('role', 'status');
+        this.status.attr.add({ role: 'status' });
 
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onPointClick) this.onPointClick(own.onPointClick);
@@ -167,59 +161,47 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
 
         for (const name of OWN) {
             if (name === 'dataSource') this.observeProperty(name, () => this.followSource());
-            else if (name === 'height') this.observeProperty<number | null>(name, height => css(el, '--_height', height ? `${height}px` : ''));
+            else if (name === 'height') this.observeProperty<number | null>(name, height => css(this, '--_height', height ? `${height}px` : ''));
             else this.observeProperty(name, () => this.again());
         }
         onLanguage(this, () => this.again());
         onReState(this, () => this.again());
 
-        surface.addEventListener('pointermove', e => this.pointerMoved(e));
-        surface.addEventListener('pointerdown', e => this.pressed(e));
-        surface.addEventListener('pointerup', e => this.released(e));
-        surface.addEventListener('wheel', e => this.wheeled(e), { passive: false });
+        const plot = this.surface;
+        plot.motif.on('pointermove', (_, e) => this.pointerMoved(e));
+        plot.motif.on('pointerdown', (_, e) => this.pressed(e));
+        plot.motif.on('pointerup', (_, e) => this.released(e));
+        plot.motif.on('wheel', (_, e) => this.wheeled(e));
         // A finger leaves as it lifts: the value stays until the reader taps elsewhere.
-        surface.addEventListener('pointerleave', e => {
+        plot.motif.on('pointerleave', (_, e) => {
             if (e.pointerType !== 'touch') this.clearActive();
         });
-        surface.addEventListener('click', e => this.plotClick(e));
-        surface.addEventListener('keydown', e => this.plotKeyDown(e));
-        surface.addEventListener('focus', () => this.plotFocused());
-        surface.addEventListener('blur', () => this.clearActive());
-        // A stylesheet that comes late or changes the chart's sizes draws it again with them.
-        this.tokens = new TokenLengths(this.element, LOOK_TOKENS, () => {
+        plot.motif.on('click', (_, e) => this.plotClick(e));
+        plot.motif.on('keydown', (_, e) => this.plotKeyDown(e));
+        plot.motif.on('focus', (_, e) => this.plotFocused(e));
+        plot.motif.on('blur', () => this.clearActive());
+        // A stylesheet that comes late or changes the chart's sizes, or a font that arrives, draws it again with them.
+        probeLengths(this, LOOK_TOKENS);
+        onLayout(this, 'look', () => {
             this.look = null;
             this.again();
         });
+        onLayout(this.surface, 'size', () => this.again());
         this.motif.setDisposable(() => {
-            this.tokens.dispose();
-            this.watch?.disconnect();
-            this.stopLook?.();
-            this.stopFonts?.();
             this.listening?.dispose();
             for (const emitter of [this.pointClick, this.pointFocused, this.seriesToggled, this.modeChanged, this.dataError, this.zoomChanged, this.selectionChanged]) emitter.dispose();
         });
     }
 
-    protected override get focusElement(): HTMLElement {
-        return this.surface?.element ?? this.element;
+    override get focusPart(): ComponentBase {
+        return this.surface ?? this;
     }
 
     // In the page now: there is room to measure, and a background behind it.
     override onMounted(): void {
         if (this.placed) return;
         this.placed = true;
-        this.watch = new ResizeWatch(() => this.again());
-        this.watch.observe(this.surface.element);
-        this.stopLook = onLookChanged(() => {
-            this.look = null;
-            this.again();
-        });
-        // Texts measured before the font arrived are measured again with it.
-        this.stopFonts = onFontsLoaded(this.element, () => {
-            this.look = null;
-            this.again();
-        });
-        this.draw();
+        this.again();
     }
 
     // Properties (see ChartProps).
@@ -493,16 +475,19 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
 
     // Everything that changes a chart lands here, so several changes at once are one draw.
     again(): void {
-        if (this.queued || !this.placed) return;
-        this.queued = true;
-        queueMicrotask(() => {
-            this.queued = false;
-            if (!this.isDisposed) this.draw();
-        });
+        if (this.placed) measure(this, this.readLookNow, this.drawWithLook);
     }
 
+    // The texts of the legend and the table read through the plot, before it has room to draw.
+    // The look is read even with no room yet (a chart in a hidden tab): the probes tell when it changes once shown.
+    readonly readLookNow = (): ChartLook => this.look ?? readLook(this, this.cartesian.labelPart);
+
+    readonly drawWithLook = (look: ChartLook): void => {
+        this.look = look;
+        this.draw();
+    };
+
     draw(): void {
-        const el = this.element;
         const series = givenList(this.series);
         const xAxis = this.xAxis;
         const yAxis = this.yAxis;
@@ -510,77 +495,83 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const window = this.windowOf(model);
         this.model = model;
         this.usePlot(model.family);
-        // The texts of the legend and the table read through the plot, before it has room to draw.
-        // The look is read even with no room yet (a chart in a hidden tab): the probes tell when it changes once shown.
-        this.look ??= readLook(el, this.cartesian.labelGroup, this.tokens);
-        this.plot.input = { model, xAxis, yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look, locale: uiLocale.locale, window };
+        this.plot.input = { model, xAxis, yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look!, texts: this.texts, locale: uiLocale.locale, window };
         this.activeSlot = null;
         this.activePoint = null;
         this.tooltipPart.hide();
 
         const name = this.accessibleName;
-        el.setAttribute('aria-label', name);
-        text(this.titleText.element, this.title);
-        text(this.subtitleText.element, this.subtitle);
-        shown(this.titleText.element, !!this.title);
-        shown(this.subtitleText.element, !!this.subtitle);
-        shown(this.titles.element, !!(this.title || this.subtitle));
+        put(this, 'aria-label', name);
+        text(this.titleText, this.title);
+        text(this.subtitleText, this.subtitle);
+        shown(this.titleText, !!this.title);
+        shown(this.subtitleText, !!this.subtitle);
+        shown(this.titles, !!(this.title || this.subtitle));
         const zoomed = !!this.zoomWindow && model.family === 'cartesian';
-        shown(this.resetButton.element, zoomed);
-        shown(this.modeButton.element, this.tableButton);
-        shown(this.tools.element, this.tableButton || zoomed);
-        shown(this.head.element, !!(this.title || this.subtitle || this.tableButton || zoomed));
-        mark(this.surface.element, 'data-zoom', this.zoom && model.family === 'cartesian');
+        shown(this.resetButton, zoomed);
+        shown(this.modeButton, this.tableButton);
+        shown(this.tools, this.tableButton || zoomed);
+        shown(this.head, !!(this.title || this.subtitle || this.tableButton || zoomed));
+        mark(this.surface, 'data-zoom', this.zoom && model.family === 'cartesian');
 
         const legend = this.legendOptions;
         const entries = this.entriesOf(model);
         this.legendEntries = entries;
         const always = model.family !== 'cartesian' || entries.some(e => e.id.startsWith('heat:'));
         const legendOn = (legend.visible ?? (always || entries.length >= 2)) && entries.length > 0;
+        this.legendOn = legendOn;
         this.legendPart.draw(entries, legend.toggle !== false);
-        put(el, 'data-legend', legendOn ? (legend.position ?? 'bottom') : null);
+        put(this, 'data-legend', legendOn ? (legend.position ?? 'bottom') : null);
 
         const table = this.mode === 'table';
-        put(el, 'data-mode', this.mode);
-        shown(this.area.element, !table);
-        shown(this.legendPart.element, legendOn && !table);
-        shown(this.tablePart.element, table);
+        put(this, 'data-mode', this.mode);
+        shown(this.area, !table);
+        shown(this.legendPart.part, legendOn && !table);
+        shown(this.tablePart.host, table);
 
         const source = this.source;
         const busy = this.loading || source?.status === 'loading';
-        mark(el, 'data-loading', busy);
-        put(el, 'aria-busy', busy ? 'true' : null);
+        mark(this, 'data-loading', busy);
+        put(this, 'aria-busy', busy ? 'true' : null);
         const failed = source?.status === 'error';
         const words = failed ? uiLocale.strings.chartFailed : model.any || busy ? '' : this.emptyText || uiLocale.strings.chartEmpty;
-        text(this.message.element, words);
-        mark(el, 'data-empty', !model.any && !busy);
-        shown(this.message.element, !!words);
+        text(this.message, words);
+        mark(this, 'data-empty', !model.any && !busy);
+        shown(this.message, !!words);
 
-        const surface = this.surface.element;
+        const surface = this.surface;
         put(surface, 'aria-label', uiLocale.text('chartPlot', { name }));
         put(surface, 'aria-roledescription', uiLocale.strings.chartRole);
         put(surface, 'aria-description', uiLocale.strings.chartHelp);
 
-        // Hidden as a table, the plot has no size to draw in; it draws when it comes back.
-        if (!table) this.drawPlot(model, xAxis, yAxis, window);
+        // Hidden as a table, the plot has no size to draw in; it draws when it comes back. It measures its room after
+        // what was written here, in the same frame.
+        if (!table) measure(this, this.readPlot, this.drawPlot);
         else this.drawTable();
     }
 
-    drawPlot(model: ChartModel, xAxis: ChartAxis, yAxis: ChartAxis, window: { from: number; to: number } | null): void {
-        const surface = this.surface.element;
-        const measured = typeof ResizeObserver !== 'undefined';
-        const width = surface.clientWidth || (measured ? 0 : UNMEASURED_WIDTH);
-        const height = surface.clientHeight || (measured ? 0 : UNMEASURED_HEIGHT);
-        if (!width || !height) return;
-        const el = this.element;
-        this.look ??= readLook(el, this.cartesian.labelGroup, this.tokens);
-        css(el, '--_surface', surfaceBehind(el));
-        const rtl = el.ownerDocument.defaultView?.getComputedStyle(el).direction === 'rtl';
+    readonly readPlot = (): PlotRoom | null => {
+        const box = boxOf(this.surface);
+        const laidOut = canMeasure(this);
+        const width = box.clientWidth || (laidOut ? 0 : UNMEASURED_WIDTH);
+        const height = box.clientHeight || (laidOut ? 0 : UNMEASURED_HEIGHT);
+        if (!width || !height) return null;
+        return { width, height, look: this.readLookNow(), surface: surfaceBehind(this), rtl: isRtl(this) };
+    };
+
+    readonly drawPlot = (room: PlotRoom | null): void => {
+        const input = this.plot.input;
+        if (!room || !input || this.mode === 'table') return;
+        const { model, xAxis, yAxis, window } = input;
+        const { width, height, look, rtl } = room;
+        this.look = look;
+        css(this, '--_surface', room.surface);
         // The same size as last time: the values changed, and the marks move from where they were.
         const size = `${width}x${height}`;
         const animate = this.animation && this.drawnOnce && size === this.lastSize;
         this.lastSize = size;
-        this.plot.draw({ model, xAxis, yAxis, horizontal: this.horizontal, rtl, width, height, look: this.look, locale: uiLocale.locale, window, references: this.references, selected: this.selection, animate });
+        this.plot.draw({ model, xAxis, yAxis, horizontal: this.horizontal, rtl, width, height, look, texts: this.texts, locale: uiLocale.locale, window, references: this.references, selected: this.selection, animate });
+        this.texts.ask();
         const pending = this.pendingActive;
         this.pendingActive = null;
         if (pending) {
@@ -590,9 +581,9 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         }
         if (!this.drawnOnce && model.any) {
             this.drawnOnce = true;
-            mark(this.plot.marks as unknown as HTMLElement, 'data-reveal', this.animation);
+            mark(this.plot.marksPart, 'data-reveal', this.animation);
         }
-    }
+    };
 
     drawTable(): void {
         // The plot's formats are the table's: it needs the model it would draw.
@@ -605,10 +596,10 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     usePlot(family: ChartFamily): void {
         let plot = this.plots.get(family);
         if (!plot) {
-            plot = family === 'parts' ? new PartsPlot(this.surface.element) : new RadarPlot(this.surface.element);
+            plot = family === 'parts' ? new PartsPlot(this.surface) : new RadarPlot(this.surface);
             this.plots.set(family, plot);
         }
-        for (const [name, each] of this.plots) css(each.svg as unknown as HTMLElement, 'display', name === family ? '' : 'none');
+        for (const [name, each] of this.plots) css(each.svgPart, 'display', name === family ? '' : 'none');
         this.plot = plot;
     }
 
@@ -663,15 +654,20 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         return { series: model.series[p.series].name, seriesIndex: p.series, index: p.index, x: p.key, y: p.y as number, xText: plot.xText(p.key), yText: plot.valueText(p), size: p.size, share: p.share, row: p.row as T };
     }
 
+    /** Where the pointer is on the plot: a handler reads it first, before it writes anything. */
     localPlace(e: MouseEvent): { x: number; y: number } {
-        const box = this.plot.svg.getBoundingClientRect();
+        const box = rectOf(this.plot.svgPart);
         return { x: e.clientX - box.left, y: e.clientY - box.top };
     }
 
     pointerMoved(e: PointerEvent): void {
+        this.pointerAt(e, this.localPlace(e));
+    }
+
+    pointerAt(e: PointerEvent, place: { x: number; y: number }): void {
         const press = this.press;
         if (press) {
-            const along = this.along(e);
+            const along = this.along(place);
             if (press.moved || Math.abs(along - press.along) > DRAG_FROM) {
                 press.moved = true;
                 this.clearActive();
@@ -679,9 +675,8 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
                 return;
             }
         }
-        const { x, y } = this.localPlace(e);
-        const found = this.plot.find(x, y);
-        if (found) this.setActive(found.slot, found.point, e);
+        const found = this.plot.find(place.x, place.y);
+        if (found) this.setActive(found.slot, found.point, e, place);
         else this.clearActive();
     }
 
@@ -779,27 +774,26 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         if (step) this.setWindow({ from: now.from + step, to: now.to + step });
     }
 
-    along(e: MouseEvent): number {
-        const { x, y } = this.localPlace(e);
-        return this.horizontal ? y : x;
+    along(place: { x: number; y: number }): number {
+        return this.horizontal ? place.y : place.x;
     }
 
     pressed(e: PointerEvent): void {
-        this.pointerMoved(e);
+        const place = this.localPlace(e);
+        this.pointerAt(e, place);
         if (!this.zoom || e.pointerType === 'touch' || e.button !== 0 || this.model?.family !== 'cartesian') return;
-        const { x, y } = this.localPlace(e);
-        const at = (this.plot as ChartPlot).positionValueAt(x, y);
+        const at = (this.plot as ChartPlot).positionValueAt(place.x, place.y);
         if (at === null) return;
-        this.press = { at, along: this.along(e), moved: false };
+        this.press = { at, along: this.along(place), moved: false };
     }
 
     released(e: PointerEvent): void {
         const press = this.press;
         this.press = null;
         if (!press?.moved) return;
+        const { x, y } = this.localPlace(e);
         const plot = this.plot as ChartPlot;
         plot.showBrush(null, null);
-        const { x, y } = this.localPlace(e);
         const at = plot.positionValueAt(x, y);
         // The press is not a click: what it went across is the new view.
         this.skipClick = true;
@@ -827,16 +821,17 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         }
     }
 
-    setActive(slot: ModelSlot, point: ModelPoint | null, e: Event | null): void {
+    /** `place`: where the pointer is on the plot, read before anything was written; null puts the tooltip at the value. */
+    setActive(slot: ModelSlot, point: ModelPoint | null, e: Event | null, place: { x: number; y: number } | null = null): void {
         if (slot === this.activeSlot && point === this.activePoint) {
-            if (e) this.placeTooltip(e as MouseEvent);
+            if (place) this.placeTooltip(place);
             return;
         }
         this.activeSlot = slot;
         this.activePoint = point;
         this.plot.showActive(slot, point, this.crosshair);
         this.showTooltip(slot, point);
-        this.placeTooltip(e as MouseEvent | null);
+        this.placeTooltip(place);
         if (point) this.pointFocused.fire({ point: this.pointOf(point), originalEvent: e, source: this });
     }
 
@@ -866,13 +861,13 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         this.tooltipPart.show(context, rows, options.format);
     }
 
-    placeTooltip(e: MouseEvent | null): void {
+    placeTooltip(pointer: { x: number; y: number } | null): void {
         const slot = this.activeSlot;
         const look = this.look;
         if (!slot || !look) return;
         const box = this.plot.box;
         const point = this.activePoint ?? slot.points[0];
-        const place = e && 'clientX' in e ? this.localPlace(e) : { x: point.px, y: point.py };
+        const place = pointer ?? { x: point.px, y: point.py };
         // On two axes it follows the position; around a center, the pointer or the value.
         const around = this.model?.family !== 'cartesian';
         const x = around || this.horizontal ? place.x : slot.at;
@@ -881,9 +876,9 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         this.tooltipPart.place(x, y, input?.width ?? box.width, input?.height ?? box.height, look.tickPad * 2);
     }
 
-    plotFocused(): void {
+    plotFocused(e?: Event): void {
         // The first value comes with the keyboard only: a click already says where it means.
-        if (!this.surface.element.matches(':focus-visible') || this.activeSlot) return;
+        if (!focusIsVisible(e) || this.activeSlot) return;
         const first = this.plot.order[0];
         if (first) this.moveTo(first, first.points[0]);
     }
@@ -900,7 +895,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         }
         this.setActive(slot, point, null);
         const p = this.pointOf(point);
-        text(this.status.element, uiLocale.text('chartValue', { series: p.series, position: p.xText, value: p.yText }));
+        text(this.status, uiLocale.text('chartValue', { series: p.series, position: p.xText, value: p.yText }));
     }
 
     plotKeyDown(e: KeyboardEvent): void {

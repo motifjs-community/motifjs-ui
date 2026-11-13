@@ -1,8 +1,12 @@
+import { Component, type ComponentBase } from '@motifx/core';
+import { isRtl, rectOf } from '../../core/measure';
 import { nextId } from '../../core/next-id';
+import { orderControls } from '../../core/order-controls';
+import { css, put } from '../../core/part-writes';
 import type { LayoutOrientation } from '../layout/layout-orientation';
-import type { LayoutItem } from './layout-item';
+import { itemPart, type LayoutItem } from './layout-item';
 import type { SashOwner } from './sash-owner';
-import { placeNode } from './place-node';
+import { detachOthers, dropPart, layoutPart } from './place-node';
 import { SplitSash } from './SplitSash';
 import type { TabDocumentManager } from './TabDocumentManager';
 import { TabGroup } from './TabGroup';
@@ -12,29 +16,37 @@ import { TabGroup } from './TabGroup';
  * other, each with its share of the room, a splitter between each two.
  */
 export class TabSplit implements SashOwner {
-  readonly element: HTMLDivElement;
+  /** The split as a component: its children's components and its splitters are its children. */
+  readonly part: Component<HTMLDivElement>;
+  /** The id written on it: the splitter before it names it as what it resizes. */
+  readonly id = nextId('tabdocs-split');
   parentSplit: TabSplit | null = null;
   children: LayoutItem[] = [];
   /** One share per child, adding up to 1. */
   sizes: number[] = [];
-  private readonly sashes: SplitSash[] = [];
+  private readonly splitters: SplitSash[] = [];
 
   constructor(
     private readonly manager: TabDocumentManager,
     public orientation: LayoutOrientation,
   ) {
-    this.element = manager.element.ownerDocument.createElement('div');
-    this.element.className = 'mx-tabdocs__split';
-    this.element.id = nextId('tabdocs-split');
+    this.part = new Component<HTMLDivElement>('div');
+    this.part.class.add('mx-tabdocs__split');
+    this.part.attr.add({ id: this.id });
+    layoutPart(this.part, true);
   }
 
   get rtl(): boolean {
-    const view = this.element.ownerDocument.defaultView;
-    return !!view && view.getComputedStyle(this.element).direction === 'rtl';
+    return isRtl(this.part);
+  }
+
+  /** Its splitters, one between each two children, in order. */
+  get sashes(): readonly SplitSash[] {
+    return this.splitters;
   }
 
   sashIndex(sash: SplitSash): number {
-    return this.sashes.indexOf(sash);
+    return this.splitters.indexOf(sash);
   }
 
   insert(child: LayoutItem, index: number, share = 1 / (this.children.length + 1)): void {
@@ -88,12 +100,12 @@ export class TabSplit implements SashOwner {
     return true;
   }
 
-  /** The pixels the children share; 0 when not laid out. */
+  /** The pixels the children share; 0 when not laid out. A layout read: read it before writing. */
   room(): number {
     const vertical = this.orientation === 'vertical';
     let total = 0;
     for (const child of this.children) {
-      const box = child.element.getBoundingClientRect();
+      const box = rectOf(itemPart(child));
       total += vertical ? box.height : box.width;
     }
     return total;
@@ -108,37 +120,37 @@ export class TabSplit implements SashOwner {
 
   /** Puts the children and splitters in place and gives each child its share. */
   render(): void {
-    const el = this.element;
-    el.dataset.orientation = this.orientation;
+    put(this.part, 'data-orientation', this.orientation);
     const wanted = Math.max(0, this.children.length - 1);
-    while (this.sashes.length < wanted) this.sashes.push(new SplitSash(this, this.manager));
-    for (const sash of this.sashes.splice(wanted)) sash.element.remove();
-    const order: Element[] = [];
+    while (this.splitters.length < wanted) this.splitters.push(new SplitSash(this, this.manager));
+    for (const sash of this.splitters.splice(wanted)) if (sash.part.parent) sash.part.parent.controls.remove(sash.part);
+    const order: ComponentBase[] = [];
     this.children.forEach((child, i) => {
-      order.push(child.element);
-      if (i < wanted) order.push(this.sashes[i].element);
+      order.push(itemPart(child));
+      if (i < wanted) order.push(this.splitters[i].part);
     });
-    order.forEach((node, i) => placeNode(el, node, el.children[i] ?? null));
-    while (el.children.length > order.length) el.lastElementChild!.remove();
-    this.children.forEach((child, i) => (child.element.style.flex = `${this.sizes[i]} 1 0px`));
+    orderControls(this.part, order);
+    // A child that went elsewhere in the tree is placed there; one that left it waits for the manager.
+    detachOthers(this.part, order);
+    this.children.forEach((child, i) => css(itemPart(child), 'flex', `${this.sizes[i]} 1 0px`));
     this.renderSashes();
   }
 
   /** The splitters' names and values. */
   renderSashes(): void {
     const label = this.manager.textOf('tabDocsResize');
-    this.sashes.forEach((sash, i) => {
-      const el = sash.element;
+    this.splitters.forEach((sash, i) => {
       const pair = this.sizes[i] + this.sizes[i + 1];
-      el.setAttribute('aria-orientation', this.orientation === 'horizontal' ? 'vertical' : 'horizontal');
-      el.setAttribute('aria-valuenow', String(Math.round(pair ? (this.sizes[i] / pair) * 100 : 50)));
-      el.setAttribute('aria-label', label);
-      el.setAttribute('aria-controls', this.children[i].element.id);
+      put(sash.part, 'aria-orientation', this.orientation === 'horizontal' ? 'vertical' : 'horizontal');
+      put(sash.part, 'aria-valuenow', String(Math.round(pair ? (this.sizes[i] / pair) * 100 : 50)));
+      put(sash.part, 'aria-label', label);
+      put(sash.part, 'aria-controls', this.children[i].id);
     });
   }
 
   dispose(): void {
-    for (const sash of this.sashes.splice(0)) sash.element.remove();
-    this.element.remove();
+    // Its sashes go with it; the groups and splits in it stay alive for the manager.
+    this.splitters.splice(0);
+    dropPart(this.part);
   }
 }

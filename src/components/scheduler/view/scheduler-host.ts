@@ -68,13 +68,13 @@ export interface SchedulerHost<T> {
   isSaving(item: T): boolean;
   /** The appointment's tooltip is showing. */
   isOpen(item: T): boolean;
-  /** "+N more" of a day, in a group (its index, -1 without groups). */
-  openMore(day: Date, group: number, anchor: HTMLElement): void;
+  /** "+N more" of a day, in a group (its index, -1 without groups), opened beside `anchor`, the more button. */
+  openMore(day: Date, group: number, anchor: ComponentBase): void;
   gridKey(e: KeyboardEvent): void;
   /** A view is on the page. */
   viewShown(): void;
-  /** The view's scroll box, for scrolling to a time. */
-  setScroller(el: HTMLElement | null): void;
+  /** The view's scroll box component, for scrolling to a time. */
+  setScroller(scroller: ComponentBase | null): void;
   /** The timeline view's scrolling, for scrolling to a time and bringing a cell into view. */
   setTimeline(timeline: TimelineScroll | null): void;
   /** An appointment is being moved or resized (by the pointer or the keys): it is shown where it would go. */

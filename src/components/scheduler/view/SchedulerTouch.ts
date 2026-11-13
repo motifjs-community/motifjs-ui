@@ -1,3 +1,6 @@
+import type { ComponentBase } from '@motifx/core';
+import { boxOf, measure, scrollTo } from '../../../core/measure';
+import { mark } from '../../../core/part-writes';
 import { SwipeTracker } from '../../../parts/overlay/swipe-tracker';
 import type { TouchHost } from './touch-host';
 
@@ -27,6 +30,13 @@ interface Pinch {
   refused: boolean;
 }
 
+/** The time between the fingers in a zoom: its share of the scroll box's content, and how far down the box it is. */
+interface Anchor {
+  scroller: ComponentBase;
+  share: number;
+  mid: number;
+}
+
 /**
  * The scheduler's finger gestures, on its own element with every listener there before a finger
  * lands (only then can a gesture keep the page still): a swipe sideways over the view goes to the
@@ -40,6 +50,21 @@ export class SchedulerTouch {
   private pinch: Pinch | null = null;
   private swipedAt = 0;
   private finger = false;
+  /** The fingers that landed in the view's scroll box: only there do two fingers zoom. */
+  private readonly inScroller = new Set<number>();
+  /** The time to keep between the fingers once the new zoom is laid out. */
+  private anchor: Anchor | null = null;
+
+  private readonly readAnchor = (): number | null => {
+    const anchor = this.anchor;
+    return anchor && !anchor.scroller.isDisposed ? boxOf(anchor.scroller).scrollHeight : null;
+  };
+
+  private readonly keepAnchor = (height: number | null): void => {
+    const anchor = this.anchor;
+    this.anchor = null;
+    if (anchor && height !== null) scrollTo(anchor.scroller, { top: Math.max(0, anchor.share * height - anchor.mid) });
+  };
 
   constructor(private readonly host: TouchHost) {}
 
@@ -48,49 +73,52 @@ export class SchedulerTouch {
     return Date.now() - this.swipedAt < AFTER_SWIPE;
   }
 
-  /** Listens on the scheduler's element; the function returned stops. */
+  /** Listens on the scheduler (its component); the function returned stops. */
   attach(): () => void {
     const root = this.host.root();
-    const on: [string, EventListener, AddEventListenerOptions][] = [
-      ['pointerdown', this.onPointer as EventListener, { capture: true }],
-      ['pointermove', this.onPointer as EventListener, { passive: true }],
-      ['touchstart', this.onStart as EventListener, { passive: true }],
-      ['touchmove', this.onMove as EventListener, { passive: false }],
-      ['touchend', this.onEnd as EventListener, {}],
-      ['touchcancel', this.onEnd as EventListener, {}],
-      ['contextmenu', this.onMenu as EventListener, {}],
+    type Handler = (sender: ComponentBase, e: Event) => void;
+    const on: [string, Handler][] = [
+      ['pointerdown:capture', (sender, e) => this.onPointer(sender, e as PointerEvent)],
+      ['pointermove:passive', (sender, e) => this.onPointer(sender, e as PointerEvent)],
+      ['touchstart:passive', (_, e) => this.onStart(e as TouchEvent)],
+      ['touchmove', (_, e) => this.onMove(e as TouchEvent)],
+      ['touchend', (_, e) => this.onEnd(e as TouchEvent)],
+      ['touchcancel', (_, e) => this.onEnd(e as TouchEvent)],
+      ['contextmenu', (_, e) => this.onMenu(e as MouseEvent)],
     ];
-    for (const [name, listener, options] of on) root.addEventListener(name, listener, options);
+    for (const [name, handler] of on) void root.motif.on(name as 'click', handler);
     return () => {
-      for (const [name, listener, options] of on) root.removeEventListener(name, listener, options);
+      for (const [name, handler] of on) void root.motif.off(name as 'click', handler);
     };
   }
 
-  private onPointer = (e: PointerEvent) => {
+  private onPointer = (root: ComponentBase, e: PointerEvent) => {
     const finger = e.pointerType === 'touch';
     if (e.type === 'pointermove' && (finger || e.pointerType !== 'mouse')) return;
     if (finger === this.finger) return;
     this.finger = finger;
-    this.host.root().toggleAttribute('data-touch', finger);
+    mark(root, 'data-touch', finger);
   };
 
   private onMenu = (e: Event) => {
-    if (this.finger && this.inContent(e.target)) e.preventDefault();
+    if (this.finger && this.inContent(e)) e.preventDefault();
   };
 
   private onStart = (e: TouchEvent) => {
+    const scroller = this.host.scroller();
+    if (scroller?.motif.isEventFrom(e)) for (const t of Array.from(e.changedTouches)) this.inScroller.add(t.identifier);
     if (e.touches.length === 2) {
       this.stopSwipe(false);
       this.startPinch(e);
       return;
     }
     if (e.touches.length !== 1 || !this.host.swipeNavigation() || this.host.dragging()) return;
-    const content = this.inContent(e.target);
+    const content = this.inContent(e);
     if (!content) return;
     const t = e.touches[0];
     const tracker = new SwipeTracker();
     tracker.start(t.clientX, t.clientY);
-    this.swipe = { id: t.identifier, x: t.clientX, y: t.clientY, width: content.clientWidth, decided: false, taken: false, tracker };
+    this.swipe = { id: t.identifier, x: t.clientX, y: t.clientY, width: boxOf(content).clientWidth, decided: false, taken: false, tracker };
   };
 
   private onMove = (e: TouchEvent) => {
@@ -123,6 +151,8 @@ export class SchedulerTouch {
   };
 
   private onEnd = (e: TouchEvent) => {
+    if (!e.touches.length) this.inScroller.clear();
+    else for (const t of Array.from(e.changedTouches)) this.inScroller.delete(t.identifier);
     if (this.pinch && e.touches.length < 2) this.stopPinch();
     const swipe = this.swipe;
     const t = swipe && Array.from(e.changedTouches).find((c) => c.identifier === swipe.id);
@@ -156,9 +186,10 @@ export class SchedulerTouch {
   private canScroll(next: boolean): boolean {
     const scroller = this.host.scroller();
     if (!scroller) return false;
-    const room = scroller.scrollWidth - scroller.clientWidth;
+    const box = boxOf(scroller);
+    const room = box.scrollWidth - box.clientWidth;
     if (room <= 1) return false;
-    const at = Math.abs(scroller.scrollLeft);
+    const at = box.scrollStart;
     return next ? at < room - 1 : at > 1;
   }
 
@@ -167,7 +198,7 @@ export class SchedulerTouch {
     const scroller = this.host.scroller();
     if (!this.host.pinchZoom() || (kind !== 'time' && kind !== 'timeline') || !scroller) return;
     const [a, b] = [e.touches[0], e.touches[1]];
-    if (!scroller.contains(a.target as Node) || !scroller.contains(b.target as Node)) return;
+    if (!this.inScroller.has(a.identifier) || !this.inScroller.has(b.identifier)) return;
     const axis = kind === 'time' ? 'y' : 'x';
     this.pinch = { axis, distance: spread(a, b, axis), from: this.host.zoom(), asked: false, refused: false };
   }
@@ -191,12 +222,14 @@ export class SchedulerTouch {
       this.host.setZoom(to);
       return;
     }
-    // The time between the fingers stays between them.
-    const box = scroller.getBoundingClientRect();
-    const mid = (a.clientY + b.clientY) / 2 - box.top;
-    const share = (scroller.scrollTop + mid) / Math.max(1, scroller.scrollHeight);
+    // The time between the fingers stays between them, once the new zoom is laid out (a zoom still waiting keeps its time).
+    if (!this.anchor) {
+      const box = boxOf(scroller);
+      const mid = (a.clientY + b.clientY) / 2 - box.top;
+      this.anchor = { scroller, share: (box.scrollTop + mid) / Math.max(1, box.scrollHeight), mid };
+    }
     this.host.setZoom(to);
-    queueMicrotask(() => (scroller.scrollTop = share * scroller.scrollHeight - mid));
+    measure(scroller, this.readAnchor, this.keepAnchor);
   }
 
   private stopPinch(): void {
@@ -207,11 +240,10 @@ export class SchedulerTouch {
     if (to !== pinch.from) this.host.zoomChanged(pinch.from, to);
   }
 
-  /** The view a touch began in, `null` outside it (the bar, a sheet). */
-  private inContent(target: EventTarget | null): HTMLElement | null {
-    const root = this.host.root();
-    const content = target instanceof Element ? target.closest<HTMLElement>('.mx-scheduler__content') : null;
-    return content && root.contains(content) && content.closest('.mx-scheduler') === root ? content : null;
+  /** The part holding the view when the event began in it, `null` outside it (the bar, a sheet). */
+  private inContent(e: Event): ComponentBase | null {
+    const content = this.host.content();
+    return content?.motif.isEventFrom(e) ? content : null;
   }
 }
 

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { Gallery } from './Gallery';
+import type { GalleryItem } from './gallery-item';
 
 const hosts: Component[] = [];
 
@@ -44,7 +45,7 @@ describe('Gallery', () => {
         expect(a.getAttribute('aria-roledescription')).toBe('slide');
         expect(a.getAttribute('aria-label')).toBe('Slide 1 of 3');
         expect(a.querySelector('img')!.getAttribute('src')).toBe('a.png');
-        expect(a.querySelector<HTMLElement>('.mx-gallery__caption')!.hidden).toBe(true);
+        expect(a.querySelector('.mx-gallery__caption')).toBe(null);
         expect(b.querySelector('img')!.alt).toBe('A boat');
         expect(b.querySelector('.mx-gallery__title')!.textContent).toBe('Two');
         expect(b.querySelector('.mx-gallery__description')!.textContent).toBe('Second');
@@ -59,6 +60,35 @@ describe('Gallery', () => {
         expect(nav(g, 'next').getAttribute('aria-disabled')).toBe(null);
         expect(g.element.querySelector<HTMLElement>('.mx-gallery__play')!.hidden).toBe(true);
         expect(g.count).toBe(3);
+    });
+
+    it('keeps its slides and dots when the value or an item changes, and writes only the slide that changed', async () => {
+        const s = reactive({ title: 'One', items: [] as (string | GalleryItem)[] });
+        s.items = [{ image: 'a.png', text: () => s.title }, { image: 'b.png', text: 'Two' }, 'c.png'];
+        const g = new Gallery({ items: () => s.items });
+        page(g);
+        await settle();
+        const before = panes(g);
+        const dotsBefore = dots(g);
+        g.value = 1;
+        await settle();
+        expect(panes(g)).toEqual(before);
+        expect(dots(g)).toEqual(dotsBefore);
+        expect(before[1].hasAttribute('data-current')).toBe(true);
+        const seen: Node[] = [];
+        const watcher = new MutationObserver(records => seen.push(...records.map(r => r.target)));
+        watcher.observe(g.element, { subtree: true, childList: true, characterData: true, attributes: true });
+        s.title = 'Uno';
+        await settle();
+        watcher.disconnect();
+        expect(before[0].querySelector('.mx-gallery__title')!.textContent).toBe('Uno');
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen.every(node => before[0].contains(node))).toBe(true);
+        // A slide stays with its item: one taken out leaves the others as they are.
+        s.items = s.items.filter(item => item !== s.items[0]);
+        await settle();
+        expect(panes(g)).toEqual(before.slice(1));
+        expect(dots(g)).toEqual(dotsBefore.slice(0, 2));
     });
 
     it('next, previous, goTo and the keys move the pane in view; x-model follows; loop goes around the ends', async () => {

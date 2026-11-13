@@ -1,16 +1,19 @@
-import { onLookChanged } from '../../core/look-watch';
-import { Component, Emitter, motifFragment, reactive, read, safeCall, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { css, kept, mark, put, text } from '../../core/draw-parts';
+import { Component, Emitter, motifFragment, reactive, read, safeCall, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp, errorHandler } from '@motifx/core';
+import { loose, part, textPart } from '../../core/draw-parts';
+import { css, kept, mark, put, text } from '../../core/part-writes';
+import { onDocument } from '../../core/window-events';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import { follow } from '../../core/follow';
 import { uiLocale } from '../../core/ui-locale';
 import { onReState } from '../../core/on-re-state';
-import { focusableIn, nextTabbable, tabbableIn } from '../../core/focus';
+import { focusAndSelect, focusFirstIn, focusGoesInto, focusOn, focusPast, focusStopIn, holdsFocus, isFocused, releaseFocus, rememberFocus, windowHasFocus } from '../../core/focus';
+import { windowOf } from '../../core/page-documents';
+import { placeOnPage } from '../../core/page-layer';
+import { boxOf, isRendered, isRtl, measure, measureNow, onLayout, rectOf, reveal, styleOf, textWidths } from '../../core/measure';
 import { checkMark, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
 import { fillTemplate } from '../../core/fill-template';
 import { nextId } from '../../core/next-id';
-import { ResizeWatch } from '../../core/resize-watch';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
 import { confirm } from '../form/confirm';
@@ -140,7 +143,9 @@ import { ActionWidths } from './view/ActionWidths';
 import { BarButtons } from './view/BarButtons';
 import type { ResolvedAction } from './view/resolved-action';
 import { CellEditor } from './view/CellEditor';
-import { CellTip } from './view/CellTip';
+import { CellTip, tipOfPart } from './view/CellTip';
+import type { CellTipTarget } from './view/cell-tip-target';
+import type { ColumnFit } from './view/column-fit';
 import { ColumnMenu } from './view/ColumnMenu';
 import { ColumnStyles } from './view/ColumnStyles';
 import type { FilterCell } from './view/FilterCell';
@@ -154,6 +159,7 @@ import type { PopupValues } from './view/popup-values';
 import { GroupPanel } from './view/GroupPanel';
 import { GridPager } from './view/GridPager';
 import type { GridRow } from './view/GridRow';
+import type { GroupFooterRow } from './view/GroupFooterRow';
 import { HeaderFilter } from './view/HeaderFilter';
 import type { FilterBuilder } from '../filterbuilder/FilterBuilder';
 import { FilterBuilderWindow } from './view/FilterBuilderWindow';
@@ -195,36 +201,36 @@ const COLUMN_LOOK = ['title', 'hidingPriority', 'resizeMode', 'columnRenderingMo
 
 /** The grid's own parts around the rows, kept to draw them again (see `drawShell`). */
 interface Shell {
-  vp: HTMLDivElement;
-  foot: HTMLDivElement;
-  overlay: HTMLDivElement;
-  loading: HTMLDivElement;
-  empty: HTMLDivElement;
-  failed: HTMLDivElement;
+  vp: Component<HTMLDivElement>;
+  foot: Component<HTMLDivElement>;
+  overlay: Component<HTMLDivElement>;
+  loading: Component<HTMLDivElement>;
+  empty: Component<HTMLDivElement>;
+  failed: Component<HTMLDivElement>;
   spinner: Spinner;
-  emptyText: HTMLSpanElement;
+  emptyText: Component<HTMLSpanElement>;
   clear: Button;
-  failedText: HTMLSpanElement;
+  failedText: Component<HTMLSpanElement>;
   retry: Button;
-  more: HTMLDivElement;
+  more: Component<HTMLDivElement>;
   moreSpinner: Spinner;
-  moreFailed: HTMLSpanElement;
+  moreFailed: Component<HTMLSpanElement>;
   moreRetry: Button;
-  exporting: HTMLDivElement;
+  exporting: Component<HTMLDivElement>;
   progress: ProgressBar;
   cancel: Button;
-  bar: HTMLDivElement;
-  count: HTMLSpanElement;
-  selected: HTMLSpanElement;
-  cells: HTMLSpanElement;
-  someFailed: HTMLSpanElement;
-  someFailedText: Text;
+  bar: Component<HTMLDivElement>;
+  count: Component<HTMLSpanElement>;
+  selected: Component<HTMLSpanElement>;
+  cells: Component<HTMLSpanElement>;
+  someFailed: Component<HTMLSpanElement>;
+  someFailedText: ComponentBase;
   someRetry: Button;
-  errors: HTMLSpanElement;
-  errorsText: Text;
+  errors: Component<HTMLSpanElement>;
+  errorsText: ComponentBase;
   nextError: Button;
-  live: HTMLDivElement;
-  error: HTMLDivElement;
+  live: Component<HTMLDivElement>;
+  error: Component<HTMLDivElement>;
 }
 
 /** The notices of the sets of options the grid follows (see `followGiven`). */
@@ -306,17 +312,25 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** "Export selected rows" was chosen for a format the app writes: its next `exportSheet()` takes the selection. */
   private selectedNext = false;
   private readonly gridId = nextId('data-grid');
-  private viewportEl: HTMLDivElement | null = null;
-  private headEl: HTMLDivElement | null = null;
-  private footEl: HTMLDivElement | null = null;
-  private probeEl: HTMLDivElement | null = null;
-  private measureEl: HTMLDivElement | null = null;
+  /** The box the rows scroll in, with the head and the totals in it. */
+  private viewportPart: Component<HTMLDivElement> | null = null;
+  /** The head: the header row, the filter row and the band rows are its children. */
+  private headPart: ComponentBase | null = null;
+  private footPart: ComponentBase | null = null;
+  /** A hidden row whose height is the rows' height. */
+  private probePart: ComponentBase | null = null;
+  private measurePart: ComponentBase | null = null;
+  /** How far the rows are scrolled sideways (from the inline start), as last measured: virtual columns are found from it. */
+  private columnsStart = 0;
+  /** Columns waiting to be fitted to their content, each with whether it goes alone (see `fitColumns`). */
+  private fitting: { fields: Map<string, boolean>; all: boolean; told: boolean } | null = null;
   /** Which button of the active actions cell has focus. */
   private actionIndex = 0;
-  private tabbable: HTMLElement | null = null;
+  /** The part that is the grid's Tab stop now (see `syncTabStop`). */
+  private tabbable: ComponentBase | null = null;
   private editor: CellEditor<T> | null = null;
-  /** The row and field the open editor belongs to. */
-  private editTarget: { rowId: string; row: T; field: string } | null = null;
+  /** The row and field the open editor belongs to, and the drawn row and cell it was put in. */
+  private editTarget: { rowId: string; row: T; field: string; view: GridRow<T>; cell: ComponentBase } | null = null;
   /** Id of the active row (follows a new row when rows above it come or go). */
   private activeRowId: string | undefined;
   /** A row the user left with messages (focus went elsewhere); adding a row goes back to it first. */
@@ -357,20 +371,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const model = new GridModel<T>(own);
     this.model = model;
     model.errorId = `${this.gridId}-error`;
-    const ghost = new DragGhost(
-      () => this.element as HTMLElement,
-      () => model.settings.get('dragGhost'),
-      'mx-data-grid__ghost',
-    );
+    const ghost = new DragGhost(() => this, () => model.settings.get('dragGhost'), 'mx-data-grid__ghost');
     this.motif.setDisposable(() => ghost.hide());
     const host: HeaderHost = {
       ghost,
       hasMenu: (field) => this.hasMenu(field),
       openMenu: (field, anchor) => this.openMenu(field, anchor),
-      autoSize: (field) => this.autoSize(field),
-      autoSizeAll: () => this.autoSizeColumns(),
+      autoSize: (field) => this.fitColumns([field], false, true),
+      autoSizeAll: () => this.fitAll(true),
       startAdjust: (kind, field) => this.startAdjust(kind, field),
-      isRtl: () => this.isRtl(),
+      isRtl: () => isRtl(this),
       openHeaderFilter: (field, anchor) => this.openHeaderFilter(field, anchor),
       toggleAll: () => this.toggleAll(),
       allState: () => this.allState(),
@@ -378,18 +388,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       focusActive: () => this.focusActive(false),
     };
     this.header = new HeaderRow<T>(model, host);
-    this.bands = new BandRows<T>(model, host, this.header, this);
+    this.bands = new BandRows<T>(model, host, this.header);
     this.motif.setDisposable(() => this.bands.dispose());
     this.filterRow = new FilterRow<T>(model);
-    this.widths = new ActionWidths(() => this.measureEl);
-    // Another design language, theme or density: the action buttons are measured again.
-    this.motif.setDisposable(
-      onLookChanged(() => {
-        this.widths.clear();
-        this.measure();
-      }),
-    );
-    this.body = new GridBody<T>(model, () => this.viewportEl, this.widths, {
+    // Widths read later than the rows were drawn: the rows fit their action buttons again.
+    this.widths = new ActionWidths(() => this.measurePart, () => model.notices.tell('actions'));
+    // Another design language, theme or density: the action buttons and the sizes are measured again.
+    onLayout(this, 'look', () => {
+      this.widths.clear();
+      this.measureSizes();
+    });
+    this.body = new GridBody<T>(model, () => this.viewportPart, this.widths, {
       grid: this,
       collapse: (key) => this.collapseRow(key),
       adaptiveContent: (rowId, row) => this.adaptiveForm(rowId, row),
@@ -397,8 +406,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.rowDrag = new RowDrag<T>(model, this.body, {
       grid: this,
       ghost,
-      root: () => this.element as HTMLElement,
-      viewport: () => this.viewportEl,
+      gridId: this.gridId,
+      head: () => this.headPart,
       focusRow: (i) => {
         const field = model.state.activeField;
         if (this.focusWithin) this.navigate(i, field);
@@ -412,11 +421,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     this.motif.setDisposable(() => this.rowDrag.dispose());
     this.dragSelect = new DragSelect<T>(model, this.body, {
-      root: () => this.element as HTMLElement,
-      viewport: () => this.viewportEl,
-      headerCell: (field) => this.header.cellElement(field),
-      isRtl: () => this.isRtl(),
-      columnsScrolled: () => this.columnsScrolled(),
+      grid: this,
+      headerCellPart: (field) => this.header.cellPart(field),
+      isRtl: () => isRtl(this),
+      columnsScrolled: () => this.measureScroll(),
       begin: (kind, index, field, how) => (kind === 'rows' ? this.beginRowDrag(index, how) : this.beginCellDrag(index, field, how)),
       reach: (kind, index, field) => (kind === 'rows' ? this.reachRows(index) : this.reachCells(index, field)),
       finish: (kind, kept) => (kind === 'rows' ? this.finishRowDrag(kept) : this.finishCellDrag(kept)),
@@ -468,13 +476,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       },
     });
     this.bottomBar = new Toolbar({ size: 'sm' });
-    this.bottomBar.element.classList.add('mx-data-grid__bar-actions');
+    this.bottomBar.class.add('mx-data-grid__bar-actions');
     const bottomActions: BarButtons<T> = new BarButtons<T>(model, 'bottom', {
       run: (entry) => void this.startEntry(entry, 'bottom'),
+      // Before the menu button.
       added: (button) => {
-        this.bottomBar.controls.add(button);
-        const menu = this.bottomBar.element.querySelector(':scope > .mx-data-grid__bar-menu');
-        if (menu) this.bottomBar.element.insertBefore(button.element, menu);
+        // Set once the buttons are made; until then the menu button is not in the bar either.
+        const menu = (this.bottomActions as BarButtons<T> | undefined)?.menuButton;
+        const at = menu ? this.bottomBar.controls.items.indexOf(menu) : -1;
+        if (at >= 0) this.bottomBar.controls.insert(at, button);
+        else this.bottomBar.controls.add(button);
       },
     });
     this.bottomActions = bottomActions;
@@ -516,9 +527,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     };
     this.groupPanel = new GroupPanel<T>(model, {
       ghost,
-      isRtl: () => this.isRtl(),
-      showHeaderDrop: (field, x, y) => this.header.showChipDrop(field, x, y),
-      dropOnHeaders: (field, x) => this.dropOnHeaders(field, x),
+      isRtl: () => isRtl(this),
+      headerDropAt: (field, x, y) => this.header.chipDropAt(field, x, y),
+      showHeaderDrop: (drop) => this.header.showChipDrop(drop),
+      dropOnHeaders: (field, index) => this.dropOnHeaders(field, index),
       focusRows: () => this.focusActive(true),
       keyHandling: (e) => this.askKey(e),
     });
@@ -548,7 +560,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       owner: this,
       options: this.builderOptions.view,
       popup: this.builderPopupSwitches,
-      returnFocus: () => this.filterPanel.textButton?.focus(),
+      returnFocus: () => {
+        const button = this.filterPanel.textButton;
+        if (button) focusOn(button);
+      },
     });
     this.filterPanel = new FilterPanel<T>(model, {
       text: () => this.filterText,
@@ -882,18 +897,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (i >= 0) this.body.reveal(i, align);
   }
 
-  /** Fits every visible, resizable column to its header and the displayed rows. */
+  /** Fits every visible, resizable column to its header and the displayed rows, measured with the window's next reads. */
   autoSizeColumns() {
-    // Virtual columns: every column gets its cells while they are measured.
-    const drawn = this.model.columnWindow;
-    drawn.everything = true;
-    this.updateColumns();
-    for (const field of this.model.columns.visible()) {
-      if (this.model.columns.can(field, 'resizable')) this.autoSize(field, true);
-    }
-    drawn.everything = false;
-    this.updateColumns();
-    this.model.keepLayout();
+    this.fitAll(false);
   }
 
   /** Sets focus on the active cell. */
@@ -1339,28 +1345,28 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** The currently rendered rows (those in view, and the active row wherever it is), in order. */
   getVisibleRows(): GridVisibleRow<T>[] {
     const { model } = this;
-    const rows: GridVisibleRow<T>[] = this.body.drawn().map(({ index, element, group }) => ({
+    const rows: GridVisibleRow<T>[] = this.body.drawn().map(({ index, part, group }) => ({
       rowIndex: index,
       rowType: this.rowTypeOf(index),
       row: group ? undefined : model.rowAt(index),
       key: this.getKeyByRowIndex(index),
       groupKey: group ? [...group.path] : undefined,
-      element,
+      part,
     }));
     // A row's details come right after it, with its index and key.
-    for (const d of this.body.drawnDetails()) rows.push({ rowIndex: d.index, rowType: d.kind === 'adaptive' ? 'detailAdaptive' : 'detail', row: d.row, key: d.key, element: d.element });
+    for (const d of this.body.drawnDetails()) rows.push({ rowIndex: d.index, rowType: d.kind === 'adaptive' ? 'detailAdaptive' : 'detail', row: d.row, key: d.key, part: d.part });
     const order = (type: GridRowType) => (type === 'detailAdaptive' ? 1 : type === 'detail' ? 2 : 0);
     return rows.sort((a, b) => a.rowIndex - b.rowIndex || order(a.rowType) - order(b.rowType));
   }
 
-  /** The element of grid row `rowIndex` while it is rendered. */
-  getRowElement(rowIndex: number): HTMLElement | undefined {
-    return this.body.rowAt(rowIndex)?.element ?? this.body.groupRowAt(rowIndex)?.element ?? this.body.footerRowAt(rowIndex)?.element;
+  /** The part of grid row `rowIndex` while it is rendered. */
+  getRowPart(rowIndex: number): ComponentBase | undefined {
+    return this.body.rowAt(rowIndex)?.part ?? this.body.groupRowAt(rowIndex)?.part ?? this.body.footerRowAt(rowIndex)?.part;
   }
 
-  /** The element of a cell while its row is rendered. A group row returns its single cell for any field. */
-  getCellElement(rowIndex: number, field: string): HTMLElement | undefined {
-    return this.body.cellElement(rowIndex, field);
+  /** The part of a cell while its row is rendered. A group row returns its single cell for any field. */
+  getCellPart(rowIndex: number, field: string): ComponentBase | undefined {
+    return this.body.cellAt(rowIndex, field);
   }
 
   /** The key of grid row `rowIndex`, or `undefined` for a new row, a group row, the header or a row still loading. */
@@ -2314,9 +2320,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** Opens the column list (show and hide), below the toolbar's column button when it is visible. */
   showColumnChooser() {
-    const button = this.topBar.elementOf('columnChooserButton');
-    const shown = button && button.isConnected && !button.hidden && !button.hasAttribute('data-overflowed') && this.topBar.bar.element.offsetParent !== null;
-    this.menu.openColumns(shown ? button : (this.headEl ?? this.element));
+    const bar = this.topBar.bar;
+    const button = this.topBar.controlOf('columnChooserButton');
+    const shown = button instanceof Control && !bar.overflowed.includes(button) && isRendered(button);
+    const anchor = shown ? button : this.headPart;
+    this.menu.openColumns(anchor ?? this);
   }
 
   // Grouping.
@@ -2717,7 +2725,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const ev = this.model.events;
     this.selectedNext = !!options.selected;
     if (!ev.listened(ev.exporting)) {
-      console.warn(`DataGrid: nothing writes '${format}' files. Write them in onExporting (exportDataGrid from @motifx-community/ui/excel for 'xlsx', from @motifx-community/ui/pdf for 'pdf').`);
+      errorHandler.reportSuppressed('DataGrid.export', new Error(`DataGrid: nothing writes '${format}' files. Write them in onExporting (exportDataGrid from @motifx-community/ui/excel for 'xlsx', from @motifx-community/ui/pdf for 'pdf').`));
       return;
     }
     const e: GridExportingEventArgs = { format, component: this, selectedRowsOnly: !!options.selected, options: { ...options }, cancel: false };
@@ -2733,12 +2741,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * `onExporting`, because an `onExporting` handler calls this method.
    */
   async exportSheet<R>(options: GridSheetOptions, write: (sheet: GridSheet<T>) => R | Promise<R>): Promise<R> {
+    // Read before anything is drawn: the direction and the widths the columns have on screen.
+    const rtl = isRtl(this);
+    const widths = this.shownWidths();
     const selected = options.selectedRowsOnly ?? this.selectedNext;
     this.selectedNext = false;
     const format = options.format ?? 'xlsx';
     const given: GridExportOptions = { selected, pageSize: options.pageSize, onProgress: options.onProgress, signal: options.signal, loadPanel: options.loadPanel ?? true };
     const collect = (o: GridExportOptions, signal: AbortSignal) =>
-      this.exporter.sheet({ ...options, onProgress: o.onProgress, selected, rtl: this.isRtl(), widthOf: (field) => this.shownWidth(field) }, signal);
+      this.exporter.sheet({ ...options, onProgress: o.onProgress, selected, rtl, widthOf: (field) => widths.get(field) ?? this.model.columns.width(field) }, signal);
     const run = await this.runExport(format, given, collect, false);
     const sheet = run!.result;
     const result = await write(sheet);
@@ -2758,7 +2769,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const settings = model.settings;
     this.class.add('mx-data-grid');
-    this.element.setAttribute('data-grid-id', this.gridId);
+    this.attr.add({ 'data-grid-id': this.gridId });
     this.drawRoot();
     // What the grid does about a change in its state: checked on every turn the grid tells changes, before the views draw.
     this.motif.setDisposable(
@@ -2973,7 +2984,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         const visible = cols.visible();
         const align = new Map<string, string>();
         for (const f of visible) align.set(f, cols.align(f));
-        this.viewportEl?.style.setProperty('--_columns', cols.template(visible));
+        if (this.shell) css(this.shell.vp, '--_columns', cols.template(visible));
         this.styles.update(visible, cols.stickyOffsets(visible), align, cols.hasBands ? cols.shownBands(visible) : [], cols.anyVirtual(visible));
       },
     );
@@ -3060,15 +3071,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     untracked(() => {
       const { model } = this;
       const settings = model.settings;
-      const el = this.element;
       const status = model.state.status;
-      put(el, 'data-mode', model.mode);
-      mark(el, 'data-striped', settings.get('striped'));
-      put(el, 'data-header-buttons', settings.get('headerButtons'));
-      put(el, 'data-selection', settings.get('selection') === 'none' ? null : settings.get('selection'));
+      put(this, 'data-mode', model.mode);
+      mark(this, 'data-striped', settings.get('striped'));
+      put(this, 'data-header-buttons', settings.get('headerButtons'));
+      put(this, 'data-selection', settings.get('selection') === 'none' ? null : settings.get('selection'));
       // While there are no rows to show, the body keeps room for the message (`emptyRows`).
-      put(el, 'data-state', status === 'loading' ? 'loading' : status === 'error' ? 'error' : model.count === 0 ? 'empty' : null);
-      css(el, '--_empty-rows', String(Math.max(0, settings.get('emptyRows'))));
+      put(this, 'data-state', status === 'loading' ? 'loading' : status === 'error' ? 'error' : model.count === 0 ? 'empty' : null);
+      css(this, '--_empty-rows', String(Math.max(0, settings.get('emptyRows'))));
     });
   }
 
@@ -3088,38 +3098,21 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     // Header cells and rows are built in definition order; put them in display order.
     const visible = this.model.columns.visible();
     this.header.arrange(visible);
-    if (this.headEl) this.bands.arrange(visible, this.headEl, this.header.element);
+    if (this.headPart) this.bands.arrange(visible, this.headPart, this.header);
     if (this.model.showsFilterRow()) this.filterRow.arrange(visible);
     this.body.arrange(visible);
     this.totalRow.arrange(visible);
   }
 
   override onMounted() {
-    const vp = this.viewportEl;
-    if (!vp) return;
-    this.styles.attach(this.element);
+    const shell = this.shell;
+    if (!shell) return;
+    this.styles.attach(this);
     this.motif.setDisposable(() => this.styles.detach());
-    const wheel = (e: WheelEvent) => this.body.onWheel(e);
-    const keys = (e: KeyboardEvent) => this.onEditorCapture(e);
-    vp.addEventListener('wheel', wheel, { passive: false });
-    vp.addEventListener('keydown', keys, true);
-    this.motif.setDisposable(() => {
-      vp.removeEventListener('wheel', wheel);
-      vp.removeEventListener('keydown', keys, true);
-    });
-    this.measure();
-    if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeWatch(() => this.measure());
-      ro.observe(vp);
-      if (this.headEl) ro.observe(this.headEl);
-      if (this.footEl) ro.observe(this.footEl);
-      if (this.probeEl) ro.observe(this.probeEl);
-      this.motif.setDisposable(() => ro.disconnect());
-    }
-    vp.style.setProperty('--_columns', this.model.columns.template(this.model.columns.visible()));
+    this.measureSizes();
+    css(shell.vp, '--_columns', this.model.columns.template(this.model.columns.visible()));
     this.body.relayout(true);
     this.syncTabStop();
-    this.element.removeAttribute('data-settling');
   }
 
   override onDisposing() {
@@ -3138,55 +3131,47 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   override view() {
     const { model } = this;
     const settings = model.settings;
-    const div = (className: string, parent?: ComponentBase) => {
-      const c = new Component<HTMLDivElement>('div');
-      c.element.className = className;
-      parent?.controls.add(c);
-      return c;
-    };
-    const span = (className: string, parent: ComponentBase) => {
-      const c = new Component<HTMLSpanElement>('span');
-      c.element.className = className;
-      parent.controls.add(c);
-      return c;
-    };
+    const div = (className: string, parent?: ComponentBase) => (parent ? part<HTMLDivElement>(parent, 'div', className) : loose<HTMLDivElement>('div', className));
+    const span = (className: string, parent: ComponentBase) => part<HTMLSpanElement>(parent, 'span', className);
 
     const main = div('mx-data-grid__main');
     const viewport = div('mx-data-grid__viewport', main);
-    const vp = viewport.element;
-    this.viewportEl = vp;
+    this.viewportPart = viewport;
     // The columns from the first frame: rows drawn before the template would stack in one column.
-    vp.style.setProperty('--_columns', this.model.columns.template(this.model.columns.visible()));
-    // Out of sight until the grid's own sheet (hidden and sticky columns, alignment) is in the page.
-    this.element.setAttribute('data-settling', '');
-    this.motif.setDisposable(this.dragSelect.holdTouch(vp));
-    vp.addEventListener('scroll', () => {
-      this.columnsScrolled();
+    css(viewport, '--_columns', this.model.columns.template(this.model.columns.visible()));
+    // Out of sight until the grid's own sheet (hidden and sticky columns, alignment) is in the page and the rows are laid out for the sizes read.
+    mark(this, 'data-settling', true);
+    this.motif.setDisposable(this.dragSelect.holdTouch(viewport));
+    viewport.motif.on('scroll', () => {
+      this.measureScroll();
       this.body.onScroll();
       this.tip.hide();
       this.syncTabStop();
     });
-    vp.addEventListener('keydown', (e) => this.onKey(e));
-    vp.addEventListener('focusin', (e) => this.onFocusIn(e));
-    vp.addEventListener('focusout', (e) => this.onFocusOut(e));
-    vp.addEventListener('paste', (e) => this.onPaste(e));
-    vp.addEventListener('pointerdown', (e) => this.onPointerDown(e));
-    vp.addEventListener('click', (e) => this.onClick(e));
-    vp.addEventListener('dblclick', (e) => this.onDoubleClick(e));
-    vp.addEventListener('contextmenu', (e) => this.onContextMenu(e));
-    vp.addEventListener('pointermove', (e) => {
-      if (this.body.detailOf(e.target as Element)) this.tip.hide();
-      else if (settings.get('tooltips')) this.tip.hover(e);
+    // The wheel scrolls the rows by the grid's own steps; an open editor sees the keys first.
+    viewport.motif.on('wheel', (_, e) => this.body.onWheel(e));
+    viewport.motif.on('keydown:capture', (_, e) => this.onEditorCapture(e));
+    viewport.motif.on('keydown', (_, e) => this.onKey(e));
+    viewport.motif.on('focusin', (_, e) => this.onFocusIn(e));
+    viewport.motif.on('focusout', (_, e) => this.onFocusOut(e));
+    viewport.motif.on('paste', (_, e) => this.onPaste(e));
+    viewport.motif.on('pointerdown', (_, e) => this.onPointerDown(e));
+    viewport.motif.on('click', (_, e) => this.onClick(e));
+    viewport.motif.on('dblclick', (_, e) => this.onDoubleClick(e));
+    viewport.motif.on('contextmenu', (_, e) => this.onContextMenu(e));
+    viewport.motif.on('pointermove', (_, e) => {
+      if (this.body.detailFrom(e)) this.tip.hide();
+      else if (settings.get('tooltips')) this.tip.hovered(this.tipFrom(e));
     });
-    vp.addEventListener('pointerleave', () => this.tip.hide());
+    viewport.motif.on('pointerleave', () => this.tip.hide());
     const head = div('mx-data-grid__head', viewport);
-    head.element.setAttribute('role', 'rowgroup');
-    this.headEl = head.element;
+    head.attr.add({ role: 'rowgroup' });
+    this.headPart = head;
     head.controls.add(this.header, this.filterRow);
     viewport.controls.add(this.body);
     const foot = div('mx-data-grid__foot', viewport);
-    foot.element.setAttribute('role', 'rowgroup');
-    this.footEl = foot.element;
+    foot.attr.add({ role: 'rowgroup' });
+    this.footPart = foot;
     foot.controls.add(this.totalRow);
 
     const overlay = div('mx-data-grid__overlay', main);
@@ -3196,19 +3181,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const empty = div('mx-data-grid__state', overlay);
     const emptyText = span('', empty);
     const clear = new Button({});
-    clear.element.classList.add('mx-data-grid__clear-filters');
+    clear.class.add('mx-data-grid__clear-filters');
     clear.motif.on('click', () => this.clearFilters());
     empty.controls.add(clear);
     const failed = div('mx-data-grid__state', overlay);
-    failed.element.dataset.tone = 'danger';
-    failed.element.setAttribute('role', 'alert');
+    failed.attr.add({ 'data-tone': 'danger', role: 'alert' });
     const failedText = span('', failed);
     const retry = new Button({});
     retry.motif.on('click', () => this.retry());
     failed.controls.add(retry);
 
     const more = div('mx-data-grid__load-more', main);
-    more.element.setAttribute('role', 'status');
+    more.attr.add({ role: 'status' });
     const moreSpinner = new Spinner({ size: 'sm' });
     more.controls.add(moreSpinner);
     const moreFailed = span('', more);
@@ -3218,7 +3202,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
     const exporting = div('mx-data-grid__export-panel', main);
     const progress = new ProgressBar({ size: 'sm', stretch: true });
-    progress.element.classList.add('mx-data-grid__export-progress');
+    progress.class.add('mx-data-grid__export-progress');
     progress.valueText = () => {
       const panel = this.exportPanel;
       const count = (n: number) => model.formatter.count(n);
@@ -3227,15 +3211,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         : model.text('gridExportProgress', { loaded: panel.loaded, total: panel.total });
     };
     const cancel = new Button({});
-    cancel.element.classList.add('mx-data-grid__export-cancel');
+    cancel.class.add('mx-data-grid__export-cancel');
     cancel.motif.on('click', () => this.stopPanelExport?.());
     exporting.controls.add(progress, cancel);
     const probe = div('mx-data-grid__probe', main);
-    probe.element.setAttribute('aria-hidden', 'true');
-    this.probeEl = probe.element;
-    const measure = div('mx-data-grid__measure', main);
-    measure.element.setAttribute('aria-hidden', 'true');
-    this.measureEl = measure.element;
+    probe.attr.add({ 'aria-hidden': 'true' });
+    this.probePart = probe;
+    const measuring = div('mx-data-grid__measure', main);
+    measuring.attr.add({ 'aria-hidden': 'true' });
+    this.measurePart = measuring;
+    // The rows' box, the head, the totals or the row height took another size: the sizes are read again.
+    for (const sized of [viewport, head, foot, probe]) onLayout(sized, 'size', () => this.measureSizes());
 
     const bar = div('mx-data-grid__bar');
     bar.controls.add(this.bottomBar);
@@ -3243,18 +3229,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const selected = span('mx-data-grid__selected', bar);
     const cells = span('mx-data-grid__cell-summary', bar);
     const someFailed = span('mx-data-grid__note', bar);
-    someFailed.element.dataset.tone = 'danger';
-    someFailed.element.setAttribute('role', 'status');
-    const someFailedText = document.createTextNode('');
-    someFailed.element.append(someFailedText);
+    someFailed.attr.add({ 'data-tone': 'danger', role: 'status' });
+    const someFailedText = textPart(someFailed, '');
     const someRetry = new Button({});
     someRetry.motif.on('click', () => this.retry());
     someFailed.controls.add(someRetry);
     const errors = span('mx-data-grid__note mx-data-grid__errors', bar);
-    errors.element.dataset.tone = 'danger';
-    errors.element.setAttribute('role', 'status');
-    const errorsText = document.createTextNode('');
-    errors.element.append(errorsText);
+    errors.attr.add({ 'data-tone': 'danger', role: 'status' });
+    const errorsText = textPart(errors, '');
     const nextError = new Button({});
     nextError.motif.on('pointerdown', (_, e) => e.preventDefault());
     nextError.motif.on('click', () => this.goToNextError());
@@ -3262,41 +3244,41 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     bar.controls.add(this.pager);
 
     const live = div('mx-data-grid__live');
-    live.element.setAttribute('aria-live', 'polite');
+    live.attr.add({ 'aria-live': 'polite' });
     const error = div('mx-data-grid__live');
-    error.element.id = model.errorId;
+    error.attr.add({ id: model.errorId });
 
     this.shell = {
-      vp,
-      foot: foot.element,
-      overlay: overlay.element,
-      loading: loading.element,
-      empty: empty.element,
-      failed: failed.element,
+      vp: viewport,
+      foot,
+      overlay,
+      loading,
+      empty,
+      failed,
       spinner,
-      emptyText: emptyText.element,
+      emptyText,
       clear,
-      failedText: failedText.element,
+      failedText,
       retry,
-      more: more.element,
+      more,
       moreSpinner,
-      moreFailed: moreFailed.element,
+      moreFailed,
       moreRetry,
-      exporting: exporting.element,
+      exporting,
       progress,
       cancel,
-      bar: bar.element,
-      count: count.element,
-      selected: selected.element,
-      cells: cells.element,
-      someFailed: someFailed.element,
+      bar,
+      count,
+      selected,
+      cells,
+      someFailed,
       someFailedText,
       someRetry,
-      errors: errors.element,
+      errors,
       errorsText,
       nextError,
-      live: live.element,
-      error: error.element,
+      live,
+      error,
     };
     const all = motifFragment();
     all.controls.add(this.topBar.bar, main, this.filterPanel, bar, live, error);
@@ -3322,7 +3304,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       put(vp, 'aria-colcount', String(model.columns.visible().length));
       put(vp, 'aria-busy', st.status === 'loading' || st.busy ? 'true' : null);
       put(parts.foot, 'aria-label', t('gridTotalSummary'));
-      parts.foot.hidden = !model.summaries.showsTotal();
+      mark(parts.foot, 'hidden', !model.summaries.showsTotal());
 
       const overlay = st.status === 'loading' ? 'loading' : st.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null;
       kept(parts.overlay, overlay !== null);
@@ -3367,11 +3349,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       kept(parts.cells, summary !== '');
       text(parts.cells, summary);
       kept(parts.someFailed, st.failedBlocks > (more === 'failed' ? 1 : 0));
-      if (parts.someFailedText.data !== t('gridSomeRowsFailed')) parts.someFailedText.data = t('gridSomeRowsFailed');
+      text(parts.someFailedText, t('gridSomeRowsFailed'));
       parts.someRetry.text = t('retry');
       kept(parts.errors, showErrors);
-      const errors = t('gridSaveErrors', { count: model.stats.failed });
-      if (parts.errorsText.data !== errors) parts.errorsText.data = errors;
+      text(parts.errorsText, t('gridSaveErrors', { count: model.stats.failed }));
       parts.nextError.text = t('gridNextError');
 
       text(parts.live, st.announcement);
@@ -3394,10 +3375,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return sets.canShowIn('toolbar') && this.topBar.shown() && sets.barEntries('toolbar').length > 0;
   }
 
-  private isRtl(): boolean {
-    return typeof getComputedStyle === 'function' && getComputedStyle(this.element).direction === 'rtl';
-  }
-
   /** New rows that are saved (they count as data rows). */
   private savedAdded(): number {
     void this.model.state.edits;
@@ -3406,31 +3383,53 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return n;
   }
 
-  /** Reads the viewport, header and row heights. */
-  private measure() {
-    const vp = this.viewportEl;
-    if (!vp) return;
+  /**
+   * Reads the viewport, header and row heights now and runs the layout work waiting in the window, for what needs the
+   * answer at once: a test, a print, an export.
+   */
+  measure(): void {
+    this.measureSizes();
+    measureNow(this);
+  }
+
+  /** Reads the viewport, header and row heights with the window's next reads. */
+  private measureSizes() {
+    if (this.viewportPart) measure(this, this.readSizes, this.drawSizes);
+  }
+
+  private readonly readSizes = () => {
+    const vp = boxOf(this.viewportPart!);
+    return {
+      head: this.headPart ? boxOf(this.headPart).offsetHeight : 0,
+      foot: this.footPart ? boxOf(this.footPart).offsetHeight : 0,
+      frame: vp.offsetHeight - vp.clientHeight,
+      height: vp.clientHeight,
+      width: vp.clientWidth,
+      row: this.probePart ? boxOf(this.probePart).offsetHeight : 0,
+    };
+  };
+
+  private readonly drawSizes = (sizes: { head: number; foot: number; frame: number; height: number; width: number; row: number }) => {
     const state = this.model.state;
-    const head = this.headEl?.offsetHeight ?? 0;
-    const foot = this.footEl?.offsetHeight ?? 0;
-    this.element.style.setProperty('--_head-height', `${head}px`);
+    const { head, foot } = sizes;
+    css(this, '--_head-height', `${head}px`);
     // The mark of infinite mode sits over the last rows, above the totals and the scroll bar.
-    this.element.style.setProperty('--_more-bottom', `${vp.offsetHeight - vp.clientHeight + foot}px`);
-    const viewport = Math.max(0, vp.clientHeight - head - foot);
+    css(this, '--_more-bottom', `${sizes.frame + foot}px`);
+    const viewport = Math.max(0, sizes.height - head - foot);
     if (viewport !== state.viewport) state.viewport = viewport;
-    const width = vp.clientWidth;
-    if (width !== state.width) state.width = width;
+    if (sizes.width !== state.width) state.width = sizes.width;
     if (viewport > 0 && !state.measured) state.measured = true;
     this.model.stateChanged('viewport', 'width', 'measured');
-    const fixed = this.model.fixedRowHeight;
-    const h = fixed ?? this.probeEl?.offsetHeight ?? 0;
+    const h = this.model.fixedRowHeight ?? sizes.row;
     if (h > 0 && h !== state.rowHeight) {
       // Another density: the action buttons are measured again.
       this.widths.clear();
       state.rowHeight = h;
       this.model.stateChanged('rowHeight');
     }
-  }
+    // The rows are laid out for the sizes read: they show from now on.
+    mark(this, 'data-settling', false);
+  };
 
   /**
    * After the data changed: saved new rows the source now has leave the new-row area, the active row
@@ -3459,39 +3458,50 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.model.stateChanged('activeRow');
     }
     if (this.formEdit?.mode === 'form' && this.body.formIndex() < 0) this.closeForm(false);
-    // The editor belongs to its row; if that row is no longer where the editor is, finish it.
-    if (this.editor && this.editTarget) {
-      const at = this.body.rowOf(this.editor.element);
-      if (!at || at.rowId !== this.editTarget.rowId) this.commitEditor() || this.closeEditor();
-    }
+    // The editor belongs to its row; if its cell left the drawn row, or that row shows another one now, finish it.
+    const at = this.editTarget;
+    if (this.editor && at && (at.cell.parent !== at.view.part || at.view.rowId !== at.rowId)) this.commitEditor() || this.closeEditor();
   }
 
   // The active cell, focus.
 
-  private activeElement(): HTMLElement | undefined {
+  /** The part of the active cell that takes focus: the cell, a button of the actions cell, the edit form's cell, a header. */
+  private activePart(): ComponentBase | undefined {
     const { activeRow, activeField } = this.model.state;
     if (activeRow >= 0 && this.formEdit?.mode === 'form' && activeRow === this.body.formIndex()) {
-      const cell = this.body.formCell();
+      const cell = this.body.formCellPart();
       if (cell) return cell;
     }
     if (activeRow >= 0) {
-      const cell = this.body.cellElement(activeRow, activeField);
-      if (cell && activeField === ACTIONS_FIELD) {
-        const buttons = this.body.rowAt(activeRow)?.actions?.focusables() ?? [];
+      const cell = this.cellPartAt(activeRow, activeField);
+      const view = this.body.rowAt(activeRow);
+      if (cell && view && activeField === ACTIONS_FIELD) {
+        const buttons = this.actionButtons(view);
         if (buttons.length) return buttons[Math.max(0, Math.min(buttons.length - 1, this.actionIndex))];
       }
       if (cell) return cell;
     }
     if (activeRow === FILTER_ROW) {
-      const cell = this.filterRow.cellElement(activeField);
+      const cell = this.filterRow.cellPart(activeField);
       if (cell) return cell;
     }
     return this.headerCellOf(activeField);
   }
 
+  /** The cell of grid row `i` for `field` while the row is drawn: a group row's one cell, or a group footer itself, for any field. */
+  private cellPartAt(i: number, field: string): ComponentBase | undefined {
+    const group = this.body.groupRowAt(i);
+    return this.body.cellPart(i, field) ?? (group ? group.cellPart : this.body.footerRowAt(i)?.part);
+  }
+
   /** The header of a column, or of a band. */
-  private headerCellOf(field: string): HTMLElement | undefined {
-    return this.model.columns.isBand(field) ? this.bands.cellElement(field) : this.header.cellElement(field);
+  private headerCellOf(field: string): ComponentBase | undefined {
+    return this.model.columns.isBand(field) ? this.bands.cellPart(field) : this.header.cellPart(field);
+  }
+
+  /** The buttons of a row's actions cell that show, in order, the "more" button last. */
+  private actionButtons(view: GridRow<T>): ComponentBase[] {
+    return view.actions?.buttonParts() ?? [];
   }
 
   /** Exactly one cell is in the tab order: the active one. */
@@ -3499,13 +3509,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     // A virtual column the active cell moved to gets its cells first.
     const active = this.keptColumn();
     if (active && !this.model.columnWindow.has(active)) this.updateColumns();
-    const el = this.activeElement();
-    if (!el) return;
-    const index = this.tabStop ? '0' : '-1';
-    if (el === this.tabbable && el.getAttribute('tabindex') === index) return;
-    this.tabbable?.setAttribute('tabindex', '-1');
-    el.setAttribute('tabindex', index);
-    this.tabbable = el;
+    const part = this.activePart();
+    if (!part) return;
+    if (this.tabbable && this.tabbable !== part && !this.tabbable.isDisposed) put(this.tabbable, 'tabindex', '-1');
+    put(part, 'tabindex', this.tabStop ? '0' : '-1');
+    this.tabbable = part;
   }
 
   private setActive(row: number, field: string) {
@@ -3561,10 +3569,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const cols = this.model.columns;
     if (reveal) this.revealColumn(cols.isBand(activeField) ? (cols.leavesIn(activeField, cols.visible())[0] ?? activeField) : activeField);
     this.syncTabStop();
-    const el = this.activeElement();
-    if (!el) return;
-    el.focus({ preventScroll: true });
-    if (this.model.settings.get('tooltips')) this.tip.focus(el);
+    const part = this.activePart();
+    if (!part) return;
+    focusOn(part, { preventScroll: true });
+    if (this.model.settings.get('tooltips')) this.tip.focus(part);
   }
 
   /** The column the active cell is in (a band's first one), drawn even while it is out of view. */
@@ -3576,17 +3584,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** Works out the columns that get cells (virtual columns); whether that changed. */
   private findColumns(visible: readonly string[]): boolean {
-    const vp = this.viewportEl;
     const { model } = this;
     const keep = [this.keptColumn()];
     if (this.editTarget) keep.push(this.editTarget.field);
-    return model.columnWindow.update(visible, vp ? Math.abs(vp.scrollLeft) : 0, vp?.clientWidth || model.state.width, keep);
+    return model.columnWindow.update(visible, this.columnsStart, model.state.width, keep);
   }
 
   /** Puts the cells of the header, the filter row, the rows and the totals in display order, with the columns drawn. */
   private arrangeColumns(visible: string[], filterRow = this.model.showsFilterRow()) {
     this.header.arrange(visible);
-    if (this.headEl) this.bands.arrange(visible, this.headEl, this.header.element);
+    if (this.headPart) this.bands.arrange(visible, this.headPart, this.header);
     if (filterRow) this.filterRow.arrange(visible);
     this.body.arrange(visible);
     this.totalRow.arrange(visible);
@@ -3601,8 +3608,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.columnsTook = performance.now() - started;
   }
 
-  /** The rows scrolled: virtual columns follow at once, or once the scrolling stops (`renderAsync`). */
-  private columnsScrolled() {
+  /** The rows scrolled: how far sideways is read with the window's next reads, and virtual columns follow. */
+  private measureScroll() {
+    if (this.viewportPart) measure(this, this.readScroll, this.columnsScrolled);
+  }
+
+  private readonly readScroll = () => boxOf(this.viewportPart!).scrollStart;
+
+  /** The rows scrolled sideways to `start`: virtual columns follow at once, or once the scrolling stops (`renderAsync`). */
+  private readonly columnsScrolled = (start: number) => {
+    this.columnsStart = start;
     const { model } = this;
     const settings = model.settings;
     if (model.columnWindow.all) return;
@@ -3613,36 +3628,26 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         if (!this.isDisposed) this.updateColumns();
       }, Math.max(0, settings.get('columnRenderingDelay')));
     } else this.updateColumns();
-  }
+  };
 
-  /** Scrolls sideways so the column is not under the sticky columns. */
+  /** Scrolls sideways, with the window's next reads, so the column is not under the sticky columns. */
   private revealColumn(field: string) {
-    const vp = this.viewportEl;
-    const cell = this.header.cellElement(field);
-    if (!vp || !cell || this.model.columns.sideOf(field)) return;
-    if (this.isRtl()) {
-      cell.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-      return;
-    }
-    const visible = this.model.columns.visible();
-    const pinned = this.model.columns.stickyWidths(visible);
+    const vp = this.viewportPart;
+    const cell = this.header.cellPart(field);
+    const cols = this.model.columns;
+    if (!vp || !cell || cols.sideOf(field)) return;
+    const visible = cols.visible();
+    const pinned = cols.stickyWidths(visible);
     // Virtual columns: from the widths given (the cells may have just been made).
-    const placed = !this.model.columnWindow.all;
-    const left = placed ? this.model.columnWindow.offsetOf(field, visible) : cell.offsetLeft;
-    const right = left + (placed ? this.model.columns.width(field) : cell.offsetWidth);
-    const from = vp.scrollLeft + pinned.start;
-    const to = vp.scrollLeft + vp.clientWidth - pinned.end;
-    if (left < from) vp.scrollLeft = left - pinned.start;
-    else if (right > to) vp.scrollLeft = right - (vp.clientWidth - pinned.end);
+    const target = this.model.columnWindow.all ? cell : { start: this.model.columnWindow.offsetOf(field, visible), size: cols.width(field) };
+    reveal(vp, target, { axis: 'x', cover: { start: pinned.start, end: pinned.end } });
   }
 
-  /** Focus leaves the grid: to the next (or previous) element in the Tab order outside the rows. */
+  /** Focus leaves the grid: to the next (or previous) Tab stop outside the rows, else off the grid. */
   private moveFocusOut(forward: boolean) {
-    const vp = this.viewportEl;
+    const vp = this.shell?.vp;
     if (!vp) return;
-    const target = nextTabbable(vp, vp.ownerDocument.body, forward);
-    if (target) target.focus();
-    else (this.element.ownerDocument.activeElement as HTMLElement | null)?.blur?.();
+    if (!focusPast(vp, forward)) releaseFocus(this);
   }
 
   // Editing.
@@ -3670,8 +3675,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (row === undefined || rowId === undefined) return false;
     const rec = model.edit(rowId);
     if (rec?.saving || rec?.removed || !model.columns.canFill(field, row, !!rec?.isNew)) return false;
-    const cell = this.body.cellElement(i, field);
-    if (!cell) return false;
+    const view = this.body.rowAt(i);
+    const cell = view?.cellPart(field);
+    if (!view || !cell) return false;
     this.closeEditor();
     const col = model.columns.get(field);
     const value = model.value(rowId, row, col);
@@ -3679,14 +3685,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const entered = model.enteredOf(rowId, row);
     if (!model.events.ask(model.events.editingStart, () => ({ field, row, values: { ...entered.values }, getValue: entered.getValue, rowIndex: i, isNew: !!rec?.isNew, cancel: false }))) return false;
     const prepare = (options: Record<string, unknown>) => this.editorPreparing(field, row, entered, !!rec?.isNew, options);
-    const editor = new CellEditor<T>(model, col, row, entered, value, typed, { commit: () => this.finishEdit('none'), cancel: () => this.cancelEdit() }, this.body, prepare);
+    const editor = new CellEditor<T>(model, col, row, entered, value, typed, { commit: () => this.finishEdit('none'), cancel: () => this.cancelEdit() }, cell, prepare);
     if (editor.cancelled) {
       editor.dispose();
       return false;
     }
-    cell.append(editor.element);
     this.editor = editor;
-    this.editTarget = { rowId, row, field };
+    this.editTarget = { rowId, row, field, view, cell };
     this.editorPrepared(field, row, entered, !!rec?.isNew, editor, 'cell');
     st.editing = { rowId, field };
     this.model.stateChanged('editing');
@@ -3708,12 +3713,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** `onEditorPrepared` for an editor just made. */
   private editorPrepared(field: string, row: T, entered: data.RowCheckContext<T>, isNew: boolean, editor: CellEditor<T>, place: 'cell' | 'form' | 'adaptive') {
     const ev = this.model.events;
-    ev.tell(ev.editorPrepared, () => ({ field, row, values: { ...entered.values }, getValue: entered.getValue, isNew, editor: editor.editor, element: editor.element, place }));
-  }
-
-  /** Whether an element is inside the edit form shown in place of a row. */
-  private inForm(target: Element | null): boolean {
-    return !!target && !!this.formEdit && this.formEdit.form.element.contains(target);
+    ev.tell(ev.editorPrepared, () => ({ field, row, values: { ...entered.values }, getValue: entered.getValue, isNew, editor: editor.editor, part: editor.box, place }));
   }
 
   /**
@@ -3757,8 +3757,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     );
     this.formEdit = { mode, rowId, row, form, window: null };
     if (mode === 'form') {
-      this.body.controls.add(form);
-      this.body.showForm(rowId, row, i, form.element);
+      this.body.showForm(rowId, row, i, form);
       this.body.reveal(i);
       this.syncTabStop();
       form.focus(field);
@@ -3785,17 +3784,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       acceptButton: form.saveButton,
       cancelButton: form.cancelButton,
     });
-    win.element.classList.add('mx-data-grid__popup');
+    win.class.add('mx-data-grid__popup');
     // Without the title shown, the window still has its name.
-    follow(
-      win,
-      'name',
-      () => (p.get('showTitle') ? null : title()),
-      (name) => {
-        if (name === null) win.element.removeAttribute('aria-label');
-        else win.element.setAttribute('aria-label', name);
-      },
-    );
+    win.bindings.watch(() => {
+      const name = p.get('showTitle') ? null : title();
+      untracked(() => {
+        if (name === null) win.attr.remove('aria-label');
+        else win.attr.add({ 'aria-label': name });
+      });
+    });
     win.onShown(() => form.focus(this.model.state.activeField));
     // Closed by the user some other way (the close button): as Cancel, which may keep it open.
     win.onClosing((e) => {
@@ -3865,13 +3862,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const rows = [model.edit(fe.rowId)?.row ?? fe.row];
     if (!this.canDrop(rows)) return false;
-    this.closeForm(false, closing);
+    const shutting = this.closeForm(false, closing);
     if (model.state.session === fe.rowId) model.setSession(null);
     if (this.pendingInvalid === fe.rowId) this.pendingInvalid = null;
-    if (model.isNew(fe.rowId) && focusRow) this.removeNewRow(fe.rowId);
+    if (model.isNew(fe.rowId) && focusRow) this.removeNewRow(fe.rowId, shutting);
     else {
       model.discard(fe.rowId);
-      if (focusRow) this.focusActive(true);
+      if (focusRow) this.afterClosed(shutting, () => this.focusActive(true));
     }
     this.dropped(rows);
     return true;
@@ -3882,18 +3879,36 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.formEdit && !this.cancelForm(false)) this.closeForm(false);
   }
 
-  /** Takes the edit form away (and its window); with `focusRow`, focus goes back to the row. */
-  private closeForm(focusRow: boolean, closing = false) {
+  /**
+   * Takes the edit form away (and its window); with `focusRow`, focus goes back to the row. Returns
+   * the window while it is still closing.
+   */
+  private closeForm(focusRow: boolean, closing = false): MxForm | null {
     const fe = this.formEdit;
-    if (!fe) return;
+    if (!fe) return null;
     this.formEdit = null;
-    const hadFocus = fe.form.element.contains(this.element.ownerDocument.activeElement);
-    if (fe.window) {
-      if (!closing && fe.window.isOpen) fe.window.close();
+    const hadFocus = holdsFocus(fe.form);
+    const win = fe.window;
+    let shutting: MxForm | null = null;
+    if (win) {
+      if (closing || (win.isOpen && win.close())) shutting = win;
     } else this.body.hideForm();
-    if (!fe.form.isDisposed && !fe.window) void fe.form.dispose();
+    if (!fe.form.isDisposed && !win) void fe.form.dispose();
     this.syncTabStop();
-    if (focusRow || (hadFocus && !fe.window)) this.focusActive(true);
+    if (focusRow || (hadFocus && !win)) this.afterClosed(shutting, () => this.focusActive(true));
+    return shutting;
+  }
+
+  /** Runs `then` once `win` has closed (a modal window blocks the page until the browser closed it), at once without one. */
+  private afterClosed(win: MxForm | null, then: () => void) {
+    if (!win) {
+      then();
+      return;
+    }
+    const closed = win.onClosed(() => {
+      closed.dispose();
+      if (!this.isDisposed) then();
+    });
   }
 
   /** Writes the editor's value into the row's draft and closes it; `false` (the editor stays) when it cannot be read. */
@@ -3920,13 +3935,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private closeEditor() {
     const ed = this.editor;
     if (!ed) return;
-    const cell = ed.element.parentElement;
-    const hadFocus = ed.element.contains(this.element.ownerDocument.activeElement);
+    const cell = this.editTarget?.cell;
+    const hadFocus = holdsFocus(ed.box);
     this.editor = null;
     this.editTarget = null;
     this.model.state.editing = null;
     this.model.stateChanged('editing');
-    if (hadFocus) cell?.focus({ preventScroll: true });
+    if (hadFocus && cell) focusOn(cell, { preventScroll: true });
     ed.dispose();
   }
 
@@ -4003,7 +4018,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /** Drops a new row; focus goes to the row above (same column), else the "New row" button, else the row below. */
-  private removeNewRow(rowId: string) {
+  private removeNewRow(rowId: string, closing: MxForm | null = null) {
     const { model } = this;
     const field = model.state.activeField;
     this.closeEditor();
@@ -4013,17 +4028,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const above = at - 1;
     if (above >= 0 && model.hasRow(above)) {
       this.setActive(above, field);
-      this.focusActive(true);
+      this.afterClosed(closing, () => this.focusActive(true));
       return;
     }
     const button = this.topBar.controlOf('addRowButton') as Button | null;
     if (button?.canFocus) {
-      button.focus();
+      this.afterClosed(closing, () => button.focus());
       return;
     }
     const next = model.hasRow(at) ? at : model.firstRow();
     this.setActive(next, field);
-    this.focusActive(true);
+    this.afterClosed(closing, () => this.focusActive(true));
   }
 
   /** Writes a value into the active cell without an editor (Space on a check box column, Delete). */
@@ -4244,43 +4259,146 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (opts.edit) this.startEdit(typeof opts.edit === 'string' ? opts.edit : undefined);
   }
 
+  // Where an event came from: the parts that could have sent it are asked (`isEventFrom`).
+
+  /** Whether an event came from the open cell editor. */
+  private fromEditor(e: Event): boolean {
+    return !!this.editor && this.editor.box.motif.isEventFrom(e);
+  }
+
+  /** Whether an event came from the edit form shown in place of a row. */
+  private fromForm(e: Event): boolean {
+    return !!this.formEdit && this.formEdit.form.motif.isEventFrom(e);
+  }
+
+  /** Whether an event came from what the rows hold of their own: the open editor, the edit form, a row's details. */
+  private fromRowContent(e: Event): boolean {
+    return this.fromEditor(e) || this.fromForm(e) || !!this.body.detailFrom(e);
+  }
+
+  /** The data row an event came from, with the cell it came from and that cell's field. */
+  private cellFrom(e: Event): { view: GridRow<T>; field: string; cell: ComponentBase } | null {
+    const view = this.body.rowFrom(e);
+    if (!view) return null;
+    for (const field of this.model.columns.state.order) {
+      const cell = view.cellPart(field);
+      if (cell?.motif.isEventFrom(e)) return { view, field, cell };
+    }
+    return null;
+  }
+
+  /** The header an event came from: a column's (by its field) or a band's (by its id). */
+  private headerFrom(e: Event): { field: string; cell: ComponentBase } | null {
+    if (!this.headPart?.motif.isEventFrom(e)) return null;
+    for (const [field, cell] of this.header.cells) if (cell.motif.isEventFrom(e)) return { field, cell };
+    const cols = this.model.columns;
+    for (const { id } of cols.hasBands ? cols.shownBands(cols.visible()) : []) {
+      const cell = this.bands.cellPart(id);
+      if (cell?.motif.isEventFrom(e)) return { field: id, cell };
+    }
+    return null;
+  }
+
+  /** The summary cell of a group footer an event came from, with its field. */
+  private footerCellFrom(footer: GroupFooterRow<T>, e: Event): { field: string; cell: ComponentBase } | null {
+    for (const field of this.model.columns.state.order) {
+      const cell = footer.cellPart(field);
+      if (cell?.motif.isEventFrom(e)) return { field, cell };
+    }
+    return null;
+  }
+
+  /** The cell of the row of totals an event came from, with its field. */
+  private totalCellFrom(e: Event): { field: string; cell: ComponentBase } | null {
+    for (const field of this.model.columns.state.order) {
+      const cell = this.totalRow.cellPart(field);
+      if (cell?.motif.isEventFrom(e)) return { field, cell };
+    }
+    return null;
+  }
+
+  /** The tip of the part an event came from: a cell or action button of a data row, a filter's condition button, a header title, a summary cell. */
+  private tipFrom(e: Event): CellTipTarget | null {
+    if (this.fromEditor(e)) return null;
+    const row = this.body.rowFrom(e);
+    if (row) return row.tipFrom(e);
+    const filter = this.filterRow.cellFrom(e);
+    if (filter) return filter.conditionPart?.motif.isEventFrom(e) ? filter.conditionTip() : null;
+    const header = this.headerFrom(e);
+    if (header) {
+      const title = header.cell.controls.items.find((c) => c.class.has('mx-data-grid__title'));
+      return title?.motif.isEventFrom(e) ? tipOfPart(title) : null;
+    }
+    const footer = this.body.footerRowFrom(e);
+    const summary = footer ? this.footerCellFrom(footer, e)?.cell : (this.body.groupRowFrom(e)?.alignedFrom(e) ?? this.totalCellFrom(e)?.cell);
+    return summary ? tipOfPart(summary) : null;
+  }
+
+  /** The action button of a data row an event came from. */
+  private actionFrom(e: Event): { view: GridRow<T>; button: ComponentBase } | null {
+    const view = this.body.rowFrom(e);
+    const button = view ? this.actionButtons(view).find((b) => b.motif.isEventFrom(e)) : undefined;
+    return view && button ? { view, button } : null;
+  }
+
+  /** Whether a key came to the part of the open editor that takes the keys (its input, its check box, its list's box). */
+  private toEditorInput(ed: CellEditor<T>, e: Event): boolean {
+    return !!ed.inputPart?.motif.isEventFrom(e);
+  }
+
+  /** Whether a key came to one of the grid's own parts that take focus, not to what such a part holds (a field of the app's in a cell). */
+  private toOwnPart(e: Event): boolean {
+    const at = this.cellFrom(e);
+    if (at) return cameTo(at.cell, e);
+    const form = this.body.formCellPart();
+    if (form?.motif.isEventFrom(e)) return cameTo(form, e);
+    const group = this.body.groupRowFrom(e);
+    if (group) return cameTo(group.cellPart, e);
+    const footer = this.body.footerRowFrom(e);
+    if (footer) return cameTo(footer.part, e);
+    const header = this.headerFrom(e);
+    if (header) return cameTo(header.cell, e);
+    const filter = this.filterRow.fieldFrom(e);
+    if (filter === undefined) return false;
+    const cell = this.filterRow.cellPart(filter);
+    return (!!cell && cameTo(cell, e)) || !!this.filterRow.cellFrom(e)?.conditionPart?.motif.isEventFrom(e);
+  }
+
   // Events.
 
   private onFocusIn(e: FocusEvent) {
-    const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target)) return;
-    const detail = this.body.detailOf(target);
+    if (this.fromEditor(e)) return;
+    const detail = this.body.detailFrom(e);
     if (detail) {
       this.enterDetail(detail);
       return;
     }
-    if (this.inForm(target)) {
+    if (this.fromForm(e)) {
       const i = this.body.formIndex();
       if (i >= 0 && i !== this.model.state.activeRow) this.setActive(i, this.model.state.activeField);
       this.syncTabStop();
       return;
     }
-    const filterCell = target.closest?.('.mx-data-grid__filter-cell') as HTMLElement | null;
-    if (filterCell) {
-      if (!this.canMoveTo(FILTER_ROW, filterCell.dataset.field ?? '')) {
+    const filter = this.filterRow.fieldFrom(e);
+    if (filter !== undefined) {
+      if (!this.canMoveTo(FILTER_ROW, filter)) {
         this.focusActive(false);
         return;
       }
       if (this.model.state.session) this.leave();
-      this.setActive(FILTER_ROW, filterCell.dataset.field ?? '');
+      this.setActive(FILTER_ROW, filter);
       this.syncTabStop();
       return;
     }
     // The row of totals: the rows are left, as for any place outside them.
-    if (target.classList.contains('mx-data-grid__total-row')) {
+    if (this.totalRow.motif.isEventFrom(e)) {
       if (this.editor && !this.commitEditor()) return;
       if (this.model.state.session) this.leave();
       return;
     }
-    const groupCell = target.closest?.('.mx-data-grid__group-cell') ?? (target.classList.contains('mx-data-grid__group-footer') ? target : null);
-    if (groupCell) {
-      const group = this.body.groupRowOf(groupCell) ?? this.body.footerRowOf(groupCell);
-      if (!group || group.index < 0) return;
+    const group = this.body.groupRowFrom(e) ?? this.body.footerRowFrom(e);
+    if (group) {
+      if (group.index < 0) return;
       if (!this.canMoveTo(group.index, this.model.state.activeField)) {
         this.focusActive(false);
         return;
@@ -4291,61 +4409,50 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.syncTabStop();
       return;
     }
-    const cell = target.closest?.('.mx-data-grid__cell, .mx-data-grid__header-cell') as HTMLElement | null;
-    if (!cell) return;
-    const field = cell.dataset.field ?? '';
-    if (target !== cell && target.classList.contains('mx-data-grid__action')) {
-      const buttons = this.body.rowOf(cell)?.actions?.focusables() ?? [];
-      this.actionIndex = Math.max(0, buttons.indexOf(target as HTMLButtonElement));
-    }
-    if (cell.classList.contains('mx-data-grid__header-cell')) {
-      if (target !== cell) return;
-      const band = cell.dataset.band;
-      if (band) {
-        if (!this.canMoveTo(HEADER_ROW, band)) {
-          this.focusActive(false);
-          return;
-        }
-        this.leave();
-        this.setActive(HEADER_ROW, band);
-        this.syncTabStop();
-        return;
-      }
-      if (!this.canMoveTo(HEADER_ROW, field)) {
+    const header = this.headerFrom(e);
+    if (header) {
+      // Focus on what a header holds (a button of its own content) leaves the active cell where it is.
+      if (!cameTo(header.cell, e)) return;
+      if (!this.canMoveTo(HEADER_ROW, header.field)) {
         this.focusActive(false);
         return;
       }
       this.leave();
-      this.setActive(HEADER_ROW, field);
-    } else {
-      const row = this.body.rowOf(cell);
-      if (!row || row.index < 0) return;
-      if (!this.canMoveTo(row.index, field)) {
-        this.focusActive(false);
-        return;
-      }
-      if (this.editor) {
-        const same = this.editTarget?.rowId === row.rowId && this.editTarget?.field === field;
-        if (!same && !this.commitEditor()) return;
-      }
-      if (this.model.state.session && row.rowId !== this.model.state.session) this.leave();
-      this.setActive(row.index, field);
+      this.setActive(HEADER_ROW, header.field);
+      this.syncTabStop();
+      return;
     }
+    const at = this.cellFrom(e);
+    if (!at || at.view.index < 0) return;
+    const { view, field } = at;
+    const button = this.actionButtons(view).findIndex((b) => b.motif.isEventFrom(e));
+    if (button >= 0) this.actionIndex = button;
+    if (!this.canMoveTo(view.index, field)) {
+      this.focusActive(false);
+      return;
+    }
+    if (this.editor) {
+      const same = this.editTarget?.rowId === view.rowId && this.editTarget?.field === field;
+      if (!same && !this.commitEditor()) return;
+    }
+    if (this.model.state.session && view.rowId !== this.model.state.session) this.leave();
+    this.setActive(view.index, field);
     this.syncTabStop();
   }
 
   private onFocusOut(e: FocusEvent) {
-    const vp = this.viewportEl;
-    const next = e.relatedTarget as Node | null;
-    if (next && vp?.contains(next)) return;
+    const vp = this.viewportPart;
+    if (vp && focusGoesInto(vp, e)) return;
+    const next = e.relatedTarget;
     this.tip.hide();
     if (this.model.state.adjust) this.endAdjust(true);
     if (this.formEdit) return;
     // Leaving the rows ends the edit; focus that only moved inside the grid's own work comes back at
     // once, and switching windows keeps everything as it is.
-    if (!next && typeof this.element.ownerDocument.hasFocus === 'function' && !this.element.ownerDocument.hasFocus()) return;
+    if (!next && !windowHasFocus(this)) return;
     queueMicrotask(() => {
-      if (!this.isDisposed && !vp?.contains(this.element.ownerDocument.activeElement)) this.leave();
+      const rows = this.shell?.vp;
+      if (!this.isDisposed && !(rows && holdsFocus(rows))) this.leave();
     });
   }
 
@@ -4356,9 +4463,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.pressFrom = { row: activeRow, field: activeField };
     // A row taken to be moved is not selected by dragging.
     if (!this.rowDrag.press(e)) this.dragSelect.press(e);
-    const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target) || this.inForm(target) || this.body.detailOf(target)) return;
-    const group = this.body.groupRowOf(target) ?? this.body.footerRowOf(target);
+    if (this.fromRowContent(e)) return;
+    const group = this.body.groupRowFrom(e) ?? this.body.footerRowFrom(e);
     if (group && group.index >= 0) {
       // Leaving the row being edited for a group row or footer may block or wait, as for any row.
       const st = this.model.state;
@@ -4366,81 +4472,77 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (!st.busy && st.session) this.navigate(group.index, st.activeField, { reveal: false });
       return;
     }
-    const cell = target.closest?.('.mx-data-grid__cell') as HTMLElement | null;
-    if (!cell) return;
-    const row = this.body.rowOf(cell);
-    if (!row || row.index < 0) return;
+    const at = this.cellFrom(e);
+    if (!at || at.view.index < 0) return;
     const st = this.model.state;
     if (st.busy) {
       e.preventDefault();
       return;
     }
-    if (!st.session || row.rowId === st.session) return;
+    if (!st.session || at.view.rowId === st.session) return;
     e.preventDefault();
-    this.navigate(row.index, cell.dataset.field ?? st.activeField, { reveal: false });
+    this.navigate(at.view.index, at.field, { reveal: false });
   }
 
   private onDoubleClick(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target) || this.inForm(target) || this.body.detailOf(target)) return;
-    const group = this.body.groupRowOf(target);
+    if (this.fromRowContent(e)) return;
+    const group = this.body.groupRowFrom(e);
     if (group?.node && group.index >= 0) {
-      this.askClick(e, true, group.cell, group.element, group.index, group.node.field, group.node);
+      this.askClick(e, true, group.cellPart, group.part, group.index, group.node.field, group.node);
       return;
     }
-    const footer = this.body.footerRowOf(target);
+    const footer = this.body.footerRowFrom(e);
     if (footer?.node && footer.index >= 0) {
-      const cell = (target.closest?.('.mx-data-grid__cell') as HTMLElement | null) ?? footer.element;
-      this.askClick(e, true, cell, footer.element, footer.index, cell.dataset.field ?? '', footer.node);
+      const at = this.footerCellFrom(footer, e);
+      this.askClick(e, true, at?.cell ?? footer.part, footer.part, footer.index, at?.field ?? '', footer.node);
       return;
     }
     if (this.clickedTotals(e, true)) return;
-    const cell = target.closest?.('.mx-data-grid__cell') as HTMLElement | null;
-    const row = cell ? this.body.rowOf(cell) : undefined;
-    if (!cell || !row || row.index < 0) return;
-    if (!this.askClick(e, true, cell, row.element, row.index, cell.dataset.field ?? '', null)) return;
-    if (row.index !== this.model.state.activeRow || this.columnSetting(cell.dataset.field ?? '', 'startEditAction') !== 'dblClick') return;
+    const at = this.cellFrom(e);
+    if (!at || at.view.index < 0) return;
+    const { view, field } = at;
+    if (!this.askClick(e, true, at.cell, view.part, view.index, field, null)) return;
+    if (view.index !== this.model.state.activeRow || this.columnSetting(field, 'startEditAction') !== 'dblClick') return;
     this.startEdit();
   }
 
-  /** The click events of a cell and of its row; whether the grid may go on with its own handling. */
-  private askClick(e: MouseEvent, double: boolean, cell: HTMLElement, rowEl: HTMLElement, index: number, field: string, group: GroupNode | null, rowType = this.rowTypeOf(index)): boolean {
+  /** The click events of a cell and of its row (the app gets their elements); whether the grid may go on with its own handling. */
+  private askClick(e: MouseEvent, double: boolean, cell: ComponentBase, rowPart: ComponentBase, index: number, field: string, group: GroupNode | null, rowType = this.rowTypeOf(index)): boolean {
     const { model } = this;
     const ev = model.events;
     const row = group || rowType === 'totalFooter' ? undefined : model.rowAt(index);
     const groupKey = group ? [...group.path] : undefined;
-    const cellOk = ev.ask(double ? ev.cellDblClick : ev.cellClick, () => ({ field, row, rowIndex: index, rowType, groupKey, element: cell, event: e, cancel: false }));
-    const rowOk = ev.ask(double ? ev.rowDblClick : ev.rowClick, () => ({ row, rowIndex: index, rowType, groupKey, element: rowEl, event: e, cancel: false }));
+    const cellOk = ev.ask(double ? ev.cellDblClick : ev.cellClick, () => ({ field, row, rowIndex: index, rowType, groupKey, part: cell, event: e, cancel: false }));
+    const rowOk = ev.ask(double ? ev.rowDblClick : ev.rowClick, () => ({ row, rowIndex: index, rowType, groupKey, part: rowPart, event: e, cancel: false }));
     return cellOk && rowOk;
   }
 
   /** A click on the row of totals: its cell's and its row's events (`rowType: 'totalFooter'`). */
   private clickedTotals(e: MouseEvent, double: boolean): boolean {
-    const target = e.target as HTMLElement;
-    const row = target.closest?.('.mx-data-grid__total-row') as HTMLElement | null;
-    if (!row) return false;
-    const cell = (target.closest('.mx-data-grid__cell') as HTMLElement | null) ?? row;
-    this.askClick(e, double, cell, row, this.model.count, cell.dataset.field ?? '', null, 'totalFooter');
+    const row = this.totalRow;
+    if (!row.motif.isEventFrom(e)) return false;
+    const at = this.totalCellFrom(e);
+    this.askClick(e, double, at?.cell ?? row, row, this.model.count, at?.field ?? '', null, 'totalFooter');
     return true;
   }
 
   /** A right click on a row: its menu, when `onContextMenuPreparing` gives it items. */
   private onContextMenu(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target) || this.inForm(target) || this.body.detailOf(target)) return;
-    const group = this.body.groupRowOf(target);
-    const footer = group ? undefined : this.body.footerRowOf(target);
-    const cell = group ? group.cell : footer ? footer.element : (target.closest?.('.mx-data-grid__cell') as HTMLElement | null);
-    const index = group ? group.index : footer ? footer.index : cell ? (this.body.rowOf(cell)?.index ?? -1) : -1;
+    if (this.fromRowContent(e)) return;
+    const group = this.body.groupRowFrom(e);
+    const footer = group ? undefined : this.body.footerRowFrom(e);
+    const at = group || footer ? null : this.cellFrom(e);
+    const cell = group ? group.cellPart : footer ? footer.part : at?.cell;
+    const index = group ? group.index : footer ? footer.index : (at?.view.index ?? -1);
     if (!cell || index < 0) return;
-    const field = group?.node?.field ?? cell.dataset.field ?? '';
+    const field = group?.node?.field ?? at?.field ?? '';
     // A data row's menu belongs to that row: it becomes the active one (the selection stays).
     if (!group && !footer && index !== this.model.state.activeRow) this.navigate(index, field, { reveal: false });
     if (this.openRowMenu(index, field, cell)) e.preventDefault();
   }
 
   /** A row's menu: the row's actions, and what `onContextMenuPreparing` makes of them. Returns whether it opened. */
-  private openRowMenu(index: number, field: string, anchor: HTMLElement): boolean {
+  private openRowMenu(index: number, field: string, anchor: ComponentBase): boolean {
     const { model } = this;
     const row = model.groupAt(index) || model.footerAt(index) ? undefined : model.rowAt(index);
     const own = row !== undefined && !model.state.busy ? untracked(() => this.actionMenuItems(row)) : [];
@@ -4467,42 +4569,38 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   private onClick(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target) || this.inForm(target) || this.body.detailOf(target)) return;
-    const action = target.closest?.('.mx-data-grid__action') as HTMLElement | null;
-    if (action) {
-      this.pressAction(action);
+    if (this.fromRowContent(e)) return;
+    const pressed = this.actionFrom(e);
+    if (pressed) {
+      this.pressAction(pressed.view, pressed.button);
       return;
     }
-    const condition = target.closest?.('.mx-data-grid__condition') as HTMLElement | null;
-    if (condition) {
-      const field = (condition.closest('.mx-data-grid__filter-cell') as HTMLElement | null)?.dataset.field;
-      if (field) this.openConditions(field);
+    const filter = this.filterRow.cellFrom(e);
+    if (filter?.conditionPart?.motif.isEventFrom(e)) {
+      this.openConditions(filter.field);
       return;
     }
-    const group = this.body.groupRowOf(target);
+    const group = this.body.groupRowFrom(e);
     if (group?.node && group.index >= 0) {
-      if (!this.askClick(e, false, group.cell, group.element, group.index, group.node.field, group.node)) return;
+      if (!this.askClick(e, false, group.cellPart, group.part, group.index, group.node.field, group.node)) return;
       // The arrow opens and closes; with `groupExpandMode: 'rowClick'` the whole row does.
       const { model } = this;
-      const onArrow = !!target.closest('.mx-data-grid__group-toggle');
-      if (model.canCollapse(group.node) && (onArrow || model.expandModeOf(group.node) === 'rowClick')) {
+      if (model.canCollapse(group.node) && (group.arrowPart.motif.isEventFrom(e) || model.expandModeOf(group.node) === 'rowClick')) {
         this.toggleGroup(group.node, !model.groups.isExpanded(group.node));
       }
       return;
     }
-    const footer = this.body.footerRowOf(target);
+    const footer = this.body.footerRowFrom(e);
     if (footer?.node && footer.index >= 0) {
-      const cell = (target.closest?.('.mx-data-grid__cell') as HTMLElement | null) ?? footer.element;
-      this.askClick(e, false, cell, footer.element, footer.index, cell.dataset.field ?? '', footer.node);
+      const at = this.footerCellFrom(footer, e);
+      this.askClick(e, false, at?.cell ?? footer.part, footer.part, footer.index, at?.field ?? '', footer.node);
       return;
     }
     if (this.clickedTotals(e, false)) return;
-    const cell = target.closest?.('.mx-data-grid__cell') as HTMLElement | null;
-    const view = cell ? this.body.rowOf(cell) : undefined;
-    if (!cell || !view || view.index < 0) return;
-    const field = cell.dataset.field ?? '';
-    if (!this.askClick(e, false, cell, view.element, view.index, field, null)) return;
+    const at = this.cellFrom(e);
+    if (!at || at.view.index < 0) return;
+    const { view, field } = at;
+    if (!this.askClick(e, false, at.cell, view.part, view.index, field, null)) return;
     // The expand cell opens and closes the row's details, and leaves the selection as it is; so does the "…" cell with the adaptive detail.
     if (field === EXPAND_FIELD) {
       if (this.model.details.enabled) this.toggleDetail(view.index, !this.model.isDetailOpen(view.index));
@@ -4543,7 +4641,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     (open ? ev.rowExpanding : ev.rowCollapsing).fire(e);
     if (e.cancel) return false;
     // Focus in the details goes back to their row before they close.
-    if (!open && this.body.detailAt(i)?.element.contains(this.element.ownerDocument.activeElement)) this.backToRow(i);
+    const detail = this.body.detailAt(i);
+    if (!open && detail && holdsFocus(detail.part)) this.backToRow(i);
     model.details.setOpen(id, key, open);
     this.body.relayout(true);
     (open ? ev.rowExpanded : ev.rowCollapsed).fire({ kind: 'detail', key, row });
@@ -4565,7 +4664,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       return true;
     }
     if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !e.shiftKey && options.get('arrowKeys')) {
-      const forward = (e.key === 'ArrowRight') !== this.isRtl();
+      const forward = (e.key === 'ArrowRight') !== isRtl(this);
       if (forward === open) return false;
       e.preventDefault();
       this.toggleDetail(row, forward);
@@ -4593,25 +4692,25 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    */
   private onDetailKey(e: KeyboardEvent, detail: DetailRow<T>) {
     if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
-    const target = e.target as HTMLElement;
-    const onCell = target === detail.cell;
-    const stops = e.key === 'Tab' || e.key === 'Enter' ? tabbableIn(detail.cell) : [];
-    if (e.key === 'Escape' || (e.key === 'Tab' && e.shiftKey && (onCell || stops[0] === target))) {
+    const cell = detail.cellPart;
+    const onCell = isFocused(cell);
+    if (e.key === 'Escape') {
       e.preventDefault();
       this.backToRow(detail.index);
-    } else if (e.key === 'Tab' && !e.shiftKey && onCell && stops.length) {
+    } else if (e.key === 'Tab') {
+      // The grid moves focus among the content's stops itself, so it knows when one of the ends is passed.
       e.preventDefault();
-      stops[0].focus();
-    } else if (e.key === 'Tab' && !e.shiftKey && (onCell || stops[stops.length - 1] === target)) {
+      if (e.shiftKey) {
+        if (onCell || !focusStopIn(cell, 'previous')) this.backToRow(detail.index);
+      } else if (!focusStopIn(cell, 'next')) this.tabOnFrom(detail);
+    } else if (e.key === 'Enter' && onCell && (focusStopIn(cell, 'first') || focusFirstIn(cell))) {
       e.preventDefault();
-      this.tabOnFrom(detail);
-    } else if (e.key === 'Enter' && onCell) {
-      const first = stops[0] ?? focusableIn(detail.cell)[0];
-      if (first) {
-        e.preventDefault();
-        first.focus();
-      }
     }
+  }
+
+  /** Focus into a row's details: their first stop, else their cell. */
+  private focusDetail(detail: DetailRow<T>) {
+    if (!focusStopIn(detail.cellPart, 'first')) focusOn(detail.cellPart);
   }
 
   /**
@@ -4624,7 +4723,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const under = this.body.detailsUnder(detail.index);
     const next = under[under.indexOf(detail) + 1];
     if (next) {
-      (tabbableIn(next.cell)[0] ?? next.cell).focus();
+      this.focusDetail(next);
       return;
     }
     const i = detail.index;
@@ -4651,19 +4750,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private tabFromRow(e: KeyboardEvent, row: number) {
     e.preventDefault();
     const detail = row >= 0 && !e.shiftKey ? this.body.detailsUnder(row)[0] : undefined;
-    if (detail) (tabbableIn(detail.cell)[0] ?? detail.cell).focus();
+    if (detail) this.focusDetail(detail);
     else this.moveFocusOut(!e.shiftKey);
   }
 
   /** Focus in a row's details goes back to the row (before every detail closes). */
   private leaveDetails() {
-    const detail = this.body.detailOf(this.element.ownerDocument.activeElement);
+    const detail = this.body.focusedDetail();
     if (detail?.kind === 'detail') this.backToRow(detail.index);
   }
 
   /** Focus in the adaptive detail goes back to its row (before it closes). */
   private leaveAdaptive() {
-    const detail = this.body.detailOf(this.element.ownerDocument.activeElement);
+    const detail = this.body.focusedDetail();
     if (detail?.kind === 'adaptive') this.backToRow(detail.index >= 0 ? detail.index : this.model.adaptiveIndex());
   }
 
@@ -4681,7 +4780,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const key = this.getKeyByRowIndex(i);
     const ev = model.events;
     if (!ev.ask(open ? ev.adaptiveDetailRowExpanding : ev.adaptiveDetailRowCollapsing, () => ({ row, key, rowIndex: i, cancel: false }))) return false;
-    if (!open && this.body.adaptiveAt(i)?.element.contains(this.element.ownerDocument.activeElement)) this.backToRow(i);
+    const detail = this.body.adaptiveAt(i);
+    if (!open && detail && holdsFocus(detail.part)) this.backToRow(i);
     if (open) a.open(rowId, key);
     else a.close();
     this.body.relayout(true);
@@ -4774,7 +4874,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       case 'ArrowLeft': {
         if (e.shiftKey || !model.settings.get('groupArrowKeys')) return false;
         e.preventDefault();
-        const forward = (e.key === 'ArrowRight') !== this.isRtl();
+        const forward = (e.key === 'ArrowRight') !== isRtl(this);
         if (forward && !open && can) this.toggleGroup(node, true);
         else if (forward && open) this.navigate(model.stepRow(row, 1), model.state.activeField);
         else if (!forward && open && can) this.toggleGroup(node, false);
@@ -4804,10 +4904,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return (cols.defs.has(field) || cols.isBand(field)) && cols.can(field, 'menu') && this.menu.hasEntries(field);
   }
 
-  private openMenu(field: string, anchor: HTMLElement) {
+  private openMenu(field: string, anchor: ComponentBase) {
     this.setActive(HEADER_ROW, field);
     this.syncTabStop();
-    this.menu.open(field, anchor, this.headerCellOf(field)!, (items) => this.prepareMenu('header', field, HEADER_ROW, undefined, items));
+    this.menu.open(field, anchor, this.headerAnchor(field), (items) => this.prepareMenu('header', field, HEADER_ROW, undefined, items));
+  }
+
+  /** A column's or a band's header, where a menu opens and where focus goes back to. */
+  private headerAnchor(field: string): ComponentBase {
+    return this.headerCellOf(field) ?? this;
   }
 
   /**
@@ -4828,7 +4933,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     switch (e.key) {
       case 'ArrowRight':
       case 'ArrowLeft':
-        to = row[at + ((e.key === 'ArrowRight') !== this.isRtl() ? 1 : -1)];
+        to = row[at + ((e.key === 'ArrowRight') !== isRtl(this) ? 1 : -1)];
         break;
       case 'Home':
         to = row[0];
@@ -4842,7 +4947,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       case 'ArrowDown': {
         if (e.altKey) {
           e.preventDefault();
-          if (this.hasMenu(id)) this.openMenu(id, this.headerCellOf(id)!);
+          if (this.hasMenu(id)) this.openMenu(id, this.headerAnchor(id));
           return;
         }
         const first = cols.leavesIn(id, visible)[0];
@@ -4853,7 +4958,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       case 'F10':
         if (e.key === 'F10' && !e.shiftKey) return;
         e.preventDefault();
-        if (this.hasMenu(id)) this.openMenu(id, this.headerCellOf(id)!);
+        if (this.hasMenu(id)) this.openMenu(id, this.headerAnchor(id));
         return;
       case 'Enter':
       case ' ':
@@ -4866,29 +4971,83 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (to) this.navigate(HEADER_ROW, to);
   }
 
-  /** Fits a column to its header and the rows shown now; in `'nextColumn'` mode the next column gives or takes the difference, unless `alone`. */
-  private autoSize(field: string, alone = false) {
-    const headerCell = this.header.cellElement(field);
-    if (!headerCell) return;
-    const title = headerCell.querySelector<HTMLElement>('.mx-data-grid__title');
-    let width = title ? headerCell.offsetWidth - title.offsetWidth + textWidth(title) : headerCell.offsetWidth;
-    for (const cell of this.body.renderedCells(field)) {
-      const style = getComputedStyle(cell);
-      const pad = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) || 0;
-      width = Math.max(width, textWidth(cell) + pad);
-    }
+  /** Every visible, resizable column fitted to its content; `told`: the user asked, so the layout change is told once they are. */
+  private fitAll(told: boolean) {
     const cols = this.model.columns;
-    const next = alone ? undefined : cols.partnerOf(field);
-    if (next) cols.resizeWithNext(field, next, this.header.shownWidth(field) + this.header.shownWidth(next), Math.ceil(width) + 2);
-    else cols.resize(field, Math.ceil(width) + 2);
+    // Virtual columns: every column gets its cells while they are measured.
+    this.model.columnWindow.everything = true;
+    this.updateColumns();
+    this.fitColumns(cols.visible().filter((field) => cols.can(field, 'resizable')), true, told, true);
   }
 
-  /** A chip dropped on the headers: the column is ungrouped and, when it can move, put where it was dropped. */
-  private dropOnHeaders(field: string, x: number) {
+  /**
+   * Fits columns to their header and the rows shown now, measured with the window's next reads. In `'nextColumn'`
+   * mode the next column gives or takes the difference, unless `alone`. `told`: the layout change is told once the
+   * widths are written; `all`: every column got its cells for it (see `fitAll`).
+   */
+  private fitColumns(fields: readonly string[], alone: boolean, told: boolean, all = false) {
+    const fitting = (this.fitting ??= { fields: new Map(), all: false, told: false });
+    for (const field of fields) fitting.fields.set(field, alone);
+    fitting.all ||= all;
+    fitting.told ||= told;
+    // The texts of the headers and cells are measured first, in the grid's font; the fit reads the round after.
+    const texts = new Set<string>();
+    for (const field of fields) {
+      const title = this.header.titleText(field);
+      if (title) texts.add(title);
+      for (const cell of this.body.renderedCells(field)) if (cell.text) texts.add(cell.text);
+    }
+    const list = [...texts];
+    textWidths(this, list, (widths) => {
+      list.forEach((value, i) => this.fitWidths.set(value, widths[i]));
+      measure(this, this.readFits, this.writeFits);
+    });
+  }
+
+  /** The widths of the texts the columns being fitted show, by text. */
+  private readonly fitWidths = new Map<string, number>();
+
+  private readonly readFits = (): (ColumnFit | null)[] => [...(this.fitting?.fields ?? [])].map(([field, alone]) => this.fitOf(field, alone));
+
+  private readonly writeFits = (fits: (ColumnFit | null)[]) => {
+    const fitting = this.fitting;
+    this.fitting = null;
+    this.fitWidths.clear();
+    if (!fitting) return;
+    const cols = this.model.columns;
+    for (const fit of fits) {
+      if (fit?.next) cols.resizeWithNext(fit.field, fit.next, fit.total, fit.width);
+      else if (fit) cols.resize(fit.field, fit.width);
+    }
+    if (fitting.all) {
+      this.model.columnWindow.everything = false;
+      this.updateColumns();
+    }
+    if (fitting.told) this.model.layoutChanged();
+    else if (fitting.all) this.model.keepLayout();
+  };
+
+  /** The width a column's content takes, and the next column that gives or takes the difference (unless `alone`); reads only. */
+  private fitOf(field: string, alone: boolean): ColumnFit | null {
+    const header = this.header.cellPart(field);
+    if (!header) return null;
+    const title = this.header.titlePart(field);
+    const shown = boxOf(header).offsetWidth;
+    const widthOf = (text: string | undefined, part: ComponentBase) => (text === undefined ? contentWidth(part) : (this.fitWidths.get(text) ?? 0));
+    let width = title ? shown - boxOf(title).offsetWidth + widthOf(this.header.titleText(field), title) : shown;
+    for (const cell of this.body.renderedCells(field)) {
+      const style = styleOf(cell.part, ['padding-left', 'padding-right']);
+      const pad = parseFloat(style['padding-left']) + parseFloat(style['padding-right']) || 0;
+      width = Math.max(width, widthOf(cell.text, cell.part) + pad);
+    }
+    const next = alone ? undefined : this.model.columns.partnerOf(field);
+    return { field, width: Math.ceil(width) + 2, next, total: next ? this.header.shownWidth(field) + this.header.shownWidth(next) : 0 };
+  }
+
+  /** A chip dropped on the headers at place `index` (the panel asked `groupDropping`): the column is ungrouped and, when it can move, put there. */
+  private dropOnHeaders(field: string, index: number) {
     const { model } = this;
     const cols = model.columns;
-    const index = this.header.chipDropIndex(field, x);
-    if (!model.groupDropAllowed(field, 'chip', 'headers', index)) return;
     model.ungroup(field, true);
     if (index >= 0 && cols.can(field, 'movable') && cols.move(field, index)) model.layoutChanged();
   }
@@ -4936,7 +5095,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const cols = model.columns;
     const title = cols.title(adjust.field);
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      const forward = (e.key === 'ArrowRight') !== this.isRtl();
+      const forward = (e.key === 'ArrowRight') !== isRtl(this);
       if (adjust.kind === 'move') {
         cols.moveBy(adjust.field, forward ? 1 : -1);
         const beside = cols.siblings(adjust.field);
@@ -4969,7 +5128,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    */
   private onEditorCapture(e: KeyboardEvent) {
     // Keys in a row's details are their content's.
-    if (this.body.detailOf(e.target as Element)) return;
+    if (this.body.detailFrom(e)) return;
     // Every key in the rows comes here first: the app may take it.
     if (!this.askKey(e)) {
       this.skippedKey = e;
@@ -4977,14 +5136,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     const ed = this.editor;
     // Escape on a lookup's closed list ends the edit (the list would empty a field that has a clear button).
-    if (ed?.kind === 'lookup' && e.key === 'Escape' && e.target === ed.input && !ed.listOpen) {
+    if (ed?.kind === 'lookup' && e.key === 'Escape' && this.toEditorInput(ed, e) && !ed.listOpen) {
       e.preventDefault();
       e.stopPropagation();
       this.cancelEdit();
       return;
     }
     if (!ed || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    if (ed.kind === 'list' || ed.kind === 'lookup' || ed.kind === 'custom' || e.target !== ed.input) return;
+    if (ed.kind === 'list' || ed.kind === 'lookup' || ed.kind === 'custom' || !this.toEditorInput(ed, e)) return;
     e.preventDefault();
     e.stopPropagation();
     if (this.model.state.busy) return;
@@ -5003,7 +5162,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       return;
     }
     // Keys the editor used, and keys in its own popup, are its own.
-    if (e.defaultPrevented || ed.ownsKey(e) || (ed.input && e.target !== ed.input && ed.kind !== 'custom')) return;
+    if (e.defaultPrevented || ed.ownsKey(e) || (ed.kind !== 'custom' && !this.toEditorInput(ed, e))) return;
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
@@ -5019,8 +5178,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.skippedKey = null;
       return;
     }
-    const target = e.target as HTMLElement;
-    const detail = this.body.detailOf(target);
+    const detail = this.body.detailFrom(e);
     if (detail) {
       this.onDetailKey(e, detail);
       return;
@@ -5031,14 +5189,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (e.key !== 'Tab') e.preventDefault();
       return;
     }
-    if (this.editor?.element.contains(target)) {
+    if (this.fromEditor(e)) {
       this.onEditorKey(e);
       return;
     }
-    const filterCell = target.closest?.('.mx-data-grid__filter-cell');
-    if (filterCell && target !== filterCell && this.onFilterEditorKey(e, target)) return;
-    if (target.classList.contains('mx-data-grid__action') && this.onActionKey(e, target)) return;
-    if (!target.matches?.('.mx-data-grid__cell, .mx-data-grid__form-cell, .mx-data-grid__group-cell, .mx-data-grid__group-footer, .mx-data-grid__header-cell, .mx-data-grid__filter-cell, .mx-data-grid__action, .mx-data-grid__condition')) return;
+    const filter = this.filterRow.cellFrom(e);
+    if (filter && !cameTo(filter.part, e) && this.onFilterEditorKey(e, filter)) return;
+    const pressed = this.actionFrom(e);
+    if (pressed && this.onActionKey(e, pressed.view, pressed.button)) return;
+    // Keys on what a part holds (a field of the app's in a cell) are not the grid's.
+    if (!pressed && !this.toOwnPart(e)) return;
     if (st.adjust) {
       if (this.onAdjustKey(e)) e.preventDefault();
       return;
@@ -5054,7 +5214,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const hasRows = first >= 0;
     let row = st.activeRow;
     let col = Math.max(0, visible.indexOf(st.activeField));
-    const rtl = this.isRtl();
+    const rtl = isRtl(this);
     const ctrl = e.ctrlKey || e.metaKey;
     const onRow = row >= 0;
     const filters = model.showsFilterRow();
@@ -5140,8 +5300,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       case 'ArrowDown':
         if (e.altKey && row === HEADER_ROW) {
           e.preventDefault();
-          if (this.hasMenu(field)) this.openMenu(field, this.header.cellElement(field)!);
-          else if (model.hasHeaderFilter(field)) this.openHeaderFilter(field, this.header.cellElement(field)!);
+          if (this.hasMenu(field)) this.openMenu(field, this.headerAnchor(field));
+          else if (model.hasHeaderFilter(field)) this.openHeaderFilter(field, this.headerAnchor(field));
           return;
         }
         if (e.altKey && row === FILTER_ROW) {
@@ -5220,10 +5380,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       case 'F10':
         if (e.key === 'F10' && !e.shiftKey) return;
         if (row === HEADER_ROW && this.hasMenu(st.activeField)) {
-          this.openMenu(st.activeField, this.header.cellElement(st.activeField)!);
+          this.openMenu(st.activeField, this.headerAnchor(st.activeField));
           e.preventDefault();
         } else if (onRow) {
-          const cell = this.body.cellElement(row, field);
+          const cell = this.cellPartAt(row, field);
           if (cell && this.openRowMenu(row, field, cell)) e.preventDefault();
         }
         return;
@@ -5479,7 +5639,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     let row = last ? r.find(last.extent) : st.activeRow;
     let col = Math.max(0, axis.indexOf(last ? last.extent.field : st.activeField));
     // Left and right are the screen's: right to left, right goes back.
-    const rtl = this.isRtl();
+    const rtl = isRtl(this);
     const end = axis.length - 1;
     switch (move) {
       case 'down':
@@ -5781,11 +5941,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /** A click on an action button: the action runs, the "more" button opens its menu. */
-  private pressAction(button: HTMLElement) {
-    const view = this.body.rowOf(button);
-    const hit = view?.actions?.actionOf(button);
+  private pressAction(view: GridRow<T>, button: ComponentBase) {
+    const hit = view.actions?.actionOfPart(button);
     const st = this.model.state;
-    if (!view || !hit || st.busy) return;
+    if (!hit || st.busy) return;
     if (hit === 'more') {
       this.openMore(view, button);
       return;
@@ -5795,7 +5954,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     void this.run(this.entryOf(hit), 'row');
   }
 
-  private openMore(view: GridRow<T>, button: HTMLElement) {
+  private openMore(view: GridRow<T>, button: ComponentBase) {
     const st = this.model.state;
     const items: MenuItem[] = (view.actions?.overflow ?? []).map((a) => ({
       text: a.text,
@@ -5879,23 +6038,22 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /** Keys on an action button: Left and Right move between the buttons of the cell; Enter and Space press it. */
-  private onActionKey(e: KeyboardEvent, button: HTMLElement): boolean {
-    const view = this.body.rowOf(button);
-    const buttons = view?.actions?.focusables() ?? [];
-    const at = buttons.indexOf(button as HTMLButtonElement);
+  private onActionKey(e: KeyboardEvent, view: GridRow<T>, button: ComponentBase): boolean {
+    const buttons = this.actionButtons(view);
+    const at = buttons.indexOf(button);
     if (e.key === 'Enter' || e.key === ' ') return true;
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.shiftKey && !e.altKey) {
-      const next = at + ((e.key === 'ArrowRight') !== this.isRtl() ? 1 : -1);
+      const next = at + ((e.key === 'ArrowRight') !== isRtl(this) ? 1 : -1);
       if (next < 0 || next >= buttons.length) return false;
       e.preventDefault();
       this.actionIndex = next;
       this.syncTabStop();
-      buttons[next].focus({ preventScroll: true });
+      focusOn(buttons[next], { preventScroll: true });
       return true;
     }
-    if (e.key === 'ArrowDown' && e.altKey && button.classList.contains('mx-data-grid__more')) {
+    if (e.key === 'ArrowDown' && e.altKey && view.actions?.actionOfPart(button) === 'more') {
       e.preventDefault();
-      if (view) this.openMore(view, button);
+      this.openMore(view, button);
       return true;
     }
     return false;
@@ -5903,43 +6061,83 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   // Copy, paste, export.
 
-  /** Puts copied cells on the clipboard: through the copy event the command raises (both forms), else as plain text. */
+  /**
+   * Puts copied cells on the clipboard. Where the window has the clipboard API (a secure page), through it: both forms
+   * where it takes them (`ClipboardItem`), else the text. Elsewhere (a page over http, an older browser), or when the
+   * API refuses, through the copy command.
+   */
   private writeClipboard(content: ClipboardContent) {
-    let written = false;
+    const view = windowOf(this);
+    const clipboard = view?.navigator.clipboard;
+    if (!view || typeof clipboard?.writeText !== 'function') {
+      this.copyByCommand(content);
+      return;
+    }
+    // The window's own constructors: a window the app opened has its own.
+    const { ClipboardItem: Item, Blob: Data } = view as Window & { ClipboardItem?: typeof ClipboardItem; Blob: typeof Blob };
+    let job: Promise<void>;
+    try {
+      job =
+        typeof Item === 'function' && typeof clipboard.write === 'function'
+          ? clipboard.write([new Item({ 'text/plain': new Data([content.text], { type: 'text/plain' }), 'text/html': new Data([content.html], { type: 'text/html' }) })])
+          : clipboard.writeText(content.text);
+    } catch (error) {
+      job = Promise.reject(error);
+    }
+    void job.catch(() => {
+      if (!this.isDisposed) this.copyByCommand(content);
+    });
+  }
+
+  /**
+   * The copy command: a hidden text area holding the text goes into the app's layer above the page, is selected, and
+   * the command copies; the copy event it raises takes both forms. Focus goes back where it was, and the area goes.
+   * Returns whether the command copied.
+   */
+  private copyByCommand(content: ClipboardContent): boolean {
+    const doc = windowOf(this)?.document;
+    if (typeof doc?.execCommand !== 'function') return false;
     const fill = (e: ClipboardEvent) => {
       if (!e.clipboardData) return;
       e.clipboardData.setData('text/plain', content.text);
       e.clipboardData.setData('text/html', content.html);
       e.preventDefault();
-      written = true;
     };
-    const doc = this.element.ownerDocument;
-    doc.addEventListener('copy', fill, true);
+    const area = new Component<HTMLTextAreaElement>('textarea');
+    area.class.add('mx-data-grid__copy-area');
+    area.attr.add({ readonly: '', tabindex: '-1', 'aria-hidden': 'true' });
+    text(area, content.text);
+    placeOnPage(this, area);
+    const back = rememberFocus();
+    const stop = onDocument(this, 'copy', fill, true);
     try {
-      if (typeof doc.execCommand === 'function') doc.execCommand('copy');
+      focusAndSelect(area);
+      return doc.execCommand('copy');
     } catch {
-      // Not allowed here: the clipboard API below.
+      // Not allowed here.
+      return false;
     } finally {
-      doc.removeEventListener('copy', fill, true);
+      stop();
+      back?.restore({ preventScroll: true });
+      void area.dispose();
     }
-    if (!written) void navigator.clipboard?.writeText?.(content.text).catch(() => undefined);
   }
 
   /** Ctrl+V on a cell: the browser raises `paste` next, at the page when no field has focus; take that one event. */
   private armPaste() {
-    const doc = this.element.ownerDocument;
     const take = (e: ClipboardEvent) => {
-      doc.removeEventListener('paste', take, true);
+      stop();
       this.onPaste(e);
     };
-    doc.addEventListener('paste', take, true);
-    setTimeout(() => doc.removeEventListener('paste', take, true), 0);
+    const stop = onDocument(this, 'paste', take, true);
+    setTimeout(stop, 0);
   }
 
-  /** A paste while a cell (not a field) has focus. */
+  /** A paste while a cell (not a field) has focus: the active cell of a data row, which takes focus once it is on a cell. */
   private onPaste(e: ClipboardEvent) {
-    const focus = this.element.ownerDocument.activeElement as HTMLElement | null;
-    if (e.defaultPrevented || !this.model.settings.get('paste') || !focus || !this.viewportEl?.contains(focus) || !focus.classList.contains('mx-data-grid__cell') || this.body.detailOf(focus)) return;
+    const st = this.model.state;
+    const cell = st.activeRow >= 0 ? this.body.rowAt(st.activeRow)?.cellPart(st.activeField) : undefined;
+    if (e.defaultPrevented || !this.model.settings.get('paste') || !cell || !isFocused(cell)) return;
     const text = e.clipboardData?.getData('text/plain');
     if (!text) return;
     e.preventDefault();
@@ -6022,10 +6220,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.drawShell();
   }
 
-  /** A column's width on screen: its header cell's, else the width the grid keeps for it. */
-  private shownWidth(field: string): number {
-    const cell = this.headEl?.querySelector<HTMLElement>(`[data-field="${CSS.escape(field)}"]`);
-    return cell && cell.offsetWidth > 0 ? cell.offsetWidth : this.model.columns.width(field);
+  /** The widths the visible columns have on screen, from their header cells; a column without one on screen is left out. */
+  private shownWidths(): Map<string, number> {
+    const widths = new Map<string, number>();
+    for (const field of this.model.columns.visible()) {
+      const cell = this.header.cellPart(field);
+      const width = cell ? boxOf(cell).offsetWidth : 0;
+      if (width > 0) widths.set(field, width);
+    }
+    return widths;
   }
 
   /** The commands of the toolbar's export button, from `export`. Reactive. */
@@ -6061,11 +6264,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.filterRow.filterCells.get(field);
   }
 
-  private openHeaderFilter(field: string, anchor: HTMLElement) {
+  private openHeaderFilter(field: string, anchor: ComponentBase) {
     if (!this.model.hasHeaderFilter(field)) return;
     this.setActive(HEADER_ROW, field);
     this.syncTabStop();
-    this.headerFilter.open(field, anchor, this.header.cellElement(field)!);
+    this.headerFilter.open(field, anchor, this.headerAnchor(field));
   }
 
   /** The condition menu of a filter cell; a yes/no column opens its list instead. */
@@ -6073,7 +6276,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const cell = this.filterCell(field);
     if (!cell) return;
-    if (!cell.condition) {
+    const condition = cell.conditionPart;
+    if (!condition) {
       const list = cell.editors[0];
       if (list instanceof DropDown) list.open();
       return;
@@ -6087,7 +6291,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         cell.focus();
       },
     }));
-    this.conditionMenu.open(items, cell.condition, model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[model.filters.operator(field)]), title: model.columns.title(field) }));
+    this.conditionMenu.open(items, condition, model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[model.filters.operator(field)]), title: model.columns.title(field) }));
     this.conditionMenu.focusChecked();
   }
 
@@ -6096,10 +6300,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * applies at once), Tab goes to the next editor of the row, Up and Down in a text box leave the
    * row, Alt+Down opens the conditions. Keys the editor uses are its own.
    */
-  private onFilterEditorKey(e: KeyboardEvent, target: HTMLElement): boolean {
-    const cell = this.filterRow.cellOf(target);
-    if (!cell) return true;
-    if (target === cell.condition) {
+  private onFilterEditorKey(e: KeyboardEvent, cell: FilterCell<T>): boolean {
+    if (cell.conditionPart?.motif.isEventFrom(e)) {
       if (e.key === 'Enter' || e.key === ' ') return true;
       if (e.key === 'ArrowDown' && e.altKey) {
         e.preventDefault();
@@ -6107,26 +6309,26 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         return true;
       }
       if (e.key === 'Escape') {
-        cell.cell.focus({ preventScroll: true });
+        focusOn(cell.part, { preventScroll: true });
         return true;
       }
       return false;
     }
     if (e.defaultPrevented) return true;
-    const editor = cell.editors.find((ed) => ed.element.contains(target));
-    if (!editor || target !== cell.inputOf(editor)) return true;
+    const editor = cell.editors.find((ed) => ed.motif.isEventFrom(e));
+    if (!editor || !cell.inputPartOf(editor).motif.isEventFrom(e)) return true;
     const plain = !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
     switch (e.key) {
       case 'Escape':
         e.preventDefault();
         e.stopPropagation();
-        cell.cell.focus({ preventScroll: true });
+        focusOn(cell.part, { preventScroll: true });
         return true;
       case 'Enter':
         this.model.flushFilter();
         if (editor instanceof DropDown) return true;
         e.preventDefault();
-        cell.cell.focus({ preventScroll: true });
+        focusOn(cell.part, { preventScroll: true });
         return true;
       case 'Tab':
         e.preventDefault();
@@ -6165,7 +6367,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.revealColumn(next.cell.field);
       next.editor.focus();
     } else {
-      cell.cell.focus({ preventScroll: true });
+      focusOn(cell.part, { preventScroll: true });
       this.moveFocusOut(dir > 0);
     }
   }
@@ -6188,14 +6390,22 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 }
 
-/** Natural width of an element's content (text and inline children), not its clipped width. */
-function textWidth(el: HTMLElement): number {
-  const doc = el.ownerDocument;
-  if (typeof doc.createRange !== 'function') return el.scrollWidth;
-  const range = doc.createRange();
-  range.selectNodeContents(el);
-  const w = range.getBoundingClientRect?.().width ?? 0;
-  return w || el.scrollWidth;
+/** The width content of a part's own takes (a template's parts), from where the first starts to where the last ends; call it in a read. */
+function contentWidth(part: ComponentBase): number {
+  let start = Infinity;
+  let end = -Infinity;
+  for (const child of part.controls.items) {
+    const rect = rectOf(child);
+    if (!rect.width && !rect.height) continue;
+    start = Math.min(start, rect.left);
+    end = Math.max(end, rect.right);
+  }
+  return end > start ? end - start : 0;
+}
+
+/** Whether an event came to a part itself, not to one of the parts it holds. */
+function cameTo(part: ComponentBase, e: Event): boolean {
+  return part.motif.isEventFrom(e) && !part.controls.items.some((c) => c.motif.isEventFrom(e));
 }
 
 function sameList(a: readonly unknown[] | undefined, b: readonly unknown[] | undefined): boolean {

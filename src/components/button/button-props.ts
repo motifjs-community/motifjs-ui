@@ -19,6 +19,7 @@ export interface ButtonProps extends ControlProps {
   tone?: Bind<ButtonTone>;
   /** The default is `'md'`. */
   size?: Bind<ButtonSize>;
+  /** An image address or a component. Given as a function, the "more" menu of a toolbar calls it again for its own copy. */
   icon?: Bind<IconSource | null | undefined>;
   /** Places the icon before or after the text. The default is `'start'`, and `'end'` puts it after the text. */
   iconPosition?: Bind<'start' | 'end'>;

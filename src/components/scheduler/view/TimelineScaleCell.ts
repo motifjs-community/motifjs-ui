@@ -1,7 +1,7 @@
 import { Component } from '@motifx/core';
 import { onReState } from '../../../core/on-re-state';
 import type { ScaleCell } from '../model/scale-cell';
-import { css, flag, put, text } from '../../../core/draw-parts';
+import { css, flag, put, text } from '../../../core/part-writes';
 import type { SchedulerHost } from './scheduler-host';
 
 interface Props<T> {
@@ -22,7 +22,7 @@ export class TimelineScaleCell<T> extends Component<HTMLDivElement, Props<T>> {
   private content: Component<HTMLDivElement> | null = null;
   /** The template the content was filled with: another one (another view, another prop) fills it again. */
   private template: unknown = undefined;
-  private readonly texts: Record<'upper' | 'weekday' | 'number' | 'hour', HTMLElement | null> = { upper: null, weekday: null, number: null, hour: null };
+  private readonly texts: Record<'upper' | 'weekday' | 'number' | 'hour', Component<HTMLElement> | null> = { upper: null, weekday: null, number: null, hour: null };
 
   constructor(props: Props<T>) {
     super('div', props);
@@ -37,11 +37,10 @@ export class TimelineScaleCell<T> extends Component<HTMLDivElement, Props<T>> {
 
   override onConfigured(): void {
     const { host, tier } = this.props;
-    const el = this.element;
-    el.className = 'mx-scheduler__scale-cell';
-    put(el, 'data-tier', tier);
+    this.class.add('mx-scheduler__scale-cell');
+    put(this, 'data-tier', tier);
     const content = new Component<HTMLDivElement>('div');
-    content.element.className = 'mx-scheduler__scale-content';
+    content.class.add('mx-scheduler__scale-content');
     this.controls.add(content);
     this.content = content;
     this.fill();
@@ -65,19 +64,19 @@ export class TimelineScaleCell<T> extends Component<HTMLDivElement, Props<T>> {
     const { host, tier } = this.props;
     const texts = this.texts;
     content.controls.clear();
-    content.element.textContent = '';
+    text(content, '');
     texts.upper = texts.weekday = texts.number = texts.hour = null;
     const kind = this.cell.kind;
     this.template = this.templateNow();
     const dateTemplate = host.dateTemplate();
     const timeTemplate = host.timeTemplate();
     if (kind === 'day' && dateTemplate) content.controls.add(dateTemplate(this.dateContext()));
-    else if (tier === 'upper') texts.upper = content.element;
+    else if (tier === 'upper') texts.upper = content;
     else if (kind === 'day') {
       texts.weekday = this.span(content, 'mx-scheduler__weekday');
       texts.number = this.span(content, 'mx-scheduler__day-number');
     } else if (timeTemplate) content.controls.add(timeTemplate(this.timeContext()));
-    else texts.hour = content.element;
+    else texts.hour = content;
   }
 
   draw(): void {
@@ -86,27 +85,26 @@ export class TimelineScaleCell<T> extends Component<HTMLDivElement, Props<T>> {
     const { cell, texts } = this;
     const { host, tier } = this.props;
     const format = host.format;
-    const el = this.element;
     if (tier === 'upper') {
-      flag(el, 'data-today', cell.kind === 'day' && cell.day.today);
+      flag(this, 'data-today', cell.kind === 'day' && cell.day.today);
     } else {
-      put(el, 'data-kind', cell.kind);
-      flag(el, 'data-today', cell.day.today);
-      flag(el, 'data-weekend', cell.kind === 'day' && cell.day.weekend);
-      flag(el, 'data-day-start', cell.kind === 'hour' && cell.dayStart);
+      put(this, 'data-kind', cell.kind);
+      flag(this, 'data-today', cell.day.today);
+      flag(this, 'data-weekend', cell.kind === 'day' && cell.day.weekend);
+      flag(this, 'data-day-start', cell.kind === 'hour' && cell.dayStart);
     }
-    css(el, 'grid-column', `${cell.first + 1} / span ${cell.span}`);
+    css(this, 'grid-column', `${cell.first + 1} / span ${cell.span}`);
     if (texts.upper) text(texts.upper, cell.kind === 'month' ? format.monthYear(cell.day.date) : format.fullDate(cell.day.date));
     if (texts.weekday) text(texts.weekday, format.weekday(cell.day.date));
     if (texts.number) text(texts.number, format.dayNumber(cell.day.date));
     if (texts.hour) text(texts.hour, format.hour(cell.minutes));
   }
 
-  private span(parent: Component<HTMLDivElement>, className: string): HTMLElement {
+  private span(parent: Component<HTMLDivElement>, className: string): Component<HTMLSpanElement> {
     const c = new Component<HTMLSpanElement>('span');
-    c.element.className = className;
+    c.class.add(className);
     parent.controls.add(c);
-    return c.element;
+    return c;
   }
 
   /** What a date template is given: each read reads the cell as it is now. */

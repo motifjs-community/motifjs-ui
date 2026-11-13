@@ -1,19 +1,23 @@
-import { Component, Transporter, untracked, type Bind } from '@motifx/core';
+import { Component, untracked, type Bind, type ComponentBase } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
+import type { Control } from '../../core/control';
 import { follow } from '../../core/follow';
-import { deepActiveElement, isShown } from '../../core/focus';
+import { focusOn, isFocused } from '../../core/focus';
 import { givenField, givenList, givenValue } from '../../core/given-field';
-import { chevronDown, dismissMark, gripMark, lockMark, maximizeMark, moreMark, pinMark, restoreMark, splitMark } from '../../core/glyphs';
+import { glyphPart, loose, part } from '../../core/draw-parts';
+import { dismissMark, gripMark, lockMark, maximizeMark, moreMark, pinMark, restoreMark, splitMark } from '../../core/glyphs';
+import { boxOf, isRendered, isRtl, keepScroll, measure, mediaOf, onLayout, rectOf, reveal as revealIn, scrollBy, scrollTo } from '../../core/measure';
+import { orderControls } from '../../core/order-controls';
+import { css, mark, put, text } from '../../core/part-writes';
 import { nextId } from '../../core/next-id';
-import { isElement, isNode } from '../../core/node-kind';
-import { ResizeWatch } from '../../core/resize-watch';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { followPointer } from '../../parts/window/follow-pointer';
 import { Toolbar } from '../toolbar/Toolbar';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { DocumentTab } from './DocumentTab';
-import { keepScroll } from './keep-scroll';
-import { placeNode } from './place-node';
+import { layoutPart } from './place-node';
+import type { StripRoom } from './strip-room';
+import type { TabHeader } from './tab-header';
 import type { SplitDirection } from './split-direction';
 import type { TabBarButton } from './tab-bar-button';
 import type { TabBarButtonSize } from './tab-bar-button-size';
@@ -32,19 +36,19 @@ interface Parts {
   manager: TabDocumentManager;
   bar: Component<HTMLDivElement>;
   /** The tab list and its scroll buttons. */
-  strip: HTMLDivElement;
-  list: HTMLDivElement;
-  pinnedRow: HTMLDivElement;
+  strip: Component<HTMLDivElement>;
+  list: Component<HTMLDivElement>;
+  pinnedRow: Component<HTMLDivElement>;
   /** The other tabs; it scrolls when they do not fit. */
-  row: HTMLDivElement;
-  back: HTMLSpanElement;
-  forward: HTMLSpanElement;
+  row: Component<HTMLDivElement>;
+  back: Component<HTMLSpanElement>;
+  forward: Component<HTMLSpanElement>;
   /** Without scroll buttons: a thin scrollbar over the tabs while the pointer is over the strip. */
-  scrollbar: HTMLDivElement;
-  thumb: HTMLDivElement;
+  scrollbar: Component<HTMLDivElement>;
+  thumb: Component<HTMLDivElement>;
   panels: Component<HTMLDivElement>;
   tips: Component<HTMLDivElement>;
-  empty: HTMLDivElement;
+  empty: Component<HTMLDivElement>;
   actions: Toolbar;
   /** The built-in toolbar buttons: split, maximize, the lock mark, "…", auto hide, close, and a window's maximize and close. */
   own: ToolbarItem[];
@@ -64,9 +68,11 @@ interface Parts {
   /** The tabs, the one used last first. */
   recent: DocumentTab[];
   split: TabSplit | null;
-  overflowQueued: boolean;
-  /** Watches the strip and the active tab (a late font changes its width): the active tab stays in sight. */
-  resize: ResizeWatch | null;
+  /** As `renderLook` drew the bar last: a single document shown as a title, and a close button of the bar's own. */
+  title: boolean;
+  barClose: boolean;
+  /** Ends the size watch on the active tab's header (a late font changes its width): it stays in sight. */
+  stopActiveWatch: (() => void) | null;
 }
 
 const PARTS = Symbol('mx.tab-group');
@@ -98,10 +104,36 @@ interface BarLook {
  * own row when `pinnedTabsOnSeparateRow` is on.
  */
 export class TabGroup extends FocusContainer<HTMLDivElement> {
+  /** @internal The id written on the group's element. */
+  readonly id = nextId('tabdocs-group');
+  private readonly readStrip = (): StripRoom => {
+    const { strip, row } = this.parts;
+    const box = boxOf(row);
+    const room: StripRoom = { needed: box.scrollWidth, room: box.clientWidth, position: box.scrollStart, hidden: 0, trackStart: 0, trackSize: box.width };
+    if (room.needed <= room.room + 1) return room;
+    for (const header of row.controls.items) {
+      const b = rectOf(header);
+      if (b.left < box.left - 1 || b.right > box.right + 1) room.hidden++;
+    }
+    const outer = rectOf(strip);
+    room.trackStart = isRtl(strip) ? outer.right - box.right : box.left - outer.left;
+    return room;
+  };
+  private readonly drawStrip = (room: StripRoom): void => {
+    const { strip, back, forward } = this.parts;
+    const over = room.needed > room.room + 1;
+    mark(strip, 'data-overflow', over);
+    mark(back, 'data-end', room.position <= 1);
+    mark(forward, 'data-end', room.position + room.room >= room.needed - 1);
+    if (over) this.placeThumb(room);
+    if (room.hidden !== untracked(() => this.hiddenTabCount)) untracked(() => this.setProperty('hiddenTabs', room.hidden));
+  };
+
   constructor(manager: TabDocumentManager) {
     super('div', {});
     const self = this as unknown as { [PARTS]?: Parts };
     const parts = (self[PARTS] = this.createParts(manager));
+    layoutPart(this, true);
     // The items read the group, so they come once its parts are in place. A compact bar keeps the
     // buttons it names and the app's that ask to stay; the others are in the "…" menu.
     parts.actions.items = () => {
@@ -246,9 +278,14 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     return this.manager.focusGroup(this);
   }
 
-  protected override get focusElement(): HTMLElement {
+  override get focusPart(): ComponentBase {
     const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
-    return parts?.active?.header ?? parts?.list ?? this.element;
+    return parts?.active?.headerPart ?? parts?.list ?? this;
+  }
+
+  override onMounted(): void {
+    // The shown panel's content is in the page now: it decides whether the panel takes focus.
+    this.parts.active?.updatePanelFocus();
   }
 
   // Called by the manager.
@@ -273,20 +310,24 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     this.parts.split = split;
   }
   /** @internal The tab list. */
-  get listElement(): HTMLDivElement {
+  get listPart(): Component<HTMLDivElement> {
     return this.parts.list;
   }
+  /** @internal The tab list and its scroll buttons. */
+  get stripPart(): Component<HTMLDivElement> {
+    return this.parts.strip;
+  }
   /** @internal The strip and the toolbar. */
-  get barElement(): HTMLDivElement {
-    return this.parts.bar.element;
+  get barPart(): Component<HTMLDivElement> {
+    return this.parts.bar;
   }
   /** @internal The row of the tabs that are not pinned: it scrolls. */
-  get rowElement(): HTMLDivElement {
+  get rowPart(): Component<HTMLDivElement> {
     return this.parts.row;
   }
   /** @internal Where the content shows. */
-  get panelsElement(): HTMLDivElement {
-    return this.parts.panels.element;
+  get panelsPart(): Component<HTMLDivElement> {
+    return this.parts.panels;
   }
   /** @internal Whether its bar keeps only some buttons and has one "…" menu for the rest and the documents. Reactive. */
   get isCompact(): boolean {
@@ -316,9 +357,9 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     return untracked(() => this.dropSides ?? this.manager.dropSides ?? ALL_SIDES);
   }
   /** @internal The "…" button, while it is shown (not folded into the toolbar's menu). */
-  get moreButton(): HTMLElement | null {
+  get moreButtonPart(): Control | null {
     const control = this.parts.actions.controlOf(this.parts.more);
-    return control?.element.isConnected && isShown(control.element) ? control.element : null;
+    return control && isRendered(control) ? control : null;
   }
 
   /** @internal Puts a tab (and its panel) in at `index`; pinned tabs stay first. */
@@ -327,9 +368,10 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const at = Math.max(0, Math.min(index, parts.tabs.length));
     parts.tabs.splice(at, 0, tab);
     parts.recent.push(tab);
-    // Core moves the panel with appendChild: what scrolled inside it would start at the top again.
-    if (tab.panel.parent) keepScroll(tab.panel.element, () => Transporter.transport(tab.panel, parts.panels));
-    else parts.panels.controls.add(tab.panel);
+    // A moved panel may lose what scrolled inside it (no `moveBefore`): it is given back.
+    const restore = tab.panel.parent ? keepScroll(tab.panel) : null;
+    parts.panels.controls.add(tab.panel);
+    restore?.();
     tab.group = this;
     tab.attachTooltip(parts.tips);
     this.arrange();
@@ -342,8 +384,9 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     if (at < 0) return;
     parts.tabs.splice(at, 1);
     parts.recent.splice(parts.recent.indexOf(tab), 1);
-    if (parts.active === tab) parts.active = null;
-    tab.header.remove();
+    if (parts.active === tab) this.setActive(null);
+    // Out of the strip, alive: the tab goes on elsewhere or is disposed.
+    tab.headerPart.parent?.controls.silentDetach(tab.headerPart);
     tab.attachTooltip(null);
     tab.group = null;
     this.changed();
@@ -390,27 +433,25 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     untracked(() => {
       const pinned = parts.tabs.filter((t) => t.document.pinned);
       const guests = parts.manager.guestHeaders(this);
-      const focus = deepActiveElement(this.element) ?? deepActiveElement(parts.manager.element);
-      const had = [...parts.tabs.map((t) => t.header), ...(guests?.before ?? []), ...(guests?.after ?? [])].find((h) => h === focus);
+      const had = [...parts.tabs.map((t) => t.headerPart), ...(guests?.before ?? []), ...(guests?.after ?? [])].find((h) => isFocused(h));
       syncChildren(
         parts.pinnedRow,
-        pinned.map((t) => t.header),
+        pinned.map((t) => t.headerPart),
       );
-      syncChildren(parts.row, [...(guests?.before ?? []), ...parts.tabs.filter((t) => !pinned.includes(t)).map((t) => t.header), ...(guests?.after ?? [])]);
-      for (const header of [...(guests?.before ?? []), ...(guests?.after ?? [])]) {
+      syncChildren(parts.row, [...(guests?.before ?? []), ...parts.tabs.filter((t) => !pinned.includes(t)).map((t) => t.headerPart), ...(guests?.after ?? [])]);
+      for (const guest of [...(guests?.before ?? []), ...(guests?.after ?? [])]) {
         // Another group's tab: its panel is not the one shown here.
-        header.toggleAttribute('data-guest', true);
-        header.setAttribute('aria-selected', 'false');
-        header.tabIndex = -1;
+        mark(guest, 'data-guest', true);
+        put(guest, 'aria-selected', 'false');
+        put(guest, 'tabindex', '-1');
       }
+      // Its own headers are all in its rows now: none of them is another strip's guest.
       for (const tab of parts.tabs) {
-        if (!tab.header.hasAttribute('data-guest') || tab.header.parentElement === parts.row || tab.header.parentElement === parts.pinnedRow) {
-          tab.header.removeAttribute('data-guest');
-          tab.header.setAttribute('aria-selected', String(tab === parts.active));
-        }
+        put(tab.headerPart, 'data-guest', null);
+        put(tab.headerPart, 'aria-selected', String(tab === parts.active));
       }
-      parts.pinnedRow.hidden = !pinned.length;
-      if (had && had.isConnected && deepActiveElement(had) !== had) had.focus({ preventScroll: true });
+      mark(parts.pinnedRow, 'hidden', !pinned.length);
+      if (had && !isFocused(had)) focusOn(had, { preventScroll: true });
     });
     this.renderRoving();
     this.queueOverflow();
@@ -420,12 +461,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   showTab(tab: DocumentTab | null): void {
     const parts = this.parts;
     const previous = parts.active;
-    if (previous && previous !== tab) {
-      previous.show(false);
-      parts.resize?.unobserve(previous.header);
-    }
-    parts.active = tab;
-    if (tab) parts.resize?.observe(tab.header);
+    if (previous && previous !== tab) previous.show(false);
+    this.setActive(tab);
     if (tab) {
       tab.show(true);
       parts.recent.splice(parts.recent.indexOf(tab), 1);
@@ -443,20 +480,20 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       if (this.browserWindow !== browser) this.setProperty('browserWindow', browser);
       if (!!this.getProperty('windowTitle') !== title) this.setProperty('windowTitle', title);
     });
-    this.element.toggleAttribute('data-floating', !!window);
-    if (area) this.element.dataset.dock = area.side;
-    else this.element.removeAttribute('data-dock');
+    mark(this, 'data-floating', !!window);
+    if (area) put(this, 'data-dock', area.side);
+    else put(this, 'data-dock', null);
   }
 
   /** @internal */
   markActive(on: boolean): void {
-    this.element.toggleAttribute('data-active', on);
+    mark(this, 'data-active', on);
     this.setProperty('isActive', on);
   }
 
   /** @internal */
   markMaximized(on: boolean): void {
-    this.element.toggleAttribute('data-maximized', on);
+    mark(this, 'data-maximized', on);
     this.setProperty('isMaximized', on);
   }
 
@@ -464,50 +501,58 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   renderTexts(number: number): void {
     const manager = this.manager;
     const locked = untracked(() => this.locked);
-    this.element.toggleAttribute('data-locked', locked);
-    this.element.setAttribute('aria-label', manager.textOf(locked ? 'tabDocsLockState' : 'tabDocsGroup', { n: number }));
-    this.parts.list.setAttribute('aria-label', manager.textOf('tabDocsTabs', { n: number }));
-    this.parts.actions.controlOf(this.parts.grip)?.element.classList.add('mx-tabdocs__grip');
-    this.parts.actions.controlOf(this.parts.autoHide)?.element.classList.add('mx-tabdocs__auto-hide');
-    this.parts.actions.controlOf(this.parts.close)?.element.classList.add('mx-tabdocs__bar-close');
-    this.parts.empty.textContent = manager.textOf('tabDocsEmpty');
+    mark(this, 'data-locked', locked);
+    put(this, 'aria-label', manager.textOf(locked ? 'tabDocsLockState' : 'tabDocsGroup', { n: number }));
+    put(this.parts.list, 'aria-label', manager.textOf('tabDocsTabs', { n: number }));
+    this.parts.actions.controlOf(this.parts.grip)?.class.add('mx-tabdocs__grip');
+    this.parts.actions.controlOf(this.parts.autoHide)?.class.add('mx-tabdocs__auto-hide');
+    this.parts.actions.controlOf(this.parts.close)?.class.add('mx-tabdocs__bar-close');
+    text(this.parts.empty, manager.textOf('tabDocsEmpty'));
   }
 
-  /** @internal The tab whose header holds `target`. */
-  tabOf(target: EventTarget | null): DocumentTab | undefined {
-    const header = isElement(target) ? target.closest('.mx-tabdocs__tab') : null;
-    return header ? this.parts.tabs.find((t) => t.header === header) : undefined;
+  /** @internal The tab whose header an event started on. */
+  tabOfEvent(e: Event): DocumentTab | undefined {
+    return this.parts.tabs.find((t) => t.headerPart.motif.isEventFrom(e));
   }
 
-  /** @internal Whether `target` is on the group's drag handle. */
-  isGrip(target: EventTarget | null): boolean {
-    const control = this.parts.actions.controlOf(this.parts.grip);
-    return isNode(target) && !!control?.element.contains(target);
+  /** @internal The tab whose header an event started on: one of its own, or on a tablet one of a group folded into it. */
+  stripTabOfEvent(e: Event): DocumentTab | undefined {
+    return this.tabOfEvent(e) ?? untracked(() => this.manager.groups).flatMap((g) => g.tabs).find((t) => t.headerPart.motif.isEventFrom(e));
   }
 
-  /** @internal Whether `target` is the strip's empty room: in the bar, not on a tab or a toolbar button. */
-  isStripSpace(target: EventTarget | null): boolean {
+  /** @internal Whether an event started on the group's drag handle. */
+  isGripEvent(e: Event): boolean {
+    return !!this.parts.actions.controlOf(this.parts.grip)?.motif.isEventFrom(e);
+  }
+
+  /** @internal Whether an event started in the strip's empty room: in the bar, not on one of its tabs, the scrollbar or a toolbar button. */
+  isStripSpaceEvent(e: Event): boolean {
     const parts = this.parts;
-    if (!isElement(target) || !parts.bar.element.contains(target) || this.tabOf(target) || parts.scrollbar.contains(target)) return false;
-    return !parts.actions.element.contains(target) || target === parts.actions.element;
+    if (!parts.bar.motif.isEventFrom(e) || this.tabOfEvent(e) || parts.scrollbar.motif.isEventFrom(e)) return false;
+    // The toolbar's own room counts; its buttons do not.
+    return !parts.actions.controls.items.some((c) => c.motif.isEventFrom(e));
+  }
+
+  /** @internal Whether an event started on one of the strip's scroll buttons. */
+  isScrollButtonEvent(e: Event): boolean {
+    return this.parts.back.motif.isEventFrom(e) || this.parts.forward.motif.isEventFrom(e);
   }
 
   /** @internal Scrolls the strip, not the page, so that a tab is in sight. */
   reveal(tab: DocumentTab): void {
-    const row = tab.header.parentElement === this.parts.row || !tab.header.isConnected ? this.parts.row : (tab.header.closest('.mx-tabdocs__row') as HTMLDivElement | null) ?? this.parts.row;
-    const header = tab.header;
-    if (!row.isConnected || header.parentElement !== row) return;
-    const room = row.getBoundingClientRect();
-    const box = header.getBoundingClientRect();
+    // On a tablet the header may be in the row of the group this one is folded into. The pinned row never scrolls.
+    const holder = tab.headerPart.parent;
+    const group = holder === this.parts.row ? this : untracked(() => this.manager.groups).find((g) => g.rowPart === holder);
     // A tab wider than the room shows its start.
-    if (box.left < room.left || box.width > room.width) row.scrollLeft += box.left - room.left;
-    else if (box.right > room.right) row.scrollLeft += box.right - room.right;
+    if (group) revealIn(group.rowPart, tab.headerPart, { axis: 'x' });
   }
 
   /** @internal The roving tab stop: the active tab. */
   renderRoving(): void {
     const parts = this.parts;
-    for (const tab of parts.tabs) tab.header.tabIndex = tab === parts.active && !tab.header.hasAttribute('data-guest') ? 0 : -1;
+    // Folded into another group on a tablet, its headers are that strip's guests: none of them is a stop.
+    const folded = parts.manager.groupFolded(this);
+    for (const tab of parts.tabs) put(tab.headerPart, 'tabindex', tab === parts.active && !folded ? '0' : '-1');
   }
 
   /** @internal Puts the recently used order back, as `saveLayout` wrote it. */
@@ -524,68 +569,54 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const parts = this.parts;
     for (const tab of parts.tabs.splice(0)) tab.dispose();
     parts.recent = [];
-    parts.active = null;
+    this.setActive(null);
     this.changed();
   }
 
-  /** @internal Shows the scroll buttons when the tabs do not fit, each dimmed at its end. */
+  /** @internal Shows the scroll buttons when the tabs do not fit, each dimmed at its end; drawn in the window's next frame. */
   queueOverflow(): void {
-    const parts = this.parts;
-    if (parts.overflowQueued) return;
-    parts.overflowQueued = true;
-    queueMicrotask(() => {
-      parts.overflowQueued = false;
-      if (!this.isDisposed) this.renderOverflow();
-    });
+    measure(this, this.readStrip, this.drawStrip);
   }
 
-  private renderOverflow(): void {
-    const { row, strip, back, forward } = this.parts;
-    const needed = row.scrollWidth;
-    const room = row.clientWidth;
-    const over = needed > room + 1;
-    strip.toggleAttribute('data-overflow', over);
-    const position = Math.abs(row.scrollLeft);
-    back.toggleAttribute('data-end', position <= 1);
-    forward.toggleAttribute('data-end', position + room >= needed - 1);
-    let hidden = 0;
-    if (over) {
-      const box = row.getBoundingClientRect();
-      for (const header of Array.from(row.children)) {
-        const b = header.getBoundingClientRect();
-        if (b.left < box.left - 1 || b.right > box.right + 1) hidden++;
-      }
-      this.placeThumb(box, needed, room, position);
-    }
-    if (hidden !== untracked(() => this.hiddenTabCount)) untracked(() => this.setProperty('hiddenTabs', hidden));
+  /** Makes `tab` the active one and watches its header's size: a late font changes its width, and it stays in sight. */
+  private setActive(tab: DocumentTab | null): void {
+    const parts = this.parts;
+    if (parts.active === tab) return;
+    parts.stopActiveWatch?.();
+    parts.active = tab;
+    parts.stopActiveWatch = tab ? onLayout(tab.headerPart, 'size', () => this.stripResized(), { owner: this }) : null;
+  }
+
+  private stripResized(): void {
+    if (this.parts.active) this.reveal(this.parts.active);
+    this.queueOverflow();
   }
 
   /** The thin scrollbar: along the tabs that scroll, its thumb as long as the share in sight. */
-  private placeThumb(box: DOMRect, needed: number, room: number, position: number): void {
-    const { strip, scrollbar } = this.parts;
-    const outer = strip.getBoundingClientRect();
+  private placeThumb({ needed, room, position, trackStart, trackSize }: StripRoom): void {
+    const scrollbar = this.parts.scrollbar;
     const size = Math.min(1, room / needed);
-    const style = scrollbar.style;
-    style.setProperty('--_track-start', `${Math.round(isRtl(strip) ? outer.right - box.right : box.left - outer.left)}px`);
-    style.setProperty('--_track-size', `${Math.round(box.width)}px`);
-    style.setProperty('--_thumb-size', `${(size * 100).toFixed(2)}%`);
-    style.setProperty('--_thumb-at', `${((Math.min(position, needed - room) / (needed - room)) * (1 - size) * 100).toFixed(2)}%`);
+    css(scrollbar, '--_track-start', `${Math.round(trackStart)}px`);
+    css(scrollbar, '--_track-size', `${Math.round(trackSize)}px`);
+    css(scrollbar, '--_thumb-size', `${(size * 100).toFixed(2)}%`);
+    css(scrollbar, '--_thumb-at', `${((Math.min(position, needed - room) / (needed - room)) * (1 - size) * 100).toFixed(2)}%`);
   }
 
   /** The thumb is dragged: the strip follows, as far as the tabs go for each pixel of the track. */
   private dragThumb(e: PointerEvent): void {
     const { row, scrollbar, thumb } = this.parts;
     if (e.button !== 0) return;
+    const box = boxOf(row);
     e.preventDefault();
     e.stopPropagation();
-    const start = row.scrollLeft;
-    const ratio = row.scrollWidth / Math.max(1, row.clientWidth);
-    scrollbar.toggleAttribute('data-dragging', true);
+    // Right to left the track runs the other way, and so does the pointer along it.
+    const ratio = (box.scrollWidth / Math.max(1, box.clientWidth)) * (box.rtl ? -1 : 1);
+    mark(scrollbar, 'data-dragging', true);
     followPointer(
       thumb,
       e,
-      (dx) => (row.scrollLeft = start + dx * ratio),
-      () => scrollbar.removeAttribute('data-dragging'),
+      (dx) => scrollTo(row, { start: box.scrollStart + dx * ratio }),
+      () => put(scrollbar, 'data-dragging', null),
     );
   }
 
@@ -619,14 +650,16 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
 
   /** `close`: the bar has a close button of its own, so a title shows none. */
   private renderLook(look: BarLook, title: boolean, close: boolean): void {
-    const el = this.element;
-    el.dataset.tabSize = look.tabSize;
-    el.style.setProperty('--_tab-min', `${look.tabMinWidth}px`);
-    el.toggleAttribute('data-scroll-buttons', look.scrollButtons);
-    el.toggleAttribute('data-compact', look.buttons !== 'all');
-    el.toggleAttribute('data-title', title);
-    el.toggleAttribute('data-bar-close', close);
-    el.dataset.barSize = look.buttonSize;
+    const parts = this.parts;
+    parts.title = title;
+    parts.barClose = close;
+    put(this, 'data-tab-size', look.tabSize);
+    css(this, '--_tab-min', `${look.tabMinWidth}px`);
+    mark(this, 'data-scroll-buttons', look.scrollButtons);
+    mark(this, 'data-compact', look.buttons !== 'all');
+    mark(this, 'data-title', title);
+    mark(this, 'data-bar-close', close);
+    put(this, 'data-bar-size', look.buttonSize);
     this.queueOverflow();
   }
 
@@ -640,12 +673,11 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     return hidden ? m.textOf('tabDocsBarMenuHidden', { n: hidden }) : m.textOf('tabDocsBarMenu');
   }
 
-  private scrollBy(direction: 1 | -1): void {
+  private scrollStrip(direction: 1 | -1): void {
     const row = this.parts.row;
-    const view = row.ownerDocument.defaultView;
-    const smooth = !!view && !view.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const rtl = view?.getComputedStyle(row).direction === 'rtl';
-    row.scrollBy({ left: direction * (rtl ? -1 : 1) * row.clientWidth * 0.8, behavior: smooth ? 'smooth' : 'auto' });
+    const width = boxOf(row).clientWidth;
+    const smooth = mediaOf(row, '(prefers-reduced-motion: no-preference)');
+    scrollBy(row, { start: direction * width * 0.8 }, smooth ? 'smooth' : 'auto');
   }
 
   /** The app's buttons, recreated only when `toolbarItems` is another function. */
@@ -670,9 +702,9 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       );
     });
     const empty = !parts.tabs.length;
-    this.element.toggleAttribute('data-empty', empty);
-    parts.list.hidden = empty;
-    parts.empty.hidden = !empty;
+    mark(this, 'data-empty', empty);
+    mark(parts.list, 'hidden', empty);
+    mark(parts.empty, 'hidden', !empty);
     this.renderRoving();
   }
 
@@ -681,33 +713,26 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   }
 
   private createParts(manager: TabDocumentManager): Parts {
-    const el = this.element;
-    const doc = el.ownerDocument;
-    el.classList.add('mx-tabdocs__group');
-    el.id = nextId('tabdocs-group');
-    el.setAttribute('role', 'group');
-    el.toggleAttribute('data-empty', true);
+    this.class.add('mx-tabdocs__group');
+    this.attr.add({ id: this.id, role: 'group' });
+    mark(this, 'data-empty', true);
     // Child components go into their parent's element: core puts them there when the group is built.
     const bar = new Component<HTMLDivElement>('div');
-    bar.element.className = 'mx-tabdocs__bar';
-    const strip = div(doc, 'mx-tabdocs__strip');
-    const list = div(doc, 'mx-tabdocs__tabs');
-    list.setAttribute('role', 'tablist');
-    list.hidden = true;
-    const pinnedRow = div(doc, 'mx-tabdocs__pinned');
-    pinnedRow.hidden = true;
-    const row = div(doc, 'mx-tabdocs__row');
-    for (const part of [pinnedRow, row]) part.setAttribute('role', 'presentation');
-    list.append(pinnedRow, row);
-    const back = scrollButton(doc, 'back');
-    const forward = scrollButton(doc, 'forward');
-    const scrollbar = div(doc, 'mx-tabdocs__scrollbar');
-    scrollbar.setAttribute('aria-hidden', 'true');
-    const thumb = div(doc, 'mx-tabdocs__thumb');
-    scrollbar.append(thumb);
+    bar.class.add('mx-tabdocs__bar');
+    const strip = part<HTMLDivElement>(bar, 'div', 'mx-tabdocs__strip');
+    const list = part<HTMLDivElement>(strip, 'div', 'mx-tabdocs__tabs');
+    list.attr.add({ role: 'tablist' });
+    mark(list, 'hidden', true);
+    const pinnedRow = part<HTMLDivElement>(list, 'div', 'mx-tabdocs__pinned');
+    mark(pinnedRow, 'hidden', true);
+    const row = part<HTMLDivElement>(list, 'div', 'mx-tabdocs__row');
+    for (const c of [pinnedRow, row]) c.attr.add({ role: 'presentation' });
     // Both scroll buttons after the tabs: the pinned ones, which never scroll, stay at the start.
-    strip.append(list, back, forward, scrollbar);
-    bar.element.append(strip);
+    const back = scrollButton(strip, 'back');
+    const forward = scrollButton(strip, 'forward');
+    const scrollbar = part<HTMLDivElement>(strip, 'div', 'mx-tabdocs__scrollbar');
+    scrollbar.attr.add({ 'aria-hidden': 'true' });
+    const thumb = part<HTMLDivElement>(scrollbar, 'div', 'mx-tabdocs__thumb');
 
     const split: ToolbarItem = {
       icon: () => splitMark(),
@@ -768,7 +793,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const more: ToolbarItem = {
       icon: () => {
         const hidden = this.look().scrollButtons ? 0 : this.hiddenTabCount;
-        return hidden ? countMark(this.element.ownerDocument, hidden) : moreMark();
+        return hidden ? countMark(hidden) : moreMark();
       },
       hint: () => this.moreText(),
       overflow: () => (this.isCompact ? 'never' : 'auto'),
@@ -798,15 +823,14 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       overflow: 'menu',
       label: () => manager.textOf('tabDocsGroupActions'),
     });
-    actions.element.classList.add('mx-tabdocs__actions');
+    actions.class.add('mx-tabdocs__actions');
     bar.controls.add(actions);
 
     const panels = new Component<HTMLDivElement>('div');
-    panels.element.className = 'mx-tabdocs__panels';
-    const empty = div(doc, 'mx-tabdocs__empty');
-    panels.element.append(empty);
+    panels.class.add('mx-tabdocs__panels');
+    const empty = part<HTMLDivElement>(panels, 'div', 'mx-tabdocs__empty');
     const tips = new Component<HTMLDivElement>('div');
-    tips.element.className = 'mx-tabdocs__tips';
+    tips.class.add('mx-tabdocs__tips');
     this.controls.add(bar, panels, tips);
     return {
       manager,
@@ -834,38 +858,39 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       active: null,
       recent: [],
       split: null,
-      overflowQueued: false,
-      resize: null,
+      title: false,
+      barClose: false,
+      stopActiveWatch: null,
     };
   }
 
   private listen(): void {
     const parts = this.parts;
-    const { list, row, bar, manager } = parts;
-    this.element.addEventListener('focusin', () => manager.groupFocused(this));
-    list.addEventListener('click', (e) => {
+    const { list, bar, row, manager } = parts;
+    this.motif.on('focusin', () => manager.groupFocused(this));
+    list.motif.on('click', (_, e) => {
       // On a tablet the strip may hold the tabs of groups folded into this one.
-      const tab = this.tabOf(e.target) ?? manager.tabOfHeader(e.target);
+      const tab = this.stripTabOfEvent(e);
       if (!tab) return;
-      const target = e.target as Element;
       // A title whose bar has the close button shows none of its own.
-      const own = !this.element.matches('[data-title][data-bar-close]');
-      if (own && target.closest('.mx-tabdocs__close')) {
+      const own = !(parts.title && parts.barClose);
+      if (own && tab.isCloseEvent(e)) {
         e.stopPropagation();
         void manager.closeByUser(tab.document);
-      } else if (target.closest('.mx-tabdocs__pin')) {
+      } else if (tab.isPinEvent(e)) {
         e.stopPropagation();
         manager.unpinByUser(tab.document);
       } else {
         manager.activateByUser(tab.document);
       }
     });
-    list.addEventListener('mousedown', (e) => {
+    list.motif.on('mousedown', (_, e) => {
       // The close button and the pin mark do not take focus from where it is.
-      if ((e.target as Element).closest('.mx-tabdocs__close, .mx-tabdocs__pin')) e.preventDefault();
+      const tab = this.stripTabOfEvent(e);
+      if (tab && (tab.isCloseEvent(e) || tab.isPinEvent(e))) e.preventDefault();
     });
-    list.addEventListener('auxclick', (e) => {
-      const tab = this.tabOf(e.target) ?? manager.tabOfHeader(e.target);
+    list.motif.on('auxclick', (_, e: MouseEvent) => {
+      const tab = this.stripTabOfEvent(e);
       if (tab && e.button === 1) {
         e.preventDefault();
         void manager.closeByUser(tab.document);
@@ -873,83 +898,55 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     });
     // A phone decides when the finger lands whether the page may scroll at once: the bar holds a
     // touchmove listener from the start, so a tab dragged after a long press can stop the scroll.
-    bar.element.addEventListener('touchmove', (e) => manager.holdTouch(e), { passive: false });
-    bar.element.addEventListener('mousedown', (e) => {
+    bar.motif.on('touchmove', (_, e: TouchEvent | undefined) => e && manager.holdTouch(e));
+    bar.motif.on('mousedown', (_, e) => {
       // A click on the empty strip leaves focus where it is (the page around would take it).
-      if (this.isStripSpace(e.target)) e.preventDefault();
+      if (this.isStripSpaceEvent(e)) e.preventDefault();
     });
-    bar.element.addEventListener('dblclick', (e) => {
-      const tab = this.tabOf(e.target);
-      if (tab && !(e.target as Element).closest('.mx-tabdocs__close, .mx-tabdocs__pin')) manager.tabDoubleClicked(this, tab.document);
-      else if (!tab && this.isStripSpace(e.target)) manager.stripDoubleClicked(this);
+    bar.motif.on('dblclick', (_, e) => {
+      const tab = this.tabOfEvent(e);
+      if (tab && !tab.isCloseEvent(e) && !tab.isPinEvent(e)) manager.tabDoubleClicked(this, tab.document);
+      else if (!tab && this.isStripSpaceEvent(e)) manager.stripDoubleClicked(this);
     });
-    row.addEventListener(
-      'wheel',
-      (e) => {
-        // A plain mouse wheel scrolls the strip sideways.
-        if (e.deltaX || !e.deltaY || row.scrollWidth <= row.clientWidth) return;
-        e.preventDefault();
-        row.scrollLeft += e.deltaY;
-      },
-      { passive: false },
-    );
-    row.addEventListener('scroll', () => this.renderOverflow());
-    parts.thumb.addEventListener('pointerdown', (e) => this.dragThumb(e));
+    row.motif.on('wheel', (_, e) => {
+      // A plain mouse wheel scrolls the strip sideways, as the browser's own sideways wheel does.
+      if (e.deltaX || !e.deltaY) return;
+      const box = boxOf(row);
+      if (box.scrollWidth <= box.clientWidth) return;
+      e.preventDefault();
+      scrollBy(row, { start: box.rtl ? -e.deltaY : e.deltaY });
+    });
+    row.motif.on('scroll', () => this.queueOverflow());
+    parts.thumb.motif.on('pointerdown', (_, e) => this.dragThumb(e));
     for (const button of [parts.back, parts.forward]) {
-      button.addEventListener('mousedown', (e) => e.preventDefault());
-      button.addEventListener('click', () => this.scrollBy(button === parts.forward ? 1 : -1));
+      button.motif.on('mousedown', (_, e) => e.preventDefault());
+      button.motif.on('click', () => this.scrollStrip(button === parts.forward ? 1 : -1));
     }
-    list.addEventListener('focusin', (e) => {
-      const tab = this.tabOf(e.target) ?? manager.tabOfHeader(e.target);
+    list.motif.on('focusin', (_, e) => {
+      const tab = this.stripTabOfEvent(e);
       if (tab) this.reveal(tab);
     });
     // A press on text or empty space in a panel moves no focus, yet the group is the one in use.
-    parts.panels.element.addEventListener('pointerdown', () => manager.groupFocused(this), { capture: true, passive: true });
-    parts.panels.element.addEventListener('focusin', (e) => {
-      const target = e.target as HTMLElement;
-      const tab = parts.tabs.find((t) => t.panel.element.contains(target));
-      if (tab && target !== tab.panel.element) tab.lastFocus = target;
+    parts.panels.motif.on('pointerdown:capture:passive', () => manager.groupFocused(this));
+    // Before Tab moves focus: what the shown panel holds now (content may come later) decides whether it is a stop.
+    this.motif.on('keydown:capture', (_, e) => {
+      if (e.key === 'Tab') parts.active?.updatePanelFocus();
     });
-    const view = this.element.ownerDocument.defaultView;
-    if (view && typeof view.MutationObserver === 'function') {
-      // Content that comes and goes in the shown panel decides whether the panel takes focus.
-      const observer = new view.MutationObserver(() => parts.active?.updatePanelFocus());
-      observer.observe(parts.panels.element, { childList: true, subtree: true });
-      this.motif.setDisposable(() => observer.disconnect());
-    }
-    if (view && typeof view.ResizeObserver === 'function') {
-      // Watches that follow the group into a new browser window.
-      const observer = (parts.resize = new ResizeWatch(() => {
-        if (parts.active) this.reveal(parts.active);
-        this.renderOverflow();
-      }));
-      observer.observe(row);
-      // A toolbar with folded buttons keeps its size when the group grows: it unfolds them here.
-      let width = -1;
-      const bar = new ResizeWatch(() => {
-        const now = parts.bar.element.clientWidth;
-        if (now === width) return;
-        width = now;
+    // The active tab stays in sight when the strip changes size.
+    onLayout(row, 'size', () => this.stripResized(), { owner: this });
+    // A toolbar with folded buttons keeps its size when the group grows: it unfolds them here.
+    let width = -1;
+    onLayout(
+      bar,
+      'size',
+      (size) => {
+        if (size.width === width) return;
+        width = size.width;
         parts.actions.updateOverflow();
-      });
-      bar.observe(parts.bar.element);
-      this.motif.setDisposable(() => {
-        observer.disconnect();
-        bar.disconnect();
-      });
-    }
+      },
+      { owner: this },
+    );
   }
-}
-
-function div(doc: Document, className: string): HTMLDivElement {
-  const el = doc.createElement('div');
-  el.className = className;
-  return el;
-}
-
-function isRtl(el: Element): boolean {
-  const view = el.ownerDocument.defaultView;
-  return !!view && view.getComputedStyle(el).direction === 'rtl';
 }
 
 /** An app's button that asks to stay in the toolbar. */
@@ -988,28 +985,26 @@ function menuItemsOf(items: readonly ToolbarItem[], toolbar: Toolbar): MenuItem[
 }
 
 /** How many tabs are out of sight, as `+2`. */
-function countMark(doc: Document, count: number): HTMLSpanElement {
-  const mark = doc.createElement('span');
-  mark.className = 'mx-tabdocs__count';
-  mark.textContent = `+${count}`;
+function countMark(count: number): Component<HTMLSpanElement> {
+  const mark = loose<HTMLSpanElement>('span', 'mx-tabdocs__count');
+  text(mark, `+${count}`);
   return mark;
 }
 
-function scrollButton(doc: Document, direction: 'back' | 'forward'): HTMLSpanElement {
+function scrollButton(strip: Component<HTMLDivElement>, direction: 'back' | 'forward'): Component<HTMLSpanElement> {
   // The arrow keys reach every tab, so these are for the pointer only.
-  const button = doc.createElement('span');
-  button.className = 'mx-tabdocs__scroll';
-  button.dataset.direction = direction;
-  button.setAttribute('aria-hidden', 'true');
-  button.append(chevronDown());
+  const button = part<HTMLSpanElement>(strip, 'span', 'mx-tabdocs__scroll');
+  button.attr.add({ 'data-direction': direction, 'aria-hidden': 'true' });
+  glyphPart(button, 'chevron-down');
   return button;
 }
 
-/** Makes `parent`'s children `wanted`, in order, moving only what is out of place. */
-function syncChildren(parent: HTMLElement, wanted: readonly HTMLElement[]): void {
-  wanted.forEach((el, i) => {
-    const at = parent.children[i] ?? null;
-    if (at !== el) placeNode(parent, el, at);
-  });
-  while (parent.children.length > wanted.length) parent.lastElementChild!.remove();
+/**
+ * Makes `parent`'s headers `wanted`, in order, moving only what is out of place (never the focused one). A header no
+ * longer here is taken out alive: it belongs to its tab, which goes on in another strip or is disposed.
+ */
+function syncChildren(parent: Component<HTMLDivElement>, wanted: readonly TabHeader[]): void {
+  const keep = new Set<unknown>(wanted);
+  for (const c of [...parent.controls.items]) if (!keep.has(c)) parent.controls.silentDetach(c);
+  orderControls(parent, wanted);
 }

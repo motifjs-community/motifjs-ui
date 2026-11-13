@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import { Panel } from './Panel';
@@ -51,7 +52,7 @@ describe('SplitContainer', () => {
     expect(second).toBe(split.second.element);
     expect(first.textContent).toBe('Left');
     expect(second.textContent).toBe('Right');
-    expect(splitter).toBe(split.splitterElement);
+    expect(splitter).toBe(split.splitterPart.element);
     expect(splitter.getAttribute('role')).toBe('separator');
     expect(splitter.getAttribute('aria-orientation')).toBe('vertical');
     expect(splitter.getAttribute('aria-controls')).toBe(first.id);
@@ -70,8 +71,9 @@ describe('SplitContainer', () => {
     await tick();
     expect(split.second.element.textContent).toBe('Output');
     expect(split.element.style.gridTemplateRows).toContain('calc((100% - var(--_layout-splitter-size)) * 0.3)');
-    expect(split.splitterElement.getAttribute('aria-orientation')).toBe('horizontal');
-    expect(split.splitterElement.getAttribute('aria-valuenow')).toBe('30');
+    expect(split.splitterPart.element.getAttribute('aria-orientation')).toBe('horizontal');
+    await whenMeasured(split);
+    expect(split.splitterPart.element.getAttribute('aria-valuenow')).toBe('30');
     split.fixedPanel = 'second';
     split.position = 120;
     expect(split.element.style.gridTemplateRows).toBe(
@@ -101,7 +103,7 @@ describe('SplitContainer', () => {
       </SplitContainer>,
     );
     await tick();
-    const splitter = split.splitterElement;
+    const splitter = split.splitterPart.element;
     expect(split.position).toBe(200);
     sizes(split, 200, 400);
     expect(press(splitter, 'ArrowRight')).toBe(true);
@@ -156,11 +158,11 @@ describe('SplitContainer', () => {
     page(split);
     await tick();
     sizes(split, 300, 300);
-    press(split.splitterElement, 'ArrowRight');
+    press(split.splitterPart.element, 'ArrowRight');
     expect(split.position).toBe('60%');
     split.element.dir = 'rtl';
     sizes(split, 300, 300);
-    press(split.splitterElement, 'ArrowRight');
+    press(split.splitterPart.element, 'ArrowRight');
     expect(split.position).toBe('40%');
   });
 
@@ -173,18 +175,18 @@ describe('SplitContainer', () => {
       </SplitContainer>,
     );
     await tick();
-    const splitter = split.splitterElement;
+    const splitter = split.splitterPart.element;
     split.first.element.querySelector('button')!.focus();
     split.collapse();
     expect(split.collapsed).toBe('first');
-    expect(split.first.element.inert).toBe(true);
+    expect(split.first.element.hasAttribute('inert')).toBe(true);
     expect(document.activeElement).toBe(splitter);
     expect(splitter.getAttribute('aria-valuenow')).toBe('0');
     expect(split.element.style.gridTemplateColumns).toBe('0px var(--_layout-splitter-size) minmax(0, 1fr)');
     press(splitter, 'Enter');
     expect(split.collapsed).toBe('none');
     expect(split.position).toBe('40%');
-    expect(split.first.element.inert).toBe(false);
+    expect(split.first.element.hasAttribute('inert')).toBe(false);
     press(splitter, 'Enter');
     expect(split.collapsed).toBe('first');
     split.collapsible = false;
@@ -194,7 +196,7 @@ describe('SplitContainer', () => {
     expect(split.collapsed).toBe('none');
     split.collapse('second');
     expect(splitter.getAttribute('aria-valuenow')).toBe('100');
-    expect(split.second.element.inert).toBe(true);
+    expect(split.second.element.hasAttribute('inert')).toBe(true);
   });
 
   it('switches resizing off, follows the locale and the enabled cascade', async () => {
@@ -207,7 +209,7 @@ describe('SplitContainer', () => {
       </SplitContainer>,
     );
     await tick();
-    const splitter = split.splitterElement;
+    const splitter = split.splitterPart.element;
     sizes(split, 100, 100);
     s.resizable = false;
     await tick();

@@ -2,10 +2,10 @@
    typography ramp, the focus ring and the user-preference overrides come
    from the design system; this file only adds what the controls need. */
 @layer mx.components {
-  /* Access keys (`&Save`): marked while Alt is held, or always with data-mx-access-keys="always" on
-     <html>. Whether a line is drawn is the access key's unit; its style, colour, thickness and offset are
-     the language's tokens (the unit's box has no such properties). */
-  :root:is([data-mx-alt], [data-mx-access-keys='always']) .mx-access-key {
+  /* Access keys (`&Save`): marked while Alt is held (the kit marks the components that show them), or always with
+     data-mx-access-keys="always" on <html>. Whether a line is drawn is the access key's unit; its style, color,
+     thickness and offset are the language's tokens (the unit's box has no such properties). */
+  :is([data-mx-alt], :root[data-mx-access-keys='always']) .mx-access-key {
     text-decoration-style: var(--_access-key-underline-style);
     text-decoration-color: var(--_access-key-underline-color);
     text-decoration-thickness: var(--_access-key-underline-thickness);

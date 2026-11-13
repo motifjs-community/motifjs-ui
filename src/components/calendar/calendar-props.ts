@@ -29,4 +29,6 @@ export interface CalendarProps extends ControlProps {
   onValueChanged?: (e: ValueChangedEventArgs<Date | null>) => void;
   /** Occurs when the pointer moves over a day, or leaves the days (`null`). */
   onDayPointed?: (day: Date | null) => void;
+  /** Occurs when the Tab stop moves to another date; its month or year is the one on screen. */
+  onFocusedDateChanged?: (date: Date) => void;
 }

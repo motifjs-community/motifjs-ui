@@ -17,7 +17,7 @@ export interface CardProps extends ControlProps {
   avatar?: Bind<AvatarProps | null>;
   /** Content at the end of the header, such as a menu button or a badge. */
   action?: Bind<ComponentBase | null>;
-  /** An image that extends to the card edges: an image address, an element or a component. */
+  /** An image that extends to the card edges: an image address or a component. */
   media?: Bind<IconSource | null>;
   /** Alternative text for the image when `media` is an image address. Without it, the image is decorative. */
   mediaAlt?: Bind<string>;

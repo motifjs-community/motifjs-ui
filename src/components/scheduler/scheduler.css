@@ -1246,17 +1246,23 @@
       display: none;
     }
 
-    /* `print()` prints the scheduler alone. */
-    :root[data-mx-print-one] body * {
+    /* `print()` prints the scheduler alone. The app's root in its window carries `data-mx-print-one`: what is in
+       it is hidden, and the rest of the page too where the browser has `:has()` (a rule of its own, so a browser
+       without it drops that rule alone). */
+    [data-mx-print-one] * {
       visibility: hidden;
     }
 
-    :root[data-mx-print-one] .mx-scheduler[data-print-one],
-    :root[data-mx-print-one] .mx-scheduler[data-print-one] * {
+    :root:has([data-mx-print-one]) body * {
+      visibility: hidden;
+    }
+
+    :root .mx-scheduler[data-print-one],
+    :root .mx-scheduler[data-print-one] * {
       visibility: visible;
     }
 
-    :root[data-mx-print-one] .mx-scheduler[data-print-one] {
+    .mx-scheduler[data-print-one] {
       position: absolute;
       inset-block-start: 0;
       inset-inline: 0;

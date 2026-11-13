@@ -1,3 +1,4 @@
+import type { ComponentBase } from '@motifx/core';
 import type { DragGhost } from '../../../parts/drag/DragGhost';
 import type { GroupPanel } from './GroupPanel';
 
@@ -5,13 +6,13 @@ import type { GroupPanel } from './GroupPanel';
 export interface HeaderHost {
   /** Whether the column has a menu (the feature is on and the menu would not be empty). */
   hasMenu(field: string): boolean;
-  openMenu(field: string, anchor: HTMLElement): void;
+  openMenu(field: string, anchor: ComponentBase): void;
   autoSize(field: string): void;
   autoSizeAll(): void;
   startAdjust(kind: 'move' | 'resize', field: string): void;
   isRtl(): boolean;
   /** Opens the column's header filter next to `anchor`. */
-  openHeaderFilter(field: string, anchor: HTMLElement): void;
+  openHeaderFilter(field: string, anchor: ComponentBase): void;
   /** The header check box: select every row, or none. */
   toggleAll(): void;
   /** The state of the header check box. */

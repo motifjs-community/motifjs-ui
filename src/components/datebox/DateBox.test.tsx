@@ -24,7 +24,7 @@ async function settle() {
 
 /** Types digits the way the browser reports them to a masked input. */
 function typeKeys(b: DateBox, text: string) {
-  const el = b.inputElement;
+  const el = b.inputPart.element;
   for (const data of text) {
     el.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data }));
   }
@@ -45,19 +45,19 @@ describe('DateBox', () => {
     let b!: DateBox;
     page(<DateBox ref={(x: DateBox) => (b = x)} label="&Day" locale="tr-TR" x-model={() => s.day} />);
     await settle();
-    b.inputElement.focus();
-    expect(b.inputElement.value).toBe('__.__.____');
-    b.inputElement.setSelectionRange(0, 0);
+    b.inputPart.element.focus();
+    expect(b.inputPart.element.value).toBe('__.__.____');
+    b.inputPart.element.setSelectionRange(0, 0);
     typeKeys(b, '2510');
     expect(s.day).toBeNull();
     expect(b.unfinished).toBe(true);
     typeKeys(b, '2026');
     expect(s.day).toEqual(day(2026, 10, 25));
-    expect(b.inputElement.value).toBe('25.10.2026');
+    expect(b.inputPart.element.value).toBe('25.10.2026');
 
     s.day = day(2027, 1, 2);
     await settle();
-    expect(b.inputElement.value).toBe('02.01.2027');
+    expect(b.inputPart.element.value).toBe('02.01.2027');
   });
 
   it('reads functions over plain data again on reState, writes a date set programmatically to x-model, and never changes your dates', async () => {
@@ -73,9 +73,9 @@ describe('DateBox', () => {
     await settle();
     plain.day = day(2026, 4, 2);
     await settle();
-    expect(b.inputElement.value).toBe('01.03.2026');
+    expect(b.inputPart.element.value).toBe('01.03.2026');
     host.reState();
-    expect(b.inputElement.value).toBe('02.04.2026');
+    expect(b.inputPart.element.value).toBe('02.04.2026');
     plain.type = 'datetime';
     host.reState();
     expect(b.type).toBe('datetime');
@@ -90,8 +90,8 @@ describe('DateBox', () => {
     let b!: DateBox;
     page(<DateBox ref={(x: DateBox) => (b = x)} locale="tr-TR" value={day(2026, 1, 1)} />);
     await settle();
-    b.inputElement.focus();
-    b.inputElement.select();
+    b.inputPart.element.focus();
+    b.inputPart.element.select();
     typeKeys(b, '31022026');
     expect(b.value).toEqual(day(2026, 1, 1));
     expect(await b.validate()).toBe(false);
@@ -131,9 +131,9 @@ describe('DateBox', () => {
     press(document.activeElement!, 'Enter');
     expect(s.day).toEqual(day(2026, 10, 26));
     expect(popupShown(b)).toBe(false);
-    expect(document.activeElement).toBe(b.inputElement);
+    expect(document.activeElement).toBe(b.inputPart.element);
 
-    press(b.inputElement, 'ArrowDown', { altKey: true });
+    press(b.inputPart.element, 'ArrowDown', { altKey: true });
     expect(popupShown(b)).toBe(true);
     expect(b.element.querySelector('.mx-calendar__today')).not.toBeNull();
   });
@@ -143,9 +143,10 @@ describe('DateBox', () => {
     let b!: DateBox;
     page(<DateBox ref={(x: DateBox) => (b = x)} type="datetime" locale="tr-TR" timeStep={15} x-model={() => s.at} />);
     await settle();
-    expect(b.inputElement.value).toBe('25.10.2026 10:00');
+    expect(b.inputPart.element.value).toBe('25.10.2026 10:00');
     b.open();
-    const times = b.element.querySelector<HTMLElement>('.mx-date-box__times')!;
+    await settle();
+    const times =b.element.querySelector<HTMLElement>('.mx-date-box__times')!;
     const options = Array.from(times.querySelectorAll<HTMLElement>('[role="option"]'));
     expect(options.length).toBe(96);
     expect(times.querySelector('[data-active]')!.textContent).toBe('10:00');
@@ -161,20 +162,20 @@ describe('DateBox', () => {
     let b!: DateBox;
     page(<DateBox ref={(x: DateBox) => (b = x)} locale="en-GB" displayFormat={{ dateStyle: 'long' }} value={day(2026, 10, 25)} />);
     await settle();
-    expect(b.inputElement.value).toBe('25 October 2026');
-    b.inputElement.focus();
-    expect(b.inputElement.value).toBe('25/10/2026');
-    b.inputElement.blur();
-    expect(b.inputElement.value).toBe('25 October 2026');
+    expect(b.inputPart.element.value).toBe('25 October 2026');
+    b.inputPart.element.focus();
+    expect(b.inputPart.element.value).toBe('25/10/2026');
+    b.inputPart.element.blur();
+    expect(b.inputPart.element.value).toBe('25 October 2026');
   });
 
   it('empties with its clear button or Escape, and works programmatically', async () => {
     const b = new DateBox({ locale: 'tr-TR', clearButton: true, type: 'time' });
     page(b);
     b.value = new Date(2026, 0, 1, 8, 30);
-    expect(b.inputElement.value).toBe('08:30');
+    expect(b.inputPart.element.value).toBe('08:30');
     expect(b.element.querySelector('.mx-date-box__toggle')!.getAttribute('aria-label')).toBe('Choose time');
-    expect(press(b.inputElement, 'Escape')).toBe(true);
+    expect(press(b.inputPart.element, 'Escape')).toBe(true);
     expect(b.value).toBeNull();
     b.value = new Date(2026, 0, 1, 9, 0);
     b.element.querySelector<HTMLButtonElement>('.mx-date-box__clear')!.click();

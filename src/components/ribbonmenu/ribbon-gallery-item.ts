@@ -8,7 +8,7 @@ export interface RibbonGalleryItem {
     text: Bind<string>;
     /** The name of a glyph. */
     glyph?: Bind<string>;
-    /** An image, an element or a component, used instead of `glyph`; a preview of the choice. */
+    /** An image address or a component, used instead of `glyph`; a preview of the choice. Give a component as a function: the row and the grid each build one (see `IconSource`). */
     icon?: Bind<IconSource | null | undefined>;
     /** A longer description, shown as a tooltip. */
     hint?: Bind<string>;

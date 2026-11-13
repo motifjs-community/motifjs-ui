@@ -214,7 +214,13 @@ describe('Scheduler: the form', () => {
     await settle();
     expect(labels()).toEqual(['Subject', 'When', 'Start', 'End', 'Room']);
     expect(form().querySelectorAll('.mx-tabs [role="tab"]').length).toBe(2);
+    // The Notes page is out of the page while hidden: shown to be read, then back.
+    const tabNamed = (text: string) => Array.from(form().querySelectorAll<HTMLElement>('.mx-tabs [role="tab"]')).find((el) => el.textContent === text)!;
+    tabNamed('Notes').click();
+    await settle();
     expect(form().querySelector('.mx-text-area textarea')!.hasAttribute('readonly')).toBe(true);
+    tabNamed('Where').click();
+    await settle();
     // The rule given adds to the built-in's: a two-letter subject does not save, and its field gets the focus.
     const title = form().querySelector<HTMLInputElement>('.mx-text-box input')!;
     title.value = 'St';

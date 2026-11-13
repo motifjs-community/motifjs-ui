@@ -1,13 +1,14 @@
-import { onLookChanged } from '../../core/look-watch';
-import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp, type ComponentBase } from '@motifx/core';
 
-import { ResizeWatch } from '../../core/resize-watch';
+import { boxOf, isInPage, measure, onLayout, onLookChange, readAgain, styleOf } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import { Field } from '../../parts/field/Field';
 import type { ValidationRule } from '../../parts/validation/validation-rule';
 import type { TextAreaProps } from './text-area-props';
 import type { TextAreaResize } from './text-area-resize';
+import { loose } from '../../core/draw-parts';
+import { css, mark, put } from '../../core/part-writes';
 
 const OWN = [
   'placeholder',
@@ -30,12 +31,16 @@ const OWN = [
 
 const SIZING = ['rows', 'autoGrow', 'minRows', 'maxRows', 'resize'] as const;
 
+const FIT_STYLE = ['line-height', 'font-size', 'padding-block-start', 'padding-block-end'] as const;
+
 const PARTS = Symbol('mx.textarea');
 
 interface Parts {
   /** Follows the width while `autoGrow` is on: a narrower box wraps into more lines. */
-  watcher: ResizeWatch | null;
+  stopWatch: (() => void) | null;
   width: number;
+  readFit: () => Record<string, string> | null;
+  writeFit: (style: Record<string, string> | null) => void;
   /** The text was selected on focus: the mouseup of the same click must not undo it. */
   keepSelection: boolean;
   enter: Emitter<EnterKeyEventArgs<string>>;
@@ -62,7 +67,7 @@ export class TextArea extends Field<string, TextAreaProps> {
   constructor(props?: IBaseProp<TextAreaProps>) {
     super(props);
     const own = (this.props ?? {}) as TextAreaProps;
-    this.element.classList.add('mx-text-area');
+    this.class.add('mx-text-area');
 
     this.observeProperty<string>('placeholder', (text) => this.renderPlaceholder(text));
     for (const name of SIZING) this.observeProperty(name, () => this.renderSizing());
@@ -80,7 +85,7 @@ export class TextArea extends Field<string, TextAreaProps> {
     this.listen();
     this.motif.setDisposable(() => {
       const parts = this.areaParts;
-      parts.watcher?.disconnect();
+      parts.stopWatch?.();
       parts.enter.dispose();
     });
   }
@@ -182,17 +187,18 @@ export class TextArea extends Field<string, TextAreaProps> {
     this.assignProperty('autocomplete', value);
   }
 
-  get textAreaElement(): HTMLTextAreaElement {
-    return this.focusElement as HTMLTextAreaElement;
+  /** The `<textarea>` as a component: write its attributes with `put` and call its methods through `attr`. */
+  get textAreaPart(): ComponentBase<HTMLTextAreaElement> {
+    return this.controlPart as ComponentBase<HTMLTextAreaElement>;
   }
 
   get onEnter(): MotifEvent<EnterKeyEventArgs<string>> {
     return this.areaParts.enter.event;
   }
 
-  /** Selects all text. */
+  /** Selects all text. The selection is made a moment later, not before the call returns. */
   select(): void {
-    this.textAreaElement.select();
+    this.controlPart.attr.add({ select: true });
   }
 
   /** Clears the field, as the clear button does. */
@@ -200,10 +206,13 @@ export class TextArea extends Field<string, TextAreaProps> {
     this.commit('');
   }
 
-  protected createControl(): HTMLElement {
-    const area = document.createElement('textarea');
-    area.className = 'mx-field__input mx-text-area__input';
-    area.rows = 3;
+  protected override get controlTag(): string {
+    return 'textarea';
+  }
+
+  protected createControl(): ComponentBase {
+    const area = loose<HTMLTextAreaElement>('textarea', 'mx-field__input mx-text-area__input');
+    area.attr.add({ rows: '3' });
     return area;
   }
 
@@ -216,8 +225,8 @@ export class TextArea extends Field<string, TextAreaProps> {
   }
 
   protected renderValue(value: string): void {
-    const area = this.textAreaElement;
-    if (area.value !== value) area.value = value;
+    const area = this.textAreaPart.element;
+    if (area.value !== value) this.controlPart.attr.add({ value });
     this.renderCounter();
     this.fit();
   }
@@ -233,27 +242,29 @@ export class TextArea extends Field<string, TextAreaProps> {
   private get areaParts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
     return (self[PARTS] ??= {
-      watcher: null,
+      stopWatch: null,
       width: 0,
+      readFit: () => (isInPage(this.controlPart) ? styleOf(this.controlPart, FIT_STYLE) : null),
+      writeFit: (style) => this.drawFit(style),
       keepSelection: false,
       enter: new Emitter(),
     });
   }
 
   private listen(): void {
-    const area = this.textAreaElement;
+    const area = this.textAreaPart.element;
     // Another design language, theme or density: the lines have another height.
-    this.motif.setDisposable(onLookChanged(() => this.fit()));
-    area.addEventListener('input', (e) => {
+    this.motif.setDisposable(onLookChange(this, () => this.fit()));
+    this.controlPart.motif.on('input', (_, e) => {
       this.renderCounter();
       this.fit();
       if (this.peekProperty('updateOn') !== 'change') this.commit(area.value, e);
     });
-    area.addEventListener('change', (e) => this.commit(area.value, e));
-    area.addEventListener('keydown', (e) => this.keyDown(e));
-    area.addEventListener('focus', () => this.gotFocus());
-    area.addEventListener('blur', () => (this.areaParts.keepSelection = false));
-    area.addEventListener('mouseup', (e) => {
+    this.controlPart.motif.on('change', (_, e) => this.commit(area.value, e));
+    this.controlPart.motif.on('keydown', (_, e) => this.keyDown(e));
+    this.controlPart.motif.on('focus', () => this.gotFocus());
+    this.controlPart.motif.on('blur', () => (this.areaParts.keepSelection = false));
+    this.controlPart.motif.on('mouseup', (_, e) => {
       if (!this.areaParts.keepSelection) return;
       this.areaParts.keepSelection = false;
       e.preventDefault();
@@ -264,7 +275,7 @@ export class TextArea extends Field<string, TextAreaProps> {
     this.areaParts.keepSelection = false;
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
-      this.commit(this.textAreaElement.value, e);
+      this.commit(this.textAreaPart.element.value, e);
       this.areaParts.enter.fire({ value: this.peekValue(), source: this, event: e });
     } else if (e.key === 'Escape' && this.peekProperty('clearButton') && !this.peekProperty('readOnly') && !this.isEmptyValue(this.peekValue())) {
       e.preventDefault();
@@ -275,18 +286,17 @@ export class TextArea extends Field<string, TextAreaProps> {
 
   private gotFocus(): void {
     if (!this.peekProperty('selectOnFocus')) return;
-    this.textAreaElement.select();
+    this.controlPart.attr.add({ select: true });
     this.areaParts.keepSelection = true;
   }
 
   private setAttribute(name: string, value: string | undefined): void {
-    if (value === undefined || value === null || value === '') this.textAreaElement.removeAttribute(name);
-    else this.textAreaElement.setAttribute(name, value);
+    put(this.controlPart, name, value);
   }
 
   private renderPlaceholder(text: string | undefined): void {
     this.setAttribute('placeholder', text);
-    this.element.toggleAttribute('data-placeholder', !!text);
+    mark(this, 'data-placeholder', !!text);
   }
 
   private renderMaxLength(): void {
@@ -300,7 +310,7 @@ export class TextArea extends Field<string, TextAreaProps> {
       this.setCounter('');
       return;
     }
-    const length = this.textAreaElement.value.length;
+    const length = this.textAreaPart.element.value.length;
     const max = this.peekProperty<number>('maxLength');
     this.setCounter(max ? `${length}/${max}` : String(length));
   }
@@ -309,45 +319,52 @@ export class TextArea extends Field<string, TextAreaProps> {
     const parts = this.areaParts;
     const grow = !!this.peekProperty('autoGrow');
     const rows = count(this.peekProperty('rows'), 3);
-    this.textAreaElement.rows = grow ? count(this.peekProperty('minRows'), rows) : rows;
-    this.element.dataset.resize = grow ? 'none' : (this.peekProperty<TextAreaResize>('resize') ?? 'vertical');
-    this.element.toggleAttribute('data-auto-grow', grow);
-    if (grow && !parts.watcher && typeof ResizeObserver !== 'undefined') {
-      parts.watcher = new ResizeWatch((entries) => {
-        const width = entries[entries.length - 1].contentRect.width;
-        if (width === parts.width) return;
-        parts.width = width;
-        this.fit();
-      });
-      parts.watcher.observe(this.textAreaElement);
-    } else if (!grow && parts.watcher) {
-      parts.watcher.disconnect();
-      parts.watcher = null;
+    put(this.controlPart, 'rows', String(grow ? count(this.peekProperty('minRows'), rows) : rows));
+    put(this, 'data-resize', grow ? 'none' : (this.peekProperty<TextAreaResize>('resize') ?? 'vertical'));
+    mark(this, 'data-auto-grow', grow);
+    if (grow && !parts.stopWatch) {
+      parts.stopWatch = onLayout(
+        this.controlPart,
+        'size',
+        ({ width }) => {
+          if (width === parts.width) return;
+          parts.width = width;
+          this.fit();
+        },
+        { owner: this, box: 'content' },
+      );
+    } else if (!grow && parts.stopWatch) {
+      parts.stopWatch();
+      parts.stopWatch = null;
       parts.width = 0;
     }
     this.fit();
   }
 
-  /** With `autoGrow`, sizes the box to the text, between `minRows` and `maxRows` lines. */
+  /** With `autoGrow`, sizes the box to the text, between `minRows` and `maxRows` lines, in the window's next frame. */
   private fit(): void {
-    const area = this.textAreaElement;
     if (!this.peekProperty('autoGrow')) {
-      area.style.removeProperty('block-size');
-      area.style.removeProperty('overflow-y');
+      css(this.controlPart, 'block-size', '');
+      css(this.controlPart, 'overflow-y', '');
       return;
     }
-    if (!area.isConnected) return;
-    const style = getComputedStyle(area);
-    const line = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2 || 0;
-    const padding = (parseFloat(style.paddingBlockStart) || 0) + (parseFloat(style.paddingBlockEnd) || 0);
+    const parts = this.areaParts;
+    measure(this, parts.readFit, parts.writeFit);
+  }
+
+  /** Tries the box at its own height and measures what the text needs. */
+  private drawFit(style: Record<string, string> | null): void {
+    if (!style || !this.peekProperty('autoGrow')) return;
+    const line = parseFloat(style['line-height']) || parseFloat(style['font-size']) * 1.2 || 0;
+    const padding = (parseFloat(style['padding-block-start']) || 0) + (parseFloat(style['padding-block-end']) || 0);
     const rows = count(this.peekProperty('rows'), 3);
     const min = count(this.peekProperty('minRows'), rows) * line + padding;
     const maxRows = this.peekProperty<number | null>('maxRows');
     const max = maxRows && maxRows > 0 ? Math.max(maxRows * line + padding, min) : Infinity;
-    area.style.blockSize = 'auto';
-    const needed = area.scrollHeight;
-    area.style.blockSize = `${Math.min(Math.max(needed, min), max)}px`;
-    area.style.overflowY = needed > max + 1 ? 'auto' : 'hidden';
+    css(this.controlPart, 'block-size', 'auto');
+    const needed = readAgain(() => boxOf(this.controlPart).scrollHeight);
+    css(this.controlPart, 'block-size', `${Math.min(Math.max(needed, min), max)}px`);
+    css(this.controlPart, 'overflow-y', needed > max + 1 ? 'auto' : 'hidden');
   }
 
   private renderClear(): void {

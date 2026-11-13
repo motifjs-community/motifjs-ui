@@ -123,7 +123,7 @@ describe('ActionSheet', () => {
     target.tabIndex = 0;
     document.body.append(target);
     const clicked: string[] = [];
-    const menu = new ContextMenu({ target, label: 'Row', items: [{ text: 'Copy', click: () => void clicked.push('copy') }], presentation: 'sheet' });
+    const menu = new ContextMenu({ target: new Component<HTMLElement>(target), label: 'Row', items: [{ text: 'Copy', click: () => void clicked.push('copy') }], presentation: 'sheet' });
     page(menu);
     await settle();
     target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX: 5, clientY: 5 }));
@@ -131,7 +131,7 @@ describe('ActionSheet', () => {
     expect(sheet.isOpen).toBe(true);
     expect(menu.opened).toBe(true);
     expect(menu.element.querySelector('.mx-popup:not([hidden])')).toBe(null);
-    expect(sheet.panelElement.getAttribute('aria-label')).toBe('Row');
+    expect(sheet.panelPart.element.getAttribute('aria-label')).toBe('Row');
     items(sheet)[0].click();
     expect(clicked).toEqual(['copy']);
     expect(menu.opened).toBe(false);

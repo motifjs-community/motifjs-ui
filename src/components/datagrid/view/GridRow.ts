@@ -1,18 +1,19 @@
-import { ComponentBase, createSignal, read, untracked } from '@motifx/core';
+import { Component, ComponentBase, createSignal, untracked } from '@motifx/core';
+import { orderControls } from '../../../core/order-controls';
 import type { CellContext } from '../cell-context';
+import type { CellTipTarget } from './cell-tip-target';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
-import { moreMark } from '../../../core/glyphs';
-import { isNode } from '../../../core/node-kind';
+import { part, removePart, textPart } from '../../../core/draw-parts';
+import { css, mark, put, text as writeText } from '../../../core/part-writes';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
 import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
 import type { RowState } from '../row-state';
 import type { ActionWidths } from './ActionWidths';
-import { createCheck, setCheck } from './check-mark';
+import { createCheck, drawCheck } from './check-mark';
 import { createDragHandle } from './drag-handle';
-import { createExpandButton, setExpandButton } from './expand-button';
-import { placeInOrder } from './place-in-order';
+import { createExpandButton, drawExpandButton } from './expand-button';
 import type { ResolvedAction } from './resolved-action';
 import { RowActions } from './RowActions';
 import { givenValue } from '../../../core/given-field';
@@ -28,17 +29,19 @@ const STATUS_TEXT = {
 } as const;
 
 /**
- * One pooled row of the body, drawn without components: a row element with a cell element per
- * column. It is built once and then shows other rows while the user scrolls; `use` changes what it
- * shows and draws it. It follows nothing: the body has it draw a part again (`drawLook`, `drawCells`,
- * `drawRanges`, `drawActions`) when the grid tells what changed. Cells show the unsaved edit of their
- * row when there is one. The selection check box and the action buttons are plain elements too; only
- * a column's own `cell` content is a component.
+ * One pooled row of the body: a row component with a cell component per column, so a column's own
+ * `cell` content is a child of its cell. It is built once and then shows other rows while the user
+ * scrolls; `use` changes what it shows and draws it. It follows nothing: the body has it draw a part
+ * again (`drawLook`, `drawCells`, `drawRanges`, `drawActions`) when the grid tells what changed. Cells
+ * show the unsaved edit of their row when there is one. Inside the cells, texts, the selection check
+ * box and the action buttons are parts of their cell.
  */
 export class GridRow<T> {
+  /** The row's component, a child of the body. */
+  readonly part: Component<HTMLDivElement>;
   readonly element: HTMLDivElement;
-  /** Cell elements by field. */
-  readonly cells = new Map<string, HTMLDivElement>();
+  /** Cell components by field. */
+  private readonly cellParts = new Map<string, Component<HTMLDivElement>>();
   /** Grid index (new rows included); -1 while the row is not used. */
   index = -1;
   /** The row shown; `undefined` while it is loading. */
@@ -49,38 +52,69 @@ export class GridRow<T> {
   readonly actions: RowActions<T> | null = null;
   /** Grows when the row shows another one or is drawn again: what a column's own cell content reads follows it. */
   private readonly shown = createSignal(0);
-  private readonly texts = new Map<string, Text>();
-  /** Components of the columns' own cell contents, by field. */
-  private readonly contents = new Map<string, ComponentBase>();
-  /** The nodes after a cell's text node that mark what the search found, and what they were drawn for. */
-  private readonly marked = new Map<string, { nodes: ChildNode[]; key: string }>();
+  private readonly texts = new Map<string, ComponentBase>();
+  /** The parts after a cell's text that mark what the search found, and what they were drawn for. */
+  private readonly marked = new Map<string, { parts: ComponentBase[]; key: string }>();
   /** Whether the search marks cells now (read when the cells are drawn). */
   private searching = false;
-  private readonly check: HTMLSpanElement;
-  private readonly expand: HTMLSpanElement;
+  /** What each cell shows as text, and the hints of lookup cells, for the cell tip. */
+  private readonly shownTexts = new Map<string, string>();
+  private readonly hints = new Map<string, string>();
+  /** The message of a row that failed to save, on its status cell. */
+  private statusMessage = '';
+  private readonly check: Component<HTMLSpanElement>;
+  private readonly expand: Component<HTMLSpanElement>;
   /** The "…" of the adaptive detail. */
-  private readonly more: HTMLSpanElement;
+  private readonly more: Component<HTMLSpanElement>;
 
   constructor(
     private readonly model: GridModel<T>,
-    /** Holds the components of custom cells, so they live and go with it. */
-    private readonly host: ComponentBase,
     widths: ActionWidths,
   ) {
-    const el = document.createElement('div');
-    el.className = 'mx-data-grid__row';
-    el.setAttribute('role', 'row');
-    el.hidden = true;
+    this.part = new Component<HTMLDivElement>('div');
+    const el = this.part.element;
+    this.part.class.add('mx-data-grid__row');
+    this.part.attr.add({ role: 'row' });
+    mark(this.part, 'hidden', true);
     this.element = el;
     this.check = createCheck(model.text('gridSelectRow'));
     this.expand = createExpandButton(model.text('gridDetails'));
-    this.more = createExpandButton(model.text('gridAdaptive'));
-    this.more.className = 'mx-data-grid__adaptive-button';
-    this.more.replaceChildren(moreMark());
+    this.more = createExpandButton(model.text('gridAdaptive'), 'mx-data-grid__adaptive-button', 'more');
     // The grid's own columns always have their cells; a virtual column gets them while it is drawn.
-    for (const field of model.columns.state.order) if (model.columns.isInternal(field) || model.columnWindow.has(field)) el.append(this.makeCell(field));
-    if (model.columns.actionsWanted()) this.actions = new RowActions<T>(this.cells.get(ACTIONS_FIELD)!, widths);
+    for (const field of model.columns.state.order) if (model.columns.isInternal(field) || model.columnWindow.has(field)) this.part.controls.add(this.makeCell(field));
+    if (model.columns.actionsWanted()) this.actions = new RowActions<T>(this.cellParts.get(ACTIONS_FIELD)!, widths);
     this.draw();
+  }
+
+  /** The cell component of `field`, while the row has that cell. */
+  cellPart(field: string): Component<HTMLDivElement> | undefined {
+    return this.cellParts.get(field);
+  }
+
+  /**
+   * What the cell tip shows for the cell of `field`: its message, the hint of a lookup cell, and its text when it is cut
+   * off (none for a cell that holds buttons or content of its own); `null` while the row has no such cell.
+   */
+  tipOf(field: string): CellTipTarget | null {
+    const part = this.cellParts.get(field);
+    if (!part) return null;
+    const { model } = this;
+    const message = (): string => (field === STATUS_FIELD ? this.statusMessage : model.columns.isInternal(field) ? '' : model.error(this.rowId, field));
+    const hint = (): string => this.hints.get(field) ?? '';
+    return this.shownTexts.has(field) ? { part, message, hint, text: () => this.shownTexts.get(field) ?? '' } : { part, message, hint };
+  }
+
+  /** The text the cell of `field` shows; `undefined` for a cell that holds buttons or content of its own. */
+  shownText(field: string): string | undefined {
+    return this.shownTexts.get(field);
+  }
+
+  /** The tip of the action button or the cell an event came from; `null` when it came from none of them. */
+  tipFrom(e: Event): CellTipTarget | null {
+    const button = this.actions?.tipFrom(e);
+    if (button) return button;
+    for (const [field, cell] of this.cellParts) if (cell.motif.isEventFrom(e)) return this.tipOf(field);
+    return null;
   }
 
   /** Draws all of the row as it is. */
@@ -102,8 +136,8 @@ export class GridRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    this.element.hidden = false;
-    this.element.style.transform = `translateY(${top}px)`;
+    mark(this.part, 'hidden', false);
+    css(this.part, 'transform', `translateY(${top}px)`);
   }
 
   /**
@@ -112,16 +146,15 @@ export class GridRow<T> {
    * `controls` is the id of the details' row while it is drawn.
    */
   drawExpand(can: boolean, open: boolean, controls: string | null) {
-    const el = this.element;
-    setExpandButton(this.expand, can, open, this.model.text('gridDetails'), controls);
-    if (can && this.model.groups.any) el.setAttribute('aria-expanded', String(open));
-    else el.removeAttribute('aria-expanded');
-    el.toggleAttribute('data-expanded', can && open);
+    drawExpandButton(this.expand, can, open, this.model.text('gridDetails'), controls);
+    if (can && this.model.groups.any) put(this.part, 'aria-expanded', String(open));
+    else put(this.part, 'aria-expanded', null);
+    mark(this.part, 'data-expanded', can && open);
   }
 
   /** Shows whether the row's adaptive detail is open on its "…"; `controls` is the id of the detail's row while it is drawn. */
   drawAdaptive(shown: boolean, open: boolean, controls: string | null) {
-    setExpandButton(this.more, shown, open, this.model.text('gridAdaptive'), controls);
+    drawExpandButton(this.more, shown, open, this.model.text('gridAdaptive'), controls);
   }
 
   /** Draws the row again as it is. */
@@ -139,32 +172,32 @@ export class GridRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    this.element.hidden = true;
+    mark(this.part, 'hidden', true);
   }
 
   /** Puts the cells in display order and numbers the visible ones; while columns are virtual, only the columns drawn have their cells in the row. */
   arrange(visible: string[]) {
     const drawn = this.model.columnWindow;
     const shown = new Set(visible);
-    const desired: HTMLElement[] = [];
+    const desired: Component<HTMLDivElement>[] = [];
     let made = false;
     visible.forEach((field, i) => {
       if (!drawn.has(field)) return;
-      let cell = this.cells.get(field);
+      let cell = this.cellParts.get(field);
       if (!cell) {
         cell = this.makeCell(field);
         made = true;
       }
       desired.push(cell);
-      cell.setAttribute('aria-colindex', String(i + 1));
+      put(cell, 'aria-colindex', String(i + 1));
     });
-    for (const [field, cell] of this.cells) {
+    for (const [field, cell] of this.cellParts) {
       if (shown.has(field) && drawn.has(field)) continue;
-      cell.removeAttribute('aria-colindex');
+      put(cell, 'aria-colindex', null);
       if (drawn.all) desired.push(cell);
-      else cell.remove();
+      else if (cell.parent === this.part) this.part.controls.silentDetach(cell);
     }
-    placeInOrder(this.element, desired);
+    orderControls(this.part, desired);
     if (made || !drawn.all)
       untracked(() => {
         this.drawCells();
@@ -181,33 +214,37 @@ export class GridRow<T> {
       const col = model.columns.get(field);
       if (!col.lookup || model.lookups.items(col) !== items) continue;
       if (wanted && !wanted.has(KeyedItems.keyString(model.value(this.rowId, this.row, col)))) continue;
-      this.drawLookup(this.cells.get(field)!, text, col);
+      this.drawLookup(this.cellParts.get(field)!, text, col);
     }
   }
 
   /** A column added at run time gets its cell (placed by the next `arrange`). */
   addColumn(field: string) {
-    if (this.cells.has(field) || !this.model.columnWindow.has(field)) return;
-    this.element.append(this.cell(this.model.columns.get(field)));
+    if (this.cellParts.has(field) || !this.model.columnWindow.has(field)) return;
+    this.part.controls.add(this.cell(this.model.columns.get(field)));
     this.redraw();
   }
 
   /** A column removed loses its cell, and its own content goes. */
   removeColumn(field: string) {
-    this.cells.get(field)?.remove();
-    this.cells.delete(field);
+    const cell = this.cellParts.get(field);
+    this.cellParts.delete(field);
     this.texts.delete(field);
     this.marked.delete(field);
-    const content = this.contents.get(field);
-    this.contents.delete(field);
-    if (content && !content.isDisposed) void content.dispose({ skipLeaveTransition: true });
+    this.shownTexts.delete(field);
+    this.hints.delete(field);
+    // Its own content goes with it.
+    if (cell?.parent) cell.parent.controls.remove(cell);
+    else if (cell && !cell.isDisposed) void cell.dispose({ skipLeaveTransition: true });
   }
 
   dispose() {
     this.model.actionSets.markRow(this, false, false);
+    if (this.part.parent) this.part.parent.controls.remove(this.part);
+    else if (!this.part.isDisposed) void this.part.dispose({ skipLeaveTransition: true });
   }
 
-  private makeCell(field: string): HTMLDivElement {
+  private makeCell(field: string): Component<HTMLDivElement> {
     if (field === STATUS_FIELD) return this.statusCell();
     if (field === DRAG_FIELD) return this.ownCell(field, 'mx-data-grid__drag', createDragHandle());
     if (field === SELECT_FIELD) return this.ownCell(field, 'mx-data-grid__select', this.check);
@@ -217,53 +254,43 @@ export class GridRow<T> {
     return this.cell(this.model.columns.get(field));
   }
 
-  private cell(col: GridColumn<T>): HTMLDivElement {
-    const cell = document.createElement('div');
-    cell.className = 'mx-data-grid__cell';
-    cell.setAttribute('role', 'gridcell');
-    cell.tabIndex = -1;
-    cell.dataset.field = col.field;
-    this.cells.set(col.field, cell);
+  /** A cell component, known by its field. */
+  private newCell(field: string, className: string): Component<HTMLDivElement> {
+    const part = new Component<HTMLDivElement>('div');
+    part.class.add(className);
+    part.attr.add({ role: 'gridcell' });
+    put(part, 'tabindex', '-1');
+    part.attr.add({ 'data-field': field });
+    this.cellParts.set(field, part);
+    return part;
+  }
+
+  private cell(col: GridColumn<T>): Component<HTMLDivElement> {
+    const cell = this.newCell(col.field, 'mx-data-grid__cell');
     if (col.cell) {
       const content = col.cell(this.context(col));
-      if (content instanceof ComponentBase) {
-        this.host.controls.add(content);
-        cell.append(content.element as Node);
-        this.contents.set(col.field, content);
-      } else if (isNode(content)) cell.append(content);
-      else if (content !== undefined && content !== null) cell.append(String(content));
+      if (content instanceof ComponentBase) cell.controls.add(content);
+      else if (content !== undefined && content !== null) {
+        textPart(cell, String(content));
+        this.shownTexts.set(col.field, String(content));
+      }
     } else {
-      const text = document.createTextNode('');
-      cell.append(text);
-      this.texts.set(col.field, text);
+      this.texts.set(col.field, textPart(cell, ''));
     }
     return cell;
   }
 
   /** A cell of one of the grid's own columns (selection, actions). */
-  private ownCell(field: string, className: string, content?: Node): HTMLDivElement {
-    const cell = document.createElement('div');
-    cell.className = `mx-data-grid__cell ${className}`;
-    cell.setAttribute('role', 'gridcell');
-    cell.tabIndex = -1;
-    cell.dataset.field = field;
-    if (content) cell.append(content);
-    this.cells.set(field, cell);
+  private ownCell(field: string, className: string, content?: ComponentBase): Component<HTMLDivElement> {
+    const cell = this.newCell(field, `mx-data-grid__cell ${className}`);
+    if (content) cell.controls.add(content);
     return cell;
   }
 
   /** The row status cell: a mark by state (drawn by CSS), its name for assistive technology, the message on hover. */
-  private statusCell(): HTMLDivElement {
-    const cell = document.createElement('div');
-    cell.className = 'mx-data-grid__cell mx-data-grid__status';
-    cell.setAttribute('role', 'gridcell');
-    cell.tabIndex = -1;
-    cell.dataset.field = STATUS_FIELD;
-    const mark = document.createElement('span');
-    mark.className = 'mx-data-grid__status-mark';
-    mark.setAttribute('aria-hidden', 'true');
-    cell.append(mark);
-    this.cells.set(STATUS_FIELD, cell);
+  private statusCell(): Component<HTMLDivElement> {
+    const cell = this.newCell(STATUS_FIELD, 'mx-data-grid__cell mx-data-grid__status');
+    part(cell, 'span', 'mx-data-grid__status-mark').attr.add({ 'aria-hidden': 'true' });
     return cell;
   }
 
@@ -291,67 +318,67 @@ export class GridRow<T> {
   /** The row's own marks: its place, odd, active, status, selection, drag and the messages of its cells. */
   drawLook() {
     const model = this.model;
-    const el = this.element;
     const { index, rowId } = this;
     void model.state.edits;
     if (index < 0) {
-      el.removeAttribute('aria-rowindex');
+      put(this.part, 'aria-rowindex', null);
       return;
     }
-    el.setAttribute('aria-rowindex', String(model.ariaRowIndex(index)));
+    put(this.part, 'aria-rowindex', String(model.ariaRowIndex(index)));
     // Grouped, the grid is a tree: data rows sit below every level (new rows outside the groups).
     const levels = model.groups.state.items.length;
-    if (levels) el.setAttribute('aria-level', String(model.addedIndex(index) >= 0 ? 1 : levels + 1));
-    else el.removeAttribute('aria-level');
-    el.toggleAttribute('data-odd', index % 2 === 1);
-    el.toggleAttribute('data-loading', this.row === undefined);
+    if (levels) put(this.part, 'aria-level', String(model.addedIndex(index) >= 0 ? 1 : levels + 1));
+    else put(this.part, 'aria-level', null);
+    mark(this.part, 'data-odd', index % 2 === 1);
+    mark(this.part, 'data-loading', this.row === undefined);
     const active = model.state.activeRow === index;
-    el.toggleAttribute('data-active', active);
+    mark(this.part, 'data-active', active);
     const status = model.status(rowId);
-    if (status) el.dataset.status = status;
-    else delete el.dataset.status;
+    if (status) put(this.part, 'data-status', status);
+    else put(this.part, 'data-status', null);
 
     // A loaded data row can be dragged; its drag cell says how, also by the keys.
     const drag = model.rowDrag;
     const draggable = drag.enabled && this.row !== undefined && rowId !== undefined && !model.isNew(rowId);
-    el.toggleAttribute('data-draggable', draggable);
-    const dragCell = this.cells.get(DRAG_FIELD)!;
+    mark(this.part, 'data-draggable', draggable);
+    const dragCell = this.cellParts.get(DRAG_FIELD)!;
     if (draggable && drag.showsIcons) {
-      dragCell.setAttribute('aria-label', model.text('gridDragRow'));
+      put(dragCell, 'aria-label', model.text('gridDragRow'));
       // `aria-keyshortcuts` names the keys as `KeyboardEvent` does: Control, Meta.
       const keys = drag.get('keyboard') ? [...drag.get('moveUpKeys'), ...drag.get('moveDownKeys')].map((k) => k.replace(/\bctrl\b/gi, 'Control').replace(/\b(cmd|mod)\b/gi, 'Meta')).join(' ') : '';
-      if (keys) dragCell.setAttribute('aria-keyshortcuts', keys);
-      else dragCell.removeAttribute('aria-keyshortcuts');
+      if (keys) put(dragCell, 'aria-keyshortcuts', keys);
+      else put(dragCell, 'aria-keyshortcuts', null);
     } else {
-      dragCell.removeAttribute('aria-label');
-      dragCell.removeAttribute('aria-keyshortcuts');
+      put(dragCell, 'aria-label', null);
+      put(dragCell, 'aria-keyshortcuts', null);
     }
 
     // Selection: new rows and rows still loading have no key to select by.
     const mode = model.settings.get('selection');
     const selectable = mode !== 'none' && this.row !== undefined && rowId !== undefined && !model.isNew(rowId);
     const selected = selectable && model.selection.isSelected(model.selectId(this.row));
-    el.toggleAttribute('data-selected', selected);
-    if (mode !== 'none') el.setAttribute('aria-selected', String(selected));
-    else el.removeAttribute('aria-selected');
-    if (mode === 'multiple') setCheck(this.check, selected, model.text('gridSelectRow'), selectable);
+    mark(this.part, 'data-selected', selected);
+    if (mode !== 'none') put(this.part, 'aria-selected', String(selected));
+    else put(this.part, 'aria-selected', null);
+    if (mode === 'multiple') drawCheck(this.check, selected, model.text('gridSelectRow'), selectable);
 
     // The message of the active cell describes it.
     const activeField = active ? model.state.activeField : '';
-    for (const [field, cell] of this.cells) {
-      if (!model.columns.isInternal(field) && field === activeField && model.error(rowId, field)) cell.setAttribute('aria-describedby', model.errorId);
-      else cell.removeAttribute('aria-describedby');
+    for (const [field, cell] of this.cellParts) {
+      if (!model.columns.isInternal(field) && field === activeField && model.error(rowId, field)) put(cell, 'aria-describedby', model.errorId);
+      else put(cell, 'aria-describedby', null);
     }
 
-    const statusCell = this.cells.get(STATUS_FIELD)!;
+    const statusCell = this.cellParts.get(STATUS_FIELD)!;
     const message = status === 'failed' || status === 'invalid' ? model.rowMessage(rowId) || model.text('gridSaveFailed') : '';
-    if (status) statusCell.dataset.status = status;
-    else delete statusCell.dataset.status;
+    this.statusMessage = message;
+    if (status) put(statusCell, 'data-status', status);
+    else put(statusCell, 'data-status', null);
     const label = !status ? null : message ? `${model.text('gridStatusFailed')}: ${message}` : model.text(STATUS_TEXT[status as keyof typeof STATUS_TEXT]);
-    if (label) statusCell.setAttribute('aria-label', label);
-    else statusCell.removeAttribute('aria-label');
-    if (message) statusCell.dataset.error = message;
-    else delete statusCell.dataset.error;
+    if (label) put(statusCell, 'aria-label', label);
+    else put(statusCell, 'aria-label', null);
+    if (message) put(statusCell, 'data-error', message);
+    else put(statusCell, 'data-error', null);
   }
 
   /**
@@ -367,7 +394,7 @@ export class GridRow<T> {
     const { run, first, last } = look;
     const inRun = loaded && run !== null && index >= run.top && index <= run.bottom;
     const selectable = look.on ? look.selectable : null;
-    for (const [field, cell] of this.cells) {
+    for (const [field, cell] of this.cellParts) {
       const mark = marks?.get(field);
       setData(cell, 'range', mark);
       let edges: string | undefined;
@@ -380,11 +407,7 @@ export class GridRow<T> {
         edges = parts.join(' ');
       }
       setData(cell, 'run', edges);
-      const selected = selectable?.has(field) ? String(mark !== undefined) : null;
-      if (cell.getAttribute('aria-selected') !== selected) {
-        if (selected === null) cell.removeAttribute('aria-selected');
-        else cell.setAttribute('aria-selected', selected);
-      }
+      put(cell, 'aria-selected', selectable?.has(field) ? String(mark !== undefined) : null);
     }
   }
 
@@ -434,8 +457,8 @@ export class GridRow<T> {
     // Read once per row: while nothing is searched no cell asks for marks.
     this.searching = model.search.marking();
     const some = !model.columnWindow.all;
-    for (const [field, cell] of this.cells) {
-      if (model.columns.isInternal(field) || (some && cell.parentElement !== this.element)) continue;
+    for (const [field, cell] of this.cellParts) {
+      if (model.columns.isInternal(field) || (some && cell.parent !== this.part)) continue;
       const col = model.columns.get(field);
       const text = this.texts.get(field);
       if (text && col.lookup) this.drawLookup(cell, text, col);
@@ -447,13 +470,13 @@ export class GridRow<T> {
         busy(cell, model.isBusy(rowId, field));
       }
       const error = model.error(rowId, field);
-      cell.toggleAttribute('data-changed', model.isChanged(rowId, field));
+      mark(cell, 'data-changed', model.isChanged(rowId, field));
       if (error) {
-        cell.dataset.error = error;
-        cell.setAttribute('aria-invalid', 'true');
+        put(cell, 'data-error', error);
+        put(cell, 'aria-invalid', 'true');
       } else {
-        delete cell.dataset.error;
-        cell.removeAttribute('aria-invalid');
+        put(cell, 'data-error', null);
+        put(cell, 'aria-invalid', null);
       }
     }
     const ev = model.events;
@@ -467,71 +490,72 @@ export class GridRow<T> {
     const isNew = model.isNew(rowId);
     if (ev.listened(ev.cellPrepared)) {
       const some = !model.columnWindow.all;
-      for (const [field, element] of this.cells) {
-        if (some && element.parentElement !== this.element) continue;
+      for (const [field, cell] of this.cellParts) {
+        if (some && cell.parent !== this.part) continue;
         const value = model.columns.isInternal(field) ? undefined : model.value(rowId, row, model.columns.get(field));
-        ev.cellPrepared.fire({ field, row, rowIndex: index, value, isNew, element });
+        ev.cellPrepared.fire({ field, row, rowIndex: index, value, isNew, part: cell });
       }
     }
     const isSelected = !isNew && model.selection.isSelected(model.selectId(row));
-    ev.tell(ev.rowPrepared, () => ({ row, rowIndex: index, rowType: isNew ? ('new' as const) : ('data' as const), isSelected, element: this.element }));
+    ev.tell(ev.rowPrepared, () => ({ row, rowIndex: index, rowType: isNew ? ('new' as const) : ('data' as const), isSelected, part: this.part }));
   }
 
   /** Writes a cell's text, with what the search found in it marked (`<mark>`). */
-  private write(field: string, text: Text, shown: string, value: unknown) {
+  private write(field: string, text: ComponentBase, shown: string, value: unknown) {
+    this.shownTexts.set(field, shown);
     const ranges = this.searching && this.row !== undefined ? this.model.search.ranges(field, shown, value) : NO_RANGES;
     const marked = this.marked.get(field);
     if (!ranges.length) {
       if (marked) {
-        for (const node of marked.nodes) node.remove();
+        for (const c of marked.parts) removePart(c);
         this.marked.delete(field);
       }
-      if (text.data !== shown) text.data = shown;
+      writeText(text, shown);
       return;
     }
     const key = `${ranges.join(';')}|${shown}`;
     if (marked?.key === key) return;
-    if (marked) for (const node of marked.nodes) node.remove();
-    const nodes: ChildNode[] = [];
+    if (marked) for (const c of marked.parts) removePart(c);
+    // The text is the only part of its cell: the marks and the texts between them follow it.
+    const cell = text.parent!;
+    const parts: ComponentBase[] = [];
     let at = ranges[0][0];
-    text.data = shown.slice(0, at);
+    writeText(text, shown.slice(0, at));
     for (const [start, end] of ranges) {
-      if (start > at) nodes.push(document.createTextNode(shown.slice(at, start)));
-      const mark = document.createElement('mark');
-      mark.className = 'mx-data-grid__mark';
-      mark.textContent = shown.slice(start, end);
-      nodes.push(mark);
+      if (start > at) parts.push(textPart(cell, shown.slice(at, start)));
+      const mark = part<HTMLElement>(cell, 'mark', 'mx-data-grid__mark');
+      mark.setText(shown.slice(start, end));
+      parts.push(mark);
       at = end;
     }
-    if (at < shown.length) nodes.push(document.createTextNode(shown.slice(at)));
-    text.after(...nodes);
-    this.marked.set(field, { nodes, key });
+    if (at < shown.length) parts.push(textPart(cell, shown.slice(at)));
+    this.marked.set(field, { parts, key });
   }
 
   /** A lookup cell: its text, empty and busy while the key loads, the key itself (muted, with a hint) when the source does not have it. */
-  private drawLookup(cell: HTMLDivElement, text: Text, col: GridColumn<T>) {
+  private drawLookup(cell: Component<HTMLDivElement>, text: ComponentBase, col: GridColumn<T>) {
     const model = this.model;
     const { row, rowId } = this;
     // Keys are requested once the body is measured, so the first request holds every key on the screen.
     const value = model.value(rowId, row, col);
     const look = model.lookups.cell(col, row, value, model.isChanged(rowId, col.field), model.state.measured);
     this.write(col.field, text, look.text, value);
-    if (look.state === 'loading' || look.state === 'missing') cell.dataset.lookup = look.state;
-    else delete cell.dataset.lookup;
-    if (look.hint) cell.dataset.hint = look.hint;
-    else delete cell.dataset.hint;
+    if (look.state === 'loading' || look.state === 'missing') put(cell, 'data-lookup', look.state);
+    else put(cell, 'data-lookup', null);
+    this.hints.set(col.field, look.hint ?? '');
+    if (look.hint) put(cell, 'data-hint', look.hint);
+    else put(cell, 'data-hint', null);
     busy(cell, look.state === 'loading' || model.isBusy(rowId, col.field));
   }
 }
 
 /** Writes `data-<name>` when it changed; `undefined` takes it away. */
-function setData(cell: HTMLElement, name: string, value: string | undefined) {
-  if (cell.dataset[name] === value) return;
-  if (value === undefined) delete cell.dataset[name];
-  else cell.dataset[name] = value;
+function setData(cell: Component<HTMLDivElement>, name: string, value: string | undefined) {
+  if (value === '') mark(cell, `data-${name}`, true);
+  else put(cell, `data-${name}`, value);
 }
 
-function busy(cell: HTMLElement, on: boolean) {
-  if (on) cell.setAttribute('aria-busy', 'true');
-  else cell.removeAttribute('aria-busy');
+function busy(cell: ComponentBase, on: boolean) {
+  if (on) put(cell, 'aria-busy', 'true');
+  else put(cell, 'aria-busy', null);
 }

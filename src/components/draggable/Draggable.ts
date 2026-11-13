@@ -1,9 +1,16 @@
-import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, mark, part, put, text } from "../../core/draw-parts";
+import { compareTreeOrder } from "../../core/component-tree";
+import { part } from "../../core/draw-parts";
+import { holderOf, measure, rectOf, type Rect } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { windowOf } from "../../core/page-documents";
+import { css, mark, put, text, toggleClass } from "../../core/part-writes";
+import { onWindow } from "../../core/window-events";
 import { uiLocale } from "../../core/ui-locale";
+import { DragBoxes } from "../../parts/drag/drag-boxes";
 import { DragGhost } from "../../parts/drag/DragGhost";
+import { stackCover } from "../../parts/drag/stack-cover";
 import type { DraggableEventArgs } from "./draggable-event-args";
 import type { DragAxis, DraggableProps, DragPosition } from "./draggable-props";
 import { DropTarget, TARGETS } from "./DropTarget";
@@ -26,8 +33,14 @@ interface Session {
     refused: boolean;
     timer: ReturnType<typeof setTimeout> | null;
     // Where the draggable lay at the start, and the box it must stay in.
-    rect: DOMRect | null;
-    bound: DOMRect | null;
+    rect: Rect | null;
+    bound: Rect | null;
+    /** The drop targets of its group on the screen, kept while it is dragged. */
+    boxes: DragBoxes | null;
+    /** The last pointer move, followed at the next frame. */
+    event: PointerEvent | null;
+    /** Takes back the pointer move waiting for the next frame. */
+    waiting: (() => void) | null;
 }
 
 /**
@@ -50,19 +63,20 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
     session: Session | null = null;
     stops: (() => void)[] = [];
     pos: DragPosition = { x: 0, y: 0 };
-    handleEl: HTMLElement | null = null;
+    /** The child `handle` names, while there is one; without it the draggable itself takes the pointer and the keys. */
+    handlePart: ComponentBase | null = null;
+    /** The handle had no role of its own: the draggable gave it one. */
+    gaveRole = false;
 
     constructor(props?: IBaseProp<DraggableProps>) {
         super('div', props);
         const own = (this.props ?? {}) as DraggableProps;
-        const el = this.element;
-        el.classList.add('mx-draggable');
-        el.setAttribute('role', 'group');
-        el.setAttribute('aria-roledescription', 'draggable');
+        this.class.add('mx-draggable');
+        this.attr.add({ role: 'group', 'aria-roledescription': 'draggable' });
         if (this.childs?.length) this.controls.add(...this.childs);
         this.live = part<HTMLSpanElement>(this, 'span', 'mx-sr-only');
-        this.live.element.setAttribute('aria-live', 'polite');
-        this.ghost = new DragGhost(() => el.ownerDocument.body, () => true, 'mx-draggable__ghost');
+        this.live.attr.add({ 'aria-live': 'polite' });
+        this.ghost = new DragGhost(() => windowOf(this)?.document ?? document, () => true, 'mx-draggable__ghost');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onDragStarting) this.onDragStarting(own.onDragStarting);
         if (own.onDragging) this.onDragging(own.onDragging);
@@ -73,12 +87,12 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
             this.pos = position ? { x: position.x, y: position.y } : { x: 0, y: 0 };
             this.applyPosition();
         });
-        this.observeProperty<DragAxis>('axis', axis => put(el, 'data-axis', axis ?? 'both'));
-        this.observeProperty<boolean>('clone', on => mark(el, 'data-clone', on === true));
+        this.observeProperty<DragAxis>('axis', axis => put(this, 'data-axis', axis ?? 'both'));
+        this.observeProperty<boolean>('clone', on => mark(this, 'data-clone', on === true));
         this.observeProperty('handle', () => this.drawHandle());
         onLanguage(this, () => this.drawHandle());
-        el.addEventListener('pointerdown', e => this.pointerDown(e));
-        el.addEventListener('keydown', e => this.keyDown(e));
+        this.motif.on('pointerdown', (_, e) => this.pointerDown(e));
+        this.motif.on('keydown', (_, e) => this.keyDown(e));
         this.motif.setDisposable(() => {
             this.end(null, false);
             for (const emitter of [this.starting, this.dragging, this.ending, this.ended]) emitter.dispose();
@@ -93,10 +107,10 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
     set axis(value: Bind<DragAxis>) {
         this.assignProperty('axis', value);
     }
-    get boundary(): 'parent' | HTMLElement | null {
-        return this.getProperty<'parent' | HTMLElement | null | undefined>('boundary') ?? null;
+    get boundary(): 'parent' | ComponentBase | null {
+        return this.getProperty<'parent' | ComponentBase | null | undefined>('boundary') ?? null;
     }
-    set boundary(value: Bind<'parent' | HTMLElement | null>) {
+    set boundary(value: Bind<'parent' | ComponentBase | null>) {
         this.assignProperty('boundary', value);
     }
     get handle(): string | null {
@@ -173,11 +187,6 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         return !!this.session?.started;
     }
 
-    /** The element that handles the pointer and keyboard: the handle, or the draggable itself. */
-    get handleElement(): HTMLElement {
-        return this.handleEl ?? this.element;
-    }
-
     // The children are in the page now: the handle named by the selector can be found.
     override onBuilt(): void {
         this.drawHandle();
@@ -185,36 +194,38 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
 
     applyPosition(): void {
         const { x, y } = this.pos;
-        css(this.element, 'translate', x === 0 && y === 0 ? '' : `${x}px ${y}px`);
+        css(this, 'translate', x === 0 && y === 0 ? '' : `${x}px ${y}px`);
     }
 
     // The handle takes the press, the Tab stop and the keys; without one the whole draggable does.
     drawHandle(): void {
-        const el = this.element;
         const selector = this.handle;
-        const next = selector ? el.querySelector<HTMLElement>(selector) : null;
-        if (this.handleEl && this.handleEl !== next) {
-            this.handleEl.classList.remove('mx-draggable__handle');
-            this.handleEl.removeAttribute('tabindex');
-            if (this.handleEl.getAttribute('data-draggable-role') === 'button') this.handleEl.removeAttribute('role');
-            this.handleEl.removeAttribute('data-draggable-role');
-            this.handleEl.removeAttribute('aria-label');
+        // One of its children, the first the selector names.
+        const next = selector ? (this.$(selector).fromComponent().find(c => c !== this) ?? null) : null;
+        const last = this.handlePart;
+        if (last && last !== next && !last.isDisposed) {
+            toggleClass(last, 'mx-draggable__handle', false);
+            put(last, 'tabindex', null);
+            if (this.gaveRole) put(last, 'role', null);
+            put(last, 'aria-label', null);
         }
-        this.handleEl = next;
-        mark(el, 'data-handle', !!next);
+        if (last !== next) this.gaveRole = false;
+        this.handlePart = next;
+        mark(this, 'data-handle', !!next);
         if (next) {
-            next.classList.add('mx-draggable__handle');
-            next.tabIndex = 0;
-            if (!next.hasAttribute('role') && !next.matches(INTERACTIVE)) {
-                next.setAttribute('role', 'button');
-                next.setAttribute('data-draggable-role', 'button');
+            toggleClass(next, 'mx-draggable__handle', true);
+            put(next, 'tabindex', '0');
+            // A handle that is not a button or a field itself is a button to a reader.
+            if (next !== last && !next.attr.has('role') && !this.fieldsInside().includes(next)) {
+                put(next, 'role', 'button');
+                this.gaveRole = true;
             }
             put(next, 'aria-label', uiLocale.strings.move);
-            el.removeAttribute('tabindex');
-            el.removeAttribute('aria-label');
+            put(this, 'tabindex', null);
+            put(this, 'aria-label', null);
         } else {
-            el.tabIndex = 0;
-            put(el, 'aria-label', uiLocale.strings.move);
+            put(this, 'tabindex', '0');
+            put(this, 'aria-label', uiLocale.strings.move);
         }
     }
 
@@ -226,15 +237,26 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         return { draggable: this, data: this.data, cancel: false, source: target, event };
     }
 
-    // The box the draggable must stay in, if any.
-    boundRect(): DOMRect | null {
+    // The box the draggable must stay in, if any: the component given, or its parent's (a fragment has none: the one above).
+    boundRect(): Rect | null {
         const boundary = this.boundary;
-        const el = boundary === 'parent' ? this.element.parentElement : boundary;
-        return el ? el.getBoundingClientRect() : null;
+        if (boundary !== 'parent') return boundary ? rectOf(boundary) : null;
+        const holder = this.parent ? holderOf(this.parent) : null;
+        return holder ? rectOf(holder) : null;
+    }
+
+    // The drop targets it may aim at, inner ones first.
+    aimable(): DropTarget[] {
+        return [...TARGETS].filter(t => t.takes(this.group)).sort((a, b) => compareTreeOrder(b, a));
+    }
+
+    // Its own buttons, links and fields: a press or a key there is theirs, not a move.
+    fieldsInside(): ComponentBase[] {
+        return this.$(INTERACTIVE).fromComponent().filter(c => c !== this);
     }
 
     // Holds a move inside the boundary, from where the draggable lay when the drag began.
-    within(dx: number, dy: number, rect: DOMRect | null, bound: DOMRect | null): DragPosition {
+    within(dx: number, dy: number, rect: Rect | null, bound: Rect | null): DragPosition {
         if (rect && bound) {
             dx = Math.min(Math.max(dx, bound.left - rect.left), Math.max(bound.left - rect.left, bound.right - rect.right));
             dy = Math.min(Math.max(dy, bound.top - rect.top), Math.max(bound.top - rect.top, bound.bottom - rect.bottom));
@@ -245,14 +267,14 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
 
     pointerDown(e: PointerEvent): void {
         if (e.button !== 0 || this.session || !this.isEnabled) return;
-        const target = e.target as HTMLElement;
-        if (this.handleEl) {
-            if (!this.handleEl.contains(target)) return;
-        } else if (target.closest(INTERACTIVE) && target.closest(INTERACTIVE) !== this.element) return;
+        const handle = this.handlePart;
+        if (handle && !handle.motif.isEventFrom(e)) return;
+        // Without a handle, a press on a button, a link or a field inside is theirs.
+        const onField = this.fieldsInside().some(c => c.motif.isEventFrom(e));
+        if (!handle && onField) return;
         const touch = e.pointerType === 'touch';
-        const session: Session = { pointerId: e.pointerId, touch, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, from: { ...this.pos }, started: false, target: null, refused: false, timer: null, rect: null, bound: null };
+        const session: Session = { pointerId: e.pointerId, touch, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, from: { ...this.pos }, started: false, target: null, refused: false, timer: null, rect: null, bound: null, boxes: null, event: null, waiting: null };
         this.session = session;
-        const win = this.element.ownerDocument.defaultView ?? window;
         const move = (ev: PointerEvent) => this.pointerMove(ev);
         const up = (ev: PointerEvent) => this.pointerUp(ev);
         const key = (ev: KeyboardEvent) => {
@@ -262,23 +284,15 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
                 this.end(ev, false);
             }
         };
-        win.addEventListener('pointermove', move);
-        win.addEventListener('pointerup', up);
-        win.addEventListener('pointercancel', up);
-        win.addEventListener('keydown', key, true);
-        this.stops.push(() => {
-            win.removeEventListener('pointermove', move);
-            win.removeEventListener('pointerup', up);
-            win.removeEventListener('pointercancel', up);
-            win.removeEventListener('keydown', key, true);
-        });
+        // The drag goes on past the element: its window is listened to while it runs.
+        this.stops.push(onWindow(this, 'pointermove', move), onWindow(this, 'pointerup', up), onWindow(this, 'pointercancel', up), onWindow(this, 'keydown', key, true));
         if (touch) {
             // A finger that moves before the long press is over scrolls; one that stays lifts the draggable.
             session.timer = setTimeout(() => {
                 session.timer = null;
                 if (this.session === session) this.start(e);
             }, LONG_PRESS);
-        } else if (!target.closest(INTERACTIVE)) {
+        } else if (!onField) {
             e.preventDefault();
         }
     }
@@ -297,6 +311,24 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
             if (moved < THRESHOLD || !this.start(e)) return;
         }
         if (s.touch) e.preventDefault();
+        s.event = e;
+        s.waiting = measure(this, this.readAim, this.follow);
+    }
+
+    // The drop target under the pointer, from the kept boxes.
+    readonly readAim = (): DropTarget | null => {
+        const s = this.session;
+        const under = s?.boxes?.at({ x: s.x, y: s.y }, this) ?? null;
+        return under instanceof DropTarget ? under : null;
+    };
+
+    // Moves the draggable, or its copy, to the pointer and tells the target under it.
+    readonly follow = (under: DropTarget | null): void => {
+        const s = this.session;
+        if (!s?.started) return;
+        s.waiting = null;
+        const e = s.event ?? undefined;
+        this.track(under, e);
         const moved = this.within(s.x - s.startX, s.y - s.startY, s.rect, s.bound);
         if (this.clone) {
             this.ghost.move(s.x, s.y, s.target && !s.refused ? 'move' : 'none');
@@ -304,9 +336,8 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
             this.pos = { x: s.from.x + moved.x, y: s.from.y + moved.y };
             this.applyPosition();
         }
-        this.track(e);
         this.dragging.fire(this.args(s.target && !s.refused ? s.target : null, e));
-    }
+    };
 
     pointerUp(e: PointerEvent): void {
         const s = this.session;
@@ -315,19 +346,24 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
             this.end(null, false);
             return;
         }
+        // The last move still waiting for its frame lands first.
+        if (s.waiting) {
+            s.waiting();
+            this.follow(this.readAim());
+        }
         // The click that follows the drop is not a click on what is under the pointer.
-        const win = this.element.ownerDocument.defaultView ?? window;
         const swallow = (ev: MouseEvent) => {
             ev.stopPropagation();
             ev.preventDefault();
         };
-        win.addEventListener('click', swallow, true);
-        setTimeout(() => win.removeEventListener('click', swallow, true), 0);
+        setTimeout(onWindow(this, 'click', swallow, true), 0);
         this.end(e, e.type === 'pointerup');
     }
 
     start(e: PointerEvent): boolean {
         const s = this.session!;
+        const rect = rectOf(this);
+        const bound = this.boundRect();
         const args = this.args(null, e);
         this.starting.fire(args);
         if (args.cancel) {
@@ -335,24 +371,20 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
             return false;
         }
         s.started = true;
-        s.rect = this.element.getBoundingClientRect();
-        s.bound = this.boundRect();
-        this.handleElement.setPointerCapture?.(e.pointerId);
-        mark(this.element, 'data-dragging', true);
-        if (this.clone) this.ghost.show(this.element, s.x, s.y, 'move');
+        s.rect = rect;
+        s.bound = bound;
+        s.boxes = new DragBoxes(this, () => this.aimable(), stackCover);
+        if (this.clone) this.ghost.show(this, s.x, s.y, 'move');
+        (this.handlePart ?? this).attr.add({ setPointerCapture: e.pointerId });
+        mark(this, 'data-dragging', true);
         for (const target of TARGETS) if (target.takes(this.group)) target.markActive(true);
         return true;
     }
 
     // The drop target under the pointer, told when the draggable comes over it and leaves it.
-    track(e: PointerEvent): void {
+    track(target: DropTarget | null, e?: Event): void {
         const s = this.session;
-        if (!s?.started) return;
-        const doc = this.element.ownerDocument;
-        const under = doc.elementFromPoint(s.x, s.y)?.closest<HTMLElement>('.mx-drop-target') ?? null;
-        let target: DropTarget | null = null;
-        for (const candidate of TARGETS) if (candidate.element === under && candidate.takes(this.group)) target = candidate;
-        if (target === s.target) return;
+        if (!s?.started || target === s.target) return;
         if (s.target) s.target.leave(this.dropArgs(s.target, e));
         s.target = target;
         s.refused = target ? !target.enter(this.dropArgs(target, e)) : false;
@@ -364,11 +396,12 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         if (!s) return;
         this.session = null;
         if (s.timer) clearTimeout(s.timer);
+        s.waiting?.();
+        s.boxes?.stop();
         if (!s.started) return;
         this.ghost.hide();
-        mark(this.element, 'data-dragging', false);
-        const on = this.handleElement;
-        if (on.hasPointerCapture?.(s.pointerId)) on.releasePointerCapture(s.pointerId);
+        mark(this, 'data-dragging', false);
+        (this.handlePart ?? this).attr.add({ releasePointerCapture: s.pointerId });
         for (const target of TARGETS) target.markActive(false);
         const target = s.target && !s.refused ? s.target : null;
         const args = this.args(target, e ?? undefined);
@@ -389,7 +422,6 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
     // The arrow keys move it by `step`, within the boundary and along the axis.
     keyDown(e: KeyboardEvent): void {
         if (!this.isEnabled || e.altKey || e.ctrlKey || e.metaKey || this.clone) return;
-        if (!this.handleElement.contains(e.target as Node) || (e.target as Element).closest(INTERACTIVE) !== null && e.target !== this.handleElement) return;
         const step = this.step;
         let dx = 0;
         let dy = 0;
@@ -398,11 +430,16 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         else if (e.key === 'ArrowDown') dy = step;
         else if (e.key === 'ArrowUp') dy = -step;
         else return;
+        // The handle's keys (the draggable's without one); a button or a field inside keeps its own.
+        const on = this.handlePart ?? this;
+        if (!on.motif.isEventFrom(e) || this.fieldsInside().some(c => c !== on && c.motif.isEventFrom(e))) return;
         e.preventDefault();
+        const rect = rectOf(this);
+        const bound = this.boundRect();
         const args = this.args(null, e);
         this.starting.fire(args);
         if (args.cancel) return;
-        const moved = this.within(dx, dy, this.element.getBoundingClientRect(), this.boundRect());
+        const moved = this.within(dx, dy, rect, bound);
         if (moved.x === 0 && moved.y === 0) return;
         this.pos = { x: this.pos.x + moved.x, y: this.pos.y + moved.y };
         this.applyPosition();
@@ -413,6 +450,6 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
     }
 
     announce(): void {
-        text(this.live.element, uiLocale.text('positionNow', { x: this.pos.x, y: this.pos.y }));
+        text(this.live, uiLocale.text('positionNow', { x: this.pos.x, y: this.pos.y }));
     }
 }

@@ -1,4 +1,4 @@
-import type { Bind } from '@motifx/core';
+import type { Bind, ComponentBase } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 import type { FieldProps } from '../../parts/field/field-props';
 import type { ItemField } from '../../parts/list/item-field';
@@ -33,7 +33,7 @@ export interface ComboBoxProps<T, V> extends FieldProps<V | null> {
   /** The arrow that opens the whole list. The default is `true`. */
   showDropDownButton?: Bind<boolean>;
   clearButton?: Bind<boolean>;
-  itemTemplate?: Bind<((item: T, host: HTMLElement) => (() => void) | void) | null>;
+  itemTemplate?: Bind<((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null>;
   /** The default is `true`. */
   matchWidth?: Bind<boolean>;
   onOpened?: () => void;

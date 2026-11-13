@@ -1,14 +1,16 @@
-import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Component, Emitter, createSignal, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp, type Signal } from "@motifx/core";
 import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute } from "../../core/access-key";
-import { css, glyphPart, iconPart, mark, part, put, shown } from "../../core/draw-parts";
+import { glyphPart, iconPart, loose, part } from "../../core/draw-parts";
 import { fillTemplate } from "../../core/fill-template";
+import { focusOn } from "../../core/focus";
 import { foldText } from "../../core/fold-text";
 import { follow } from "../../core/follow";
 import { givenField, givenList, givenValue } from "../../core/given-field";
 import { glyph, searchMark } from "../../core/glyphs";
 import type { IconSource } from "../../core/icon-source";
 import { onLanguage } from "../../core/on-language";
-import { TokenLengths } from "../../core/token-lengths";
+import { boxOf, lengthOf, measure, onLayout, probeLengths, styleOf } from "../../core/measure";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { OverlayPanel } from "../../parts/overlay/OverlayPanel";
 import { Badge } from "../badge/Badge";
@@ -32,30 +34,34 @@ const SPLIT = '--_app-menu-split-size';
 
 type Key = string | number;
 
+/** What of an item the lists, the lines between the groups, the icon room, the search and the selection depend on. */
 interface Look {
     item: AppMenuItem;
     key: Key;
-    text: string;
-    glyph: string;
-    icon: IconSource | null;
-    hint: string;
-    href: string;
-    rel: string;
-    target: string;
-    badge: number | null;
-    dot: boolean;
+    /** Has an `href`: made as a link. */
+    link: boolean;
+    /** Has an icon or a glyph. */
+    pictured: boolean;
     enabled: boolean;
     visible: boolean;
     group: string;
     bottom: boolean;
-    closeOnClick: boolean | null;
     page: boolean;
+    // What the search looks in, read only while there is something to find.
+    text: string;
+    hint: string;
 }
 
+const sameLooks = (a: readonly Look[], b: readonly Look[]) =>
+    a.length === b.length && a.every((look, i) => (Object.keys(look) as (keyof Look)[]).every(name => Object.is(look[name], b[i][name])));
+
 interface ItemPart {
-    item: AppMenuItem;
+    /** The item the part shows: its own fields are followed from it. */
+    item: Signal<AppMenuItem>;
     key: Key;
     bottom: boolean;
+    /** Made as a link (`a`), else as a button. */
+    link: boolean;
     separator: Component<HTMLDivElement>;
     host: Component<HTMLElement>;
     iconHost: Component<HTMLSpanElement>;
@@ -70,6 +76,14 @@ interface ItemPart {
 interface View {
     item: AppMenuItem;
     host: Component<HTMLDivElement>;
+}
+
+/** The room of the menu and its layout's lengths, as read. */
+interface Room {
+    width: number;
+    share: number;
+    least: number;
+    split: number;
 }
 
 /**
@@ -118,48 +132,64 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     pageHead: Component<HTMLDivElement>;
     backer: Button;
     entries: ItemPart[] = [];
+    // The items' parts by their key, list and kind; a count that tells the lists to take the entries again.
+    slots = new Map<string, ItemPart>();
+    drawn = reactive({ count: 0 });
     looks: Look[] = [];
     views = new Map<Key, View>();
-    lengths: TokenLengths;
-    roomObserver: ResizeObserver | null = null;
     stopItems: (() => void) | null = null;
     // Between placing the panel and closing it: `isOpen` turns on only after the panel is placed.
     showing = false;
+    // The list and the page take turns: the panel cannot hold both.
+    stacked = false;
+    // Which of the two is shown while they take turns.
+    turnedTo: 'list' | 'page' = 'list';
+    // The item Tab reaches in the list (its tabindex is 0); -1 while there is none.
+    listStop = -1;
     typed = '';
     typedAt = 0;
 
     constructor(props?: IBaseProp<AppMenuProps>) {
         super(props);
         const own = (this.props ?? {}) as AppMenuProps;
-        const body = this.contentElement;
 
         this.nav = new Component<HTMLElement>('nav');
-        this.nav.element.className = 'mx-app-menu__nav';
-        this.placeIn(this.nav, body);
+        this.nav.class.add('mx-app-menu__nav');
+        this.placeIn(this.nav, this.contentPart);
         // Its variant and size come from its place.
         this.closer = new Button({ icon: glyph('arrow-start') });
-        this.closer.element.classList.add('mx-app-menu__close');
-        this.closer.element.addEventListener('click', () => this.close('button'));
+        this.closer.class.add('mx-app-menu__close');
+        this.closer.motif.on('click', () => this.close('button'));
         this.nav.controls.add(this.closer);
         this.headerHost = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__header-slot');
         this.searchHost = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__search');
         this.topList = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__list');
         this.noMatch = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__no-match');
-        this.noMatch.element.setAttribute('role', 'status');
+        this.noMatch.attr.add({ role: 'status' });
         this.bottomList = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__list mx-app-menu__list--bottom');
         this.footerHost = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__footer-slot');
-        for (const el of [this.headerHost, this.footerHost, this.searchHost, this.noMatch]) shown(el.element, false);
+        for (const el of [this.headerHost, this.footerHost, this.searchHost, this.noMatch]) shown(el, false);
+        // Built once: each list holds the parts of its items, made when an item comes and taken out when it goes.
+        for (const [list, bottom] of [[this.topList, false], [this.bottomList, true]] as const) {
+            list.bindings.list(
+                () => {
+                    void this.drawn.count;
+                    return untracked(() => this.entries.filter(p => p.bottom === bottom).flatMap(p => [p.separator, p.host]));
+                },
+                (c: ComponentBase) => c
+            );
+        }
 
         this.pageArea = new Component<HTMLDivElement>('div');
-        this.pageArea.element.className = 'mx-app-menu__page';
-        this.placeIn(this.pageArea, body);
+        this.pageArea.class.add('mx-app-menu__page');
+        this.placeIn(this.pageArea, this.contentPart);
         this.pageHead = part<HTMLDivElement>(this.pageArea, 'div', 'mx-app-menu__page-head');
         this.backer = new Button({ icon: glyph('arrow-start') });
-        this.backer.element.classList.add('mx-app-menu__back');
-        this.backer.element.addEventListener('click', () => this.showList());
+        this.backer.class.add('mx-app-menu__back');
+        this.backer.motif.on('click', () => this.showList());
         this.pageHead.controls.add(this.backer);
 
-        this.lengths = new TokenLengths(this.element, [SHARE, LEAST, SPLIT], () => this.layout());
+        probeLengths(this, [SHARE, LEAST, SPLIT]);
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onSelecting) this.onSelecting(own.onSelecting);
         if (own.onSelectionChanged) this.onSelectionChanged(own.onSelectionChanged);
@@ -176,28 +206,25 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         this.observeProperty('searchText', () => this.drawSearch());
         this.observeProperty('label', () => this.drawNames());
         onLanguage(this, () => this.drawNames());
-        this.nav.element.addEventListener('click', e => this.navClick(e));
-        body.addEventListener('animationend', e => {
-            if (e.target === this.nav.element || e.target === this.pageArea.element) put(this.element, 'data-turn', null);
-        });
-        this.nav.element.addEventListener('keydown', e => this.navKeyDown(e));
+        this.nav.motif.on('click', (_, e) => this.navClick(e));
+        // A turn ends with the animation of the list or the page itself.
+        const turned = () => put(this, 'data-turn', null);
+        this.nav.motif.on('animationend:self', turned);
+        this.pageArea.motif.on('animationend:self', turned);
+        this.nav.motif.on('keydown', (_, e) => this.navKeyDown(e));
         // Escape on a page that took the list's place goes back to the list before it closes the menu.
-        this.panelElement.addEventListener('keydown', e => {
+        this.panelPart.motif.on('keydown', (_, e) => {
             if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing || !this.pageShownAlone()) return;
             e.preventDefault();
             e.stopPropagation();
             this.showList();
         });
-        const Observer = this.element.ownerDocument.defaultView?.ResizeObserver;
-        if (Observer) {
-            this.roomObserver = new Observer(() => this.layout());
-            this.roomObserver.observe(this.element);
-        }
+        // A change of the room or of a length (language, theme, density) lays it out again.
+        onLayout(this, 'size', () => this.askLayout());
+        onLayout(this, 'look', () => this.askLayout());
         this.drawNames();
         this.motif.setDisposable(() => {
             this.stopItems?.();
-            this.roomObserver?.disconnect();
-            this.lengths.dispose();
             for (const emitter of [this.selecting, this.selectionChanged, this.itemClick, this.itemsChanged, this.searchTextChanged]) emitter.dispose();
         });
     }
@@ -359,25 +386,35 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
 
     protected override placePanel(): void {
         this.showing = true;
-        put(this.element, 'data-view', 'list');
-        this.layout();
+        this.turnedTo = 'list';
+        put(this, 'data-view', 'list');
+        this.askLayout();
         this.drawSelection();
     }
 
     protected override panelClosed(): void {
         this.showing = false;
-        put(this.element, 'data-view', 'list');
-        put(this.element, 'data-turn', null);
+        this.turnedTo = 'list';
+        put(this, 'data-view', 'list');
+        put(this, 'data-turn', null);
     }
 
     renderItems(): void {
         this.stopItems?.();
         const items = givenList(this.peekProperty<readonly AppMenuItem[]>('items'));
-        // The items' own functions are tracked; the list and the drawing are not.
+        // The items' own functions are tracked; the list and the drawing are not. Only what decides the parts and the
+        // layout of the items together is read here: each part follows the rest of its item's fields itself.
+        let last: Look[] | null = null;
         this.stopItems = follow(
             this,
             'items',
-            () => items.map((item, index) => this.lookOf(item, index)),
+            () => {
+                const searching = this.query() !== '';
+                const looks = items.map((item, index) => this.lookOf(item, index, searching));
+                // The same layout is handed over as the same looks, and draws nothing.
+                if (last && sameLooks(last, looks)) return last;
+                return (last = looks);
+            },
             looks => {
                 this.looks = looks;
                 this.drawItems();
@@ -385,114 +422,150 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         );
     }
 
-    lookOf(item: AppMenuItem, index: number): Look {
-        const closeOnClick = givenField<boolean | undefined>(item, 'closeOnClick');
+    lookOf(item: AppMenuItem, index: number, searching: boolean): Look {
+        const field = (name: string) => String(givenField(item, name) ?? '');
         return {
             item,
             key: givenValue<Key | undefined>(item, 'key') ?? index,
-            text: String(givenField(item, 'text') ?? ''),
-            glyph: String(givenField(item, 'glyph') ?? ''),
-            icon: givenField<IconSource | null | undefined>(item, 'icon') ?? null,
-            hint: String(givenField(item, 'hint') ?? ''),
-            href: String(givenField(item, 'href') ?? ''),
-            rel: String(givenField(item, 'rel') ?? ''),
-            target: String(givenField(item, 'target') ?? ''),
-            badge: givenField<number | null | undefined>(item, 'badge') ?? null,
-            dot: givenField(item, 'dot') === true,
+            link: field('href') !== '',
+            pictured: !!givenField(item, 'icon') || field('glyph') !== '',
             enabled: givenField(item, 'enabled') !== false,
             visible: givenField(item, 'visible') !== false,
-            group: String(givenField(item, 'group') ?? ''),
+            group: field('group'),
             bottom: givenField(item, 'bottom') === true,
-            closeOnClick: closeOnClick === undefined ? null : closeOnClick !== false,
-            page: typeof givenValue(item, 'page') === 'function'
+            page: typeof givenValue(item, 'page') === 'function',
+            text: searching ? field('text') : '',
+            hint: searching ? field('hint') : ''
         };
     }
 
-    // The items are made again when they are others, move between the lists or change between button and link;
-    // otherwise they are written in place.
+    /** Whether an item closes the menu when it is pressed, when it says so. */
+    closesOf(look: Look): boolean | null {
+        const closeOnClick = untracked(() => givenField<boolean | undefined>(look.item, 'closeOnClick'));
+        return closeOnClick === undefined ? null : closeOnClick !== false;
+    }
+
+    /** An item's text as it is now. */
+    textOf(look: Look): string {
+        return untracked(() => String(givenField(look.item, 'text') ?? ''));
+    }
+
+    // An item's part is made when the item comes, moves between the lists or changes between button and link;
+    // otherwise it is kept, and follows its item's own fields itself.
     drawItems(): void {
-        const tagOf = (look: Look) => (look.href ? 'A' : 'BUTTON');
-        const stale = this.entries.length !== this.looks.length || this.entries.some((p, i) => p.key !== this.looks[i].key || p.bottom !== this.looks[i].bottom || p.host.element.tagName !== tagOf(this.looks[i]));
-        if (stale) {
-            for (const p of this.entries) {
-                void p.separator.dispose();
-                void p.host.dispose();
-            }
-            this.entries = this.looks.map(look => this.makeItem(look));
-        }
-        this.looks.forEach((look, i) => (this.entries[i].item = look.item));
+        // An item keeps its part while an item of its key stays in the same list as the same kind; the lists show the
+        // parts in the items' order and take out only the parts of the items that are gone.
+        const used = new Map<string, ItemPart>();
+        this.entries = this.looks.map(look => {
+            const base = `${look.bottom ? 'b' : 't'}${look.link ? 'a' : 'n'}:${typeof look.key}:${look.key}`;
+            let name = base;
+            for (let n = 1; used.has(name); n++) name = `${base}#${n}`;
+            const p = this.slots.get(name) ?? this.makeItem(look);
+            used.set(name, p);
+            return p;
+        });
+        this.slots = used;
+        untracked(() => this.drawn.count++);
+        // A part given another item object follows that one from now on.
+        untracked(() => this.looks.forEach((look, i) => this.entries[i].item.peek() !== look.item && (this.entries[i].item.value = look.item)));
         const lastGroup = new Map<boolean, string | null>();
         // When any item has an icon, an item without one keeps the room, so the labels line up.
-        const icons = this.looks.some(look => look.visible && (!!look.icon || look.glyph !== ''));
+        const icons = this.looks.some(look => look.visible && look.pictured);
         this.looks.forEach((look, i) => {
             const p = this.entries[i];
             const seen = this.shows(look);
-            const host = p.host.element;
-            const parsed = parseAccessKey(look.text);
-            renderAccessKey(p.label.element, parsed);
-            const key = parsed.key ? accessKeyToken(parsed.key) : null;
-            setAccessKeyAttribute(host, p.accessKey, key);
-            p.accessKey = key;
-            shown(host, seen);
-            put(host, 'title', look.hint || null);
-            put(host, 'aria-disabled', look.enabled ? null : 'true');
-            put(host, 'data-key', String(look.key));
-            if (look.href) {
-                put(host, 'href', look.enabled ? look.href : null);
-                put(host, 'rel', look.rel || null);
-                put(host, 'target', look.target || null);
-            }
+            shown(p.host, seen);
             // A line before the first visible item of another group in the same list.
             const before = lastGroup.get(look.bottom);
-            shown(p.separator.element, seen && before !== undefined && before !== null && before !== look.group);
+            shown(p.separator, seen && before !== undefined && before !== null && before !== look.group);
             if (seen) lastGroup.set(look.bottom, look.group);
-            this.drawIcon(p, look, icons);
-            this.drawBadge(p, look);
+            shown(p.iconHost, look.pictured || icons);
+            css(p.iconHost, 'visibility', look.pictured ? '' : 'hidden');
         });
-        shown(this.bottomList.element, this.looks.some(look => look.bottom && this.shows(look)));
+        shown(this.bottomList, this.looks.some(look => look.bottom && this.shows(look)));
         const query = this.query();
-        shown(this.noMatch.element, query !== '' && !this.looks.some(look => this.shows(look)));
-        this.noMatch.element.textContent = query ? fillTemplate(uiLocale.strings.appMenuNoMatch, { text: query }) : '';
+        shown(this.noMatch, query !== '' && !this.looks.some(look => this.shows(look)));
+        text(this.noMatch, query ? fillTemplate(uiLocale.strings.appMenuNoMatch, { text: query }) : '');
         this.dropViews();
         this.drawSelection();
     }
 
     makeItem(look: Look): ItemPart {
-        const list = look.bottom ? this.bottomList : this.topList;
-        const separator = part<HTMLDivElement>(list, 'div', 'mx-app-menu__separator');
-        separator.element.setAttribute('role', 'separator');
-        const host = part<HTMLElement>(list, look.href ? 'a' : 'button', 'mx-app-menu__item');
-        if (!look.href) (host.element as HTMLButtonElement).type = 'button';
+        const separator = loose<HTMLDivElement>('div', 'mx-app-menu__separator');
+        separator.attr.add({ role: 'separator' });
+        const host = loose<HTMLElement>(look.link ? 'a' : 'button', 'mx-app-menu__item');
+        if (!look.link) host.attr.add({ type: 'button' });
+        put(host, 'data-key', String(look.key));
         const iconHost = part<HTMLSpanElement>(host, 'span', 'mx-app-menu__icon');
         const itemGlyph = glyphPart(iconHost, '', 'mx-app-menu__glyph');
         const label = part<HTMLSpanElement>(host, 'span', 'mx-app-menu__label');
-        return { item: look.item, key: look.key, bottom: look.bottom, separator, host, iconHost, glyph: itemGlyph, icon: null, iconSource: null, label, badge: null, accessKey: null };
-    }
-
-    drawIcon(p: ItemPart, look: Look, room: boolean): void {
-        if (look.icon !== p.iconSource) {
-            void p.icon?.dispose();
-            p.icon = look.icon ? iconPart(p.iconHost, look.icon) : null;
-            p.iconSource = look.icon;
+        const p: ItemPart = { item: createSignal(look.item), key: look.key, bottom: look.bottom, link: look.link, separator, host, iconHost, glyph: itemGlyph, icon: null, iconSource: null, label, badge: null, accessKey: null };
+        // Each of the item's own fields writes only what shows it, when it changes.
+        const watch = <T>(read: (item: AppMenuItem) => T, write: (value: T) => void) =>
+            host.bindings.watch(() => {
+                const value = read(p.item.value);
+                untracked(() => write(value));
+            });
+        const field = (item: AppMenuItem, name: string) => String(givenField(item, name) ?? '');
+        const enabled = (item: AppMenuItem) => givenField(item, 'enabled') !== false;
+        watch(
+            item => [field(item, 'text'), enabled(item)] as const,
+            ([said, on]) => {
+                const parsed = parseAccessKey(said);
+                renderAccessKey(label, parsed);
+                // A disabled item takes no key.
+                const key = parsed.key && on ? accessKeyToken(parsed.key) : null;
+                setAccessKeyAttribute(host, p.accessKey, key, () => this.pressItem(p));
+                p.accessKey = key;
+                // Its page is named by it.
+                const view = this.views.get(p.key);
+                if (view?.item === p.item.peek()) put(view.host, 'aria-label', parsed.text);
+            }
+        );
+        watch(item => field(item, 'hint'), hint => put(host, 'title', hint || null));
+        watch(enabled, on => put(host, 'aria-disabled', on ? null : 'true'));
+        if (look.link) {
+            watch(
+                item => [field(item, 'href'), field(item, 'rel'), field(item, 'target'), enabled(item)] as const,
+                ([href, rel, target, on]) => {
+                    put(host, 'href', on ? href : null);
+                    put(host, 'rel', rel || null);
+                    put(host, 'target', target || null);
+                }
+            );
         }
-        put(p.glyph.element, 'data-icon', look.glyph || null);
-        shown(p.glyph.element, !look.icon && look.glyph !== '');
-        const has = !!look.icon || look.glyph !== '';
-        shown(p.iconHost.element, has || room);
-        css(p.iconHost.element, 'visibility', has ? '' : 'hidden');
+        watch(
+            item => [givenField<IconSource | null | undefined>(item, 'icon') ?? null, field(item, 'glyph')] as const,
+            ([icon, name]) => this.drawIcon(p, icon, name)
+        );
+        watch(
+            item => [givenField(item, 'dot') === true, givenField<number | null | undefined>(item, 'badge') ?? null] as const,
+            ([dot, badge]) => this.drawBadge(p, dot, badge)
+        );
+        return p;
     }
 
-    drawBadge(p: ItemPart, look: Look): void {
-        const on = look.dot || look.badge !== null;
+    drawIcon(p: ItemPart, icon: IconSource | null, name: string): void {
+        if (icon !== p.iconSource) {
+            void p.icon?.dispose();
+            p.icon = icon ? iconPart(p.iconHost, icon) : null;
+            p.iconSource = icon;
+        }
+        put(p.glyph, 'data-icon', name || null);
+        shown(p.glyph, !icon && name !== '');
+    }
+
+    drawBadge(p: ItemPart, dot: boolean, badge: number | null): void {
+        const on = dot || badge !== null;
         if (on && !p.badge) {
             p.badge = new Badge({ size: 'sm' });
-            p.badge.element.classList.add('mx-app-menu__badge');
+            p.badge.class.add('mx-app-menu__badge');
             p.host.controls.add(p.badge);
         }
         if (!p.badge) return;
-        p.badge.dot = look.dot;
-        p.badge.count = look.badge;
-        shown(p.badge.element, on);
+        p.badge.dot = dot;
+        p.badge.count = badge;
+        shown(p.badge, on);
     }
 
     // Pages of items that are gone go with them.
@@ -512,14 +585,15 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         const key = this.shownKey;
         const stops = this.stops();
         const stop = stops.find(i => this.looks[i].key === key) ?? stops[0] ?? -1;
+        this.listStop = stop;
         this.looks.forEach((look, i) => {
-            const host = this.entries[i].host.element;
+            const host = this.entries[i].host;
             const selected = look.page && look.key === key;
             mark(host, 'data-selected', selected);
             put(host, 'aria-current', selected ? 'page' : null);
-            host.tabIndex = i === stop ? 0 : -1;
+            put(host, 'tabindex', i === stop ? '0' : '-1');
             // Where focus goes when the menu opens.
-            host.toggleAttribute('autofocus', i === stop);
+            mark(host, 'autofocus', i === stop);
         });
         if (this.showing && key !== null) this.showView(key);
     }
@@ -530,16 +604,16 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         let view = this.views.get(key);
         if (!view) {
             const host = part<HTMLDivElement>(this.pageArea, 'div', 'mx-app-menu__view');
-            host.element.setAttribute('role', 'region');
-            host.element.tabIndex = -1;
+            host.attr.add({ role: 'region' });
+            put(host, 'tabindex', '-1');
             const make = givenValue<(() => ComponentBase) | undefined>(look.item, 'page');
             const page = make?.();
             if (page) host.controls.add(page);
             view = { item: look.item, host };
             this.views.set(key, view);
         }
-        put(view.host.element, 'aria-label', parseAccessKey(look.text).text);
-        for (const [k, v] of this.views) shown(v.host.element, k === key);
+        put(view.host, 'aria-label', parseAccessKey(this.textOf(look)).text);
+        for (const [k, v] of this.views) shown(v.host, k === key);
     }
 
     /** The items Tab and the arrows reach, in the order they stand: the list at the top, then the one at the bottom. */
@@ -563,16 +637,17 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
 
     drawSearch(): void {
         const on = this.peekProperty('searchEnabled') === true;
-        shown(this.searchHost.element, on);
+        shown(this.searchHost, on);
         if (on && !this.search) {
             const search = new TextBox({ labelMode: 'hidden', size: 'md', type: 'search', icon: searchMark(), clearButton: true, autocomplete: 'off', spellcheck: false, label: () => uiLocale.strings.search, placeholder: () => uiLocale.strings.search });
             search.onValueChanged(e => e.byUser && this.searchBy(String(e.value ?? '')));
-            search.element.addEventListener('keydown', e => this.searchKeyDown(e));
+            search.motif.on('keydown', (_, e) => this.searchKeyDown(e));
             this.searchHost.controls.add(search);
             this.search = search;
         }
         if (this.search && this.search.value !== this.searchText) this.search.value = this.searchText;
-        if (this.looks.length) this.drawItems();
+        // What the search looks in is read again for what is typed.
+        if (this.looks.length) this.renderItems();
     }
 
     searchKeyDown(e: KeyboardEvent): void {
@@ -607,72 +682,87 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         if (control) host.controls.add(control);
         if (side === 'header') this.headerControl = control;
         else this.footerControl = control;
-        shown(host.element, !!control);
+        shown(host, !!control);
     }
 
     drawNames(): void {
         const name = parseAccessKey(this.peekProperty<string>('text') ?? '').text || this.peekProperty<string>('label') || uiLocale.strings.appMenuLabel;
-        if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', name);
-        this.nav.element.setAttribute('aria-label', name);
-        this.closer.element.setAttribute('aria-label', uiLocale.strings.appMenuClose);
-        this.backer.element.setAttribute('aria-label', uiLocale.strings.appMenuBack);
+        if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) put(this.panelPart, 'aria-label', name);
+        put(this.nav, 'aria-label', name);
+        put(this.closer, 'aria-label', uiLocale.strings.appMenuClose);
+        put(this.backer, 'aria-label', uiLocale.strings.appMenuBack);
     }
 
     // Layout: a panel over a share of the room, the whole room when that would be too narrow, and the list and the page
     // in turns when the panel cannot hold both.
-    layout(): void {
-        if (!this.showing) return;
-        const room = this.element.clientWidth;
-        if (!room) return;
-        const share = this.lengths.get(SHARE, 500) / 1000;
-        const least = this.lengths.get(LEAST, 360);
-        const split = this.lengths.get(SPLIT, 560);
-        const full = room * share < least;
-        const width = full ? room : room * share;
-        mark(this.element, 'data-full', full);
-        const stacked = width < split;
-        if (!stacked && this.element.hasAttribute('data-stacked')) {
-            put(this.element, 'data-view', 'list');
-            put(this.element, 'data-turn', null);
-        }
-        mark(this.element, 'data-stacked', stacked);
+    askLayout(): void {
+        if (this.showing) measure(this, this.readRoom, this.layout);
     }
 
+    readonly readRoom = (): Room => ({
+        width: boxOf(this).clientWidth,
+        share: lengthOf(this, SHARE, 500) / 1000,
+        least: lengthOf(this, LEAST, 360),
+        split: lengthOf(this, SPLIT, 560)
+    });
+
+    readonly layout = ({ width: room, share, least, split }: Room): void => {
+        if (!this.showing || !room) return;
+        const full = room * share < least;
+        const width = full ? room : room * share;
+        mark(this, 'data-full', full);
+        const stacked = width < split;
+        if (!stacked && this.stacked) {
+            this.turnedTo = 'list';
+            put(this, 'data-view', 'list');
+            put(this, 'data-turn', null);
+        }
+        this.stacked = stacked;
+        mark(this, 'data-stacked', stacked);
+    };
+
     pageShownAlone(): boolean {
-        return this.element.hasAttribute('data-stacked') && this.element.getAttribute('data-view') === 'page';
+        return this.stacked && this.turnedTo === 'page';
     }
 
     showPage(): void {
         this.turn('page');
-        if (!this.element.hasAttribute('data-stacked')) return;
+        if (!this.stacked) return;
         const key = this.shownKey;
         const view = key === null ? null : this.views.get(key);
-        view?.host.element.focus({ preventScroll: true });
+        if (view) focusOn(view.host, { preventScroll: true });
     }
 
     showList(): void {
         this.turn('list');
-        const stop = this.entries.find(p => p.host.element.tabIndex === 0);
-        stop?.host.element.focus({ preventScroll: true });
+        const stop = this.entries[this.listStop];
+        if (stop) focusOn(stop.host, { preventScroll: true });
     }
 
     // While the list and the page take turns, the one coming in pushes the other out; the turn ends with its animation.
     turn(view: 'list' | 'page'): void {
-        const from = this.element.getAttribute('data-view');
-        put(this.element, 'data-view', view);
-        if (from === view || !this.showing || !this.element.hasAttribute('data-stacked')) return;
-        put(this.element, 'data-turn', view === 'page' ? 'forward' : 'back');
-        // Where nothing animates (motion turned off by a stylesheet), no end comes.
-        if (!this.nav.element.getAnimations?.().length) put(this.element, 'data-turn', null);
+        const from = this.turnedTo;
+        this.turnedTo = view;
+        put(this, 'data-view', view);
+        if (from === view || !this.showing || !this.stacked) return;
+        put(this, 'data-turn', view === 'page' ? 'forward' : 'back');
+        measure(this, this.readAnimation, this.endStillTurn);
     }
 
-    indexOfElement(target: EventTarget | null): number {
-        const host = (target as Element | null)?.closest?.('.mx-app-menu__item');
-        return this.entries.findIndex(p => p.host.element === host);
+    readonly readAnimation = (): string => styleOf(this.nav, ['animation-name'])['animation-name'];
+
+    // Where nothing animates (motion turned off by a stylesheet), no end comes.
+    readonly endStillTurn = (animation: string): void => {
+        if (animation === '' || animation === 'none') put(this, 'data-turn', null);
+    };
+
+    /** The item an event came from, -1 for none. */
+    indexOfEvent(e: Event): number {
+        return this.entries.findIndex(p => p.host.motif.isEventFrom(e));
     }
 
     navClick(e: MouseEvent): void {
-        const index = this.indexOfElement(e.target);
+        const index = this.indexOfEvent(e);
         if (index < 0) return;
         this.press(this.looks[index], e);
     }
@@ -686,7 +776,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
             if (this.choose(look, e)) this.showPage();
             return;
         }
-        const args: AppMenuItemClickEventArgs = { item: look.item, key: look.key, keepOpen: !(look.closeOnClick ?? this.closeOnCommand), originalEvent: e, source: this };
+        const args: AppMenuItemClickEventArgs = { item: look.item, key: look.key, keepOpen: !(this.closesOf(look) ?? this.closeOnCommand),originalEvent: e, source: this };
         givenValue<((e: AppMenuItemClickEventArgs) => void) | undefined>(look.item, 'click')?.(args);
         this.itemClick.fire(args);
         if (!args.keepOpen) this.close('button');
@@ -706,11 +796,11 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     }
 
     navKeyDown(e: KeyboardEvent): void {
-        const index = this.indexOfElement(e.target);
+        const index = this.indexOfEvent(e);
         if (index < 0 || e.isComposing) return;
-        if (e.key === ' ' && this.looks[index].href) {
+        if (e.key === ' ' && this.looks[index].link) {
             e.preventDefault();
-            this.entries[index].host.element.click();
+            this.entries[index].host.attr.add({ click: true });
             return;
         }
         const stops = this.stops();
@@ -730,26 +820,35 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
     // A letter chooses the item whose access key it is; otherwise it goes to the next item that starts with what was typed.
     byLetter(e: KeyboardEvent, stops: number[], at: number): number {
         const letter = e.key.toLocaleLowerCase(uiLocale.locale);
-        const keyed = stops.find(i => parseAccessKey(this.looks[i].text).key?.toLocaleLowerCase(uiLocale.locale) === letter);
+        const keyed = stops.find(i => parseAccessKey(this.textOf(this.looks[i])).key?.toLocaleLowerCase(uiLocale.locale) === letter);
         if (keyed !== undefined) {
             e.preventDefault();
-            this.moveTo(keyed);
-            this.entries[keyed].host.element.click();
+            this.pressItem(this.entries[keyed]);
             return -1;
         }
         if (e.altKey || !letter.trim()) return -1;
         const now = Date.now();
         this.typed = now - this.typedAt < 700 ? this.typed + letter : letter;
         this.typedAt = now;
-        const text = (i: number) => parseAccessKey(this.looks[i].text).text.toLocaleLowerCase(uiLocale.locale);
+        const text = (i: number) => parseAccessKey(this.textOf(this.looks[i])).text.toLocaleLowerCase(uiLocale.locale);
         const order = [...stops.slice(at + (this.typed.length > 1 ? 0 : 1)), ...stops.slice(0, at + (this.typed.length > 1 ? 0 : 1))];
         return order.find(i => text(i).startsWith(this.typed)) ?? -1;
     }
 
+    /** Moves focus to an item and clicks it: its access key, or its letter in the list. */
+    pressItem(p: ItemPart): boolean {
+        const index = this.entries.indexOf(p);
+        if (index < 0) return false;
+        this.moveTo(index);
+        p.host.attr.add({ click: true });
+        return true;
+    }
+
     moveTo(index: number): void {
-        for (const p of this.entries) p.host.element.tabIndex = -1;
-        const host = this.entries[index].host.element;
-        host.tabIndex = 0;
-        host.focus();
+        for (const p of this.entries) put(p.host, 'tabindex', '-1');
+        const host = this.entries[index].host;
+        put(host, 'tabindex', '0');
+        this.listStop = index;
+        focusOn(host);
     }
 }

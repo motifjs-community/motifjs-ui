@@ -1,14 +1,17 @@
-import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { clearParts, glyphPart, loose, part } from '../../core/draw-parts';
+import { flag, kept, mark, put, text as writeText } from '../../core/part-writes';
 import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
-import { chevronDown } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { DataItems } from '../../parts/data/DataItems';
+import { isEmptyKey } from '../../parts/data/empty-key';
 import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import { OptionList } from '../../parts/list/OptionList';
+import type { OptionParts } from '../../parts/list/option-parts';
 import { givenList } from '../../core/given-field';
 import { itemOwnValue } from '../../parts/list/item-own-value';
 import { readItemField } from '../../parts/list/read-item-field';
@@ -24,7 +27,9 @@ const OWN = ['items', 'dataSource', 'valueText', 'placeholder', 'searchEnabled',
 /** Props whose value may be a function of its own. */
 const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enabledField', 'itemTemplate', 'fieldTemplate'] as const;
 
-type Template<T> = ((item: T, host: HTMLElement) => (() => void) | void) | null;
+type Template<T> = ((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null;
+
+type OptionDrawer<T> = ((item: T, option: OptionParts) => (() => void) | void) | null;
 
 const PARTS = Symbol('mx.dropdown');
 
@@ -32,21 +37,31 @@ const PARTS = Symbol('mx.dropdown');
 type ValueState = 'shown' | 'loading' | 'missing' | 'failed';
 
 interface Parts<T> {
-  display: HTMLDivElement;
-  text: HTMLSpanElement;
+  textPart: Component<HTMLSpanElement>;
+  /** The value's text or the placeholder, written in place. */
+  valuePart: Component<HTMLSpanElement>;
+  /** The wait's text for screen readers, made the first time the field waits. */
+  waitPart: Component<HTMLSpanElement> | null;
+  /** Where the app's template draws the value's item, made the first time it does. */
+  drawnPart: Component<HTMLSpanElement> | null;
   releaseField: () => void;
   popup: Popup | null;
   list: OptionList<T> | null;
   search: TextBox | null;
   stopList: (() => void) | null;
+  /** What the field shows now, and what the open list was drawn from: drawn again only when one of them changes. */
+  fieldShown?: unknown[];
+  listShown?: unknown[];
   filter: string;
   /** Items from a data source. */
   source: DataItems<T>;
+  /** The drawer the rows are drawn with: the list draws its rows again only when it changes. */
+  drawnWith?: { drawer: OptionDrawer<T> | undefined; draw: OptionList<T>['draw'] };
   /** The item of the value, kept when it is on no loaded page. */
   chosen: T | undefined;
   lookup: number;
   state: ValueState;
-  spinner: HTMLSpanElement | null;
+  spinner: Component<HTMLSpanElement> | null;
   stopLanguage: (() => void) | null;
   timer: ReturnType<typeof setTimeout> | undefined;
   opened: Emitter<void>;
@@ -70,9 +85,9 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   constructor(props?: IBaseProp<DropDownProps<T, V>>) {
     super(props);
     const own = (this.props ?? {}) as DropDownProps<T, V>;
-    this.element.classList.add('mx-drop-down');
+    this.class.add('mx-drop-down');
     // Pressed like a button: the field shows its pressed look while held.
-    this.element.toggleAttribute('data-pressable', true);
+    mark(this, 'data-pressable', true);
 
     this.observeProperty('clearButton', () => this.renderClear());
     this.observeProperty('matchWidth', (on) => {
@@ -84,8 +99,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     if (own.onClosed) this.onClosed(own.onClosed);
 
     const parts = this.dropParts;
-    const chevron = this.area('actions').appendChild(chevronDown());
-    chevron.classList.add('mx-drop-down__chevron');
+    glyphPart(this.area('actions'), 'chevron-down', 'mx-drop-down__chevron');
     // The field follows the items given, the value and its own props; the items' fields are read as they are.
     const stopField = follow(
       this,
@@ -93,9 +107,9 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       () => {
         void this.getProperty('textField');
         void this.getProperty('valueField');
-        void this.getProperty('chosenTick');
-        void this.getProperty('refreshed');
         return {
+          // A refresh or a choice draws the value again: an app's template reads its item as it is now.
+          tick: `${this.getProperty('chosenTick') ?? 0}|${this.getProperty('refreshed') ?? 0}`,
           items: this.items,
           value: this.value,
           valueText: this.getProperty<string | undefined>('valueText') ?? '',
@@ -103,7 +117,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
           template: this.getProperty<Template<T>>('fieldTemplate'),
         };
       },
-      ({ items, value, valueText, placeholder, template }) => this.renderField(items, value, valueText, placeholder, template),
+      ({ tick, items, value, valueText, placeholder, template }) => this.renderField(tick, items, value, valueText, placeholder, template),
     );
     this.observeProperty('dataSource', () => this.renderSource());
     // A value field by name lets a value on no loaded page be asked for by that field.
@@ -259,11 +273,10 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     parts.search?.clear();
     if (parts.source.dataSource && parts.source.searchText) void parts.source.search('');
     this.watchList();
-    const box = this.focusElement.parentElement!;
-    popup.open(box, { toggle: box, returnFocus: this.focusElement });
+    popup.open(this.boxPart, { returnFocus: this.controlPart });
     this.setProperty('opened', true);
-    this.element.setAttribute('data-open', '');
-    parts.display.setAttribute('aria-expanded', 'true');
+    mark(this, 'data-open', true);
+    put(this.controlPart, 'aria-expanded', 'true');
     const list = parts.list!;
     const selected = list.count ? this.indexOfValue() : -1;
     if (selected >= 0) list.setActive(selected);
@@ -272,7 +285,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     if (parts.search) parts.search.focus();
     if (search && parts.search) {
       parts.search.value = search;
-      parts.search.inputElement.setSelectionRange(search.length, search.length);
+      parts.search.inputPart.attr.add({ setSelectionRange: [search.length, search.length] });
     } else if (search) this.typeAhead(search);
     parts.opened.fire();
     return true;
@@ -301,17 +314,25 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     }
   }
 
+  /**
+   * For subclasses: draws an option's content into its parts instead of its text. It wins over `itemTemplate`;
+   * the open list is drawn again when it changes.
+   */
+  protected get optionDrawer(): OptionDrawer<T> {
+    return this.getProperty<OptionDrawer<T> | undefined>('optionDrawer') ?? null;
+  }
+  protected set optionDrawer(value: OptionDrawer<T>) {
+    this.setProperty('optionDrawer', value);
+  }
+
   /** For subclasses: the popup and its list were created (e.g. to add a header above the list). */
   protected popupCreated(_popup: Popup, _list: OptionList<T>): void {}
 
-  protected createControl(): HTMLElement {
-    const display = document.createElement('div');
-    display.className = 'mx-drop-down__display';
-    display.tabIndex = 0;
-    display.setAttribute('role', 'combobox');
-    display.setAttribute('aria-haspopup', 'listbox');
-    display.setAttribute('aria-expanded', 'false');
-    return display;
+  protected createControl(): ComponentBase {
+    const control = loose<HTMLDivElement>('div', 'mx-drop-down__display');
+    put(control, 'tabindex', '0');
+    control.attr.add({ role: 'combobox', 'aria-haspopup': 'listbox', 'aria-expanded': 'false' });
+    return control;
   }
 
   protected emptyValue(): V | null {
@@ -326,12 +347,12 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private get dropParts(): Parts<T> {
     const self = this as unknown as { [PARTS]?: Parts<T> };
     if (!self[PARTS]) {
-      const display = this.focusElement as HTMLDivElement;
-      const text = display.appendChild(document.createElement('span'));
-      text.className = 'mx-drop-down__text';
+      const textPart = part<HTMLSpanElement>(this.controlPart, 'span', 'mx-drop-down__text');
       self[PARTS] = {
-        display,
-        text,
+        textPart,
+        valuePart: part<HTMLSpanElement>(textPart, 'span', 'mx-drop-down__value'),
+        waitPart: null,
+        drawnPart: null,
         releaseField: () => {},
         popup: null,
         list: null,
@@ -380,7 +401,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     const parts = this.dropParts;
     const same = (item: T) => this.sameValue(this.itemValue(item) as V | null, value);
     if (!parts.source.dataSource) return givenList(items).find(same);
-    if (value === null || value === undefined) return undefined;
+    // An empty text is no value, as the data source counts it: nothing to ask for.
+    if (isEmptyKey(value)) return undefined;
     if (parts.chosen !== undefined && same(parts.chosen)) return parts.chosen;
     const near = parts.source.findLoaded(value, (item) => this.itemValue(item), (a, b) => this.sameValue(a as V, b as V));
     if (near !== undefined) return near;
@@ -407,7 +429,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private valueLook(items: readonly T[], value: V | null, valueText: string): { item?: T; text: string; state: ValueState } {
     const item = this.itemOfValue(items, value);
     if (item !== undefined) return { item, text: this.itemText(item), state: 'shown' };
-    if (value === null || value === undefined) return { text: '', state: 'shown' };
+    if (isEmptyKey(value)) return { text: '', state: 'shown' };
     const parts = this.dropParts;
     if (!parts.source.dataSource) return { text: String(value), state: 'shown' };
     const known = parts.source.known(value);
@@ -458,21 +480,20 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   }
 
   private listen(): void {
-    const display = this.dropParts.display;
-    display.addEventListener('keydown', (e) => this.displayKeyDown(e));
-    const inBox = (e: Event) => {
-      const target = e.target as Element;
-      return !!target.closest('.mx-field__box') && !target.closest('.mx-field__button');
-    };
-    // A click anywhere in the box toggles the list; focus stays on the field.
-    this.element.addEventListener('mousedown', (e) => {
-      if (!inBox(e) || e.target === display) return;
+    const parts = this.dropParts;
+    this.controlPart.motif.on('keydown', (_, e) => this.displayKeyDown(e));
+    // The box's buttons (the clear button, the buttons given) do their own work.
+    const onButton = (e: Event) => this.boxButtons.some((button) => button.motif.isEventFrom(e));
+    // A click anywhere else in the box toggles the list; focus stays on the field.
+    this.boxPart.motif.on('mousedown', (_, e) => {
+      // A press on the field itself, not on its text, focuses it as any press does.
+      if (onButton(e) || (this.controlPart.motif.isEventFrom(e) && !parts.textPart.motif.isEventFrom(e))) return;
       e.preventDefault();
       this.focus();
     });
-    this.element.addEventListener('click', (e) => {
-      if (!inBox(e)) return;
-      if (this.dropParts.popup?.isOpen) this.close();
+    this.boxPart.motif.on('click', (_, e) => {
+      if (onButton(e)) return;
+      if (parts.popup?.isOpen) this.close();
       else this.open();
     });
   }
@@ -535,11 +556,10 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private pointAt(index: number): void {
     const parts = this.dropParts;
     const id = index >= 0 && parts.list ? parts.list.idOf(index) : null;
-    for (const el of [parts.display, parts.search?.inputElement]) {
-      if (!el) continue;
-      if (id && parts.popup?.isOpen) el.setAttribute('aria-activedescendant', id);
-      else el.removeAttribute('aria-activedescendant');
-    }
+    put(this.controlPart, 'aria-activedescendant', id && parts.popup?.isOpen ? id : null);
+    const input = parts.search?.inputPart;
+    if (!input) return;
+    put(input, 'aria-activedescendant', id && parts.popup?.isOpen ? id : null);
   }
 
   private choose(item: T, event: Event, refocus = true): void {
@@ -553,7 +573,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     const parts = this.dropParts;
     const popup = new Popup();
     popup.matchWidth = this.peekProperty('matchWidth') !== false;
-    popup.element.classList.add('mx-drop-down__popup');
+    popup.class.add('mx-drop-down__popup');
     this.controls.add(popup);
     if (this.peekProperty('searchEnabled')) {
       const search = new TextBox({ type: 'search', labelMode: 'hidden', stretch: true, autocomplete: 'off' });
@@ -561,7 +581,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
         search.label = uiLocale.strings.search;
         search.placeholder = uiLocale.strings.search;
       });
-      search.element.classList.add('mx-drop-down__search');
+      search.class.add('mx-drop-down__search');
       search.onValueChanged((e) => {
         parts.filter = e.value;
         if (parts.source.dataSource) {
@@ -577,7 +597,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
         this.dropParts.list!.move('first');
         this.pointAt(this.dropParts.list!.activeIndex);
       });
-      search.inputElement.addEventListener('keydown', (e) => this.listKeyDown(e, false));
+      // The input's keys reach the search box.
+      search.motif.on('keydown', (_, e) => this.listKeyDown(e, false));
       popup.controls.add(search);
       parts.search = search;
     }
@@ -590,15 +611,15 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     list.onChosen((e) => this.choose(e.item, e.event));
     popup.controls.add(list);
     parts.list = list;
-    parts.display.setAttribute('aria-controls', list.element.id);
-    parts.search?.inputElement.setAttribute('aria-controls', list.element.id);
+    put(this.controlPart, 'aria-controls', list.id);
+    if (parts.search) put(parts.search.inputPart, 'aria-controls', list.id);
     this.popupCreated(popup, list);
     popup.onClosed((reason) => {
       parts.stopList?.();
       parts.stopList = null;
       this.setProperty('opened', false);
-      this.element.removeAttribute('data-open');
-      parts.display.setAttribute('aria-expanded', 'false');
+      mark(this, 'data-open', false);
+      put(this.controlPart, 'aria-expanded', 'false');
       this.pointAt(-1);
       parts.closed.fire(reason);
     });
@@ -609,11 +630,16 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private watchList(): void {
     const parts = this.dropParts;
     parts.stopList?.();
+    parts.listShown = undefined;
     parts.stopList = follow(
       this,
       'list',
-      () => [this.items, this.getProperty('textField'), this.getProperty('iconField'), this.getProperty('groupField'), this.getProperty('itemTemplate')],
-      () => {
+      () => [this.items, this.getProperty('textField'), this.getProperty('iconField'), this.getProperty('groupField'), this.getProperty('itemTemplate'), this.getProperty('optionDrawer')],
+      (looks) => {
+        // A `reState()` that finds the same items and fields leaves the list as it is.
+        const same = parts.listShown?.length === looks.length && looks.every((v, i) => Object.is(v, parts.listShown![i]));
+        parts.listShown = looks;
+        if (same) return;
         this.drawList();
         parts.popup?.place();
       },
@@ -627,7 +653,15 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     const group = this.peekProperty<ItemField<T>>('groupField');
     list.iconOf = icon === undefined ? null : (item) => readItemField(item, icon, 'icon') as IconSource | undefined;
     list.groupOf = group === undefined ? null : (item) => (readItemField(item, group, 'group') as string | undefined) ?? undefined;
-    list.draw = this.peekProperty<Template<T>>('itemTemplate') ?? null;
+    // A subclass's drawer gets the option's parts; the app's template gets the item and its place only.
+    const drawer = this.peekProperty<OptionDrawer<T> | undefined>('optionDrawer');
+    const template = this.peekProperty<Template<T>>('itemTemplate');
+    if (!drawer) list.draw = template ?? null;
+    else if (parts.drawnWith?.drawer === drawer) list.draw = parts.drawnWith.draw;
+    else {
+      parts.drawnWith = { drawer, draw: (item, _host, option) => drawer(item, option) };
+      list.draw = parts.drawnWith.draw;
+    }
     if (parts.source.dataSource) {
       list.groupOf = null;
       list.setSource(parts.source);
@@ -641,35 +675,44 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     }
   }
 
-  private renderField(items: readonly T[], value: V | null, valueText: string, placeholder: string, template: Template<T>): void {
+  /** The value in the field: what shows it changes only when it does, the marks and the title as they are. */
+  private renderField(tick: string, items: readonly T[], value: V | null, valueText: string, placeholder: string, template: Template<T>): void {
     const parts = this.dropParts;
     const { item, text, state } = this.valueLook(items, value, valueText);
+    const shown = [tick, item, text, state, placeholder, template];
+    const same = parts.fieldShown?.length === shown.length && shown.every((v, i) => Object.is(v, parts.fieldShown![i]));
+    parts.fieldShown = shown;
+    if (same) return;
     parts.releaseField();
     parts.releaseField = () => {};
     parts.state = state;
     const loading = state === 'loading';
     const empty = item === undefined && !text && !loading;
-    parts.text.toggleAttribute('data-placeholder', empty);
-    parts.text.toggleAttribute('data-missing', state === 'missing' || state === 'failed');
-    this.element.toggleAttribute('data-loading', loading);
-    if (loading) parts.display.setAttribute('aria-busy', 'true');
-    else parts.display.removeAttribute('aria-busy');
+    mark(parts.textPart, 'data-placeholder', empty);
+    mark(parts.textPart, 'data-missing', state === 'missing' || state === 'failed');
+    mark(this, 'data-loading', loading);
+    flag(this.controlPart, 'aria-busy', loading);
     if (state !== 'shown') this.followLanguage();
-    if (loading) {
-      const hidden = document.createElement('span');
-      hidden.className = 'mx-sr-only';
-      hidden.textContent = uiLocale.strings.loading;
-      parts.text.replaceChildren(hidden);
-      this.addSpinner();
-    } else if (item !== undefined && template) {
-      parts.text.replaceChildren();
-      parts.releaseField = template(item, parts.text) ?? (() => {});
-    } else {
-      parts.text.textContent = empty ? placeholder : text;
+    // The kit's parts stay and are written in place; only what the app's template drew goes, drawn for the new item.
+    const drawn = !loading && item !== undefined && !!template;
+    if (loading && !parts.waitPart) parts.waitPart = part<HTMLSpanElement>(parts.textPart, 'span', 'mx-sr-only');
+    if (parts.waitPart) {
+      if (loading) writeText(parts.waitPart, uiLocale.strings.loading);
+      kept(parts.waitPart, loading);
     }
-    if (state === 'missing' || state === 'failed') parts.text.title = state === 'failed' ? uiLocale.strings.loadFailed : uiLocale.strings.notInList;
-    else parts.text.removeAttribute('title');
-    this.element.toggleAttribute('data-placeholder', !!placeholder);
+    if (loading) this.addSpinner();
+    if (drawn && !parts.drawnPart) parts.drawnPart = part<HTMLSpanElement>(parts.textPart, 'span', 'mx-drop-down__drawn');
+    if (parts.drawnPart) {
+      clearParts(parts.drawnPart);
+      parts.drawnPart.setText('');
+      if (drawn) parts.releaseField = template!(item as T, parts.drawnPart) ?? (() => {});
+      kept(parts.drawnPart, drawn);
+    }
+    writeText(parts.valuePart, loading || drawn ? '' : empty ? placeholder : text);
+    kept(parts.valuePart, !loading && !drawn);
+    if (state === 'missing' || state === 'failed') put(parts.textPart, 'title', state === 'failed' ? uiLocale.strings.loadFailed : uiLocale.strings.notInList);
+    else put(parts.textPart, 'title', null);
+    mark(this, 'data-placeholder', !!placeholder);
   }
 
   /** The texts of the wait and of a missing key are the kit's: the field draws them again when its language changes. */
@@ -686,11 +729,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private addSpinner(): void {
     const parts = this.dropParts;
     if (parts.spinner) return;
-    const spinner = document.createElement('span');
-    spinner.className = 'mx-drop-down__spinner';
-    spinner.setAttribute('aria-hidden', 'true');
-    this.area('actions').append(spinner);
-    parts.spinner = spinner;
+    parts.spinner = part<HTMLSpanElement>(this.area('actions'), 'span', 'mx-drop-down__spinner');
+    parts.spinner.attr.add({ 'aria-hidden': 'true' });
   }
 
   private renderClear(): void {

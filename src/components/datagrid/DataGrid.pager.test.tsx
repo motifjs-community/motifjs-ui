@@ -220,14 +220,14 @@ describe('DataGrid pager', () => {
 
   it('turns the page with PageDown and PageUp, or moves rows with pageKeys "rows"', async () => {
     const grid = await make();
-    const cell = grid.getCellElement(0, 'name')!;
+    const cell = grid.getCellPart(0, 'name')!.element;
     cell.focus();
     await settle();
     key(cell, 'PageDown');
     await settle();
     expect(grid.page).toBe(1);
     expect(grid.focusedRowIndex).toBe(20);
-    expect(document.activeElement).toBe(grid.getCellElement(20, 'name'));
+    expect(document.activeElement).toBe(grid.getCellPart(20, 'name')?.element);
     key(document.activeElement!, 'PageUp');
     await settle();
     expect(grid.page).toBe(0);

@@ -39,7 +39,7 @@
         "$description": "The access key's mark in a top item's label (`shown`: while Alt is held, or always); the kit's own mark is the access key's.",
         "selector": ":where(.mx-menubar__item) .mx-access-key",
         "states": {
-          "shown": ":root:is([data-mx-alt], [data-mx-access-keys='always']) :where(.mx-menubar__item) .mx-access-key"
+          "shown": ":is([data-mx-alt], :root[data-mx-access-keys='always']) :where(.mx-menubar__item) .mx-access-key"
         }
       }
     }

@@ -334,7 +334,7 @@ describe('DataGrid filter panel', () => {
     const b = g.filterBuilderInstance!;
     expect(b.addGroup()).toBeNull();
     expect(b.groupOperations).toEqual(['and', 'or']);
-    expect(b.treeElement!.querySelector('[data-part="group"] .mx-button__face')!.textContent).toContain('AND');
+    expect(b.treePart!.element.querySelector('[data-part="group"] .mx-button__face')!.textContent).toContain('AND');
     g.filterBuilder.maxGroupLevel = 1;
     await settle();
     expect(b.addGroup()).not.toBeNull();

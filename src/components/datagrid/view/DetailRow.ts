@@ -1,9 +1,10 @@
-import { ComponentBase, createSignal, untracked } from '@motifx/core';
+import { Component, ComponentBase, createSignal, untracked } from '@motifx/core';
 import type { DetailContext } from '../detail-context';
 import type { GridModel } from '../model/GridModel';
 import { AdaptiveForm } from './AdaptiveForm';
 import type { DetailHost } from './detail-host';
-import { isNode } from '../../../core/node-kind';
+import { textPart } from '../../../core/draw-parts';
+import { css, mark, put } from '../../../core/part-writes';
 
 /**
  * The details of one row (`masterDetail`): a row element under its master row with one cell across
@@ -11,13 +12,17 @@ import { isNode } from '../../../core/node-kind';
  * row, is created the first time the details show and is kept while the row is open, also out of view
  * (parked: laid out but not drawn, so the content keeps its scroll positions), until it is disposed.
  * A row's adaptive detail (`kind: 'adaptive'`, the values of the columns the width hides) is one too,
- * with content of its own (`make`).
+ * with content of its own (`make`). The row, its cell and the box are components: the content is a
+ * child of the box.
  */
 export class DetailRow<T> {
+  /** The row's component, a child of the body. */
+  readonly part: Component<HTMLDivElement>;
   readonly element: HTMLDivElement;
-  readonly cell: HTMLDivElement;
+  /** The one cell, across the grid. */
+  readonly cellPart: Component<HTMLDivElement>;
   /** What holds the content, named after the row (a cell named apart from its content would read wrong). */
-  private readonly box: HTMLDivElement;
+  private readonly boxPart: Component<HTMLDivElement>;
   /** Grid index of the master row while drawn; -1 while parked. */
   index = -1;
   /** Measured height; 0 until it was drawn. */
@@ -26,6 +31,7 @@ export class DetailRow<T> {
   seen = 0;
   private content: ComponentBase | null = null;
   private built = false;
+  private drawn = false;
   private readonly version = createSignal(0);
 
   constructor(
@@ -40,24 +46,22 @@ export class DetailRow<T> {
     /** Makes the content instead of `masterDetail.template`. */
     private readonly make: ((ctx: DetailContext<T>) => unknown) | null = null,
   ) {
-    const el = document.createElement('div');
-    el.className = kind === 'adaptive' ? 'mx-data-grid__detail-row mx-data-grid__adaptive-row' : 'mx-data-grid__detail-row';
-    el.setAttribute('role', 'row');
-    el.id = elementId;
-    el.hidden = true;
-    const cell = document.createElement('div');
-    cell.className = 'mx-data-grid__detail-cell';
-    cell.setAttribute('role', 'gridcell');
-    cell.setAttribute('aria-colindex', '1');
-    cell.tabIndex = -1;
-    const box = document.createElement('div');
-    box.className = 'mx-data-grid__detail-content';
-    box.setAttribute('role', 'group');
-    cell.append(box);
-    el.append(cell);
+    this.part = new Component<HTMLDivElement>('div');
+    const el = this.part.element;
+    this.part.class.add(kind === 'adaptive' ? 'mx-data-grid__detail-row mx-data-grid__adaptive-row' : 'mx-data-grid__detail-row');
+    this.part.attr.add({ role: 'row', id: elementId });
+    mark(this.part, 'hidden', true);
+    const cellPart = new Component<HTMLDivElement>('div');
+    cellPart.class.add('mx-data-grid__detail-cell');
+    cellPart.attr.add({ role: 'gridcell', 'aria-colindex': '1' });
+    put(cellPart, 'tabindex', '-1');
+    this.boxPart = new Component<HTMLDivElement>('div');
+    this.boxPart.class.add('mx-data-grid__detail-content');
+    this.boxPart.attr.add({ role: 'group' });
+    cellPart.controls.add(this.boxPart);
+    this.part.controls.add(cellPart);
     this.element = el;
-    this.cell = cell;
-    this.box = box;
+    this.cellPart = cellPart;
   }
 
   /** What the content was created as, once it is: a component, or `null`. */
@@ -67,7 +71,7 @@ export class DetailRow<T> {
 
   /** Whether it is drawn now. */
   get shown(): boolean {
-    return !this.element.hidden;
+    return this.drawn;
   }
 
   /** Draws the details of grid row `index` at `top`, as wide as the viewport and kept in it while the rows scroll sideways. */
@@ -77,25 +81,23 @@ export class DetailRow<T> {
       this.row = row;
       this.version.value = this.version.peek() + 1;
     }
-    const el = this.element;
     if (!this.built) this.build();
-    el.hidden = false;
-    el.style.inlineSize = `${width}px`;
-    el.style.transform = `translate(${left}px, ${top}px)`;
+    this.drawn = true;
+    mark(this.part, 'hidden', false);
+    css(this.part, 'inline-size', `${width}px`);
+    css(this.part, 'transform', `translate(${left}px, ${top}px)`);
     const label = this.model.text(this.kind === 'adaptive' ? 'gridAdaptiveOf' : 'gridDetailsOf', { row: this.model.formatter.count(index + 1) });
-    if (this.box.getAttribute('aria-label') !== label) this.box.setAttribute('aria-label', label);
+    put(this.boxPart, 'aria-label', label);
     // Grouped, the grid is a tree: the details sit at the level of their row.
     const levels = this.model.groups.state.items.length;
-    if (levels) el.setAttribute('aria-level', String(levels + 1));
-    else el.removeAttribute('aria-level');
-    const span = String(Math.max(1, columns));
-    if (this.cell.getAttribute('aria-colspan') !== span) this.cell.setAttribute('aria-colspan', span);
+    if (levels) put(this.part, 'aria-level', String(levels + 1));
+    else put(this.part, 'aria-level', null);
+    put(this.cellPart, 'aria-colspan', String(Math.max(1, columns)));
     // A height of its own: the content scrolls inside.
     const fixed = this.kind === 'detail' ? this.model.details.options.get('height') : undefined;
     const height = typeof fixed === 'function' ? untracked(() => fixed(row)) : fixed;
-    const size = height === undefined ? '' : `${Math.max(0, height)}px`;
-    if (this.cell.style.blockSize !== size) this.cell.style.blockSize = size;
-    this.cell.toggleAttribute('data-fixed', height !== undefined);
+    css(this.cellPart, 'block-size', height === undefined ? '' : `${Math.max(0, height)}px`);
+    mark(this.cellPart, 'data-fixed', height !== undefined);
   }
 
   /** What the content reads of the row through its context is read again (`grid.repaint()`); its adaptive form draws its texts again. */
@@ -106,18 +108,18 @@ export class DetailRow<T> {
 
   /** Out of view: kept, not drawn. */
   park() {
-    if (this.element.hidden) return;
-    this.element.hidden = true;
-    this.element.style.transform = '';
+    if (!this.drawn) return;
+    this.drawn = false;
+    mark(this.part, 'hidden', true);
+    css(this.part, 'transform', '');
     this.index = -1;
   }
 
   /** Disposes the content and takes the row out of the body. */
   dispose() {
-    const content = this.content;
     this.content = null;
-    if (content && !content.isDisposed) void content.dispose();
-    this.element.remove();
+    if (this.part.parent) this.part.parent.controls.remove(this.part);
+    else if (!this.part.isDisposed) void this.part.dispose({ skipLeaveTransition: true });
   }
 
   /** Makes the content from the template, once. */
@@ -127,11 +129,9 @@ export class DetailRow<T> {
     if (!template) return;
     const content = untracked(() => template(this.context()));
     if (content instanceof ComponentBase) {
-      this.host.owner.controls.add(content);
-      this.box.append(content.element as Node);
+      this.boxPart.controls.add(content);
       this.content = content;
-    } else if (isNode(content)) this.box.append(content);
-    else if (content !== undefined && content !== null) this.box.append(String(content));
+    } else if (content !== undefined && content !== null) textPart(this.boxPart, String(content));
   }
 
   private context(): DetailContext<T> {

@@ -1,5 +1,6 @@
 import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { css, put } from '../../core/part-writes';
 import { ChildSettings } from './ChildSettings';
 import type { Dock } from './dock';
 import type { DockChildProps } from './dock-child-props';
@@ -58,9 +59,9 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
   constructor(props?: IBaseProp<DockPanelProps>) {
     super('div', props);
     const own = (this.props ?? {}) as DockPanelProps;
-    this.element.classList.add('mx-dock-panel');
+    this.class.add('mx-dock-panel');
     this.observeProperty('gap', () => this.arrange());
-    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(this.element, padding));
+    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(this, padding));
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     void this.settings;
     if (this.childs?.length) this.controls.add(...this.childs);
@@ -100,8 +101,8 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
     if (self[CHILDREN]) return self[CHILDREN];
     self[CHILDREN] = new ChildSettings(this, SETTINGS, {
       changed: () => this.arrange(),
-      left: (_child, el) => {
-        this.clear(el);
+      left: (child) => {
+        this.clear(child);
         this.arrange();
       },
     });
@@ -115,13 +116,12 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
     const count = (dock: Dock) => docks.filter((d) => d === dock).length;
     const [tops, bottoms, starts, ends] = [count('top'), count('bottom'), count('start'), count('end')];
     const tracks = (before: number, after: number) => [...Array<string>(before).fill('auto'), 'minmax(0, 1fr)', ...Array<string>(after).fill('auto')].join(' ');
-    this.element.style.setProperty('grid-template-rows', tracks(tops, bottoms));
-    this.element.style.setProperty('grid-template-columns', tracks(starts, ends));
+    css(this, 'grid-template-rows', tracks(tops, bottoms));
+    css(this, 'grid-template-columns', tracks(starts, ends));
 
     const gap = spaceValue(this.peekProperty<LayoutSpace>('gap'));
     let [t, b, s, e] = [0, 0, 0, 0];
     children.forEach((child, i) => {
-      const el = child.element as HTMLElement;
       const dock = docks[i];
       const across = (from: number, to: number) => `${from + 1} / ${-(to + 1)}`;
       let row = '';
@@ -131,21 +131,20 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
       else if (dock === 'start') [row, column] = [across(t, b), `${s + 1} / ${++s + 1}`];
       else if (dock === 'end') [row, column] = [across(t, b), `${-(e + 2)} / ${-(++e)}`];
       else if (dock === 'fill') [row, column] = [across(tops, bottoms), across(starts, ends)];
-      el.dataset.mxDock = dock;
-      this.write(el, 'grid-row', row);
-      this.write(el, 'grid-column', column);
-      for (const [side, margin] of Object.entries(FACING)) this.write(el, margin, side === dock ? gap : '');
-      for (const [name, css] of ANCHORS) this.write(el, css, dock === 'float' ? length(this.settings.get(child, name)) : '');
+      put(child, 'data-mx-dock', dock);
+      this.write(child, 'grid-row', row);
+      this.write(child, 'grid-column', column);
+      for (const [side, margin] of Object.entries(FACING)) this.write(child, margin, side === dock ? gap : '');
+      for (const [name, css] of ANCHORS) this.write(child, css, dock === 'float' ? length(this.settings.get(child, name)) : '');
     });
   }
 
-  private clear(el: HTMLElement): void {
-    delete el.dataset.mxDock;
-    for (const name of ['grid-row', 'grid-column', ...Object.values(FACING), ...ANCHORS.map(([, css]) => css)]) el.style.removeProperty(name);
+  private clear(child: ComponentBase): void {
+    put(child, 'data-mx-dock', null);
+    for (const name of ['grid-row', 'grid-column', ...Object.values(FACING), ...ANCHORS.map(([, css]) => css)]) this.write(child, name, '');
   }
 
-  private write(el: HTMLElement, name: string, value: string): void {
-    if (value) el.style.setProperty(name, value);
-    else el.style.removeProperty(name);
+  private write(child: ComponentBase, name: string, value: string): void {
+    css(child, name, value);
   }
 }

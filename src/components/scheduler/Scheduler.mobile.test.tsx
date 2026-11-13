@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { Component } from '@motifx/core';
+import { mount, mountHost } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { windowStack } from '../../core/window-stack';
 import { Scheduler } from './Scheduler';
 import { SchedulerTouch } from './view/SchedulerTouch';
@@ -58,11 +60,10 @@ function screen(coarse: boolean) {
   };
 }
 
-/** The scheduler's element measures `width` pixels. */
+/** The scheduler's element measures `width` pixels (its size watch reads the border box first). */
 function wide(width: number) {
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-    const w = this.classList.contains('mx-scheduler') ? width : 0;
-    return { x: 0, y: 0, top: 0, left: 0, right: w, bottom: 0, width: w, height: 0, toJSON: () => ({}) } as DOMRect;
+  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+    return this.classList.contains('mx-scheduler') ? width : 0;
   });
 }
 
@@ -113,6 +114,8 @@ describe('Scheduler: presentation', () => {
     const said: string[] = [];
     const s = make({ onPresentationChanged: (e: { from: string; to: string; width: number }) => said.push(`${e.from}>${e.to}@${e.width}`) });
     await settle();
+    // Its width is read with the window's next frame.
+    await whenMeasured(s);
     // Narrow with a mouse: a desktop.
     expect(s.currentPresentation).toBe('desktop');
     pointer.set(true);
@@ -134,7 +137,7 @@ describe('Scheduler: presentation', () => {
     const s = make({ presentation: 'phone', currentView: 'day', phoneView: null });
     await settle();
     expect(s.currentView).toBe('day');
-    s.showTooltip(s.appointments[0], s.element);
+    s.showTooltip(s.appointments[0], s);
     await settle();
     const sheet = s.element.querySelector<HTMLElement>('.mx-scheduler__tooltip-sheet');
     expect(sheet?.classList.contains('mx-action-sheet')).toBe(true);
@@ -161,20 +164,22 @@ function touch(type: string, target: Element, points: { x: number; y: number; id
 }
 
 function gestures(overrides: Partial<TouchHost> = {}) {
-  const root = document.createElement('div');
+  const scrollerPart = new Component<HTMLDivElement>('div');
+  const contentPart = new Component<HTMLDivElement>('div');
+  const rootPart = mountHost(contentPart);
+  contentPart.controls.add(scrollerPart);
+  const root = rootPart.element;
+  const content = contentPart.element;
+  const scroller = scrollerPart.element;
   root.className = 'mx-scheduler';
-  const content = document.createElement('div');
   content.className = 'mx-scheduler__content';
-  const scroller = document.createElement('div');
-  content.append(scroller);
-  root.append(content);
-  document.body.append(root);
   Object.defineProperty(content, 'clientWidth', { value: 400 });
   const log: string[] = [];
   let zoom = 1;
   const host: TouchHost = {
-    root: () => root,
-    scroller: () => scroller,
+    root: () => rootPart,
+    content: () => contentPart,
+    scroller: () => scrollerPart,
     kind: () => 'time',
     dragging: () => false,
     swipeNavigation: () => true,

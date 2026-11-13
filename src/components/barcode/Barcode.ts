@@ -1,10 +1,13 @@
 import { Emitter, type Bind, type Component, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, mark, part, shown, text } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
+import { isInPage, measure, onLookChange, styleOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { windowOf } from "../../core/page-documents";
+import { css, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { encodeBarcode, type BarcodeFormat, type BarcodeModel } from "../../parts/code/barcode-encode";
-import { codeCanvas, codeSvgDocument, createCodeSvg, drawCodeSvg, showSvg, type CodeImage } from "../../parts/code/code-image";
+import { codeCanvas, codeSvgDocument, createCodeSvgParts, rectsPath, type CodeImage } from "../../parts/code/code-image";
 import type { BarcodeExportOptions } from "./barcode-export-options";
 import type { BarcodeFailedEventArgs } from "./barcode-failed-event-args";
 import type { BarcodeProps } from "./barcode-props";
@@ -30,23 +33,27 @@ const GUARDED: readonly BarcodeFormat[] = ['ean13', 'ean8', 'upca'];
 export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
     encodeFailed = new Emitter<BarcodeFailedEventArgs>();
     svg: SVGSVGElement;
+    svgPart: Component<SVGSVGElement>;
     path: SVGPathElement;
+    pathPart: Component<SVGPathElement>;
     textPart: Component<HTMLSpanElement>;
     model: BarcodeModel | null = null;
+    invalid = false;
+    languageHeight = 64;
 
     constructor(props?: IBaseProp<BarcodeProps>) {
         super('div', props);
         const own = (this.props ?? {}) as BarcodeProps;
-        const el = this.element;
-        el.classList.add('mx-barcode');
-        el.setAttribute('role', 'img');
-        const { svg, path } = createCodeSvg(el.ownerDocument);
-        this.svg = svg;
-        this.path = path;
-        svg.classList.add('mx-barcode__svg');
-        el.append(svg);
+        this.class.add('mx-barcode');
+        this.attr.add({ role: 'img' });
+        const { svg, path } = createCodeSvgParts(this);
+        this.svgPart = svg;
+        this.svg = svg.element;
+        this.pathPart = path;
+        this.path = path.element;
+        svg.class.add('mx-barcode__svg');
         this.textPart = part<HTMLSpanElement>(this, 'span', 'mx-barcode__text');
-        this.textPart.element.setAttribute('aria-hidden', 'true');
+        this.textPart.attr.add({ 'aria-hidden': 'true' });
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onEncodeFailed) this.onEncodeFailed(own.onEncodeFailed);
 
@@ -54,6 +61,7 @@ export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
         this.observeProperty('showText', () => this.drawText());
         this.observeProperty('label', () => this.drawName());
         onLanguage(this, () => this.drawName());
+        this.motif.setDisposable(onLookChange(this, () => measure(this, this.readHeight, this.useHeight)));
         this.motif.setDisposable(() => this.encodeFailed.dispose());
         this.render();
     }
@@ -114,7 +122,7 @@ export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
 
     /** Indicates that the value could not be drawn. */
     get isInvalid(): boolean {
-        return this.element.hasAttribute('data-invalid');
+        return this.invalid;
     }
 
     /** The text under the bars, with the check digit where the format has one. */
@@ -134,10 +142,11 @@ export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
     /** The code as a data URL, a PNG by default. */
     toDataURL(type = 'image/png', options: BarcodeExportOptions = {}): string {
         const image = this.imageOf(IMAGE_BAR);
-        if (!image) return '';
+        const doc = windowOf(this)?.document;
+        if (!image || !doc) return '';
         const look = this.exportLook(options);
         const room = this.withTextRoom(image);
-        const canvas = codeCanvas(this.element.ownerDocument, room, look);
+        const canvas = codeCanvas(doc, room, look);
         const context = canvas.getContext('2d');
         if (context && this.showText) {
             context.fillStyle = look.color;
@@ -173,7 +182,6 @@ export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
     }
 
     render(): void {
-        const el = this.element;
         const value = this.value;
         let model: BarcodeModel | null = null;
         let failed = false;
@@ -185,38 +193,46 @@ export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
             }
         }
         this.model = model;
-        mark(el, 'data-invalid', failed);
-        showSvg(this.svg, !!model);
-        if (model) {
-            const barHeight = (this.height ?? this.barHeightOfLanguage()) / this.moduleWidth;
-            const image = this.imageOf(barHeight) as CodeImage;
-            drawCodeSvg(this.svg, this.path, image);
-            this.svg.setAttribute('preserveAspectRatio', 'none');
-            css(this.svg as unknown as HTMLElement, 'inline-size', `${image.width * this.moduleWidth}px`);
-            css(this.svg as unknown as HTMLElement, 'block-size', `${image.height * this.moduleWidth}px`);
-        }
+        this.invalid = failed;
+        mark(this, 'data-invalid', failed);
+        mark(this.svgPart, 'hidden', !model);
+        this.drawBars();
         this.drawText();
         this.drawName();
         if (failed) this.encodeFailed.fire({ value, format: this.format, source: this });
     }
 
-    // The height the language gives, read once the bar is in the page.
-    barHeightOfLanguage(): number {
-        const given = this.element.isConnected ? parseFloat(getComputedStyle(this.element).getPropertyValue('--_barcode-height')) : NaN;
-        return Number.isFinite(given) && given > 0 ? given : 64;
+    drawBars(): void {
+        if (!this.model) return;
+        const barHeight = (this.height ?? this.languageHeight) / this.moduleWidth;
+        const image = this.imageOf(barHeight) as CodeImage;
+        put(this.svgPart, 'viewBox', `0 0 ${image.width} ${image.height}`);
+        put(this.pathPart, 'd', rectsPath(image.rects));
+        put(this.svgPart, 'preserveAspectRatio', 'none');
+        css(this.svgPart, 'inline-size', `${image.width * this.moduleWidth}px`);
+        css(this.svgPart, 'block-size', `${image.height * this.moduleWidth}px`);
     }
 
+    // The height the language gives; none while the bar is out of the page, which keeps the last one.
+    readHeight = (): number => (isInPage(this) ? parseFloat(styleOf(this, ['--_barcode-height'])['--_barcode-height']) : NaN);
+
+    useHeight = (given: number): void => {
+        if (!(given > 0) || given === this.languageHeight) return;
+        this.languageHeight = given;
+        this.drawBars();
+    };
+
     override onMounted(): void {
-        this.render();
+        measure(this, this.readHeight, this.useHeight);
     }
 
     drawText(): void {
         const on = this.showText && !!this.model;
-        text(this.textPart.element, this.codeText);
-        shown(this.textPart.element, on);
+        text(this.textPart, this.codeText);
+        shown(this.textPart, on);
     }
 
     drawName(): void {
-        this.element.setAttribute('aria-label', this.label || uiLocale.text('barcodeLabel', { value: this.codeText || this.value }));
+        put(this, 'aria-label', this.label || uiLocale.text('barcodeLabel', { value: this.codeText || this.value }));
     }
 }

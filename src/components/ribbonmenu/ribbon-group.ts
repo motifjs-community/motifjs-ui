@@ -13,7 +13,7 @@ export interface RibbonGroup {
     commands: Bind<readonly RibbonCommand[]>;
     /** The name of a glyph, for the button the group folds into when there is no room. */
     glyph?: Bind<string>;
-    /** An image, an element or a component, used instead of `glyph`. */
+    /** An image address or a component, used instead of `glyph`. */
     icon?: Bind<IconSource | null | undefined>;
     /** Groups with a lower priority give way first when there is no room; of equals, the last first. The default is `0`. */
     priority?: Bind<number>;

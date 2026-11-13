@@ -76,7 +76,7 @@ const key = (el: Element, k: string, init: KeyboardEventInit = {}) => el.dispatc
 
 /** Opens a column's header filter and waits for its values. */
 async function openValues(grid: DataGrid<any>, field: string) {
-  (grid as any).openHeaderFilter(field, grid.element.querySelector(`[role="columnheader"][data-field="${field}"]`));
+  (grid as any).openHeaderFilter(field, (grid as any).headerAnchor(field));
   await settle();
   const list = (grid as any).headerFilter.listBox;
   return { list, values: () => list.listItems.loaded.map((v: { text: string; count?: number }) => `${v.text}:${v.count ?? ''}`) as string[] };

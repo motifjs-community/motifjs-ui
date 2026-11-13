@@ -1,12 +1,28 @@
-import { Component, Emitter, type Event as MotifEvent } from '@motifx/core';
-import { deepActiveElement } from '../../core/focus';
-import { isNode } from '../../core/node-kind';
-import { placePopup } from './place-popup';
+import { Component, ComponentBase, Emitter, type Event as MotifEvent } from '@motifx/core';
+import { Control } from '../../core/control';
+import { focusGoesInto, focusOn, holdsFocus } from '../../core/focus';
+import type { FocusMark } from '../../core/focus-mark';
+import { isInPage, sameWindow } from '../../core/measure';
+import { windowOf } from '../../core/page-documents';
+import { placeOnPage } from '../../core/page-layer';
+import { onDocument, onWindow } from '../../core/window-events';
+import { callNow, mark, put } from '../../core/part-writes';
+import { placeBeside } from './place-popup';
 import type { PopupCloseReason } from './popup-close-reason';
 import type { PopupOpenOptions } from './popup-open-options';
 import type { PopupPlacement } from './popup-placement';
 
 const hasPopover = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
+
+/** The popups that are open now, in every document. */
+const openPopups = new Set<Popup>();
+
+/** Gives focus back: a control takes it where it decides, a part on itself, a remembered place where it was. */
+function giveFocusTo(back: ComponentBase | FocusMark): void {
+  if (back instanceof Control) back.focus();
+  else if (back instanceof ComponentBase) focusOn(back);
+  else back.restore();
+}
 
 /**
  * A surface shown next to an anchor, above everything else (the browser's top layer): a menu, a
@@ -23,24 +39,36 @@ export class Popup extends Component<HTMLDivElement> {
   /** Makes the popup at least as wide as the anchor. */
   matchWidth = true;
 
-  private anchor: HTMLElement | null = null;
+  private anchor: ComponentBase | null = null;
   /** The document it follows its anchor in while it is open. */
   private watched: Document | null = null;
-  private toggle: Element | null = null;
-  private returnFocus: HTMLElement | null = null;
+  /** Stops listening to the page while it is open. */
+  private stopPage: (() => void)[] = [];
+  private toggle: ComponentBase | null = null;
+  private returnFocus: ComponentBase | FocusMark | null = null;
+  /** Where it belongs while it shows in another document's layer: it goes back there when it closes. */
+  private home: ComponentBase | null = null;
+  /** It is in the browser's top layer (`showPopover`). */
+  private inTopLayer = false;
   private frame = 0;
   private readonly closedEmitter = new Emitter<PopupCloseReason>();
 
   readonly onClosed: MotifEvent<PopupCloseReason> = this.closedEmitter.event;
 
+  /** Whether an event came from inside a popup that is open now, whoever opened it. */
+  static isEventFromAnyOpen(e: Event): boolean {
+    for (const popup of openPopups) if (popup.motif.isEventFrom(e)) return true;
+    return false;
+  }
+
   override onConfigured(): void {
     this.class.add('mx-popup');
-    this.element.tabIndex = -1;
-    if (hasPopover) this.element.popover = 'manual';
-    else this.element.hidden = true;
-    this.element.addEventListener('keydown', (e) => this.onKeyDown(e));
-    this.element.addEventListener('focusout', (e) => this.onFocusOut(e));
-    this.element.addEventListener('click', (e) => e.stopPropagation());
+    put(this, 'tabindex', '-1');
+    if (hasPopover) this.attr.add({ popover: 'manual' });
+    else mark(this, 'hidden', true);
+    this.motif.on('keydown', (_, e) => this.onKeyDown(e));
+    this.motif.on('focusout', (_, e) => this.onFocusOut(e));
+    this.motif.on('click', (_, e) => e.stopPropagation());
     this.motif.setDisposable(() => {
       this.stopFollowing();
       this.closedEmitter.dispose();
@@ -52,74 +80,101 @@ export class Popup extends Component<HTMLDivElement> {
   }
 
   /** Opens next to `anchor`, or moves there when it is open. */
-  open(anchor: HTMLElement, options: PopupOpenOptions = {}): void {
+  open(anchor: ComponentBase, options: PopupOpenOptions = {}): void {
     const opening = !this.anchor;
     this.anchor = anchor;
     this.toggle = options.toggle ?? anchor;
-    this.returnFocus = options.returnFocus ?? (this.toggle as HTMLElement);
-    const doc = anchor.ownerDocument;
+    this.returnFocus = options.returnFocus ?? this.toggle;
+    const view = windowOf(anchor);
+    const doc = view?.document ?? document;
     let show = opening;
-    if (this.element.ownerDocument !== doc) {
+    if (windowOf(this) !== view) {
       // A popup shows in the top layer of the document it is in: it goes to its anchor's.
       this.stopListening();
       if (!opening) this.hideSurface();
-      doc.body.append(this.element);
+      if (!this.home && this.parent) this.home = this.parent;
+      const home = this.home;
+      const homeThere = home && !home.isDisposed && sameWindow(home, anchor);
+      if (homeThere) this.goHome();
+      else placeOnPage(doc, this);
       show = true;
     }
-    if (show) {
-      if (hasPopover) this.element.showPopover();
-      else this.element.hidden = false;
-    }
+    if (show) this.showSurface();
+    openPopups.add(this);
     if (!this.watched) {
       this.watched = doc;
-      const view = doc.defaultView;
-      doc.addEventListener('pointerdown', this.onPointerDown, true);
-      view?.addEventListener('scroll', this.onScroll, true);
-      view?.addEventListener('resize', this.schedule);
+      // A press outside, and the page scrolling or changing size, while it is open.
+      this.stopPage = [
+        onDocument(doc, 'pointerdown', this.onPointerDown, true),
+        onWindow(doc, 'scroll', this.onScroll, true),
+        onWindow(doc, 'resize', this.schedule),
+      ];
     }
     this.place();
   }
 
   close(reason: PopupCloseReason = 'code'): void {
     if (!this.anchor) return;
-    const focusInside = this.element.contains(deepActiveElement(this.element));
-    const returnFocus = this.returnFocus;
+    const focusInside = holdsFocus(this);
+    const back = this.returnFocus;
     this.stopFollowing();
     this.hideSurface();
+    this.goHome();
     // Focus that leaves on its own (Tab, a click elsewhere) goes where it was going.
-    if (focusInside && reason !== 'focus') returnFocus?.focus();
+    if (focusInside && reason !== 'focus' && back) giveFocusTo(back);
     this.closedEmitter.fire(reason);
   }
 
   /** Aligns the popup with its anchor again, such as after its content changes size. */
   place(): void {
     if (!this.anchor) return;
-    if (!this.anchor.isConnected) {
+    if (!isInPage(this.anchor)) {
       this.close('code');
       return;
     }
-    placePopup(this.element, this.anchor, this.placement, this.matchWidth);
+    placeBeside(this, this.anchor, this.placement, this.matchWidth);
   }
 
   private stopFollowing(): void {
     this.anchor = this.toggle = this.returnFocus = null;
+    openPopups.delete(this);
     this.stopListening();
   }
 
+  /**
+   * Into the browser's top layer, or shown where popovers are missing. The browser's own call, made at once: it is
+   * placed and measured right after.
+   */
+  private showSurface(): void {
+    if (!hasPopover) {
+      mark(this, 'hidden', false);
+      return;
+    }
+    callNow(this, 'showPopover');
+    this.inTopLayer = true;
+  }
+
   private hideSurface(): void {
-    if (hasPopover && this.element.matches(':popover-open')) this.element.hidePopover();
-    else this.element.hidden = true;
+    if (!hasPopover) mark(this, 'hidden', true);
+    else if (this.inTopLayer) {
+      this.inTopLayer = false;
+      callNow(this, 'hidePopover');
+    }
+  }
+
+  /** Back to its owner from another document's layer. */
+  private goHome(): void {
+    const home = this.home;
+    this.home = null;
+    if (home && !home.isDisposed && this.parent !== home) home.controls.add(this);
   }
 
   private stopListening(): void {
     const doc = this.watched;
     this.watched = null;
     if (!doc) return;
-    const view = doc.defaultView;
-    doc.removeEventListener('pointerdown', this.onPointerDown, true);
-    view?.cancelAnimationFrame?.(this.frame);
-    view?.removeEventListener('scroll', this.onScroll, true);
-    view?.removeEventListener('resize', this.schedule);
+    for (const stop of this.stopPage.splice(0)) stop();
+    doc.defaultView?.cancelAnimationFrame?.(this.frame);
   }
 
   private readonly schedule = () => {
@@ -134,13 +189,12 @@ export class Popup extends Component<HTMLDivElement> {
 
   // Its own content scrolling moves nothing; placing it again would take that scroll back to the top.
   private readonly onScroll = (e: Event) => {
-    if (isNode(e.target) && this.element.contains(e.target)) return;
+    if (this.motif.isEventFrom(e)) return;
     this.schedule();
   };
 
   private readonly onPointerDown = (e: PointerEvent) => {
-    const target = e.target as Node;
-    if (!this.element.contains(target) && !this.toggle?.contains(target)) this.close('outside');
+    if (!this.motif.isEventFrom(e) && !this.toggle?.motif.isEventFrom(e)) this.close('outside');
   };
 
   private onKeyDown(e: KeyboardEvent): void {
@@ -151,8 +205,8 @@ export class Popup extends Component<HTMLDivElement> {
     this.close('escape');
   }
 
+  // Focus that goes to an element outside it and its toggle closes it; focus that goes nowhere keeps it open.
   private onFocusOut(e: FocusEvent): void {
-    const to = e.relatedTarget as Node | null;
-    if (to && !this.element.contains(to) && !this.toggle?.contains(to)) this.close('focus');
+    if (e.relatedTarget && !focusGoesInto(this, e) && !(this.toggle && focusGoesInto(this.toggle, e))) this.close('focus');
   }
 }

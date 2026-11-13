@@ -1,9 +1,11 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Emitter, type Bind, type Component, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, mark, put, shown } from "../../core/draw-parts";
+import { part } from "../../core/draw-parts";
 import { onLanguage } from "../../core/on-language";
+import { windowOf } from "../../core/page-documents";
+import { css, mark, put, shown } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
-import { codeCanvas, codeSvgDocument, createCodeSvg, drawCodeSvg, showSvg, type CodeImage, type CodeRect } from "../../parts/code/code-image";
+import { codeCanvas, codeSvgDocument, createCodeSvgParts, rectsPath, type CodeImage, type CodeRect } from "../../parts/code/code-image";
 import { encodeQr, type QrLevel, type QrMatrix } from "../../parts/code/qr-encode";
 import type { QRCodeExportOptions } from "./qr-code-export-options";
 import type { QRCodeFailedEventArgs } from "./qr-code-failed-event-args";
@@ -26,30 +28,34 @@ const MOST_LOGO = 0.3;
 export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
     encodeFailed = new Emitter<QRCodeFailedEventArgs>();
     svg: SVGSVGElement;
+    svgPart: Component<SVGSVGElement>;
     path: SVGPathElement;
+    pathPart: Component<SVGPathElement>;
     logoImage: HTMLImageElement;
+    logoPart: Component<HTMLImageElement>;
     matrix: QrMatrix | null = null;
     image: CodeImage | null = null;
+    invalid = false;
 
     constructor(props?: IBaseProp<QRCodeProps>) {
         super('div', props);
         const own = (this.props ?? {}) as QRCodeProps;
-        const el = this.element;
-        el.classList.add('mx-qr-code');
-        el.setAttribute('role', 'img');
-        const { svg, path } = createCodeSvg(el.ownerDocument);
-        this.svg = svg;
-        this.path = path;
-        svg.classList.add('mx-qr-code__svg');
-        this.logoImage = el.ownerDocument.createElement('img');
-        this.logoImage.className = 'mx-qr-code__logo';
-        this.logoImage.alt = '';
-        el.append(svg, this.logoImage);
+        this.class.add('mx-qr-code');
+        this.attr.add({ role: 'img' });
+        const { svg, path } = createCodeSvgParts(this);
+        this.svgPart = svg;
+        this.svg = svg.element;
+        this.pathPart = path;
+        this.path = path.element;
+        svg.class.add('mx-qr-code__svg');
+        this.logoPart = part<HTMLImageElement>(this, 'img', 'mx-qr-code__logo');
+        this.logoImage = this.logoPart.element;
+        this.logoPart.attr.add({ alt: '' });
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onEncodeFailed) this.onEncodeFailed(own.onEncodeFailed);
 
         for (const name of ['value', 'level', 'margin', 'logo', 'logoSize'] as const) this.observeProperty(name, () => this.render());
-        this.observeProperty<number | null>('size', size => css(el, '--_size', size ? `${size}px` : ''));
+        this.observeProperty<number | null>('size', size => css(this, '--_size', size ? `${size}px` : ''));
         this.observeProperty('label', () => this.drawName());
         onLanguage(this, () => this.drawName());
         this.motif.setDisposable(() => this.encodeFailed.dispose());
@@ -106,7 +112,7 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
 
     /** Indicates that the value could not be drawn. */
     get isInvalid(): boolean {
-        return this.element.hasAttribute('data-invalid');
+        return this.invalid;
     }
 
     /** The number of modules along a side of the code, without its margin. */
@@ -121,7 +127,8 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
 
     /** The code as a data URL, a PNG by default. The logo is not part of it. */
     toDataURL(type = 'image/png', options: QRCodeExportOptions = {}): string {
-        return this.image ? codeCanvas(this.element.ownerDocument, this.image, this.exportLook(options)).toDataURL(type) : '';
+        const doc = windowOf(this)?.document;
+        return this.image && doc ? codeCanvas(doc, this.image, this.exportLook(options)).toDataURL(type) : '';
     }
 
     exportLook(options: QRCodeExportOptions) {
@@ -134,7 +141,6 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
     }
 
     render(): void {
-        const el = this.element;
         const text = this.value;
         let matrix: QrMatrix | null = null;
         let failed = false;
@@ -147,9 +153,13 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
         }
         this.matrix = matrix;
         this.image = matrix ? this.imageOf(matrix) : null;
-        mark(el, 'data-invalid', failed);
-        showSvg(this.svg, !!matrix);
-        if (this.image) drawCodeSvg(this.svg, this.path, this.image);
+        this.invalid = failed;
+        mark(this, 'data-invalid', failed);
+        mark(this.svgPart, 'hidden', !matrix);
+        if (this.image) {
+            put(this.svgPart, 'viewBox', `0 0 ${this.image.width} ${this.image.height}`);
+            put(this.pathPart, 'd', rectsPath(this.image.rects));
+        }
         this.drawLogo();
         this.drawName();
         if (failed) this.encodeFailed.fire({ value: text, source: this });
@@ -182,7 +192,7 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
     }
 
     drawLogo(): void {
-        const image = this.logoImage;
+        const image = this.logoPart;
         const logo = this.logo;
         shown(image, !!logo && !!this.matrix);
         put(image, 'src', logo);
@@ -191,6 +201,6 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
 
     drawName(): void {
         const value = this.value;
-        this.element.setAttribute('aria-label', this.label || uiLocale.text('qrCodeLabel', { value }));
+        put(this, 'aria-label', this.label || uiLocale.text('qrCodeLabel', { value }));
     }
 }

@@ -14,11 +14,11 @@ export class NameForm extends MxForm {
         const s = uiLocale.strings;
         this.nameBox = new TextBox({ label: s.customizerName, value, stretch: true, selectOnFocus: true });
         const ok = new Button({ text: s.ok, tone: 'accent' });
-        ok.element.addEventListener('click', () => this.close('ok'));
+        ok.motif.on('click', () => this.close('ok'));
         const cancel = new Button({ text: s.cancel });
-        cancel.element.addEventListener('click', () => this.close('cancel'));
+        cancel.motif.on('click', () => this.close('cancel'));
         const footer = new Component<HTMLDivElement>('div');
-        footer.element.className = 'mx-customizer__buttons';
+        footer.class.add('mx-customizer__buttons');
         footer.controls.add(ok, cancel);
         this.content = this.nameBox;
         this.footer = footer;

@@ -1,8 +1,9 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
-import { put } from "../../core/draw-parts";
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { glyphPart, loose, part, removePart } from "../../core/draw-parts";
+import { isFocused } from "../../core/focus";
 import { functionValue } from "../../core/function-value";
-import { calendarMark } from "../../core/glyphs";
 import { onLanguage } from "../../core/on-language";
+import { put } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { addDays } from "../../parts/dates/add-days";
 import { addMonths } from "../../parts/dates/add-months";
@@ -30,15 +31,16 @@ const PICKER = ['min', 'max', 'disabledDates', 'locale', 'firstDayOfWeek', 'show
 const PARTS = Symbol('mx.daterangebox');
 
 interface Parts {
-    startInput: HTMLInputElement;
-    endInput: HTMLInputElement;
-    separator: HTMLSpanElement;
+    /** The inputs' components: their events are listened to through them. */
+    startPart: ComponentBase;
+    endPart: Component<HTMLInputElement>;
+    separator: Component<HTMLSpanElement>;
     startMask: InputMask;
     endMask: InputMask;
     pattern: DatePattern;
     // A side whose text is not a whole, real date yet.
     unfinished: [boolean, boolean];
-    toggle: HTMLButtonElement | null;
+    toggle: Component<HTMLButtonElement> | null;
     popup: Popup | null;
     calendars: Calendar[];
     presetList: OptionList<DateRangePreset> | null;
@@ -69,7 +71,7 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
     constructor(props?: IBaseProp<DateRangeBoxProps>) {
         super(props);
         const own = (this.props ?? {}) as DateRangeBoxProps;
-        this.element.classList.add('mx-date-range-box');
+        this.class.add('mx-date-range-box');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.disabledDates !== undefined) this.bindProperty('disabledDates', functionValue(own.disabledDates));
 
@@ -79,8 +81,8 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
             this.renderNames();
         });
         this.observeProperty<string>('text', () => this.renderNames());
-        this.observeProperty<string>('startPlaceholder', p => put(this.rangeParts.startInput, 'placeholder', p || null));
-        this.observeProperty<string>('endPlaceholder', p => put(this.rangeParts.endInput, 'placeholder', p || null));
+        this.observeProperty<string>('startPlaceholder', p => put(this.rangeParts.startPart, 'placeholder', p || null));
+        this.observeProperty<string>('endPlaceholder', p => put(this.rangeParts.endPart, 'placeholder', p || null));
         this.observeProperty('clearButton', () => this.renderClear());
         this.observeProperty('showPickerButton', () => this.renderToggle());
         this.observeProperty('displayFormat', () => this.renderValue(this.peekValue()));
@@ -220,13 +222,14 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         this.value = [this.peekValue()[0], value];
     }
 
-    /** The start input. The end input is `endInputElement`. */
-    get inputElement(): HTMLInputElement {
-        return this.rangeParts.startInput;
+    /** The start input as a component. The end input is `endInputPart`. */
+    get inputPart(): ComponentBase<HTMLInputElement> {
+        return this.rangeParts.startPart as ComponentBase<HTMLInputElement>;
     }
 
-    get endInputElement(): HTMLInputElement {
-        return this.rangeParts.endInput;
+    /** The end input as a component. */
+    get endInputPart(): ComponentBase<HTMLInputElement> {
+        return this.rangeParts.endPart;
     }
 
     /** Indicates that the text of an end is not yet a complete, valid date. */
@@ -265,9 +268,9 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         const [start, end] = this.peekValue();
         parts.stage = start && !end ? 1 : 0;
         this.syncPicker();
-        popup.open(parts.startInput.parentElement!, { toggle: parts.startInput.parentElement!, returnFocus: parts.startInput });
+        popup.open(this.boxPart, { returnFocus: parts.startPart });
         this.setProperty('opened', true);
-        parts.toggle?.setAttribute('aria-expanded', 'true');
+        if (parts.toggle) put(parts.toggle, 'aria-expanded', 'true');
         parts.calendars[0]?.focus();
         parts.opened.fire();
         return true;
@@ -282,13 +285,14 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         this.commit([null, null]);
     }
 
-    protected createControl(): HTMLElement {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'mx-field__input mx-date-range-box__start';
-        input.inputMode = 'numeric';
-        input.autocomplete = 'off';
-        return input;
+    protected override get controlTag(): string {
+        return 'input';
+    }
+
+    protected createControl(): ComponentBase {
+        const control = loose<HTMLInputElement>('input', 'mx-field__input mx-date-range-box__start');
+        control.attr.add({ type: 'text', inputmode: 'numeric', autocomplete: 'off' });
+        return control;
     }
 
     protected emptyValue(): DateRange {
@@ -347,24 +351,19 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         const self = this as unknown as { [PARTS]?: Parts };
         if (!self[PARTS]) {
             const pattern = datePatternOf(uiLocale.locale, 'date');
-            const startInput = this.focusElement as HTMLInputElement;
+            const startPart = this.controlPart;
             const tools = this.area('tools');
-            tools.classList.add('mx-date-range-box__tools');
-            const separator = document.createElement('span');
-            separator.className = 'mx-glyph mx-date-range-box__separator';
-            separator.setAttribute('aria-hidden', 'true');
-            const endInput = document.createElement('input');
-            endInput.type = 'text';
-            endInput.className = 'mx-field__input mx-date-range-box__end';
-            endInput.inputMode = 'numeric';
-            endInput.autocomplete = 'off';
-            tools.append(separator, endInput);
+            tools.class.add('mx-date-range-box__tools');
+            const separator = part<HTMLSpanElement>(tools, 'span', 'mx-glyph mx-date-range-box__separator');
+            separator.attr.add({ 'aria-hidden': 'true' });
+            const endPart = part<HTMLInputElement>(tools, 'input', 'mx-field__input mx-date-range-box__end');
+            endPart.attr.add({ type: 'text', inputmode: 'numeric', autocomplete: 'off' });
             self[PARTS] = {
-                startInput,
-                endInput,
+                startPart,
+                endPart,
                 separator,
-                startMask: new InputMask(startInput, { mask: pattern.mask }),
-                endMask: new InputMask(endInput, { mask: pattern.mask }),
+                startMask: new InputMask(startPart, { mask: pattern.mask }),
+                endMask: new InputMask(endPart, { mask: pattern.mask }),
                 pattern,
                 unfinished: [false, false],
                 toggle: null,
@@ -385,7 +384,7 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         parts.pattern = datePatternOf(this.peekProperty<string>('locale') || uiLocale.locale, kind === 'datetime' ? 'datetime' : 'date', !!this.peekProperty('showSeconds'));
         parts.startMask.update({ mask: parts.pattern.mask });
         parts.endMask.update({ mask: parts.pattern.mask });
-        this.element.dataset.type = kind;
+        put(this, 'data-type', kind);
         this.renderValue(this.peekValue());
         if (parts.popup) {
             parts.popup.close('code');
@@ -400,19 +399,19 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         const parts = this.rangeParts;
         const label = this.peekProperty<string>('text') ?? '';
         const strings = uiLocale.strings;
-        put(parts.startInput, 'aria-label', label ? `${label}, ${strings.rangeStart}` : strings.rangeStart);
-        put(parts.endInput, 'aria-label', label ? `${label}, ${strings.rangeEnd}` : strings.rangeEnd);
-        parts.toggle?.setAttribute('aria-label', strings.chooseDate);
-        parts.popup?.element.setAttribute('aria-label', strings.chooseDate);
+        put(parts.startPart, 'aria-label', label ? `${label}, ${strings.rangeStart}` : strings.rangeStart);
+        put(parts.endPart, 'aria-label', label ? `${label}, ${strings.rangeEnd}` : strings.rangeEnd);
+        if (parts.toggle) put(parts.toggle, 'aria-label', strings.chooseDate);
+        if (parts.popup) put(parts.popup, 'aria-label', strings.chooseDate);
     }
 
     listen(): void {
         const parts = this.rangeParts;
-        parts.startInput.addEventListener('input', e => this.typed(0, e));
-        parts.endInput.addEventListener('input', e => this.typed(1, e));
-        for (const [side, input] of [[0, parts.startInput], [1, parts.endInput]] as const) {
-            input.addEventListener('blur', () => this.showDisplayText());
-            input.addEventListener('keydown', e => {
+        parts.startPart.motif.on('input', (_, e) => this.typed(0, e));
+        parts.endPart.motif.on('input', (_, e) => this.typed(1, e));
+        for (const [side, input] of [[0, parts.startPart], [1, parts.endPart]] as const) {
+            input.motif.on('blur', () => this.showDisplayText());
+            input.motif.on('keydown', (_, e) => {
                 if (e.key === 'ArrowDown' && e.altKey) {
                     e.preventDefault();
                     this.open();
@@ -454,35 +453,30 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         }
         const locale = this.peekProperty<string>('locale') || uiLocale.locale;
         const value = this.peekValue();
-        const active = document.activeElement;
-        for (const [side, input] of [[0, parts.startInput], [1, parts.endInput]] as const) {
+        for (const [side, input] of [[0, parts.startPart], [1, parts.endPart]] as const) {
             const date = value[side];
-            if (date && active !== input && !parts.unfinished[side]) input.value = new Intl.DateTimeFormat(locale, format).format(date);
+            if (date && !isFocused(input) && !parts.unfinished[side]) input.attr.add({ value: new Intl.DateTimeFormat(locale, format).format(date) });
         }
     }
 
     renderToggle(): void {
         const parts = this.rangeParts;
         if (this.peekProperty('showPickerButton') === false) {
-            parts.toggle?.remove();
+            removePart(parts.toggle);
             parts.toggle = null;
             return;
         }
         if (!parts.toggle) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'mx-field__button mx-date-range-box__toggle';
-            button.setAttribute('aria-haspopup', 'dialog');
-            button.setAttribute('aria-expanded', 'false');
-            button.addEventListener('click', () => {
+            const toggle = part<HTMLButtonElement>(this.area('actions'), 'button', 'mx-field__button mx-date-range-box__toggle');
+            toggle.attr.add({ type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' });
+            toggle.motif.on('click', () => {
                 if (parts.popup?.isOpen) this.close();
                 else this.open();
             });
-            this.area('actions').append(button);
-            parts.toggle = button;
+            glyphPart(toggle, 'calendar');
+            parts.toggle = toggle;
         }
-        parts.toggle.replaceChildren(calendarMark());
-        parts.toggle.setAttribute('aria-label', uiLocale.strings.chooseDate);
+        put(parts.toggle, 'aria-label', uiLocale.strings.chooseDate);
     }
 
     renderClear(): void {
@@ -493,13 +487,12 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         const parts = this.rangeParts;
         const popup = new Popup();
         popup.matchWidth = false;
-        popup.element.classList.add('mx-date-range-box__popup');
-        popup.element.setAttribute('role', 'dialog');
-        popup.element.setAttribute('aria-label', uiLocale.strings.chooseDate);
+        popup.class.add('mx-date-range-box__popup');
+        popup.attr.add({ role: 'dialog', 'aria-label': uiLocale.strings.chooseDate });
         this.controls.add(popup);
         popup.onClosed(reason => {
             this.setProperty('opened', false);
-            parts.toggle?.setAttribute('aria-expanded', 'false');
+            if (parts.toggle) put(parts.toggle, 'aria-expanded', 'false');
             parts.closed.fire(reason);
         });
         return popup;
@@ -515,7 +508,7 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
             parts.calendars = [];
             for (let i = 0; i < count; i++) {
                 const calendar = new Calendar({ showOtherMonths: count === 1 });
-                calendar.element.classList.add('mx-date-range-box__calendar');
+                calendar.class.add('mx-date-range-box__calendar');
                 calendar.onValueChanged(e => {
                     if (!e.byUser || !e.value) return;
                     const day = e.value;
@@ -534,10 +527,10 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         if (presets.length && !parts.presetList) {
             const list = new OptionList<DateRangePreset>();
             list.textOf = p => p.text;
-            list.element.tabIndex = 0;
-            list.element.classList.add('mx-date-range-box__presets');
-            list.element.addEventListener('keydown', e => {
-                if (list.handleKey(e)) list.element.setAttribute('aria-activedescendant', list.idOf(list.activeIndex));
+            put(list, 'tabindex', '0');
+            list.class.add('mx-date-range-box__presets');
+            list.motif.on('keydown', (_, e) => {
+                if (list.handleKey(e)) put(list, 'aria-activedescendant', list.idOf(list.activeIndex));
             });
             list.onChosen(e => {
                 parts.unfinished = [false, false];
@@ -584,10 +577,8 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
             const shown = other.focusedDate;
             if (shown.getFullYear() !== expected.getFullYear() || shown.getMonth() !== expected.getMonth()) other.goTo(expected);
         };
-        calendar.element.addEventListener('click', e => {
-            if ((e.target as Element).closest('.mx-calendar__nav, .mx-calendar__cell, .mx-calendar__today')) queueMicrotask(follow);
-        });
-        calendar.element.addEventListener('keydown', () => queueMicrotask(follow));
+        // The other moves only when the two are no longer a month apart, so its own move ends here.
+        calendar.onFocusedDateChanged(follow);
     }
 
     // A day picked on a calendar: the start first, then the end (the earlier one the start).

@@ -1,3 +1,6 @@
+import type { Component, ComponentBase } from '@motifx/core';
+import { svgComponent } from '../chart/svg-parts';
+
 /** A dark rectangle of a code, in modules. */
 export interface CodeRect {
     x: number;
@@ -21,31 +24,17 @@ export interface CodeImageOptions {
     background: string;
 }
 
-/** Shows or hides an `<svg>`, which has no `hidden` property of its own. */
-export function showSvg(svg: SVGSVGElement, on: boolean): void {
-    svg.toggleAttribute('hidden', !on);
-}
-
 /** The rectangles as the data of one SVG path. */
 export function rectsPath(rects: readonly CodeRect[]): string {
     return rects.map(r => `M${r.x} ${r.y}h${r.width}v${r.height}h${-r.width}z`).join('');
 }
 
-/** Draws `image` in an inline `<svg>`, sized in CSS and colored by `currentColor`. */
-export function drawCodeSvg(svg: SVGSVGElement, path: SVGPathElement, image: CodeImage): void {
-    svg.setAttribute('viewBox', `0 0 ${image.width} ${image.height}`);
-    path.setAttribute('d', rectsPath(image.rects));
-}
-
-/** A new inline `<svg>` with its path. */
-export function createCodeSvg(doc: Document): { svg: SVGSVGElement; path: SVGPathElement } {
-    const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    const path = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    svg.setAttribute('shape-rendering', 'crispEdges');
-    svg.setAttribute('aria-hidden', 'true');
-    path.setAttribute('fill', 'currentColor');
-    svg.append(path);
+/** A new inline `<svg>` with its path, parts of `parent`, sized in CSS and colored by `currentColor`. */
+export function createCodeSvgParts(parent: ComponentBase): { svg: Component<SVGSVGElement>; path: Component<SVGPathElement> } {
+    const svg = svgComponent(parent, 'svg');
+    const path = svgComponent(svg, 'path');
+    svg.attr.add({ preserveAspectRatio: 'xMidYMid meet', 'shape-rendering': 'crispEdges', 'aria-hidden': 'true' });
+    path.attr.add({ fill: 'currentColor' });
     return { svg, path };
 }
 
@@ -56,7 +45,7 @@ export function codeSvgDocument(image: CodeImage, options: CodeImageOptions, ext
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}" shape-rendering="crispEdges"><rect width="${width}" height="${height}" fill="${background}"/><path fill="${color}" d="${rectsPath(image.rects)}"/>${extra}</svg>`;
 }
 
-/** The code on a new canvas. */
+/** The code on a new canvas, drawn off the page for a picture of it (never placed). */
 export function codeCanvas(doc: Document, image: CodeImage, options: CodeImageOptions): HTMLCanvasElement {
     const { scale, color, background } = options;
     const canvas = doc.createElement('canvas');

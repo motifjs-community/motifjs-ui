@@ -11,7 +11,7 @@ export interface SpeedDialAction {
     text: Bind<string>;
     /** A glyph from the kit's set (`pencil`, `trash`, `plus`…). */
     glyph?: Bind<string>;
-    /** A custom icon that replaces the glyph: an address, an element or a component. */
+    /** A custom icon that replaces the glyph: an address or a component. */
     icon?: IconSource;
     /**
      * The tooltip: custom text, its options, or `false` for none. This takes precedence over the speed dial's

@@ -1,6 +1,7 @@
 import type { ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { Chart } from './Chart';
 import type { ChartProps } from './chart-props';
 
@@ -9,9 +10,14 @@ function make(props: ChartProps): Chart {
     const chart = new Chart(props);
     hosts.push(mountHost(chart));
     chart.onMounted();
+    measureNow(chart);
     return chart;
 }
-const settle = () => Promise.resolve().then(() => Promise.resolve());
+// The changes land, then the draw they asked for runs with the window's next frame, here at once.
+const settle = async () => {
+    await Promise.resolve().then(() => Promise.resolve());
+    for (const host of hosts) if (!host.isDisposed) measureNow(host);
+};
 const $ = (chart: Chart, selector: string) => chart.element.querySelector(selector) as HTMLElement;
 const $$ = (chart: Chart, selector: string) => [...chart.element.querySelectorAll(selector)] as HTMLElement[];
 const key = (el: HTMLElement, name: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
@@ -98,7 +104,7 @@ describe('Chart, zoom', () => {
         const rows = Array.from({ length: 100 }, (_, i) => ({ x: i, v: i }));
         const chart = make({ data: rows, xField: 'x', xAxis: { kind: 'linear', span: 10 }, series: [{ yField: 'v' }] });
         // The position axis only: the value axis may well start below the values, at a round number.
-        const ticks = [...chart.cartesian.xLabels.group.querySelectorAll('text')].map(t => Number(t.textContent));
+        const ticks = [...chart.cartesian.xLabels.part.element.querySelectorAll('text')].map(t => Number(t.textContent));
         expect(ticks.length).toBeGreaterThan(1);
         expect(Math.min(...ticks)).toBeGreaterThanOrEqual(89);
         expect(Math.max(...ticks)).toBeLessThanOrEqual(99);

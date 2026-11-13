@@ -232,9 +232,12 @@ describe('DropDown and Lookup over a data source', () => {
     plain.columns = [...plain.columns, city];
     await settle();
     expect(header()).toEqual(['Company']);
+    const company = d.element.querySelector('.mx-lookup__header .mx-lookup__cell');
     host.reState();
     await settle();
     expect(header()).toEqual(['Company', 'City']);
+    // The cell of a column kept stays: the header is not drawn again.
+    expect(d.element.querySelector('.mx-lookup__header .mx-lookup__cell')).toBe(company);
     plain.headers = false;
     host.reState();
     expect(d.element.querySelector<HTMLElement>('.mx-lookup__header')!.hidden).toBe(true);

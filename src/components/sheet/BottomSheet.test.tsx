@@ -2,6 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { backButtonHolders, backButtonSettled } from '../../core/back-button';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { TextBox } from '../textbox/TextBox';
@@ -20,11 +21,11 @@ afterEach(async () => {
 });
 
 /** A container 800 pixels high (jsdom lays nothing out). */
-function room(height = 800): HTMLDivElement {
-  const el = document.createElement('div');
-  Object.defineProperty(el, 'clientHeight', { configurable: true, value: height });
-  document.body.append(el);
-  return el;
+function room(height = 800): Component<HTMLDivElement> {
+  const box = new Component<HTMLDivElement>('div');
+  Object.defineProperty(box.element, 'clientHeight', { configurable: true, value: height });
+  page(box);
+  return box;
 }
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -71,7 +72,7 @@ function touch(el: Element, type: string, x: number, y: number) {
   return e;
 }
 
-const size = (s: BottomSheet) => s.panelElement.style.getPropertyValue('--_size');
+const size = (s: BottomSheet) => s.panelPart.element.style.getPropertyValue('--_size');
 const handle = (s: BottomSheet) => s.element.querySelector<HTMLElement>('.mx-bottom-sheet__handle')!;
 
 describe('BottomSheet', () => {
@@ -86,15 +87,17 @@ describe('BottomSheet', () => {
     await settle();
     state.open = true;
     await settle();
-    expect(document.activeElement).toBe(sheet.panelElement);
-    press('Escape', sheet.panelElement);
+    expect(document.activeElement).toBe(sheet.panelPart.element);
+    press('Escape', sheet.panelPart.element);
     expect(state.open).toBe(false);
   });
 
   it('opens over its container as a modal dialog named by its title, and closes with Escape giving focus back', async () => {
+    // What it makes inert are the container's components.
     const box = room();
-    const before = document.createElement('button');
-    box.append(before);
+    const beforePart = new Component<HTMLButtonElement>('button');
+    box.controls.add(beforePart);
+    const before = beforePart.element;
     before.focus();
     const log: string[] = [];
     const sheet = new BottomSheet({
@@ -111,9 +114,9 @@ describe('BottomSheet', () => {
     expect(sheet.element.hidden).toBe(true);
     expect(sheet.open()).toBe(true);
     expect(sheet.isOpen).toBe(true);
-    expect(box.contains(sheet.element)).toBe(true);
+    expect(box.element.contains(sheet.element)).toBe(true);
     expect(sheet.element.hasAttribute('data-contained')).toBe(true);
-    const panel = sheet.panelElement;
+    const panel = sheet.panelPart.element;
     expect(panel.getAttribute('role')).toBe('dialog');
     expect(panel.getAttribute('aria-modal')).toBe('true');
     expect(document.getElementById(panel.getAttribute('aria-labelledby')!)!.textContent).toBe('Filters');
@@ -154,12 +157,12 @@ describe('BottomSheet', () => {
     state.open = true;
     await settle();
     expect(sheet.isOpen).toBe(true);
-    expect(sheet.panelElement.getAttribute('aria-label')).toBe('Tools');
+    expect(sheet.panelPart.element.getAttribute('aria-label')).toBe('Tools');
     sheet.element.querySelector<HTMLElement>('.mx-bottom-sheet__scrim')!.click();
     expect(sheet.isOpen).toBe(true);
     expect(state.open).toBe(true);
     // The user closing it writes the model.
-    press('Escape', sheet.panelElement);
+    press('Escape', sheet.panelPart.element);
     expect(state.open).toBe(false);
   });
 
@@ -174,11 +177,13 @@ describe('BottomSheet', () => {
     page(sheet);
     await settle();
     sheet.open();
-    // Opens at the first one given.
+    // Opens at the first one given, placed in the next measuring round, as each height after it.
     expect(sheet.detent).toBe('full');
+    await whenMeasured(sheet);
     expect(size(sheet)).toBe('800px');
     expect(sheet.collapse()).toBe(true);
     expect(sheet.detent).toBe('half');
+    await whenMeasured(sheet);
     expect(size(sheet)).toBe('400px');
     handle(sheet).focus();
     expect(press('ArrowDown')).toBe(true);
@@ -186,9 +191,11 @@ describe('BottomSheet', () => {
     expect(sheet.collapse()).toBe(false);
     press('End');
     expect(sheet.detent).toBe('full');
+    await whenMeasured(sheet);
     expect(handle(sheet).getAttribute('aria-valuetext')).toBe('Full height');
     expect(handle(sheet).getAttribute('aria-valuenow')).toBe('100');
     press('Home');
+    await whenMeasured(sheet);
     expect(handle(sheet).getAttribute('aria-valuetext')).toBe('200px high');
     expect(handle(sheet).getAttribute('aria-valuenow')).toBe('25');
     expect(changes).toEqual(['full>half', 'half>200 user', '200>full user', 'full>200 user']);
@@ -218,15 +225,20 @@ describe('BottomSheet', () => {
     page(sheet);
     await settle();
     sheet.open();
+    // Each height is placed in the next measuring round; a drag starts from where it stands.
+    await whenMeasured(sheet);
     // Slowly up by 150: nearest is 400 + 150 = 550 → 400 (half way is 600).
     drag(handle(sheet), 500, [450, 400, 350], 200);
     expect(sheet.detent).toBe(400);
+    await whenMeasured(sheet);
     // A quick flick up goes to the next one.
     drag(handle(sheet), 500, [490, 470], 16);
     expect(sheet.detent).toBe('full');
+    await whenMeasured(sheet);
     // Slowly down to 250: nearest 200.
     drag(handle(sheet), 100, [300, 500, 650], 200);
     expect(sheet.detent).toBe(200);
+    await whenMeasured(sheet);
     // Dragged past half of the lowest: it closes.
     drag(handle(sheet), 600, [700, 760], 200);
     expect(sheet.isOpen).toBe(false);
@@ -239,13 +251,17 @@ describe('BottomSheet', () => {
     page(sheet);
     await settle();
     sheet.open();
+    await whenMeasured(sheet);
     drag(handle(sheet), 600, [700, 790], 200);
     expect(sheet.isOpen).toBe(true);
     expect(sheet.detent).toBe(200);
+    await whenMeasured(sheet);
     drag(handle(sheet), 600, []);
     expect(sheet.detent).toBe('full');
+    await whenMeasured(sheet);
     drag(handle(sheet), 600, []);
     expect(sheet.detent).toBe(200);
+    await whenMeasured(sheet);
     sheet.draggable = false;
     drag(handle(sheet), 600, [300], 200);
     expect(sheet.detent).toBe(200);
@@ -257,7 +273,8 @@ describe('BottomSheet', () => {
     page(sheet);
     await settle();
     sheet.open();
-    const body = sheet.contentElement;
+    await whenMeasured(sheet);
+    const body = sheet.contentPart.element;
     touch(body, 'touchstart', 50, 300);
     const move = touch(body, 'touchmove', 50, 340);
     expect(move.defaultPrevented).toBe(true);
@@ -308,7 +325,7 @@ describe('BottomSheet', () => {
     sheet.open();
     expect(sheet.element.isConnected).toBe(true);
     expect(sheet.element.hasAttribute('data-contained')).toBe(false);
-    expect(sheet.panelElement.hasAttribute('aria-modal')).toBe(false);
+    expect(sheet.panelPart.element.hasAttribute('aria-modal')).toBe(false);
     expect(sheet.element.hasAttribute('data-scrim')).toBe(false);
     expect(outside.hasAttribute('inert')).toBe(false);
     // Non-modal: focus stays where it was unless asked.
@@ -322,7 +339,8 @@ describe('BottomSheet', () => {
     const host = page();
     const sheet = new BottomSheet({ container: box });
     expect(sheet.show(host)).toBe(true);
-    expect(sheet.parent).toBe(host);
+    // A child of the container it opens in; it goes with its host all the same.
+    expect(sheet.parent).toBe(box);
     sheet.close();
     await settle();
     expect(sheet.isDisposed).toBe(true);
@@ -335,7 +353,7 @@ describe('BottomSheet', () => {
     await settle();
     sheet.open();
     expect(handle(sheet).getAttribute('aria-label')).toBe('Sheet height');
-    expect(sheet.panelElement.getAttribute('aria-label')).toBe('Sheet');
+    expect(sheet.panelPart.element.getAttribute('aria-label')).toBe('Sheet');
     await uiLocale.use('tr');
     await settle();
     expect(handle(sheet).getAttribute('aria-label')).toBe('Panel yüksekliği');
@@ -354,6 +372,6 @@ describe('BottomSheet', () => {
     sheet.open();
     await host.dispose();
     expect(reasons).toEqual(['owner']);
-    expect(box.querySelector('[inert]')).toBe(null);
+    expect(box.element.querySelector('[inert]')).toBe(null);
   });
 });

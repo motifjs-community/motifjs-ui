@@ -13,12 +13,12 @@ export interface ContextMenuProps extends ControlProps {
   label?: Bind<string>;
   /** The commands. `onOpening` can provide different ones for each element. */
   items?: Bind<readonly MenuItem[]>;
-  /** The element or component the menu belongs to. The default is the element the `ContextMenu` is placed in. */
+  /** The component the menu belongs to. The default is the component the `ContextMenu` is placed in. */
   target?: Bind<ContextMenuTarget | null | undefined>;
   /** The Menu key and Shift+F10 open the menu at the focused element. The default is `true`. */
   keyboard?: Bind<boolean>;
   /**
-   * Scrolling the element the menu opened on out of view closes the menu. Until then, the menu follows the element.
+   * Scrolling the component the menu opened on out of view closes the menu. Until then, the menu follows it.
    * The default is `true`.
    */
   closeOnScroll?: Bind<boolean>;

@@ -1,3 +1,6 @@
+import type { ComponentBase } from '@motifx/core';
+import { isRtl, rectOf, type Rect } from '../../core/measure';
+import { itemPart } from './item-part';
 import type { SplitDirection } from './split-direction';
 import type { TabBrowserWindow } from './TabBrowserWindow';
 import { TabSplit } from './TabSplit';
@@ -27,10 +30,10 @@ export class LayoutDropTarget implements TabDropTarget {
     if (drag.window && drag.manager !== m) return null;
     const group = m.groupAt(x, y, drag.window ?? null);
     if (!group || !group.acceptsDrop) return null;
-    if (contains(group.barElement.getBoundingClientRect(), x, y)) return this.stripPlace(group, this.indexAt(group, x, y, drag), drag);
+    if (contains(rectOf(group.barPart), x, y)) return this.stripPlace(group, this.indexAt(group, x, y, drag), drag);
     // The dock guides take the place of the zones; a window moved docks by them or by a strip only.
     if (m.dockGuides || drag.window) return null;
-    const content = group.panelsElement.getBoundingClientRect();
+    const content = rectOf(group.panelsPart);
     const edge = !group.window && !group.dockArea ? this.layoutEdgeAt(group, content, x, y) : null;
     const along = edge ? this.edgePlace(edge, drag, group.browserWindow) : null;
     if (along) return along;
@@ -42,7 +45,7 @@ export class LayoutDropTarget implements TabDropTarget {
     const group = place.group;
     if (place.target === 'strip' && group) return { area: null, mark: this.markAt(group, place.index, drag) };
     if (place.target === 'group' && group && place.side) {
-      return { area: half(group.panelsElement.getBoundingClientRect(), onScreen(place.side, group.element), 0.5), mark: null };
+      return { area: half(rectOf(group.panelsPart), onScreen(place.side, group), 0.5), mark: null };
     }
     if (place.target === 'edge' && place.side && place.side !== 'center') return { area: this.edgeArea(place.side, place.browserWindow ?? null), mark: null };
     return { area: null, mark: null };
@@ -83,11 +86,11 @@ export class LayoutDropTarget implements TabDropTarget {
 
   /** The place in a group's strip under the pointer: before the first tab whose middle is past it. */
   indexAt(group: TabGroup, x: number, y: number, drag: TabDragSubject): number {
-    const rtl = isRtl(group.element);
+    const rtl = isRtl(group);
     let index = 0;
     for (const tab of group.tabs) {
       if (tab.document === drag.document) continue;
-      const box = tab.header.getBoundingClientRect();
+      const box = rectOf(tab.headerPart);
       const middle = box.left + box.width / 2;
       // A row above the pointer's, or before it on the same row.
       if (y >= box.bottom || (y >= box.top && (rtl ? x < middle : x > middle))) index++;
@@ -107,29 +110,29 @@ export class LayoutDropTarget implements TabDropTarget {
   }
 
   private markAt(group: TabGroup, index: number, drag: TabDragSubject): DOMRect {
-    const rtl = isRtl(group.element);
-    const headers = group.tabs.filter((t) => t.document !== drag.document).map((t) => t.header);
+    const rtl = isRtl(group);
+    const headers = group.tabs.filter((t) => t.document !== drag.document).map((t) => t.headerPart);
     const before = headers[index];
     const after = headers[index - 1];
     if (before) {
-      const box = before.getBoundingClientRect();
+      const box = rectOf(before);
       return new DOMRect(rtl ? box.right : box.left, box.top, 0, box.height);
     }
     if (after) {
-      const box = after.getBoundingClientRect();
+      const box = rectOf(after);
       return new DOMRect(rtl ? box.left : box.right, box.top, 0, box.height);
     }
-    const strip = group.rowElement.getBoundingClientRect();
-    const bar = group.barElement.getBoundingClientRect();
+    const strip = rectOf(group.rowPart);
+    const bar = rectOf(group.barPart);
     return new DOMRect(rtl ? strip.right : strip.left, bar.top, 0, bar.height);
   }
 
   /** Which side of the content the pointer is near (`dropEdgeSize` from it), else the centre. */
-  private sideAt(group: TabGroup, box: DOMRect, x: number, y: number): TabDropSide | null {
+  private sideAt(group: TabGroup, box: Rect, x: number, y: number): TabDropSide | null {
     const allowed = group.dropSidesNow;
     const across = size(this.manager.dropEdgeSize, box.width);
     const down = size(this.manager.dropEdgeSize, box.height);
-    const rtl = isRtl(group.element);
+    const rtl = isRtl(group);
     // How far into each edge band the pointer is, 0 at the edge, 1 at the band's inner end.
     const depth: [TabDropSide, number][] = [
       [rtl ? 'right' : 'left', (x - box.left) / across],
@@ -143,14 +146,14 @@ export class LayoutDropTarget implements TabDropTarget {
   }
 
   /** The edge of the layout the pointer is on: a band along the content of a group that touches that edge. */
-  private layoutEdgeAt(group: TabGroup, content: DOMRect, x: number, y: number): SplitDirection | null {
+  private layoutEdgeAt(group: TabGroup, content: Rect, x: number, y: number): SplitDirection | null {
     const m = this.manager;
     const band = m.layoutEdgeSize;
     const host = group.browserWindow;
     const root = host ? host.root : m.rootItem;
     if (!m.layoutEdgeDrop || band <= 0 || !root) return null;
-    const outer = root.element.getBoundingClientRect();
-    const box = group.element.getBoundingClientRect();
+    const outer = rectOf(itemPart(root));
+    const box = rectOf(group);
     const near: Record<SplitDirection, boolean> = {
       left: box.left - outer.left < 2 && x - content.left < band,
       right: outer.right - box.right < 2 && content.right - x < band,
@@ -158,34 +161,29 @@ export class LayoutDropTarget implements TabDropTarget {
       down: outer.bottom - box.bottom < 2 && content.bottom - y < band,
     };
     const edge = EDGES.find((e) => near[e]);
-    return edge ? (onScreen(edge, host ? host.element : m.element) as SplitDirection) : null;
+    return edge ? (onScreen(edge, host ? host.part : m) as SplitDirection) : null;
   }
 
   /** The room a new group along an edge of the layout (of a new window's, `host`) would get. */
   private edgeArea(side: SplitDirection, host: TabBrowserWindow | null): DOMRect | null {
     const root = host ? host.root : this.manager.rootItem;
     if (!root) return null;
-    const box = root.element.getBoundingClientRect();
+    const box = rectOf(itemPart(root));
     const horizontal = side === 'left' || side === 'right';
     const lined = root instanceof TabSplit && root.orientation === (horizontal ? 'horizontal' : 'vertical');
     const share = lined ? 1 / (root.children.length + 1) : 0.5;
-    return half(box, onScreen(side, host ? host.element : this.manager.element), share);
+    return half(box, onScreen(side, host ? host.part : this.manager), share);
   }
 }
 
 /** The side on the screen: right to left, a group's start (`left`) is on the right. Its own inverse. */
-function onScreen(side: TabDropSide, el: Element): TabDropSide {
-  if (!isRtl(el) || side === 'up' || side === 'down' || side === 'center') return side;
+function onScreen(side: TabDropSide, of: ComponentBase): TabDropSide {
+  if (!isRtl(of) || side === 'up' || side === 'down' || side === 'center') return side;
   return side === 'left' ? 'right' : 'left';
 }
 
-function contains(box: DOMRect, x: number, y: number): boolean {
+function contains(box: Rect, x: number, y: number): boolean {
   return x >= box.left && x < box.right && y >= box.top && y < box.bottom;
-}
-
-function isRtl(el: Element): boolean {
-  const view = el.ownerDocument.defaultView;
-  return !!view && view.getComputedStyle(el).direction === 'rtl';
 }
 
 /** Pixels, or a share of `length` (`'30%'`). */
@@ -197,7 +195,7 @@ function size(value: number | string, length: number): number {
 }
 
 /** The part of a box on one side of it (all of it for the centre), `share` of it wide or tall; screen sides. */
-function half(box: DOMRect, side: TabDropSide, share: number): DOMRect {
+function half(box: Rect, side: TabDropSide, share: number): DOMRect {
   if (side === 'center') return new DOMRect(box.left, box.top, box.width, box.height);
   if (side === 'left') return new DOMRect(box.left, box.top, box.width * share, box.height);
   if (side === 'right') return new DOMRect(box.right - box.width * share, box.top, box.width * share, box.height);

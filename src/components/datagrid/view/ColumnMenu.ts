@@ -3,6 +3,7 @@ import { MenuList } from '../../../parts/menu/MenuList';
 import type { MenuItem } from '../../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../../parts/menu/menu-item-click-event-args';
 import { Popup } from '../../../parts/popup/Popup';
+import { put } from '../../../core/part-writes';
 import { TreeView } from '../../treeview/TreeView';
 import type { ColumnFeatures } from '../column-features';
 import type { GridModel } from '../model/GridModel';
@@ -25,7 +26,7 @@ export class ColumnMenu<T> {
   readonly popup: Popup;
   readonly list: MenuList;
   /** The header the menu was opened for. */
-  private anchor: HTMLElement | null = null;
+  private anchor: ComponentBase | null = null;
   private chooser: { popup: Popup; tree: TreeView<ColumnNode> } | null = null;
 
   constructor(
@@ -36,14 +37,14 @@ export class ColumnMenu<T> {
     const popup = new Popup();
     popup.placement = 'bottom-end';
     popup.matchWidth = false;
-    popup.element.classList.add('mx-data-grid__menu');
+    popup.class.add('mx-data-grid__menu');
     const list = new MenuList();
     list.source = owner;
     popup.controls.add(list);
     owner.controls.add(popup);
     list.onChosen((e) => this.chosen(e));
     // Tab closes the menu and gives focus back to the header.
-    popup.element.addEventListener('keydown', (e) => {
+    popup.motif.on('keydown', (_, e) => {
       if (e.key !== 'Tab') return;
       e.preventDefault();
       popup.close('code');
@@ -65,24 +66,24 @@ export class ColumnMenu<T> {
    * Opens the menu of a column or band under `anchor`; focus goes back to `returnTo` when it
    * closes. `prepare` may change the items, or return `null` to open nothing.
    */
-  open(field: string, anchor: HTMLElement, returnTo: HTMLElement, prepare: (items: MenuItem[]) => MenuItem[] | null = (items) => items) {
+  open(field: string, anchor: ComponentBase, returnTo: ComponentBase, prepare: (items: MenuItem[]) => MenuItem[] | null = (items) => items) {
     const items = prepare(this.items(field));
     if (!items) return;
     this.anchor = returnTo;
-    this.list.element.setAttribute('aria-label', this.grid.text('gridColumnMenu', { title: this.grid.columns.title(field) }));
+    put(this.list, 'aria-label', this.grid.text('gridColumnMenu', { title: this.grid.columns.title(field) }));
     this.list.setItems(items);
     this.popup.open(anchor, { toggle: anchor, returnFocus: returnTo });
     this.list.focusItem('first');
   }
 
   /** Opens only the list of columns under `anchor` (the toolbar's button); focus goes back to it. */
-  openColumns(anchor: HTMLElement) {
+  openColumns(anchor: ComponentBase) {
     if (this.grid.columns.hasBands) {
       this.openTree(anchor);
       return;
     }
     this.anchor = anchor;
-    this.list.element.setAttribute('aria-label', this.grid.text('gridColumnChooser'));
+    put(this.list, 'aria-label', this.grid.text('gridColumnChooser'));
     this.list.setItems(this.columnItems());
     this.popup.open(anchor, { toggle: anchor, returnFocus: anchor });
     this.list.focusItem('first');
@@ -127,7 +128,7 @@ export class ColumnMenu<T> {
   }
 
   /** The column chooser with bands: the columns as a tree, a check box each, in a window under `anchor`. */
-  private openTree(anchor: HTMLElement) {
+  private openTree(anchor: ComponentBase) {
     const { grid } = this;
     if (this.popup.isOpen) this.popup.close('code');
     const chooser = this.chooser ?? this.makeChooser();
@@ -143,7 +144,7 @@ export class ColumnMenu<T> {
     const popup = new Popup();
     popup.placement = 'bottom-end';
     popup.matchWidth = false;
-    popup.element.classList.add('mx-data-grid__menu', 'mx-data-grid__chooser');
+    popup.class.add('mx-data-grid__menu', 'mx-data-grid__chooser');
     const tree: TreeView<ColumnNode> = new TreeView<ColumnNode>({
       label: () => grid.text('gridColumnChooser'),
       items: [],
@@ -160,7 +161,7 @@ export class ColumnMenu<T> {
     });
     popup.controls.add(tree);
     this.owner.controls.add(popup);
-    popup.element.addEventListener('keydown', (e) => {
+    popup.motif.on('keydown', (_, e) => {
       if (e.key !== 'Tab') return;
       e.preventDefault();
       popup.close('code');
@@ -205,6 +206,11 @@ export class ColumnMenu<T> {
     if (changed) grid.layoutChanged();
   }
 
+  /** The header filter of the column, under the header the menu was opened for. */
+  private openHeaderFilter(field: string) {
+    if (this.anchor) this.host.openHeaderFilter(field, this.anchor);
+  }
+
   private hide(field: string, hidden: boolean) {
     const { grid } = this;
     grid.columns.setHidden(field, hidden);
@@ -245,7 +251,7 @@ export class ColumnMenu<T> {
       grid.announceSort(field, dir);
     };
     const columns: MenuItem = cols.hasBands
-      ? { text: t('gridColumns'), visible: () => this.hasColumns(), click: () => this.openTree(this.anchor ?? document.body) }
+      ? { text: t('gridColumns'), visible: () => this.hasColumns(), click: () => this.anchor && this.openTree(this.anchor) }
       : { text: t('gridColumns'), visible: () => this.hasColumns(), items: () => this.columnItems() };
     const pins: MenuItem[] = [
       { text: t('gridPinStart'), visible: pinnable, enabled: () => sticky() !== 'start', click: done(() => cols.setSticky(field, 'start')) },
@@ -296,7 +302,7 @@ export class ColumnMenu<T> {
         },
       ],
       [
-        { text: t('gridFilterValues'), visible: () => grid.hasHeaderFilter(field), click: () => this.host.openHeaderFilter(field, this.anchor ?? document.body) },
+        { text: t('gridFilterValues'), visible: () => grid.hasHeaderFilter(field), click: () => this.openHeaderFilter(field) },
         { text: t('gridClearFilter'), visible: () => grid.filters.isActive(field), click: () => grid.filters.clear(field) },
       ],
       pins,

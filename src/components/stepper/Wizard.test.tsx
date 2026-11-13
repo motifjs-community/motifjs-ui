@@ -87,7 +87,7 @@ describe('Wizard', () => {
         expect(await w.next()).toBe(false);
         expect(w.selectedIndex).toBe(0);
         expect(faces(w)[0].dataset.status).toBe('error');
-        expect(document.activeElement).toBe(box.inputElement);
+        expect(document.activeElement).toBe(box.inputPart.element);
         box.value = 'ada@example.com';
         await settle();
         expect(await w.next()).toBe(true);
@@ -148,6 +148,7 @@ describe('Wizard', () => {
         await settle();
         const c = w.add(new WizardStep({ key: 'c', title: 'C', content: () => new Component('p') }));
         expect(w.steps.length).toBe(3);
+        await settle();
         faces(w)[2].click();
         await settle();
         expect(s.at).toBe('c');
@@ -159,6 +160,7 @@ describe('Wizard', () => {
         expect(pages(w)[0].querySelector('p')).not.toBe(null);
         w.remove(c);
         expect(w.steps.length).toBe(2);
+        await settle();
         expect(faces(w).length).toBe(2);
     });
 });

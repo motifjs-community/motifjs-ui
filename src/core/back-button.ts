@@ -5,6 +5,8 @@
 // stray entry is left. The entries all look the same: going back closes the holder of the highest
 // layer, the last one held first.
 
+import { onWindow } from './window-events';
+
 interface Holder {
   onBack: () => void;
   layer: number;
@@ -60,7 +62,8 @@ function sessionOf(view: Window): Session {
   if (session) return session;
   session = { view, holders: [], depth: 0, skips: 0, waiting: 0 };
   const s = session;
-  view.addEventListener('popstate', () => popped(s));
+  // For the life of the window: its history is the browser's, and so is the back button.
+  onWindow(view.document, 'popstate', () => popped(s));
   sessions.set(view, session);
   return session;
 }

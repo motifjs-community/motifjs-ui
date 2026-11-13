@@ -1,5 +1,7 @@
 import { Component, ComponentBase, read, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
+import { part } from '../../../core/draw-parts';
+import { focusFirstIn } from '../../../core/focus';
 import { CheckBox } from '../../checkbox/CheckBox';
 import { ComboBox } from '../../combobox/ComboBox';
 import { DateBox } from '../../datebox/DateBox';
@@ -22,9 +24,10 @@ import type { EditorKind } from './editor-kind';
 import type { EditorValue } from './editor-value';
 import { readField } from '../model/read-field';
 
-/** Rows of a lookup editor's list asked for at a time. */
-
 type Options = Record<string, unknown>;
+
+/** The largest position `setSelectionRange` takes: past any text, so a caret put there goes to the end. */
+const TEXT_END = 2 ** 32 - 1;
 
 /**
  * The editor of the cell in edit mode: a kit field drawn without its frame inside the cell (a
@@ -36,7 +39,7 @@ type Options = Record<string, unknown>;
  */
 export class CellEditor<T> {
   readonly kind: EditorKind;
-  /** The element placed in the cell. */
+  /** The part placed in the cell. */
   readonly box: Component<HTMLDivElement>;
   /** The edit was called off before the editor was created. */
   readonly cancelled: boolean = false;
@@ -73,8 +76,8 @@ export class CellEditor<T> {
     const box = new Component<HTMLDivElement>('div');
     this.box = box;
     owner.controls.add(box);
-    box.element.className = 'mx-data-grid__editor';
-    box.element.dataset.kind = this.kind;
+    box.class.add('mx-data-grid__editor');
+    box.attr.add({ 'data-kind': this.kind });
     if (column.editor) {
       if (!prepare({})) {
         this.cancelled = true;
@@ -100,9 +103,7 @@ export class CellEditor<T> {
         content.value = value;
         if (form) for (const [name, given] of Object.entries(form)) if (name in content && given !== undefined) (content as unknown as Options)[name] = given;
       } else if (form && content instanceof ComponentBase) {
-        const caption = box.element.appendChild(document.createElement('span'));
-        caption.className = 'mx-data-grid__form-label';
-        caption.textContent = String(read(form.label as string | (() => string)) ?? '');
+        part<HTMLSpanElement>(box, 'span', 'mx-data-grid__form-label').setText(String(read(form.label as string | (() => string)) ?? ''));
       }
       this.field = content instanceof Field ? content : null;
       if (content instanceof ComponentBase) {
@@ -119,7 +120,7 @@ export class CellEditor<T> {
       this.field = this.kind === 'lookup' ? this.createLookup(options) : this.createField(options);
       box.controls.add(this.field);
     }
-    if (!form) this.field?.element.setAttribute('data-in-cell', '');
+    if (!form) this.field?.attr.add({ 'data-in-cell': '' });
   }
 
   /** The editor component: the kit field, or a custom editor's content. */
@@ -127,13 +128,9 @@ export class CellEditor<T> {
     return this.field ?? this.content;
   }
 
-  get element(): HTMLElement {
-    return this.box.element;
-  }
-
-  /** The element that takes the keys: the input, the check box, the list's field. */
-  get input(): HTMLElement | null {
-    return (this.field as unknown as { focusElement?: HTMLElement } | null)?.focusElement ?? null;
+  /** The part that takes the keys: the input, the check box, the list's field. */
+  get inputPart(): ComponentBase | null {
+    return this.field?.focusPart ?? null;
   }
 
   /** A lookup's list is open. */
@@ -145,8 +142,7 @@ export class CellEditor<T> {
   focus() {
     const field = this.field;
     if (!field) {
-      const target = this.element.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]:not([tabindex="-1"])') ?? this.element;
-      target.focus({ preventScroll: true });
+      focusFirstIn(this.box, 'any', { preventScroll: true });
       return;
     }
     field.focus();
@@ -155,21 +151,14 @@ export class CellEditor<T> {
       this.typedIn = true;
       if (!typed || !this.initialText) return;
       if (field instanceof DropDown) field.open(this.initialText);
-      else if (field instanceof ComboBox) {
-        field.inputElement.value = this.initialText;
-        field.inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-      }
+      else if (field instanceof ComboBox) field.typeText(this.initialText);
       return;
     }
-    const input = this.input;
-    if (!(input instanceof HTMLInputElement) || input.type === 'checkbox' || (this.kind !== 'text' && this.kind !== 'number')) return;
-    if (typed && this.kind === 'number') {
-      input.value = this.initialText!;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+    if (this.kind !== 'text' && this.kind !== 'number') return;
+    if (typed && field instanceof NumberBox) field.typeText(this.initialText!);
     this.typedIn = true;
-    if (!typed && this.model.settings.get('selectTextOnEditStart')) input.select();
-    else input.setSelectionRange(input.value.length, input.value.length);
+    if (!typed && this.model.settings.get('selectTextOnEditStart')) (field as TextBox | NumberBox).select();
+    else this.inputPart!.attr.add({ setSelectionRange: [TEXT_END, TEXT_END] });
   }
 
   /** Reads the value; a number or a date that cannot be read is reported, not kept. */
@@ -190,7 +179,7 @@ export class CellEditor<T> {
         return { ok: true, value: dateLike(box.value, this.value) };
       }
       case 'number': {
-        const n = parseNumber((this.input as HTMLInputElement).value, this.model.formatter.locale);
+        const n = parseNumber((field as NumberBox).inputText, this.model.formatter.locale);
         if (n !== null && Number.isNaN(n)) return { ok: false, message: this.model.text('gridInvalidNumber') };
         return { ok: true, value: n };
       }

@@ -1,15 +1,17 @@
 import { follow } from '../../core/follow';
-import { onLookChanged } from '../../core/look-watch';
-import { createSignal, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
+import { boxOf, isRtl, measure, onLookChange, rectOf, scrollIntoView, scrollTo } from '../../core/measure';
+import { Component, createSignal, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { deepActiveElement } from '../../core/focus';
+import { isWithin } from '../../core/component-tree';
+import { clearParts, glyphPart, loose, part, removePart } from '../../core/draw-parts';
+import { focusOn, holdsFocus, isFocused } from '../../core/focus';
 import { functionValue } from '../../core/function-value';
-import { checkMark, chevronEnd, dashMark } from '../../core/glyphs';
-import { iconNode } from '../../core/icon-node';
+import { orderControls } from '../../core/order-controls';
+import { css, mark, put, text as writeText } from '../../core/part-writes';
+import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
-import { isElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import type { ItemField } from '../../parts/list/item-field';
 import { givenList } from '../../core/given-field';
@@ -21,6 +23,7 @@ import type { TreeFields } from './tree-fields';
 import { TreeModel } from './TreeModel';
 import type { TreeNode } from './tree-node';
 import type { TreeRow } from './tree-row';
+import type { TreeRowParts } from './tree-row-parts';
 import type { TreeViewCheckChangedEventArgs } from './tree-view-check-changed-event-args';
 import type { TreeViewExpandOn } from './tree-view-expand-on';
 import type { TreeViewExpandedEventArgs } from './tree-view-expanded-event-args';
@@ -76,16 +79,37 @@ const NONE = Symbol('none');
 
 const PARTS = Symbol('mx.treeview');
 
+/** What a row was drawn with, and its text's part. */
+interface RowLook<T> {
+  key: unknown;
+  parentKey: unknown;
+  item: T;
+  icon: IconSource | null | undefined;
+  template: TreeViewItemTemplate<T> | null;
+  checks: boolean;
+  text: Component<HTMLSpanElement>;
+}
+
+/** The rows drawn before the items were read again, by key, with what releases each. */
+type OldRows = Map<unknown, { drawn: TreeRowParts; release: (() => void) | undefined }>;
+
 interface Parts<T> {
   model: TreeModel<T>;
-  body: HTMLDivElement;
-  empty: HTMLDivElement;
+  /** The part with `role="tree"` that holds the rows, a child of the tree: the search box is put before it. */
+  bodyPart: Component<HTMLDivElement>;
+  empty: Component<HTMLDivElement>;
   search: TextBox | null;
   rows: TreeRow<T>[];
   index: Map<TreeNode<T>, number>;
-  elements: Map<TreeNode<T>, HTMLElement>;
-  nodes: WeakMap<Element, TreeNode<T>>;
+  /** The rows drawn now, by node. */
+  elements: Map<TreeNode<T>, TreeRowParts>;
+  /** The empty blocks that stand for the rows out of view in a long tree. */
+  spaces: Component<HTMLDivElement>[];
   releases: Map<TreeNode<T>, () => void>;
+  /** What each row was drawn with: a row whose look stays is kept when the items are read again. */
+  looks: WeakMap<TreeRowParts, RowLook<T>>;
+  /** The rows of each closed row's hidden group, kept for when it opens again. */
+  stashes: Map<TreeRowParts, OldRows>;
   expanded: Set<unknown>;
   selected: Set<unknown>;
   checked: Set<unknown>;
@@ -106,8 +130,12 @@ interface Parts<T> {
   focusKey: unknown;
   anchorKey: unknown;
   windowed: boolean;
+  /** In a long tree, as last measured: the height of a row, how far the rows are scrolled and how much of them shows. */
   rowHeight: number;
-  frame: number;
+  top: number;
+  view: number;
+  /** In a long tree, the row to scroll into view once the rows are measured; -1 for none. */
+  reach: number;
   typed: string;
   typedAt: number;
   ready: boolean;
@@ -154,15 +182,14 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     super('div', props);
     const own = (this.props ?? {}) as TreeViewProps<T>;
     const parts = this.parts;
-    this.element.classList.add('mx-tree-view');
+    this.class.add('mx-tree-view');
 
     for (const name of LOOK) this.observeProperty(name, () => this.renderLook());
     this.observeProperty<string | undefined>('label', (label) => {
-      if (label) parts.body.setAttribute('aria-label', label);
-      else parts.body.removeAttribute('aria-label');
+      if (label) put(parts.bodyPart, 'aria-label', label);
+      else put(parts.bodyPart, 'aria-label', null);
     });
     this.observeProperty('searchEnabled', () => this.renderSearch());
-    this.motif.on('x:built', () => this.placeSearch());
     this.observeProperty<string | undefined>('searchValue', (text) => {
       if (parts.search && parts.search.value !== (text ?? '')) parts.search.value = text ?? '';
       if (parts.ready) this.redraw();
@@ -183,7 +210,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     }
     // Another design language, theme or density: the rows have another height.
     this.motif.setDisposable(
-      onLookChanged(() => {
+      onLookChange(this, () => {
         parts.rowHeight = 0;
         if (parts.ready) this.redraw();
       }),
@@ -202,8 +229,8 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     // The tree follows the items, every field it reads of them and the props that say how.
     this.watchItems();
     const stopTexts = onLanguage(this, () => {
-      parts.empty.textContent = uiLocale.strings.noItems;
-      for (const error of parts.body.querySelectorAll<HTMLElement>('.mx-tree-view__error')) this.fillError(error);
+      writeText(parts.empty, uiLocale.strings.noItems);
+      for (const row of parts.elements.values()) if (row.error) this.fillError(row.error);
     });
     this.takeExpanded(this.peekProperty('expandedKeys'));
     this.takeChecked(this.peekProperty('checkedKeys'));
@@ -213,20 +240,18 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     // Names written on the component's tag belong to the tree inside it.
     queueMicrotask(() => {
       for (const name of ['aria-label', 'aria-labelledby', 'aria-describedby']) {
-        const value = this.element.getAttribute(name);
+        const value = this.attr.get(name);
         if (value === null) continue;
-        parts.body.setAttribute(name, value);
-        this.element.removeAttribute(name);
+        parts.bodyPart.attr.add({ [name]: value });
+        this.attr.remove(name);
       }
     });
     this.motif.setDisposable(() => {
       parts.stopItems();
       stopTexts();
       for (const stop of parts.watchers.splice(0)) stop();
-      cancelAnimationFrame(parts.frame);
       parts.loads.clear();
-      for (const release of parts.releases.values()) release();
-      parts.releases.clear();
+      this.releaseAll();
       for (const emitter of [parts.expanding, parts.collapsing, parts.expanded$, parts.collapsed$, parts.selectionChanged, parts.checkChanged, parts.itemClick]) {
         emitter.dispose();
       }
@@ -406,9 +431,9 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     this.assignProperty('virtualFrom', value, Number);
   }
 
-  /** The element with `role="tree"`. */
-  get treeElement(): HTMLDivElement {
-    return this.parts.body;
+  /** The part with `role="tree"`. */
+  get treePart(): Component<HTMLDivElement> {
+    return this.parts.bodyPart;
   }
 
   // Events.
@@ -527,7 +552,8 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       const at = this.reveal(key);
       if (at < 0 || !this.isEnabled) return false;
       this.focusRow(at);
-      return deepActiveElement() === this.parts.elements.get(this.parts.rows[at].node);
+      const drawn = this.parts.elements.get(this.parts.rows[at].node);
+      return !!drawn && isFocused(drawn.item);
     });
   }
 
@@ -548,15 +574,27 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     untracked(() => {
       const parts = this.parts;
       const node = parts.model.node(key);
-      const el = node && parts.elements.get(node);
+      const old = node && parts.elements.get(node);
       const at = node && parts.index.get(node);
-      if (!node || !el || at === undefined) return;
-      const focused = deepActiveElement() === el;
-      this.forget(el);
-      const fresh = this.itemElement(parts.rows[at]);
-      el.replaceWith(fresh);
+      const host = old?.item.parent;
+      if (!node || !old || !host || at === undefined) return;
+      const focused = isFocused(old.item);
+      this.forget(node);
+      const fresh = this.itemPart(parts.rows[at]);
+      host.controls.insert(host.controls.items.indexOf(old.item), fresh.item);
+      // The open children go along to the new row, alive.
+      if (old.group) {
+        fresh.item.controls.add(old.group);
+        fresh.group = old.group;
+      }
+      const stash = parts.stashes.get(old);
+      if (stash) {
+        parts.stashes.delete(old);
+        parts.stashes.set(fresh, stash);
+      }
+      removePart(old.item);
       this.renderRoving();
-      if (focused) fresh.focus({ preventScroll: true });
+      if (focused) focusOn(fresh.item, { preventScroll: true });
     });
   }
 
@@ -570,10 +608,10 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   }
 
   /** Focuses the row Tab reaches. */
-  protected override get focusElement(): HTMLElement {
+  override get focusPart(): ComponentBase {
     const parts = this.parts;
     const stop = this.stopNode();
-    return (stop && parts.elements.get(stop)) || parts.body;
+    return (stop && parts.elements.get(stop)?.item) || parts.bodyPart;
   }
 
   protected override applyProperty(name: string, value: unknown): void {
@@ -606,23 +644,25 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   private get parts(): Parts<T> {
     const self = this as unknown as { [PARTS]?: Parts<T> };
     if (!self[PARTS]) {
-      const body = document.createElement('div');
-      body.className = 'mx-tree-view__body';
-      body.setAttribute('role', 'tree');
-      const empty = document.createElement('div');
-      empty.className = 'mx-tree-view__empty';
-      empty.hidden = true;
-      this.element.append(body, empty);
+      const bodyPart = new Component<HTMLDivElement>('div');
+      bodyPart.class.add('mx-tree-view__body');
+      bodyPart.attr.add({ role: 'tree' });
+      const emptyPart = new Component<HTMLDivElement>('div');
+      emptyPart.class.add('mx-tree-view__empty');
+      mark(emptyPart, 'hidden', true);
+      this.controls.add(bodyPart, emptyPart);
       self[PARTS] = {
         model: new TreeModel<T>(),
-        body,
-        empty,
+        bodyPart,
+        empty: emptyPart,
         search: null,
         rows: [],
         index: new Map(),
         elements: new Map(),
-        nodes: new WeakMap(),
+        spaces: [],
         releases: new Map(),
+        looks: new WeakMap(),
+        stashes: new Map(),
         expanded: new Set(),
         selected: new Set(),
         checked: new Set(),
@@ -640,7 +680,9 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
         anchorKey: NONE,
         windowed: false,
         rowHeight: 0,
-        frame: 0,
+        top: 0,
+        view: 0,
+        reach: -1,
         typed: '',
         typedAt: 0,
         ready: false,
@@ -1043,49 +1085,174 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     return this.peekProperty<number>('virtualFrom') ?? 500;
   }
 
+  /** Draws the rows: a row whose key and look stay is kept, its text and states written in place. */
   private drawAll(): void {
     const parts = this.parts;
-    const body = parts.body;
-    const active = deepActiveElement();
-    const hadFocus = !!active && body.contains(active);
-    this.releaseAll();
-    body.replaceChildren();
+    const hadFocus = holdsFocus(parts.bodyPart);
     const empty = !parts.rows.length;
-    parts.empty.hidden = !empty;
-    this.element.toggleAttribute('data-empty', empty);
-    parts.windowed = parts.rows.length > this.windowFrom;
-    this.element.toggleAttribute('data-windowed', parts.windowed);
-    if (parts.windowed) this.drawWindow();
-    else this.buildBranch(0, 1, body);
+    mark(parts.empty, 'hidden', !empty);
+    mark(this, 'data-empty', empty);
+    const windowed = parts.rows.length > this.windowFrom;
+    // A long tree places its rows apart from a short one's: switching between them draws them anew.
+    const old = windowed === parts.windowed ? this.takeRows() : null;
+    if (!old) {
+      this.releaseAll();
+      clearParts(parts.bodyPart);
+      parts.spaces = [];
+    }
+    parts.windowed = windowed;
+    mark(this, 'data-windowed', windowed);
+    if (windowed) {
+      if (old) for (const row of parts.rows) this.keepRow(old, row);
+      this.drawWindow();
+    } else this.buildBranch(0, 1, parts.bodyPart, old, !!old);
+    if (old) this.dropRows(old);
     this.renderRoving();
     if (hadFocus) {
       const stop = this.stopNode();
-      const el = stop && parts.elements.get(stop);
-      if (el) el.focus({ preventScroll: true });
-      else body.focus();
+      const drawn = stop && parts.elements.get(stop);
+      if (drawn) focusOn(drawn.item, { preventScroll: true });
+      else focusOn(parts.bodyPart);
     }
   }
 
-  /** Builds the rows from `from` on that sit at `level`, their open children nested in groups. */
-  private buildBranch(from: number, level: number, host: HTMLElement): number {
+  /**
+   * Builds the rows from `from` on that sit at `level`, their open children nested in groups. With `old`, the rows
+   * drawn before: where `keep` says the host stayed, a row kept for its key stays in place, its group with it.
+   */
+  private buildBranch(from: number, level: number, host: ComponentBase, old: OldRows | null = null, keep = false): number {
     const rows = this.parts.rows;
+    const placed: ComponentBase[] = [];
     let at = from;
     while (at < rows.length && rows[at].node.level >= level) {
       const row = rows[at];
-      const el = this.itemElement(row);
-      host.append(el);
+      const kept = old && keep ? this.keepRow(old, row) : null;
+      const drawn = kept ?? this.itemPart(row);
+      if (kept) this.renderItem(kept, row);
+      if (old) placed.push(drawn.item);
+      else host.controls.add(drawn.item);
       at++;
       if (at < rows.length && rows[at].node.level > row.node.level) {
-        const group = el.appendChild(document.createElement('div'));
-        group.className = 'mx-tree-view__group';
-        group.setAttribute('role', 'group');
-        at = this.buildBranch(at, row.node.level + 1, group);
-      }
+        const group = kept?.group;
+        if (kept && group && old) this.openGroup(kept, old);
+        at = this.buildBranch(at, row.node.level + 1, group ?? this.addGroup(drawn), old, !!group);
+      } else if (drawn.group && old) this.closeGroup(drawn, row.node, this.takeWithin(drawn.group, old));
     }
+    if (old) orderControls(host, placed);
     return at;
   }
 
-  /** A row opened or closed: only its children are drawn again. */
+  /** Takes the rows drawn so far out of the tree's keeping, by key: `keepRow` gives those that stay back. */
+  private takeRows(): OldRows {
+    const parts = this.parts;
+    const old: OldRows = new Map();
+    for (const [node, drawn] of parts.elements) old.set(node.key, { drawn, release: parts.releases.get(node) });
+    parts.elements.clear();
+    parts.releases.clear();
+    return old;
+  }
+
+  /** The row drawn before for `row`'s key, kept for its new node when what it was drawn with stays; null otherwise. */
+  private keepRow(old: OldRows, row: TreeRow<T>): TreeRowParts | null {
+    const parts = this.parts;
+    const node = row.node;
+    const entry = old.get(node.key);
+    const look = entry && (parts.looks.get(entry.drawn) as RowLook<T> | undefined);
+    if (!entry || !look) return null;
+    const item = node.item;
+    const template = this.peekProperty<TreeViewItemTemplate<T> | null>('itemTemplate') ?? null;
+    const same =
+      look.parentKey === node.parent?.key &&
+      look.checks === !!this.peekProperty('showCheckBoxes') &&
+      look.template === template &&
+      (!template || look.item === item) &&
+      look.icon === this.iconOf(item);
+    if (!same) return null;
+    old.delete(node.key);
+    parts.elements.set(node, entry.drawn);
+    if (entry.release) parts.releases.set(node, entry.release);
+    look.item = item;
+    if (!template) writeText(look.text, this.textOf(item));
+    css(entry.drawn.item, '--_level', String(node.level));
+    return entry.drawn;
+  }
+
+  /** Lets go of the rows drawn before that were not kept. */
+  private dropRows(old: OldRows): void {
+    const parts = this.parts;
+    for (const { drawn, release } of old.values()) {
+      release?.();
+      const stash = parts.stashes.get(drawn);
+      if (stash) {
+        parts.stashes.delete(drawn);
+        this.dropRows(stash);
+      }
+      // A row inside a group taken away went with it.
+      if (!drawn.item.isDisposed) removePart(drawn.item);
+    }
+  }
+
+  private addGroup(drawn: TreeRowParts): Component<HTMLDivElement> {
+    const group = part<HTMLDivElement>(drawn.item, 'div', 'mx-tree-view__group');
+    group.attr.add({ role: 'group' });
+    drawn.group = group;
+    return group;
+  }
+
+  /**
+   * The rows inside `group`, taken out of `rows`, or without it out of the tree's keeping: `keepRow` gives back those
+   * that stay.
+   */
+  private takeWithin(group: ComponentBase, rows?: OldRows): OldRows {
+    const parts = this.parts;
+    const taken: OldRows = new Map();
+    if (rows) {
+      for (const [key, entry] of rows) {
+        if (!isWithin(entry.drawn.item, group)) continue;
+        taken.set(key, entry);
+        rows.delete(key);
+      }
+      return taken;
+    }
+    for (const [node, drawn] of parts.elements) {
+      if (!isWithin(drawn.item, group)) continue;
+      taken.set(node.key, { drawn, release: parts.releases.get(node) });
+      parts.elements.delete(node);
+      parts.releases.delete(node);
+    }
+    return taken;
+  }
+
+  /** A group opens again: the rows hidden with it join `rows` for keeping, and it shows. */
+  private openGroup(drawn: TreeRowParts, rows: OldRows): void {
+    const parts = this.parts;
+    const stash = parts.stashes.get(drawn);
+    if (stash) {
+      parts.stashes.delete(drawn);
+      for (const [key, entry] of stash) rows.set(key, entry);
+    }
+    if (drawn.group) mark(drawn.group, 'hidden', false);
+  }
+
+  /** A row closes: its group hides with its rows in it, kept for when it opens again; a row left without children lets them go. */
+  private closeGroup(drawn: TreeRowParts, node: TreeNode<T>, rows: OldRows): void {
+    const parts = this.parts;
+    const group = drawn.group;
+    if (!group) return;
+    const stash = parts.stashes.get(drawn);
+    if (stash) for (const [key, entry] of stash) rows.set(key, entry);
+    if (!rows.size || !parts.model.hasChildren(node, parts.shown)) {
+      parts.stashes.delete(drawn);
+      this.dropRows(rows);
+      removePart(group);
+      drawn.group = null;
+      return;
+    }
+    parts.stashes.set(drawn, rows);
+    mark(group, 'hidden', true);
+  }
+
+  /** A row opened or closed: its group is built on the first open, then shown and hidden; its rows kept by key. */
   private drawBranch(node: TreeNode<T>): void {
     const parts = this.parts;
     const windowed = parts.rows.length > this.windowFrom;
@@ -1098,37 +1265,36 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       this.renderRoving();
       return;
     }
-    const el = parts.elements.get(node);
-    if (!el) return;
-    const old = el.querySelector(':scope > .mx-tree-view__group');
-    if (old) {
-      const active = deepActiveElement();
-      if (active && old.contains(active)) el.focus({ preventScroll: true });
-      for (const child of old.querySelectorAll('.mx-tree-view__item')) this.forget(child);
-      old.remove();
-    }
+    const drawn = parts.elements.get(node);
+    if (!drawn) return;
     const at = parts.index.get(node);
     if (at !== undefined) {
-      this.renderItem(el, parts.rows[at]);
+      this.renderItem(drawn, parts.rows[at]);
       const next = parts.rows[at + 1];
-      if (next && next.node.level > node.level) {
-        const group = el.appendChild(document.createElement('div'));
-        group.className = 'mx-tree-view__group';
-        group.setAttribute('role', 'group');
-        this.buildBranch(at + 1, node.level + 1, group);
-      }
+      const group = drawn.group;
+      if (!next || next.node.level <= node.level) {
+        if (group) {
+          if (holdsFocus(group)) focusOn(drawn.item, { preventScroll: true });
+          this.closeGroup(drawn, node, this.takeWithin(group));
+        }
+      } else if (group) {
+        const old = this.takeWithin(group);
+        this.openGroup(drawn, old);
+        this.buildBranch(at + 1, node.level + 1, group, old, true);
+        this.dropRows(old);
+      } else this.buildBranch(at + 1, node.level + 1, this.addGroup(drawn));
     }
     this.renderRoving();
   }
 
   /** In a long tree: the rows in view (and the one Tab reaches), two empty blocks for the rest. */
-  private drawWindow(): void {
+  private drawWindow(seen?: { top: number; view: number }): void {
     const parts = this.parts;
-    const body = parts.body;
     const rows = parts.rows;
     const count = rows.length;
     if (!parts.rowHeight) parts.rowHeight = this.measure();
     const height = parts.rowHeight;
+    const body = seen ? { scrollTop: seen.top, clientHeight: seen.view } : boxOf(parts.bodyPart);
     const top = body.scrollTop;
     const view = body.clientHeight || height * 20;
     const first = Math.max(0, Math.floor(top / height) - OVERSCAN);
@@ -1142,38 +1308,40 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       else wanted.push(stopAt);
     }
     const keep = new Set<TreeNode<T>>();
-    const placed: HTMLElement[] = [];
+    const placed: ComponentBase[] = [];
+    const spaces: Component<HTMLDivElement>[] = [];
+    const addSpace = (size: number) => {
+      const space = this.space(size);
+      spaces.push(space);
+      placed.push(space);
+    };
     let next = 0;
     for (const at of wanted) {
-      if (at > next) placed.push(this.space((at - next) * height));
+      if (at > next) addSpace((at - next) * height);
       const row = rows[at];
-      let el = parts.elements.get(row.node);
-      if (el) this.renderItem(el, row);
-      else el = this.itemElement(row);
-      placed.push(el);
+      let drawn = parts.elements.get(row.node);
+      if (drawn) this.renderItem(drawn, row);
+      else drawn = this.itemPart(row);
+      placed.push(drawn.item);
       keep.add(row.node);
       next = at + 1;
     }
-    if (count > next) placed.push(this.space((count - next) * height));
-    for (const [node, el] of [...parts.elements]) {
+    if (count > next) addSpace((count - next) * height);
+    for (const [node, drawn] of [...parts.elements]) {
       if (keep.has(node)) continue;
-      this.forget(el);
-      el.remove();
+      this.forget(node);
+      removePart(drawn.item);
     }
-    for (const space of [...body.querySelectorAll(':scope > .mx-tree-view__space')]) space.remove();
+    for (const space of parts.spaces) removePart(space);
+    parts.spaces = spaces;
     // Rows that stay are never moved: moving the focused one would drop focus.
-    let cursor = body.firstElementChild;
-    for (const el of placed) {
-      if (el === cursor) cursor = cursor.nextElementSibling;
-      else body.insertBefore(el, cursor);
-    }
+    orderControls(parts.bodyPart, placed);
   }
 
-  private space(size: number): HTMLElement {
-    const space = document.createElement('div');
-    space.className = 'mx-tree-view__space';
-    space.setAttribute('aria-hidden', 'true');
-    space.style.blockSize = `${size}px`;
+  private space(size: number): Component<HTMLDivElement> {
+    const space = loose<HTMLDivElement>('div', 'mx-tree-view__space');
+    space.attr.add({ 'aria-hidden': 'true' });
+    css(space, 'block-size', `${size}px`);
     return space;
   }
 
@@ -1181,145 +1349,147 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const parts = this.parts;
     const row = parts.rows[0];
     if (!row) return 32;
-    const probe = this.itemElement(row);
-    parts.body.append(probe);
-    const height = probe.getBoundingClientRect().height;
-    this.forget(probe);
-    probe.remove();
+    // Not kept by the tree: the row drawn for the same node stays the one it knows.
+    const releases: (() => void)[] = [];
+    const probe = this.rowParts(row, releases);
+    this.renderItem(probe, row);
+    parts.bodyPart.controls.add(probe.item);
+    const height = rectOf(probe.item).height;
+    for (const release of releases) release();
+    removePart(probe.item);
     return height || 32;
   }
 
-  private itemElement(row: TreeRow<T>): HTMLElement {
+  private itemPart(row: TreeRow<T>): TreeRowParts {
     const parts = this.parts;
+    const releases: (() => void)[] = [];
+    const drawn = this.rowParts(row, releases);
+    if (releases.length) parts.releases.set(row.node, () => releases.forEach((r) => r()));
+    parts.elements.set(row.node, drawn);
+    this.renderItem(drawn, row);
+    return drawn;
+  }
+
+  /** The parts of a row, not kept by the tree yet; what takes its icon and template away again goes to `releases`. */
+  private rowParts(row: TreeRow<T>, releases: (() => void)[]): TreeRowParts {
     const node = row.node;
     const item = node.item;
-    const el = document.createElement('div');
-    el.className = 'mx-tree-view__item';
-    el.setAttribute('role', 'treeitem');
-    el.tabIndex = -1;
-    const line = el.appendChild(document.createElement('div'));
-    line.className = 'mx-tree-view__row';
-    el.style.setProperty('--_level', String(node.level));
-    const expander = line.appendChild(document.createElement('span'));
-    expander.className = 'mx-tree-view__expander';
-    expander.append(chevronEnd());
+    const itemPart = loose<HTMLDivElement>('div', 'mx-tree-view__item');
+    itemPart.attr.add({ role: 'treeitem' });
+    put(itemPart, 'tabindex', '-1');
+    const line = part<HTMLDivElement>(itemPart, 'div', 'mx-tree-view__row');
+    css(itemPart, '--_level', String(node.level));
+    const expander = part<HTMLSpanElement>(line, 'span', 'mx-tree-view__expander');
+    glyphPart(expander, 'chevron-end');
+    let check: Component<HTMLSpanElement> | null = null;
     if (this.peekProperty('showCheckBoxes')) {
-      const check = line.appendChild(document.createElement('span'));
-      check.className = 'mx-tree-view__check';
-      const mark = checkMark();
-      mark.classList.add('mx-tree-view__check-mark');
-      const dash = dashMark();
-      dash.classList.add('mx-tree-view__dash-mark');
-      check.append(mark, dash);
+      check = part<HTMLSpanElement>(line, 'span', 'mx-tree-view__check');
+      glyphPart(check, 'check', 'mx-tree-view__check-mark');
+      glyphPart(check, 'dash', 'mx-tree-view__dash-mark');
     }
-    const releases: (() => void)[] = [];
     const icon = this.iconOf(item);
     if (icon !== undefined && icon !== null) {
-      const host = line.appendChild(document.createElement('span'));
-      host.className = 'mx-tree-view__icon';
-      host.setAttribute('aria-hidden', 'true');
-      const shown = iconNode(icon);
-      host.append(shown.node);
-      releases.push(shown.release);
+      const host = part<HTMLSpanElement>(line, 'span', 'mx-tree-view__icon');
+      host.attr.add({ 'aria-hidden': 'true' });
+      releases.push(showIcon(icon, host));
     }
-    const text = line.appendChild(document.createElement('span'));
-    text.className = 'mx-tree-view__text';
+    const text = part<HTMLSpanElement>(line, 'span', 'mx-tree-view__text');
     const template = this.peekProperty<TreeViewItemTemplate<T> | null>('itemTemplate');
     const release = template ? template(item, text) : undefined;
     if (release) releases.push(release);
-    if (!template) text.textContent = this.textOf(item);
-    if (releases.length) parts.releases.set(node, () => releases.forEach((r) => r()));
-    parts.elements.set(node, el);
-    parts.nodes.set(el, node);
-    this.renderItem(el, row);
-    return el;
+    if (!template) writeText(text, this.textOf(item));
+    const drawn: TreeRowParts = { item: itemPart, line, expander, check, group: null, error: null, retry: null };
+    this.parts.looks.set(drawn, { key: node.key, parentKey: node.parent?.key, item, icon, template: template ?? null, checks: !!check, text });
+    return drawn;
   }
 
   /** A row's states: level and place, open, selected, checked, enabled, loading. */
-  private renderItem(el: HTMLElement, row: TreeRow<T>): void {
+  private renderItem(drawn: TreeRowParts, row: TreeRow<T>): void {
     const parts = this.parts;
     const node = row.node;
     const key = node.key;
-    el.setAttribute('aria-level', String(node.level));
-    el.setAttribute('aria-setsize', String(row.size));
-    el.setAttribute('aria-posinset', String(row.position));
+    put(drawn.item, 'aria-level', String(node.level));
+    put(drawn.item, 'aria-setsize', String(row.size));
+    put(drawn.item, 'aria-posinset', String(row.position));
     const busy = parts.busy.get(key);
     const branch = parts.model.hasChildren(node, parts.shown);
     const open = branch && this.isOpen(node) && busy !== 'error';
-    if (branch) el.setAttribute('aria-expanded', String(open));
-    else el.removeAttribute('aria-expanded');
-    el.toggleAttribute('data-branch', branch);
-    el.toggleAttribute('data-expanded', open);
+    if (branch) put(drawn.item, 'aria-expanded', String(open));
+    else put(drawn.item, 'aria-expanded', null);
+    mark(drawn.item, 'data-branch', branch);
+    mark(drawn.item, 'data-expanded', open);
     if ((this.peekProperty('selectionMode') ?? 'single') === 'none') {
-      el.removeAttribute('aria-selected');
-      el.removeAttribute('data-selected');
+      put(drawn.item, 'aria-selected', null);
+      put(drawn.item, 'data-selected', null);
     } else {
       const selected = parts.selected.has(key);
-      el.setAttribute('aria-selected', String(selected));
-      el.toggleAttribute('data-selected', selected);
+      put(drawn.item, 'aria-selected', String(selected));
+      mark(drawn.item, 'data-selected', selected);
     }
     if (this.peekProperty('showCheckBoxes')) {
       const state = parts.states.get(node) ?? (parts.checked.has(key) ? 'checked' : 'unchecked');
-      el.setAttribute('aria-checked', state === 'mixed' ? 'mixed' : String(state === 'checked'));
-      el.dataset.state = state;
+      put(drawn.item, 'aria-checked', state === 'mixed' ? 'mixed' : String(state === 'checked'));
+      put(drawn.item, 'data-state', state);
     } else {
-      el.removeAttribute('aria-checked');
-      delete el.dataset.state;
+      put(drawn.item, 'aria-checked', null);
+      put(drawn.item, 'data-state', null);
     }
     const enabled = this.enabledOf(node.item);
-    el.toggleAttribute('data-disabled', !enabled);
-    if (!enabled) el.setAttribute('aria-disabled', 'true');
-    else if (!this.element.hasAttribute('data-disabled')) el.removeAttribute('aria-disabled');
-    if (busy === 'loading') el.setAttribute('aria-busy', 'true');
-    else el.removeAttribute('aria-busy');
-    el.toggleAttribute('data-loading', busy === 'loading');
-    this.renderError(el, busy === 'error');
+    mark(drawn.item, 'data-disabled', !enabled);
+    if (!enabled) put(drawn.item, 'aria-disabled', 'true');
+    else if (this.peekProperty('enabled') !== false) put(drawn.item, 'aria-disabled', null);
+    if (busy === 'loading') put(drawn.item, 'aria-busy', 'true');
+    else put(drawn.item, 'aria-busy', null);
+    mark(drawn.item, 'data-loading', busy === 'loading');
+    this.renderError(drawn, busy === 'error');
   }
 
-  private renderError(el: HTMLElement, failed: boolean): void {
-    const line = el.firstElementChild as HTMLElement;
-    const error = line.querySelector<HTMLElement>(':scope > .mx-tree-view__error');
-    el.toggleAttribute('data-error', failed);
+  private renderError(drawn: TreeRowParts, failed: boolean): void {
+    mark(drawn.item, 'data-error', failed);
     if (!failed) {
-      if (error) {
-        error.remove();
-        el.removeAttribute('aria-describedby');
+      if (drawn.error) {
+        removePart(drawn.error);
+        drawn.error = null;
+        drawn.retry = null;
+        put(drawn.item, 'aria-describedby', null);
       }
       return;
     }
-    if (error) return;
-    const box = line.appendChild(document.createElement('span'));
-    box.className = 'mx-tree-view__error';
-    box.id = nextId('tree-error');
+    if (drawn.error) return;
+    const box = part<HTMLSpanElement>(drawn.line, 'span', 'mx-tree-view__error');
+    const id = nextId('tree-error');
+    box.attr.add({ id });
     // Read as the row's description, not as part of its name.
-    box.setAttribute('aria-hidden', 'true');
-    box.append(document.createElement('span'));
-    const retry = box.appendChild(document.createElement('button'));
-    retry.type = 'button';
-    retry.tabIndex = -1;
-    retry.className = 'mx-tree-view__retry';
+    box.attr.add({ 'aria-hidden': 'true' });
+    part(box, 'span', '');
+    const retry = part<HTMLButtonElement>(box, 'button', 'mx-tree-view__retry');
+    retry.attr.add({ type: 'button' });
+    put(retry, 'tabindex', '-1');
+    drawn.error = box;
+    drawn.retry = retry;
     this.fillError(box);
-    el.setAttribute('aria-describedby', box.id);
+    put(drawn.item, 'aria-describedby', id);
   }
 
-  private fillError(box: HTMLElement): void {
+  private fillError(box: Component<HTMLSpanElement>): void {
     const strings = uiLocale.strings;
-    (box.firstElementChild as HTMLElement).textContent = strings.loadFailed;
-    (box.lastElementChild as HTMLElement).textContent = strings.retry;
+    const [message, retry] = box.controls.items;
+    writeText(message, strings.loadFailed);
+    writeText(retry, strings.retry);
   }
 
   private renderNode(node: TreeNode<T>): void {
     const parts = this.parts;
-    const el = parts.elements.get(node);
+    const drawn = parts.elements.get(node);
     const at = parts.index.get(node);
-    if (el && at !== undefined) this.renderItem(el, parts.rows[at]);
+    if (drawn && at !== undefined) this.renderItem(drawn, parts.rows[at]);
   }
 
   private renderStates(): void {
     const parts = this.parts;
-    for (const [node, el] of parts.elements) {
+    for (const [node, drawn] of parts.elements) {
       const at = parts.index.get(node);
-      if (at !== undefined) this.renderItem(el, parts.rows[at]);
+      if (at !== undefined) this.renderItem(drawn, parts.rows[at]);
     }
     this.renderRoving();
   }
@@ -1342,17 +1512,16 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   private renderRoving(): void {
     const parts = this.parts;
     const stop = this.peekProperty('tabStop') === false ? null : this.stopNode();
-    for (const [node, el] of parts.elements) el.tabIndex = node === stop ? 0 : -1;
+    for (const [node, drawn] of parts.elements) put(drawn.item, 'tabindex', node === stop ? '0' : '-1');
   }
 
   private renderLook(): void {
     const parts = this.parts;
-    const data = this.element.dataset;
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
-    this.element.toggleAttribute('data-lines', !!this.peekProperty('showLines'));
-    this.element.toggleAttribute('data-checkboxes', !!this.peekProperty('showCheckBoxes'));
-    if (this.peekProperty('selectionMode') === 'multiple') parts.body.setAttribute('aria-multiselectable', 'true');
-    else parts.body.removeAttribute('aria-multiselectable');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
+    mark(this, 'data-lines', !!this.peekProperty('showLines'));
+    mark(this, 'data-checkboxes', !!this.peekProperty('showCheckBoxes'));
+    if (this.peekProperty('selectionMode') === 'multiple') put(parts.bodyPart, 'aria-multiselectable', 'true');
+    else put(parts.bodyPart, 'aria-multiselectable', null);
   }
 
   private renderSearch(): void {
@@ -1371,30 +1540,23 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       search.label = uiLocale.strings.search;
       search.placeholder = uiLocale.strings.search;
     });
-    search.element.classList.add('mx-tree-view__search');
+    search.class.add('mx-tree-view__search');
     search.value = this.peekProperty<string>('searchValue') ?? '';
     search.onValueChanged((e) => this.changeProperty('searchValue', e.value ?? ''));
-    search.inputElement.addEventListener('keydown', (e) => {
+    search.motif.on('keydown', (_, e: KeyboardEvent) => {
       if (e.key !== 'ArrowDown' || !parts.rows.length) return;
       e.preventDefault();
       const stop = this.stopNode();
       untracked(() => this.focusRow(stop ? (parts.index.get(stop) ?? 0) : 0));
     });
-    this.controls.add(search);
+    // Above the rows: before them among the tree's controls.
+    this.controls.insert(this.controls.items.indexOf(parts.bodyPart), search);
     parts.search = search;
-    this.placeSearch();
   }
 
-  /** The search box sits above the rows; building the tree places its controls again, so it is put back. */
-  private placeSearch(): void {
+  /** Lets go of the row drawn for `node`: what its icon and template hold is released, and the tree keeps it no longer. */
+  private forget(node: TreeNode<T>): void {
     const parts = this.parts;
-    if (parts.search && parts.search.element.nextElementSibling !== parts.body) parts.body.before(parts.search.element);
-  }
-
-  private forget(el: Element): void {
-    const parts = this.parts;
-    const node = parts.nodes.get(el);
-    if (!node || parts.elements.get(node) !== el) return;
     parts.releases.get(node)?.();
     parts.releases.delete(node);
     parts.elements.delete(node);
@@ -1405,22 +1567,23 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     for (const release of parts.releases.values()) release();
     parts.releases.clear();
     parts.elements.clear();
+    for (const stash of parts.stashes.values()) for (const { release } of stash.values()) release?.();
+    parts.stashes.clear();
   }
 
   private scrollToRow(at: number): void {
     const parts = this.parts;
-    const body = parts.body;
     if (parts.windowed) {
       const height = parts.rowHeight || this.measure();
       const top = at * height;
-      const view = body.clientHeight;
-      if (top < body.scrollTop) body.scrollTop = top;
-      else if (top + height > body.scrollTop + view) body.scrollTop = top + height - view;
+      const body = boxOf(parts.bodyPart);
+      if (top < body.scrollTop) scrollTo(parts.bodyPart, { top });
+      else if (top + height > body.scrollTop + body.clientHeight) scrollTo(parts.bodyPart, { top: top + height - body.clientHeight });
       this.drawWindow();
       this.renderRoving();
     }
-    const line = parts.elements.get(parts.rows[at].node)?.firstElementChild;
-    if (line && typeof line.scrollIntoView === 'function') line.scrollIntoView({ block: 'nearest' });
+    const line = parts.elements.get(parts.rows[at].node)?.line;
+    if (line) scrollIntoView(line);
   }
 
   private focusRow(at: number): void {
@@ -1430,51 +1593,65 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     parts.focusKey = row.node.key;
     this.scrollToRow(at);
     this.renderRoving();
-    parts.elements.get(row.node)?.focus({ preventScroll: true });
+    const drawn = parts.elements.get(row.node);
+    if (drawn) focusOn(drawn.item, { preventScroll: true });
   }
 
   // Input.
 
   private listen(): void {
     const parts = this.parts;
-    const body = parts.body;
-    body.addEventListener('click', (e) => untracked(() => this.clicked(e)));
-    body.addEventListener('dblclick', (e) => untracked(() => this.doubleClicked(e)));
-    body.addEventListener('keydown', (e) => untracked(() => this.keyDown(e)));
-    body.addEventListener('focusin', (e) => {
-      const node = this.nodeOf(e.target);
+    const body = parts.bodyPart;
+    body.motif.on('click', (_, e: MouseEvent) => untracked(() => this.clicked(e)));
+    body.motif.on('dblclick', (_, e: MouseEvent) => untracked(() => this.doubleClicked(e)));
+    body.motif.on('keydown', (_, e: KeyboardEvent) => untracked(() => this.keyDown(e)));
+    body.motif.on('focusin', (_, e: FocusEvent) => {
+      const node = this.nodeOf(e);
       if (!node || parts.focusKey === node.key) return;
       parts.focusKey = node.key;
       this.renderRoving();
     });
-    body.addEventListener('scroll', () => {
+    body.motif.on('scroll', () => {
       if (!parts.windowed) return;
-      cancelAnimationFrame(parts.frame);
-      parts.frame = requestAnimationFrame(() => this.drawWindow());
+      measure(this, this.readScroll, this.writeScroll);
     });
   }
 
-  private nodeOf(target: EventTarget | null): TreeNode<T> | undefined {
-    const el = isElement(target) ? target.closest('.mx-tree-view__item') : null;
-    return el ? this.parts.nodes.get(el) : undefined;
+  /** The scrolled rows are drawn once a frame, however many scroll events came. */
+  private readScroll = (): { top: number; view: number } => {
+    const body = boxOf(this.parts.bodyPart);
+    return { top: body.scrollTop, view: body.clientHeight };
+  };
+
+  private writeScroll = (seen: { top: number; view: number }): void => {
+    if (this.parts.windowed) this.drawWindow(seen);
+  };
+
+  /** The node of the drawn row an event came from: the innermost one, as a row holds the rows of its open children. */
+  private nodeOf(e: Event): TreeNode<T> | undefined {
+    let found: TreeNode<T> | undefined;
+    for (const [node, drawn] of this.parts.elements) {
+      if ((!found || node.level > found.level) && drawn.item.motif.isEventFrom(e)) found = node;
+    }
+    return found;
   }
 
   private clicked(e: MouseEvent): void {
     const parts = this.parts;
-    const target = e.target as Element;
-    const node = this.nodeOf(target);
-    if (!node) return;
+    const node = this.nodeOf(e);
+    const drawn = node && parts.elements.get(node);
+    if (!node || !drawn) return;
     const branch = parts.model.hasChildren(node, parts.shown);
-    if (target.closest('.mx-tree-view__retry')) {
+    if (drawn.retry?.motif.isEventFrom(e)) {
       this.setOpen(node, true, true, e);
       return;
     }
-    if (target.closest('.mx-tree-view__expander')) {
+    if (drawn.expander.motif.isEventFrom(e)) {
       if (branch) this.setOpen(node, !this.isOpen(node), true, e);
       return;
     }
     const enabled = this.enabledOf(node.item);
-    if (target.closest('.mx-tree-view__check')) {
+    if (drawn.check?.motif.isEventFrom(e)) {
       if (enabled) this.setCheck(node, parts.states.get(node) !== 'checked', true);
       return;
     }
@@ -1488,16 +1665,19 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
 
   private doubleClicked(e: MouseEvent): void {
     const parts = this.parts;
-    const target = e.target as Element;
-    const node = this.nodeOf(target);
-    if (!node || target.closest('.mx-tree-view__expander, .mx-tree-view__check, .mx-tree-view__retry')) return;
+    const node = this.nodeOf(e);
+    const drawn = node && parts.elements.get(node);
+    if (!node || !drawn) return;
+    if (drawn.expander.motif.isEventFrom(e) || drawn.check?.motif.isEventFrom(e) || drawn.retry?.motif.isEventFrom(e)) return;
     if (parts.model.hasChildren(node, parts.shown) && this.peekProperty('expandOn') === 'dblclick') this.setOpen(node, !this.isOpen(node), true, e);
   }
 
   private keyDown(e: KeyboardEvent): void {
     const parts = this.parts;
-    const node = this.nodeOf(e.target);
-    if (!node || e.target !== parts.elements.get(node)) return;
+    const node = this.nodeOf(e);
+    const drawn = node && parts.elements.get(node);
+    // Keys pressed on the row itself: what its line holds (a field of a template) keeps its own.
+    if (!node || !drawn || drawn.line.motif.isEventFrom(e) || drawn.group?.motif.isEventFrom(e)) return;
     const rows = parts.rows;
     const at = parts.index.get(node);
     if (at === undefined) return;
@@ -1506,8 +1686,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const branch = parts.model.hasChildren(node, parts.shown);
     const open = branch && this.isOpen(node);
     let key = e.key;
-    const dir = this.element.closest('[dir]')?.getAttribute('dir');
-    if (dir ? dir === 'rtl' : getComputedStyle(this.element).direction === 'rtl') {
+    if (isRtl(this)) {
       if (key === 'ArrowLeft') key = 'ArrowRight';
       else if (key === 'ArrowRight') key = 'ArrowLeft';
     }
@@ -1537,7 +1716,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       }
       case 'PageDown':
       case 'PageUp': {
-        const page = Math.max(1, Math.floor(parts.body.clientHeight / (parts.rowHeight || this.measure())) - 1);
+        const page = Math.max(1, Math.floor(boxOf(parts.bodyPart).clientHeight /(parts.rowHeight || this.measure())) - 1);
         this.focusRow(Math.max(0, Math.min(rows.length - 1, at + (key === 'PageDown' ? page : -page))));
         break;
       }

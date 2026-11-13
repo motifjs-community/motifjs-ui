@@ -1,13 +1,13 @@
-import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { follow } from '../../core/follow';
 import { givenField, givenList } from '../../core/given-field';
 import { glyph } from '../../core/glyphs';
-import { iconPart, part, put, shown, text } from '../../core/draw-parts';
+import { loose, part } from '../../core/draw-parts';
 import type { IconSource } from '../../core/icon-source';
+import { boxOf, measure, onLayout, readAgain, type Box } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
-import { ResizeWatch } from '../../core/resize-watch';
+import { put, shown, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
@@ -30,7 +30,26 @@ interface Look {
 interface Step {
   li: Component<HTMLLIElement>;
   /** The link, the button, or the current page. */
-  face: Component<HTMLElement>;
+  face: Component<HTMLElement> | null;
+}
+
+/** An item in its place, with the step drawn for it. */
+interface Entry {
+  item: unknown;
+  step: Step | null;
+}
+
+type Kind = 'here' | 'link' | 'button';
+
+/** Where the menu of the steps that do not fit goes in the list: right after the first step. */
+const MORE = Symbol('mx.breadcrumb.more');
+const DIVIDER = Symbol('mx.breadcrumb.divider');
+
+/** An icon given as an address. */
+function iconImage(src: string): Component<HTMLImageElement> {
+  const img = loose<HTMLImageElement>('img');
+  img.attr.add({ src, alt: '' });
+  return img;
 }
 
 /**
@@ -46,37 +65,40 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
   private readonly list: Component<HTMLOListElement>;
   private readonly moreItem: Component<HTMLLIElement>;
   private readonly more: Button;
-  private steps: Step[] = [];
-  private looks: Look[] = [];
-  private stopItems: (() => void) | null = null;
+  private entries: Entry[] = [];
   /** The steps now in the menu. */
   private hidden = new Set<number>();
-  private readonly watch = new ResizeWatch(() => this.fit());
 
   constructor(props?: IBaseProp<BreadcrumbProps>) {
     super('nav', props);
     const own = (this.props ?? {}) as BreadcrumbProps;
-    this.element.classList.add('mx-breadcrumb');
+    this.class.add('mx-breadcrumb');
     this.list = part(this, 'ol', 'mx-breadcrumb__list');
-    this.moreItem = part(this.list, 'li', 'mx-breadcrumb__item mx-breadcrumb__more');
+    this.moreItem = loose<HTMLLIElement>('li', 'mx-breadcrumb__item mx-breadcrumb__more');
     this.more = new Button({ icon: glyph('more'), variant: 'ghost', size: 'sm', menu: [] });
-    this.moreItem.controls.add(this.more);
-    this.divider(this.moreItem);
+    this.moreItem.controls.add(this.more, this.divider());
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onItemClick) this.onItemClick(own.onItemClick);
 
-    this.observeProperty('items', () => this.renderItems());
-    for (const name of ['rel', 'lastIsCurrent'] as const) this.observeProperty(name, () => this.drawSteps());
+    // Built once: a step stays while its item does, and a changed item changes only what shows it.
+    this.list.bindings.list(
+      () => {
+        const [first, ...rest] = this.entryList();
+        return first ? [first, MORE, ...rest] : [MORE];
+      },
+      (entry: Entry | typeof MORE) => (entry === MORE ? this.moreItem : this.makeStep(entry)),
+    );
+    // What fits is measured again when the steps or what they say change.
+    this.bindings.watch(() => {
+      for (const entry of this.entryList()) this.lookOf(entry.item);
+      untracked(() => this.fit());
+    });
     this.observeProperty('maxItems', () => this.fit());
-    this.observeProperty<ControlSize>('size', (size) => put(this.element, 'data-size', size ?? 'md'));
+    this.observeProperty<ControlSize>('size', (size) => put(this, 'data-size', size ?? 'md'));
     this.observeProperty<string>('label', () => this.renderName());
     onLanguage(this, () => this.renderName());
-    this.watch.observe(this.element);
-    this.motif.setDisposable(() => {
-      this.watch.disconnect();
-      this.stopItems?.();
-      this.clicked.dispose();
-    });
+    onLayout(this, 'size', () => this.fit());
+    this.motif.setDisposable(() => this.clicked.dispose());
   }
 
   // Properties (see BreadcrumbProps).
@@ -129,28 +151,31 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
     return [...this.hidden].sort((a, b) => a - b);
   }
 
-  override onMounted(): void {
-    this.fit();
-  }
-
   private renderName(): void {
-    put(this.element, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.breadcrumb);
+    put(this, 'aria-label', this.peekProperty<string>('label') || uiLocale.strings.breadcrumb);
     if (this.more.hint !== uiLocale.strings.breadcrumbMore) this.more.hint = uiLocale.strings.breadcrumbMore;
   }
 
-  private renderItems(): void {
-    this.stopItems?.();
-    const items = givenList(this.peekProperty<readonly unknown[]>('items'));
-    // The items' own functions are tracked; the list and drawing are not.
-    this.stopItems = follow(
-      this,
-      'items',
-      () => items.map((item) => this.lookOf(item)),
-      (looks) => {
-        this.looks = looks;
-        this.drawSteps();
-      },
-    );
+  /** One entry per item, in item order: the same entry while its item stays (an item given twice has two). */
+  private entryList(): Entry[] {
+    const items = givenList(this.getProperty<readonly unknown[]>('items'));
+    const old = new Map<unknown, Entry[]>();
+    for (const entry of this.entries) {
+      const same = old.get(entry.item);
+      if (same) same.push(entry);
+      else old.set(entry.item, [entry]);
+    }
+    return (this.entries = items.map((item) => old.get(item)?.shift() ?? { item, step: null }));
+  }
+
+  private isLast(entry: Entry): boolean {
+    return this.entryList().at(-1) === entry;
+  }
+
+  /** The current page, a link or a button: what the step's face is made of. */
+  private kindOf(entry: Entry): Kind {
+    if (this.isLast(entry) && this.getProperty<boolean | undefined>('lastIsCurrent') !== false) return 'here';
+    return this.lookOf(entry.item).href ? 'link' : 'button';
   }
 
   private lookOf(item: unknown): Look {
@@ -164,52 +189,67 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
     };
   }
 
-  /** The steps are recreated: their kind (link, button, current) depends on what they say. */
-  private drawSteps(): void {
-    for (const step of this.steps) void step.li.dispose();
-    const current = this.peekProperty<boolean | undefined>('lastIsCurrent') !== false;
-    const rel = this.peekProperty<string>('rel') || null;
-    this.steps = this.looks.map((look, index) => {
-      // The menu of the steps that do not fit comes right after the first one.
-      const li = new Component<HTMLLIElement>('li');
-      li.element.className = 'mx-breadcrumb__item';
-      this.list.controls.insert(index + (index > 0 ? 1 : 0), li);
-      const last = index === this.looks.length - 1;
-      let face: Component<HTMLElement>;
-      if (last && current) {
-        face = part(li, 'span', 'mx-breadcrumb__current');
-        face.element.setAttribute('aria-current', 'page');
-      } else if (look.href) {
-        face = part<HTMLAnchorElement>(li, 'a', 'mx-breadcrumb__link');
-        put(face.element, 'href', look.href);
-        put(face.element, 'rel', rel);
-      } else {
-        face = part<HTMLButtonElement>(li, 'button', 'mx-breadcrumb__link');
-        (face.element as HTMLButtonElement).type = 'button';
-      }
-      if (look.icon) iconPart(face, look.icon);
-      text(part(face, 'span', 'mx-breadcrumb__text').element, look.text);
-      if (!look.enabled && face.element.classList.contains('mx-breadcrumb__link')) {
-        face.element.setAttribute('aria-disabled', 'true');
-        if (face.element instanceof HTMLAnchorElement) face.element.removeAttribute('href');
-      }
-      face.element.addEventListener('click', (e) => this.pressed(index, e));
-      if (!last) this.divider(li);
-      return { li, face };
+  /** A step, built once: its face changes only when its kind does, its divider only when it becomes (or stops being) the last. */
+  private makeStep(entry: Entry): Component<HTMLLIElement> {
+    const li = loose<HTMLLIElement>('li', 'mx-breadcrumb__item');
+    const step: Step = { li, face: null };
+    entry.step = step;
+    li.motif.setDisposable(() => {
+      if (entry.step === step) entry.step = null;
     });
-    this.fit();
+    li.bindings.list(() => [this.kindOf(entry)], (kind: Kind) => this.makeFace(entry, step, kind));
+    li.bindings.list(() => (this.isLast(entry) ? [] : [DIVIDER]), () => this.divider());
+    // What fits may have been worked out before the step was made.
+    shown(li, !this.hidden.has(this.entries.indexOf(entry)));
+    return li;
+  }
+
+  private makeFace(entry: Entry, step: Step, kind: Kind): Component<HTMLElement> {
+    const tag = kind === 'here' ? 'span' : kind === 'link' ? 'a' : 'button';
+    const face = loose<HTMLElement>(tag, kind === 'here' ? 'mx-breadcrumb__current' : 'mx-breadcrumb__link');
+    step.face = face;
+    face.motif.setDisposable(() => {
+      if (step.face === face) step.face = null;
+    });
+    if (kind === 'here') face.attr.add({ 'aria-current': 'page' });
+    if (kind === 'button') face.attr.add({ type: 'button' });
+    face.bindings.list(
+      () => {
+        const icon = this.lookOf(entry.item).icon;
+        return icon ? [icon] : [];
+      },
+      (icon: IconSource) => (typeof icon === 'string' ? iconImage(icon) : icon),
+    );
+    const caption = part<HTMLSpanElement>(face, 'span', 'mx-breadcrumb__text');
+    face.bindings.watch(() => {
+      const look = this.lookOf(entry.item);
+      const rel = kind === 'link' ? this.getProperty<string>('rel') || null : null;
+      untracked(() => {
+        text(caption, look.text);
+        // A disabled link or button; the current page is neither.
+        if (kind !== 'here') put(face, 'aria-disabled', look.enabled ? null : 'true');
+        if (kind === 'link') {
+          put(face, 'href', look.enabled ? look.href : null);
+          put(face, 'rel', rel);
+        }
+      });
+    });
+    face.motif.on('click', (_, e) => this.pressed(entry, e));
+    return face;
   }
 
   /** A divider after a step: a glyph whose shape is the design language's (`divider.icon`). */
-  private divider(li: Component<HTMLLIElement>): void {
-    const mark = part<HTMLSpanElement>(li, 'span', 'mx-glyph mx-breadcrumb__divider');
-    mark.element.setAttribute('aria-hidden', 'true');
+  private divider(): Component<HTMLSpanElement> {
+    const mark = loose<HTMLSpanElement>('span', 'mx-glyph mx-breadcrumb__divider');
+    mark.attr.add({ 'aria-hidden': 'true' });
+    return mark;
   }
 
   /** A step pressed: told first; a link is followed unless canceled, a disabled one never. */
-  private pressed(index: number, e: Event): void {
-    const look = this.looks[index];
-    if (!look || !look.enabled) {
+  private pressed(entry: Entry, e: Event): void {
+    const index = this.entries.indexOf(entry);
+    const look = untracked(() => this.lookOf(entry.item));
+    if (index < 0 || !look.enabled) {
       e.preventDefault();
       return;
     }
@@ -220,7 +260,7 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
 
   /** As many steps as fit (and no more than `maxItems`): the ones between the first and the last go into the menu. */
   private fit(): void {
-    const count = this.steps.length;
+    const count = this.entries.length;
     const max = this.maxItems;
     this.hidden = new Set();
     const keep = (n: number) => {
@@ -229,25 +269,34 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
     };
     if (max !== null && count > max) keep(max);
     this.showSteps();
-    const list = this.list.element;
+    measure(this, this.readList, this.hideOverflow);
+  }
+
+  private readonly readList = (): Box => boxOf(this.list);
+
+  /** Hides steps from the second on while the list overflows, measuring it again after each one. */
+  private readonly hideOverflow = (list: Box): void => {
+    const count = this.entries.length;
     for (let i = 1; i < count - 1 && list.scrollWidth > list.clientWidth + 0.5; i++) {
       if (this.hidden.has(i)) continue;
       this.hidden.add(i);
       this.showSteps();
+      list = readAgain(this.readList);
     }
-  }
+  };
 
   private showSteps(): void {
-    this.steps.forEach((step, i) => shown(step.li.element, !this.hidden.has(i)));
-    shown(this.moreItem.element, this.hidden.size > 0);
+    this.entries.forEach((entry, i) => shown(entry.step?.li ?? null, !this.hidden.has(i)));
+    shown(this.moreItem, this.hidden.size > 0);
     const menu: MenuItem[] = this.collapsed.map((i) => {
-      const look = this.looks[i];
+      const entry = this.entries[i];
+      const look = untracked(() => this.lookOf(entry.item));
       return {
         text: look.text,
         icon: look.icon,
         enabled: look.enabled,
         // The step's own face is pressed: a link is followed as one, so the router takes it too.
-        click: () => (this.steps[i].face.element as HTMLElement).click(),
+        click: () => entry.step?.face?.attr.add({ click: true }),
       };
     });
     this.more.menu = menu;

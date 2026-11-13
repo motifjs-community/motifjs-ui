@@ -12,7 +12,7 @@ import type { ChipVariant } from './chip-variant';
 export interface ChipProps extends ControlProps {
   /** The value it represents in a group. The default is its text. */
   value?: Bind<unknown>;
-  /** An icon before the text: an image address, an element or a component. */
+  /** An icon before the text: an image address or a component. */
   icon?: Bind<IconSource | null>;
   /** An avatar before the text (its props, with the size set by the chip). */
   avatar?: Bind<AvatarProps | null>;

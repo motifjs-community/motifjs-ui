@@ -1,9 +1,10 @@
 import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, glyphPart, mark, part, put, shown } from "../../core/draw-parts";
-import { deepActiveElement } from "../../core/focus";
-import { nextId } from "../../core/next-id";
+import { glyphPart, part, removePart } from "../../core/draw-parts";
+import { focusOn, holdsFocus } from "../../core/focus";
+import { isInPage, isRtl, measure, rectOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
+import { css, mark, put, shown } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { LayoutOrientation } from "../layout/layout-orientation";
 import { SplitPane } from "./SplitPane";
@@ -36,6 +37,9 @@ interface Drag {
     from: number;
     a: number;
     b: number;
+    rtl: boolean;
+    // The shown panes' pixels as the drag left them.
+    measured: number[];
 }
 
 /**
@@ -65,7 +69,7 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
     constructor(props?: IBaseProp<SplitterProps>) {
         super('div', props);
         const own = (this.props ?? {}) as SplitterProps;
-        this.element.classList.add('mx-splitter');
+        this.class.add('mx-splitter');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onResizing) this.onResizing(own.onResizing);
         if (own.onResized) this.onResized(own.onResized);
@@ -73,14 +77,13 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         if (own.onCollapsed) this.onCollapsed(own.onCollapsed);
 
         this.observeProperty<LayoutOrientation>('orientation', o => {
-            put(this.element, 'data-orientation', o ?? 'horizontal');
+            put(this, 'data-orientation', o ?? 'horizontal');
             this.relayout();
         });
         for (const name of ['resizable', 'collapsible'] as const) this.observeProperty(name, () => this.drawHandles());
         this.observeProperty('sizes', () => this.sizeChanged());
         onLanguage(this, () => this.drawHandles());
         for (const child of this.childs ?? []) if (child instanceof SplitPane) this.place(child, this.panes.length);
-        this.element.addEventListener('keydown', e => this.keyDown(e));
         this.motif.setDisposable(() => {
             for (const emitter of [this.resizing, this.resized, this.collapsing, this.collapsedEvent]) emitter.dispose();
         });
@@ -153,11 +156,7 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
     /** The current pane sizes in pixels, in pane order, with 0 for a collapsed pane. */
     get currentSizes(): number[] {
         const panes = this.shownPanes();
-        const measured = this.measure(panes);
-        return this.panes.map(pane => {
-            const at = panes.indexOf(pane);
-            return at < 0 || pane.collapsed ? 0 : Math.round(measured[at]);
-        });
+        return this.allSizes(panes, this.paneSizes(panes));
     }
 
     /** The number of panes, including collapsed ones. */
@@ -231,7 +230,7 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         this.panes.splice(index, 0, pane);
         this.controls.add(index, pane);
         pane.owner = this;
-        if (!pane.element.id) pane.element.id = nextId('split-pane');
+        put(pane, 'id', pane.paneId);
         this.sizeChanged();
     }
 
@@ -290,25 +289,25 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         if (!this.ready) return;
         const panes = this.shownPanes();
         const horizontal = this.horizontal;
-        const el = this.element;
-        el.style.setProperty(horizontal ? 'grid-template-columns' : 'grid-template-rows', this.tracks(panes));
-        el.style.removeProperty(horizontal ? 'grid-template-rows' : 'grid-template-columns');
+        css(this, horizontal ? 'grid-template-columns' : 'grid-template-rows', this.tracks(panes));
+        css(this, horizontal ? 'grid-template-rows' : 'grid-template-columns', '');
         panes.forEach((pane, i) => {
-            css(pane.element, horizontal ? 'grid-column' : 'grid-row', String(2 * i + 1));
-            css(pane.element, horizontal ? 'grid-row' : 'grid-column', '1');
-            pane.element.inert = pane.collapsed;
-            mark(pane.element, 'data-collapsed', pane.collapsed);
+            css(pane, horizontal ? 'grid-column' : 'grid-row', String(2 * i + 1));
+            css(pane, horizontal ? 'grid-row' : 'grid-column', '1');
+            mark(pane, 'inert', pane.collapsed);
+            mark(pane, 'data-collapsed', pane.collapsed);
         });
         while (this.handles.length < Math.max(0, panes.length - 1)) this.handles.push(this.makeHandle());
-        while (this.handles.length > Math.max(0, panes.length - 1)) void this.handles.pop()!.cell.dispose();
+        while (this.handles.length > Math.max(0, panes.length - 1)) removePart(this.handles.pop()!.cell);
         this.handles.forEach((h, i) => {
-            const cell = h.cell.element;
+            const cell = h.cell;
             css(cell, horizontal ? 'grid-column' : 'grid-row', String(2 * i + 2));
             css(cell, horizontal ? 'grid-row' : 'grid-column', '1');
             // In the Tab order between the two panes it lies between; moved only when it is not there yet, since a
             // move would drop the focus and the pointer capture it holds.
-            const next = panes[i + 1].element;
-            if (next.parentElement === el && cell.parentElement === el && cell.nextElementSibling !== next) el.insertBefore(cell, next);
+            const next = panes[i + 1];
+            const items = this.controls.items;
+            if (next.parent === this && h.cell.parent === this && items[items.indexOf(h.cell) + 1] !== next) this.controls.move(h.cell, next);
         });
         this.drawHandles();
     }
@@ -316,29 +315,28 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
     makeHandle(): Handle {
         const cell = part<HTMLDivElement>(this, 'div', 'mx-splitter__handle');
         const bar = part<HTMLDivElement>(cell, 'div', 'mx-splitter__bar');
-        bar.element.setAttribute('role', 'separator');
-        bar.element.setAttribute('aria-valuemin', '0');
-        bar.element.setAttribute('aria-valuemax', '100');
+        bar.attr.add({ role: 'separator', 'aria-valuemin': '0', 'aria-valuemax': '100' });
         const grip = part<HTMLSpanElement>(bar, 'span', 'mx-splitter__grip');
-        grip.element.setAttribute('aria-hidden', 'true');
+        grip.attr.add({ 'aria-hidden': 'true' });
         const before = part<HTMLButtonElement>(cell, 'button', 'mx-splitter__fold');
-        before.element.type = 'button';
-        before.element.tabIndex = -1;
-        put(before.element, 'data-side', 'before');
+        before.attr.add({ type: 'button' });
+        put(before, 'tabindex', '-1');
+        put(before, 'data-side', 'before');
         const beforeGlyph = glyphPart(before, 'chevron-start', 'mx-splitter__fold-glyph');
         const after = part<HTMLButtonElement>(cell, 'button', 'mx-splitter__fold');
-        after.element.type = 'button';
-        after.element.tabIndex = -1;
-        put(after.element, 'data-side', 'after');
+        after.attr.add({ type: 'button' });
+        put(after, 'tabindex', '-1');
+        put(after, 'data-side', 'after');
         const afterGlyph = glyphPart(after, 'chevron-end', 'mx-splitter__fold-glyph');
         const handle: Handle = { cell, bar, before, after, beforeGlyph, afterGlyph };
-        bar.element.addEventListener('pointerdown', e => this.pointerDown(e, handle));
-        bar.element.addEventListener('pointermove', e => this.pointerMove(e));
-        bar.element.addEventListener('pointerup', e => this.pointerUp(e));
-        bar.element.addEventListener('pointercancel', e => this.pointerUp(e));
-        bar.element.addEventListener('dblclick', e => this.foldFromHandle(handle, 'before', e));
-        before.element.addEventListener('click', e => this.foldFromHandle(handle, 'before', e));
-        after.element.addEventListener('click', e => this.foldFromHandle(handle, 'after', e));
+        bar.motif.on('keydown', (_, e) => this.keyDown(e, handle));
+        bar.motif.on('pointerdown', (_, e) => this.pointerDown(e, handle));
+        bar.motif.on('pointermove', (_, e) => this.pointerMove(e));
+        bar.motif.on('pointerup', (_, e) => this.pointerUp(e));
+        bar.motif.on('pointercancel', (_, e) => this.pointerUp(e));
+        bar.motif.on('dblclick', (_, e) => this.foldFromHandle(handle, 'before', e));
+        before.motif.on('click', (_, e) => this.foldFromHandle(handle, 'before', e));
+        after.motif.on('click', (_, e) => this.foldFromHandle(handle, 'after', e));
         return handle;
     }
 
@@ -348,7 +346,6 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         const panes = this.shownPanes();
         const horizontal = this.horizontal;
         const strings = uiLocale.strings;
-        const measured = this.measure(panes);
         this.handles.forEach((h, i) => {
             const a = panes[i];
             const b = panes[i + 1];
@@ -356,23 +353,33 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
             const resizable = this.canResize(i);
             const foldA = a.isCollapsible;
             const foldB = b.isCollapsible;
-            const bar = h.bar.element;
+            const bar = h.bar;
             put(bar, 'aria-orientation', horizontal ? 'vertical' : 'horizontal');
-            put(bar, 'aria-controls', a.element.id);
+            put(bar, 'aria-controls', a.paneId);
             put(bar, 'aria-label', strings.resize);
             mark(bar, 'data-resizable', resizable);
-            const room = measured[i] + measured[i + 1];
-            put(bar, 'aria-valuenow', String(Math.round(room > 0 ? (measured[i] / room) * 100 : 50)));
-            if (resizable || foldA || foldB) bar.tabIndex = this.peekProperty('tabStop') === false ? -1 : 0;
-            else bar.removeAttribute('tabindex');
-            shown(h.before.element, foldA);
-            shown(h.after.element, foldB);
-            put(h.before.element, 'aria-label', a.collapsed ? strings.splitterExpand : strings.splitterCollapse);
-            put(h.after.element, 'aria-label', b.collapsed ? strings.splitterExpand : strings.splitterCollapse);
-            h.beforeGlyph.element.dataset.icon = horizontal ? (a.collapsed ? 'chevron-end' : 'chevron-start') : a.collapsed ? 'chevron-down' : 'chevron-up';
-            h.afterGlyph.element.dataset.icon = horizontal ? (b.collapsed ? 'chevron-start' : 'chevron-end') : b.collapsed ? 'chevron-up' : 'chevron-down';
+            if (resizable || foldA || foldB) put(bar, 'tabindex', this.peekProperty('tabStop') === false ? '-1' : '0');
+            else put(bar, 'tabindex', null);
+            shown(h.before, foldA);
+            shown(h.after, foldB);
+            put(h.before, 'aria-label', a.collapsed ? strings.splitterExpand : strings.splitterCollapse);
+            put(h.after, 'aria-label', b.collapsed ? strings.splitterExpand : strings.splitterCollapse);
+            put(h.beforeGlyph, 'data-icon', horizontal ? (a.collapsed ? 'chevron-end' : 'chevron-start') : a.collapsed ? 'chevron-down' : 'chevron-up');
+            put(h.afterGlyph, 'data-icon', horizontal ? (b.collapsed ? 'chevron-start' : 'chevron-end') : b.collapsed ? 'chevron-up' : 'chevron-down');
         });
+        measure(this, this.readValues, this.writeValues);
     }
+
+    // Where each handle stands between its two panes (`aria-valuenow`), once the panes are laid out.
+    private readonly readValues = (): number[] => this.paneSizes(this.shownPanes());
+
+    private readonly writeValues = (measured: number[]): void => {
+        if (!this.ready) return;
+        this.handles.forEach((h, i) => {
+            const room = (measured[i] ?? 0) + (measured[i + 1] ?? 0);
+            put(h.bar, 'aria-valuenow', String(Math.round(room > 0 ? (measured[i] / room) * 100 : 50)));
+        });
+    };
 
     canResize(handle: number): boolean {
         const panes = this.shownPanes();
@@ -382,18 +389,25 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
     }
 
     // The panes' pixels along the split; zeros when not laid out.
-    measure(panes: SplitPane[]): number[] {
-        if (!this.element.isConnected) return panes.map(() => 0);
+    paneSizes(panes: SplitPane[]): number[] {
+        if (!isInPage(this)) return panes.map(() => 0);
         const horizontal = this.horizontal;
         return panes.map(pane => {
-            const box = pane.element.getBoundingClientRect();
+            const box = rectOf(pane);
             return horizontal ? box.width : box.height;
         });
     }
 
+    // The shown panes' pixels in the order of all panes, with 0 for a hidden or collapsed one.
+    allSizes(panes: SplitPane[], measured: number[]): number[] {
+        return this.panes.map(pane => {
+            const at = panes.indexOf(pane);
+            return at < 0 || pane.collapsed ? 0 : Math.round(measured[at]);
+        });
+    }
+
     // Before a handle moves, every share becomes its pixels, so the move changes only the two panes beside it.
-    freeze(panes: SplitPane[]): void {
-        const measured = this.measure(panes);
+    freeze(panes: SplitPane[], measured: number[]): void {
         panes.forEach((pane, i) => {
             const lay = this.lay.get(pane);
             if (lay && lay.px === null && !pane.collapsed) lay.fr = Math.max(0.0001, measured[i]);
@@ -401,11 +415,12 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
     }
 
     // Pane `handle` gets `a` of the `total` the two panes share, within their limits; the next pane the rest.
-    apply(handle: number, a: number, total: number): boolean {
+    // Returns the size it got, or null when there is no such handle.
+    apply(handle: number, a: number, total: number): number | null {
         const panes = this.shownPanes();
         const first = panes[handle];
         const second = panes[handle + 1];
-        if (!first || !second) return false;
+        if (!first || !second) return null;
         const low = Math.max(first.minSize, total - (second.maxSize ?? total));
         const high = Math.min(first.maxSize ?? total, total - second.minSize);
         const size = Math.round(Math.min(Math.max(a, low), Math.max(low, high)));
@@ -416,11 +431,19 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         if (layB.px !== null) layB.px = total - size;
         else layB.fr = Math.max(0.0001, total - size);
         this.relayout();
-        return true;
+        return size;
     }
 
-    tell(emitter: Emitter<SplitterResizeEventArgs>, handle: number, event?: Event): void {
-        emitter.fire({ handle, sizes: this.currentSizes, byUser: true, source: this, event });
+    // The shown panes' pixels once handle `handle` gave `size` of `total` to the pane before it: the others keep theirs.
+    sizesAfter(measured: number[], handle: number, size: number, total: number): number[] {
+        const sizes = measured.slice();
+        sizes[handle] = size;
+        sizes[handle + 1] = total - size;
+        return sizes;
+    }
+
+    tell(emitter: Emitter<SplitterResizeEventArgs>, handle: number, sizes: number[], event?: Event): void {
+        emitter.fire({ handle, sizes, byUser: true, source: this, event });
     }
 
     fold(target: SplitPane | number, on: boolean, byUser: boolean, event?: Event): boolean {
@@ -431,13 +454,13 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         const args: SplitterCollapseEventArgs = { pane, index, collapsed: on, byUser, cancel: false, source: this, event };
         this.collapsing.fire(args);
         if (args.cancel) return false;
-        const active = deepActiveElement();
-        const inside = !!active && pane.element.contains(active);
+        const inside = holdsFocus(pane);
         pane.setCollapsed(on);
         this.relayout();
         if (on && inside) {
             const at = this.shownPanes().indexOf(pane);
-            (this.handles[at]?.bar.element ?? this.handles[at - 1]?.bar.element)?.focus({ preventScroll: true });
+            const handle = this.handles[at] ?? this.handles[at - 1];
+            if (handle) focusOn(handle.bar, { preventScroll: true });
         }
         this.collapsedEvent.fire({ pane, index, collapsed: on, byUser, cancel: false, source: this, event });
         return true;
@@ -454,12 +477,10 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         this.fold(pane, !pane.collapsed, true, event);
     }
 
-    keyDown(e: KeyboardEvent): void {
+    keyDown(e: KeyboardEvent, handle: Handle): void {
         if (!this.isEnabled || e.altKey || e.ctrlKey || e.metaKey) return;
-        const bar = (e.target as HTMLElement).closest<HTMLElement>('.mx-splitter__bar');
-        const handle = this.handles.find(h => h.bar.element === bar);
-        if (!handle) return;
         const i = this.handles.indexOf(handle);
+        if (i < 0) return;
         if (e.key === 'Enter') {
             e.preventDefault();
             this.foldFromHandle(handle, 'before', e);
@@ -470,58 +491,69 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         const forward = horizontal ? 'ArrowRight' : 'ArrowDown';
         const back = horizontal ? 'ArrowLeft' : 'ArrowUp';
         const panes = this.shownPanes();
-        const measured = this.measure(panes);
+        // Read first: the move writes the tracks, and the sizes it tells come from what it decided.
+        const measured = this.paneSizes(panes);
+        const rtl = horizontal && isRtl(this);
         const total = measured[i] + measured[i + 1];
         let a: number | undefined;
         if (e.key === forward || e.key === back) {
-            const rtl = horizontal && getComputedStyle(this.element).direction === 'rtl';
             const grows = (e.key === forward) !== rtl;
             a = measured[i] + (grows ? this.step : -this.step);
         } else if (e.key === 'Home') a = 0;
         else if (e.key === 'End') a = total;
         if (a === undefined) return;
         e.preventDefault();
-        this.freeze(panes);
-        if (this.apply(i, a, total)) {
-            this.tell(this.resized, i, e);
-            this.bindings.writeModel(this.currentSizes);
-        }
+        this.freeze(panes, measured);
+        const size = this.apply(i, a, total);
+        if (size === null) return;
+        const sizes = this.allSizes(panes, this.sizesAfter(measured, i, size, total));
+        this.tell(this.resized, i, sizes, e);
+        this.bindings.writeModel(sizes);
     }
 
     pointerDown(e: PointerEvent, handle: Handle): void {
         if (e.button !== 0 || !this.isEnabled) return;
         const i = this.handles.indexOf(handle);
         if (!this.canResize(i)) return;
-        e.preventDefault();
-        const bar = handle.bar.element;
-        bar.focus({ preventScroll: true });
-        bar.setPointerCapture?.(e.pointerId);
         const panes = this.shownPanes();
-        const measured = this.measure(panes);
-        this.freeze(panes);
-        this.drag = { pointer: e.pointerId, handle: i, from: this.horizontal ? e.clientX : e.clientY, a: measured[i], b: measured[i + 1] };
-        mark(this.element, 'data-dragging', true);
+        const measured = this.paneSizes(panes);
+        const horizontal = this.horizontal;
+        const rtl = horizontal && isRtl(this);
+        e.preventDefault();
+        const bar = handle.bar;
+        focusOn(bar, { preventScroll: true });
+        bar.attr.add({ setPointerCapture: e.pointerId });
+        this.freeze(panes, measured);
+        this.drag = { pointer: e.pointerId, handle: i, from: horizontal ? e.clientX : e.clientY, a: measured[i], b: measured[i + 1], rtl, measured };
+        mark(this, 'data-dragging', true);
         mark(bar, 'data-dragging', true);
     }
 
     pointerMove(e: PointerEvent): void {
         const drag = this.drag;
         if (!drag || drag.pointer !== e.pointerId) return;
-        const rtl = this.horizontal && getComputedStyle(this.element).direction === 'rtl';
         const moved = (this.horizontal ? e.clientX : e.clientY) - drag.from;
-        if (this.apply(drag.handle, drag.a + (rtl ? -moved : moved), drag.a + drag.b)) this.tell(this.resizing, drag.handle, e);
+        const total = drag.a + drag.b;
+        const size = this.apply(drag.handle, drag.a + (drag.rtl ? -moved : moved), total);
+        if (size === null) return;
+        drag.measured = this.sizesAfter(drag.measured, drag.handle, size, total);
+        this.tell(this.resizing, drag.handle, this.allSizes(this.shownPanes(), drag.measured), e);
     }
 
     pointerUp(e: PointerEvent): void {
         const drag = this.drag;
         if (!drag || drag.pointer !== e.pointerId) return;
         this.drag = null;
-        const bar = this.handles[drag.handle]?.bar.element;
-        if (bar?.hasPointerCapture?.(e.pointerId)) bar.releasePointerCapture(e.pointerId);
-        mark(this.element, 'data-dragging', false);
-        if (bar) mark(bar, 'data-dragging', false);
+        const bar = this.handles[drag.handle]?.bar;
+        mark(this, 'data-dragging', false);
+        if (bar) {
+            // The bar took the pointer when the drag began.
+            bar.attr.add({ releasePointerCapture: e.pointerId });
+            mark(bar, 'data-dragging', false);
+        }
         if (e.type !== 'pointerup') return;
-        this.tell(this.resized, drag.handle, e);
-        this.bindings.writeModel(this.currentSizes);
+        const sizes = this.allSizes(this.shownPanes(), drag.measured);
+        this.tell(this.resized, drag.handle, sizes, e);
+        this.bindings.writeModel(sizes);
     }
 }

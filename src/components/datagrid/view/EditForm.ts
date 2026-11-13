@@ -1,8 +1,12 @@
-import { Component, untracked } from '@motifx/core';
-import { put } from '../../../core/draw-parts';
+import { Component, untracked, type ComponentBase } from '@motifx/core';
+import { part } from '../../../core/draw-parts';
+import { focusGoesInto, focusInLineField, holdsFocus, isRendered } from '../../../core/focus';
+import { mark, put, text as writeText } from '../../../core/part-writes';
 import { Button } from '../../button/Button';
+import { ToggleField } from '../../checkbox/ToggleField';
 import type { FormItem } from '../../formlayout/form-item';
 import { FormLayout } from '../../formlayout/FormLayout';
+import { RadioGroup } from '../../radiogroup/RadioGroup';
 import type { GridModel } from '../model/GridModel';
 import { sameValue } from '../model/same-value';
 import type { Switches } from '../model/Switches';
@@ -10,10 +14,6 @@ import { CellEditor } from './CellEditor';
 import type { EditFormHost } from './edit-form-host';
 import type { FormValues } from './form-values';
 import { readField } from '../model/read-field';
-
-/** Where Enter saves the form: one-line fields, not buttons, check boxes or multi-line text. */
-const ENTER_FIELDS =
-  'input:not([type=button],[type=submit],[type=reset],[type=image],[type=file],[type=checkbox],[type=radio]), select, [role=textbox]:not([aria-multiline=true]), [role=combobox], [role=spinbutton]';
 
 interface Placed<T> {
   holder: Component<HTMLDivElement>;
@@ -43,7 +43,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
   readonly saveButton: Button;
   readonly cancelButton: Button;
   private readonly placed = new Map<string, Placed<T>>();
-  private readonly message: HTMLDivElement;
+  private readonly message: Component<HTMLDivElement>;
   private readonly isNew: boolean;
   /** The `items` option the fields were laid out from, as text; `null` before the first time. */
   private itemsFrom: string | null = null;
@@ -57,56 +57,49 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     inline: boolean,
   ) {
     super('div');
-    const el = this.element;
-    el.className = 'mx-data-grid__form';
-    const message = el.appendChild(document.createElement('div'));
-    message.className = 'mx-data-grid__form-message';
-    message.setAttribute('role', 'alert');
+    this.class.add('mx-data-grid__form');
+    const message = part<HTMLDivElement>(this, 'div', 'mx-data-grid__form-message');
+    message.attr.add({ role: 'alert' });
     this.message = message;
     this.isNew = model.isNew(rowId);
     this.layout = new FormLayout({});
     this.controls.add(this.layout);
 
     this.buttons = new Component<HTMLDivElement>('div');
-    this.buttons.element.className = 'mx-data-grid__form-buttons';
+    this.buttons.class.add('mx-data-grid__form-buttons');
     this.saveButton = new Button({ tone: 'accent' });
     this.cancelButton = new Button({});
-    this.saveButton.element.classList.add('mx-data-grid__apply');
-    this.cancelButton.element.classList.add('mx-data-grid__dismiss');
-    this.saveButton.element.addEventListener('click', () => host.save());
-    this.cancelButton.element.addEventListener('click', () => host.cancel());
+    this.saveButton.class.add('mx-data-grid__apply');
+    this.cancelButton.class.add('mx-data-grid__dismiss');
+    this.saveButton.motif.on('click', () => host.save());
+    this.cancelButton.motif.on('click', () => host.cancel());
     this.buttons.controls.add(this.saveButton, this.cancelButton);
     // A click keeps focus in the field: leaving it would take its message away and move the buttons under the pointer.
-    this.buttons.element.addEventListener('pointerdown', (e) => {
-      if ((e.target as Element).closest?.('button')) e.preventDefault();
-    });
+    for (const button of [this.saveButton, this.cancelButton]) button.motif.on('pointerdown', (_, e) => e.preventDefault());
     if (inline) this.controls.add(this.buttons);
 
     // The grid checks and saves the row: the form element is never sent (Enter in its only field would).
-    el.addEventListener(
-      'submit',
-      (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      },
-      true,
-    );
+    this.motif.on('submit:capture', (_, e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
     // A field left: its value goes into the draft.
-    el.addEventListener('focusout', (e) => {
-      const holder = (e.target as Element).closest?.('.mx-data-grid__form-field') as HTMLElement | null;
-      const next = e.relatedTarget as Node | null;
-      if (!holder || (next && holder.contains(next))) return;
-      if (holder.dataset.field) this.keep(holder.dataset.field);
+    this.motif.on('focusout', (_, e) => {
+      const field = this.fieldFrom(e);
+      if (field === null) return;
+      const holder = this.placed.get(field)?.holder;
+      if (holder && focusGoesInto(holder, e)) return;
+      this.keep(field);
     });
     // Enter saves and Escape cancels; in a window, the window's buttons do that.
     if (inline) {
-      el.addEventListener('keydown', (e) => {
+      this.motif.on('keydown', (_, e) => {
         if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
         if (e.key === 'Escape') {
           e.preventDefault();
           e.stopPropagation();
           host.cancel();
-        } else if (e.key === 'Enter' && (e.target as Element).matches?.(ENTER_FIELDS)) {
+        } else if (e.key === 'Enter' && focusInLineField(e) && !this.fromChoice(e)) {
           e.preventDefault();
           host.save();
         }
@@ -125,8 +118,8 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     untracked(() => {
       const { model, rowId, settings, layout } = this;
       const text = model.edit(rowId)?.errors[''] ?? '';
-      if (this.message.textContent !== text) this.message.textContent = text;
-      if (this.message.hidden !== !text) this.message.hidden = !text;
+      writeText(this.message, text);
+      mark(this.message, 'hidden', !text);
       const given = settings.get('items');
       const from = JSON.stringify(given ?? null);
       if (from !== this.itemsFrom) {
@@ -137,7 +130,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
       layout.minColumnWidth = settings.get('minColWidth') ?? '';
       const labelMode = settings.get('labelMode');
       layout.labelMode = labelMode;
-      put(layout.element as HTMLElement, 'aria-label', model.text(this.isNew ? 'gridNewRowTitle' : 'gridEditRowTitle'));
+      put(layout, 'aria-label',model.text(this.isNew ? 'gridNewRowTitle' : 'gridEditRowTitle'));
       const busy = model.state.busy;
       this.saveButton.text = model.text('gridSave');
       this.saveButton.enabled = !busy;
@@ -161,7 +154,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
 
   /** Focuses a field's editor, else the first one that can be filled in. */
   focus(field?: string): boolean {
-    const usable = (p: Placed<T> | undefined) => !!p?.editor && !p.holder.element.closest('[hidden]') && !this.readOnly(p);
+    const usable = (p: Placed<T> | undefined) => !!p?.editor && isRendered(p.holder) && !this.readOnly(p);
     const given = field ? this.placed.get(field) : undefined;
     const target = usable(given) ? given : [...this.placed.values()].find(usable);
     if (!target?.editor) return false;
@@ -201,6 +194,22 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     return this.placed.get(field)?.editor ?? null;
   }
 
+  /** The field an event came from, or `null`. */
+  fieldFrom(e: Event): string | null {
+    for (const [field, p] of this.placed) if (p.holder.motif.isEventFrom(e)) return field;
+    return null;
+  }
+
+  /** Whether a key came from a check box, a switch or a radio button: Enter there does not save. */
+  private fromChoice(e: Event): boolean {
+    let at: ComponentBase | undefined = this;
+    while (at) {
+      at = at.controls.items.find((c) => c.motif.isEventFrom(e));
+      if (at instanceof ToggleField || at instanceof RadioGroup) return true;
+    }
+    return false;
+  }
+
   private readOnly(p: Placed<T>): boolean {
     return p.editor?.editor ? !!(p.editor.editor as unknown as { readOnly?: boolean }).readOnly : false;
   }
@@ -236,8 +245,8 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     const own = this.model.columns.get(field).formItem ?? {};
     if (given.visible === undefined && own.visible === false) return null;
     const holder = new Component<HTMLDivElement>('div');
-    holder.element.className = 'mx-data-grid__form-field';
-    holder.element.dataset.field = field;
+    holder.class.add('mx-data-grid__form-field');
+    holder.attr.add({ 'data-field': field });
     this.placed.set(field, { holder, item: given, editor: null, value: undefined, drawsLabelMode: true, drawsError: true });
     return {
       colSpan: given.colSpan ?? own.colSpan,
@@ -309,7 +318,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
       if (!p.editor) continue;
       const now = model.value(rowId, row, model.columns.get(field));
       if (sameValue(now, p.value)) continue;
-      const focused = p.holder.element.contains(p.holder.element.ownerDocument.activeElement);
+      const focused = holdsFocus(p.holder);
       this.make(field);
       if (focused) p.editor?.focus();
     }

@@ -4,7 +4,7 @@ import type { LoadPanelTarget } from './load-panel-target';
 
 /** Props of `LoadPanel`. Each prop is also a settable property, and a function is tracked. */
 export interface LoadPanelProps extends ControlProps {
-    /** The area to cover, a component or element. The default, `null`, covers the whole page. */
+    /** The area to cover, a component. The default, `null`, covers the whole page. */
     target?: Bind<LoadPanelTarget | undefined>;
     /**
      * The message below the indicator. This is the same property as `text`. The default is the kit's "Loading…"

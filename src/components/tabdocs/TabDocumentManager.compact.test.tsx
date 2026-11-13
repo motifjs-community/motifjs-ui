@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
@@ -88,7 +89,9 @@ async function places(props: TabDocumentManagerProps = {}) {
 
 /** Lays a strip out: `room` pixels wide, its tabs `width` each, scrolled by `scroll`. */
 function layStrip(g: TabGroup, room: number, width: number, scroll = 0) {
-  const row = g.rowElement;
+  // What opening the tabs asked of the next frame (the active tab kept in sight) lands before the strip is laid out.
+  measureNow(g);
+  const row = g.rowPart.element;
   const tabs = Array.from(row.children);
   Object.defineProperty(row, 'scrollWidth', { value: tabs.length * width, configurable: true });
   Object.defineProperty(row, 'clientWidth', { value: room, configurable: true });
@@ -96,6 +99,8 @@ function layStrip(g: TabGroup, room: number, width: number, scroll = 0) {
   rects.set(row, new DOMRect(0, 0, room, 30));
   tabs.forEach((t, i) => rects.set(t, new DOMRect(i * width - scroll, 0, width, 30)));
   g.queueOverflow();
+  // The strip is read with the window's next frame: it lands now.
+  measureNow(g);
 }
 
 describe('TabDocumentManager: compact bars', () => {
@@ -255,15 +260,17 @@ describe('TabDocumentManager: tabs out of sight', () => {
     const bar = floating.element.querySelector<HTMLElement>('.mx-tabdocs__scrollbar')!;
     expect(bar.getAttribute('aria-hidden')).toBe('true');
     expect([bar.style.getPropertyValue('--_thumb-size'), bar.style.getPropertyValue('--_thumb-at'), bar.style.getPropertyValue('--_track-size')]).toEqual(['50.00%', '25.00%', '120px']);
-    expect(floating.isStripSpace(bar.firstElementChild)).toBe(false);
+    expect(floating.isStripSpaceEvent({ target: bar.firstElementChild } as unknown as Event)).toBe(false);
     const dragged: string[] = [];
     m.onDragStarting(() => dragged.push('drag'));
     const thumb = bar.firstElementChild as HTMLElement;
     pointer('pointerdown', thumb, 50, 28);
     pointer('pointermove', thumb, 70, 28);
     pointer('pointerup', thumb, 70, 28);
+    // Core makes the scroll a microtask later.
+    await settle();
     // 20 pixels of a track that shows half the tabs: 40 pixels of tabs.
-    expect(floating.rowElement.scrollLeft).toBe(100);
+    expect(floating.rowPart.element.scrollLeft).toBe(100);
     expect(dragged).toEqual([]);
   });
 });
@@ -348,7 +355,7 @@ describe('TabDocumentManager: a single document as a title', () => {
     const h = header(side, 'Tool');
     expect(side.element.hasAttribute('data-title')).toBe(true);
     expect([h.getAttribute('role'), h.getAttribute('aria-selected'), h.dataset.close]).toEqual(['tab', 'true', 'always']);
-    expect(side.listElement.getAttribute('role')).toBe('tablist');
+    expect(side.listPart.element.getAttribute('role')).toBe('tablist');
     tool.dirty = true;
     tool.badge = 3;
     await settle();
@@ -379,7 +386,7 @@ describe('TabDocumentManager: a single document as a title', () => {
     key('Escape');
     // Dragging the title drags the document, the empty bar the window.
     rects.set(h, new DOMRect(10, 10, 80, 30));
-    rects.set(floating.barElement, new DOMRect(10, 10, 300, 30));
+    rects.set(floating.barPart.element, new DOMRect(10, 10, 300, 30));
     const started: string[] = [];
     m.onDragStarting((e) => {
       started.push(e.document?.title ?? 'window');

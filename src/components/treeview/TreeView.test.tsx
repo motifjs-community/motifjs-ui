@@ -1,4 +1,4 @@
-import { Component, reactive } from '@motifx/core';
+import { Component, reactive, type ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
@@ -48,7 +48,9 @@ const files = (): Folder[] => [
   { id: 'package', text: 'package.json' },
 ];
 
-const rows = (t: TreeView<any>) => Array.from(t.treeElement.querySelectorAll<HTMLElement>('[role="treeitem"]'));
+// A closed row's group stays, hidden: its rows are not on screen.
+const rows = (t: TreeView<any>) =>
+  Array.from(t.treePart.element.querySelectorAll<HTMLElement>('[role="treeitem"]')).filter((r) => !r.closest('[hidden]'));
 const texts = (t: TreeView<any>) => rows(t).map((r) => r.querySelector('.mx-tree-view__text')!.textContent);
 const row = (t: TreeView<any>, text: string) => rows(t).find((r) => r.querySelector('.mx-tree-view__text')!.textContent === text)!;
 const part = (r: HTMLElement, name: string) => r.querySelector<HTMLElement>(`:scope > .mx-tree-view__row > .mx-tree-view__${name}`)!;
@@ -74,7 +76,7 @@ describe('TreeView', () => {
 
     expect(jsx.element.className).toContain('mx-tree-view');
     expect(jsx.element.className).toContain('extra');
-    const tree = jsx.treeElement;
+    const tree = jsx.treePart.element;
     expect(tree.getAttribute('role')).toBe('tree');
     expect(tree.getAttribute('aria-label')).toBe('Files');
     expect(texts(jsx)).toEqual(['src', 'app.ts', 'lib', 'docs', 'package.json']);
@@ -145,6 +147,29 @@ describe('TreeView', () => {
     s.extra = false;
     await settle();
     expect(texts(t)).toEqual(['source']);
+  });
+
+  it('keeps its rows, those in open groups too, when the items are read again', async () => {
+    const s = reactive({ extra: true, name: 'src' });
+    const items = files();
+    items[0].text = (() => s.name) as unknown as string;
+    let t!: TreeView<Folder>;
+    page(<TreeView ref={(x: TreeView<Folder>) => (t = x)} items={() => (s.extra ? items : items.slice(0, 1))} expandedKeys={['docs']} />);
+    await settle();
+    const rows = () => Array.from(t.element.querySelectorAll('[role="treeitem"]'));
+    const before = rows();
+    s.name = 'source';
+    await settle();
+    expect(texts(t)).toEqual(['source', 'docs', 'readme.md', 'package.json']);
+    rows().forEach((row, at) => expect(row).toBe(before[at]));
+    s.extra = false;
+    await settle();
+    expect(rows()).toHaveLength(1);
+    expect(rows()[0]).toBe(before[0]);
+    s.extra = true;
+    await settle();
+    expect(rows()[0]).toBe(before[0]);
+    expect(texts(t)).toEqual(['source', 'docs', 'readme.md', 'package.json']);
   });
 
   describe.each(dataKinds)('%s data', (_, make) => {
@@ -248,7 +273,7 @@ describe('TreeView', () => {
     let t!: TreeView<Folder>;
     page(<TreeView ref={(x: TreeView<Folder>) => (t = x)} items={files()} selectionMode="multiple" x-model={() => s.picked} />);
     await settle();
-    expect(t.treeElement.getAttribute('aria-multiselectable')).toBe('true');
+    expect(t.treePart.element.getAttribute('aria-multiselectable')).toBe('true');
     click(part(row(t, 'src'), 'text'));
     click(part(row(t, 'package.json'), 'text'), { ctrlKey: true });
     await settle();
@@ -314,6 +339,27 @@ describe('TreeView', () => {
     expect(row(t, 'src').getAttribute('aria-expanded')).toBe('true');
     press('ArrowRight');
     expect(row(t, 'src').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('builds a row group once: closing hides it, opening shows the same rows again', () => {
+    const t = new TreeView<Folder>({ items: files() });
+    page(t);
+    const shut = rows(t).length;
+    t.expand('src');
+    const opened = rows(t);
+    expect(opened.length).toBeGreaterThan(shut);
+    t.collapse('src');
+    expect(rows(t)).toHaveLength(shut);
+    t.expand('src');
+    const again = rows(t);
+    expect(again).toHaveLength(opened.length);
+    again.forEach((r, i) => expect(r).toBe(opened[i]));
+    // A change of the items keeps the hidden rows by key too.
+    t.collapse('src');
+    t.items = files();
+    t.expand('src');
+    expect(rows(t).map((r) => r.querySelector('.mx-tree-view__text')!.textContent)).toEqual(opened.map((r) => r.querySelector('.mx-tree-view__text')!.textContent));
+    rows(t).forEach((r, i) => expect(r).toBe(opened[i]));
   });
 
   it('opens and closes rows programmatically, with cancelable events and the expanded field', async () => {
@@ -477,7 +523,7 @@ describe('TreeView', () => {
     expect(t.element.hasAttribute('data-windowed')).toBe(true);
     const drawn = rows(t).length;
     expect(drawn).toBeLessThan(60);
-    expect(t.treeElement.querySelectorAll('.mx-tree-view__space')).toHaveLength(1);
+    expect(t.treePart.element.querySelectorAll('.mx-tree-view__space')).toHaveLength(1);
     expect(rows(t)[0].getAttribute('aria-setsize')).toBe('2000');
     t.focus();
     const first = document.activeElement;
@@ -501,8 +547,8 @@ describe('TreeView', () => {
         ref={(x: TreeView<Folder & { icon?: string }>) => (t = x)}
         aria-label="Project"
         items={[{ id: 'a', text: 'A', icon: 'a.svg' }, { id: 'b', text: 'B', enabled: false }]}
-        itemTemplate={(item: Folder, host: HTMLElement) => {
-          host.textContent = `[${item.text}]`;
+        itemTemplate={(item: Folder & { icon?: string }, host: ComponentBase<HTMLElement>) => {
+          host.setText(`[${item.text}]`);
         }}
         showLines={() => s.lines}
         enabled={() => s.enabled}
@@ -510,7 +556,7 @@ describe('TreeView', () => {
       />,
     );
     await settle();
-    expect(t.treeElement.getAttribute('aria-label')).toBe('Project');
+    expect(t.treePart.element.getAttribute('aria-label')).toBe('Project');
     expect(t.element.hasAttribute('aria-label')).toBe(false);
     expect(texts(t)).toEqual(['[A]', '[B]']);
     expect(part(row(t, '[A]'), 'icon').querySelector('img')!.getAttribute('src')).toBe('a.svg');

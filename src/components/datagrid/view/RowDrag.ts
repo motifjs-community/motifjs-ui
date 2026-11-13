@@ -1,14 +1,20 @@
 import { ComponentBase, untracked } from '@motifx/core';
+import { loose, textPart } from '../../../core/draw-parts';
+import { css, mark, put } from '../../../core/part-writes';
 import { parseChord } from '../../../core/keyboard';
-import { isNode } from '../../../core/node-kind';
+import { onWindow } from '../../../core/window-events';
 import type { GridRowDragEventArgs } from '../grid-row-drag-event-args';
 import type { GridRowDropEventArgs } from '../grid-row-drop-event-args';
+import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD } from '../model/ColumnModel';
 import type { GridModel } from '../model/GridModel';
 import type { GridBody } from './GridBody';
+import type { GridRow } from './GridRow';
 import type { RowDragHost } from './row-drag-host';
 import { rowDropPlace } from './row-drop-place';
-import { scrollStep } from '../../../parts/drag/scroll-step';
-import { nextFrame, stopFrame } from './next-frame';
+import { boxOf, isInPage, measure, onLayout, rectOf, styleOf, type Point, type Rect } from '../../../core/measure';
+import { autoScroll } from '../../../parts/drag/auto-scroll';
+import { DragBoxes } from '../../../parts/drag/drag-boxes';
+import { stackCover } from '../../../parts/drag/stack-cover';
 
 /** Every grid that drags rows, so a drag finds the grids of its group under the pointer. */
 const DRAGGERS = new Set<RowDrag<any>>();
@@ -23,7 +29,16 @@ interface Aim<T> {
   /** Where the drop line goes, from the top of the rows; `null` for none. */
   line: number | null;
   /** The row dropped onto. */
-  target: HTMLElement | null;
+  target: ComponentBase | null;
+  /** How far the dragged row moves to stand at the place, with `'push'`, when it comes from this grid. */
+  shift: number;
+}
+
+/** What a frame of a drag reads: where the row would land, and the look of its copy before it shows. */
+interface FrameRead<T> {
+  session: Session<T>;
+  aim: Aim<T> | null;
+  ghost: { columns: string | null; width: number; scrolled: number; rowHeight: string; bounds: Rect | null } | null;
 }
 
 /** A row being dragged with the pointer. */
@@ -35,7 +50,8 @@ interface Session<T> {
   y: number;
   fromIndex: number;
   item: T;
-  element: HTMLElement;
+  /** The row's component: it holds the pointer while the row is dragged. */
+  part: ComponentBase;
   /** The row's top and height, from the top of the rows, when it was taken. */
   top: number;
   height: number;
@@ -45,9 +61,22 @@ interface Session<T> {
   aim: Aim<T> | null;
   /** The handlers took no drop where it is now. */
   refused: boolean;
-  frame: number;
+  /** The pointer moved (or the rows scrolled) since the last frame: the place is worked out again. */
+  pending: boolean;
+  /** The last pointer move, for the handlers; `null` when the rows scrolled under a still pointer. */
+  event: PointerEvent | null;
+  /** The copy follows the pointer. */
+  ghostShown: boolean;
   /** The drag template's component, disposed at the end. */
   content: ComponentBase | null;
+  /** The app's `boundary` as a component, fixed when the drag starts; `null` for none. */
+  boundary: ComponentBase | null;
+  /** The rows of the grids it may land in, on the screen. */
+  boxes: DragBoxes | null;
+  /** The grid scrolled near its edges, and what stops that. */
+  edgeOf: RowDrag<T> | null;
+  stopEdge: (() => void) | null;
+  stopScroll: (() => void) | null;
 }
 
 const KEY_ALIASES: Record<string, string> = { up: 'arrowup', down: 'arrowdown' };
@@ -67,12 +96,12 @@ function pressed(chords: readonly string[], e: KeyboardEvent): boolean {
   return false;
 }
 
-/** An element given as itself or as a CSS selector. */
-function elementOf(given: string | HTMLElement | undefined): HTMLElement | null {
-  if (!given) return null;
-  if (typeof given !== 'string') return given;
+/** The first component of the tree `from` is in whose element matches `selector`. */
+function componentOf(from: ComponentBase, selector: string): ComponentBase | null {
+  let root = from;
+  while (root.parent) root = root.parent;
   try {
-    return document.querySelector<HTMLElement>(given);
+    return root.$(selector).fromComponent()[0] ?? null;
   } catch {
     return null;
   }
@@ -109,6 +138,11 @@ export class RowDrag<T> {
     return this.host.grid;
   }
 
+  /** The part that scrolls the rows: the body's parent. */
+  private get viewport(): ComponentBase | null {
+    return this.body.parent;
+  }
+
   dispose() {
     this.end(null, false);
     DRAGGERS.delete(this);
@@ -118,19 +152,20 @@ export class RowDrag<T> {
   press(e: PointerEvent): boolean {
     const { model, options } = this;
     if (e.button !== 0 || this.session || !untracked(() => options.enabled) || model.state.busy || model.state.session) return false;
-    const target = e.target as HTMLElement;
-    const view = this.body.rowOf(target);
+    const view = this.body.rowFrom(e);
     if (!view || view.index < 0 || view.row === undefined || view.rowId === undefined || model.isNew(view.rowId)) return false;
+    const onIcon = !!view.cellPart(DRAG_FIELD)?.motif.isEventFrom(e);
     const handle = untracked(() => options.get('handle'));
     if (handle) {
-      const by = target.closest?.(handle);
-      if (!by || !view.element.contains(by)) return false;
+      // The app's handle: the parts of the row its selector matches.
+      if (!view.part.$(handle).fromComponent().some((by) => by.motif.isEventFrom(e))) return false;
     } else if (untracked(() => options.showsIcons)) {
-      if (!target.closest('.mx-data-grid__drag')) return false;
-    } else if (target.closest('.mx-data-grid__action, .mx-data-grid__editor, .mx-data-grid__expand-button, .mx-data-grid__adaptive-button')) return false;
-    const vp = this.host.viewport();
-    const rect = view.element.getBoundingClientRect();
-    const top = rect.top - this.body.element.getBoundingClientRect().top;
+      if (!onIcon) return false;
+    } else if (this.fromControl(view, e)) return false;
+    const viewport = this.viewport;
+    const rect = rectOf(view.part);
+    const top = rect.top - rectOf(this.body).top;
+    const left = viewport ? rectOf(viewport).left : rect.left;
     this.session = {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -139,15 +174,22 @@ export class RowDrag<T> {
       y: e.clientY,
       fromIndex: view.index,
       item: view.row,
-      element: view.element,
+      part: view.part,
       top,
       height: rect.height || model.state.rowHeight,
-      offset: { x: e.clientX - (vp?.getBoundingClientRect().left ?? rect.left), y: e.clientY - rect.top },
+      offset: { x: e.clientX - left, y: e.clientY - rect.top },
       started: false,
       aim: null,
       refused: false,
-      frame: 0,
+      pending: false,
+      event: null,
+      ghostShown: false,
       content: null,
+      boundary: null,
+      boxes: null,
+      edgeOf: null,
+      stopEdge: null,
+      stopScroll: null,
     };
     const move = (ev: PointerEvent) => this.onMove(ev);
     const up = (ev: PointerEvent) => this.onUp(ev);
@@ -159,21 +201,21 @@ export class RowDrag<T> {
         this.model.announce(this.model.text('gridRowDragCanceled'));
       }
     };
-    // The window the grid is in (a window the app opened has its own events).
-    const win = target.ownerDocument.defaultView ?? window;
-    win.addEventListener('pointermove', move);
-    win.addEventListener('pointerup', up);
-    win.addEventListener('pointercancel', up);
-    win.addEventListener('keydown', key, true);
-    this.stops.push(() => {
-      win.removeEventListener('pointermove', move);
-      win.removeEventListener('pointerup', up);
-      win.removeEventListener('pointercancel', up);
-      win.removeEventListener('keydown', key, true);
-    });
+    // The window the grid is in: the drag goes on past the grid, onto another one too.
+    const grid = this.grid;
+    this.stops.push(onWindow(grid, 'pointermove', move), onWindow(grid, 'pointerup', up), onWindow(grid, 'pointercancel', up), onWindow(grid, 'keydown', key, true));
     // The drag icon does not select text or start the browser's own drag.
-    if (target.closest('.mx-data-grid__drag')) e.preventDefault();
+    if (onIcon) e.preventDefault();
     return true;
+  }
+
+  /** Whether a press on a row started on one of its own controls: an action button, the details arrow, the "…" or the editor. */
+  private fromControl(view: GridRow<T>, e: Event): boolean {
+    const editing = this.model.state.editing;
+    const fields = [ACTIONS_FIELD, EXPAND_FIELD, ADAPTIVE_FIELD];
+    if (editing && editing.rowId === view.rowId) fields.push(editing.field);
+    // Their parts, not the cells: the space around them still takes the row.
+    return fields.some((field) => !!view.cellPart(field)?.controls.items.some((part) => part.motif.isEventFrom(e)));
   }
 
   /** A key on a row: Ctrl+Shift+Up / Down (`moveUpKeys`, `moveDownKeys`) move it a place. Returns whether it was one. */
@@ -202,9 +244,9 @@ export class RowDrag<T> {
     const { model } = this;
     const row = this.dataRowAt(fromIndex);
     if (row === undefined || toIndex === fromIndex || !model.hasRow(toIndex)) return false;
-    const aim: Aim<T> = { drag: this, local: model.localOf(toIndex), inside: false, toIndex, line: null, target: null };
-    const element = this.host.grid.getRowElement(fromIndex) ?? this.host.root();
-    const args = () => this.args(row, fromIndex, element, aim, event);
+    const aim: Aim<T> = { drag: this, local: model.localOf(toIndex), inside: false, toIndex, line: null, target: null, shift: 0 };
+    const part = this.grid.getRowPart(fromIndex) ?? this.grid;
+    const args = () => this.args(row, fromIndex, part, aim, event);
     if (!this.ask('onDragStart', args()) || !this.ask('onDragChange', args()) || !this.ask('onDragEnd', args())) return false;
     const e = args() as GridRowDropEventArgs<T>;
     delete (e as { cancel?: boolean }).cancel;
@@ -225,9 +267,9 @@ export class RowDrag<T> {
       if (Math.max(Math.abs(e.clientX - s.startX), Math.abs(e.clientY - s.startY)) < threshold) return;
       if (!this.start(e)) return;
     }
-    this.track(e);
-    const point = this.clamp(s.x, s.y);
-    this.autoScroll(point.x, point.y);
+    s.event = e;
+    s.pending = true;
+    measure(this.grid, this.readFrame, this.drawFrame);
   }
 
   private onUp(e: PointerEvent) {
@@ -237,44 +279,80 @@ export class RowDrag<T> {
       this.end(null, false);
       return;
     }
+    // A move not drawn yet still counts: the drop goes where the pointer is.
+    if (s.pending) this.drawFrame(this.readFrame());
     // The click that follows the drop is not a click on the row.
     const swallow = (ev: MouseEvent) => {
       ev.stopPropagation();
       ev.preventDefault();
     };
-    const view = (e.target as Node | null)?.ownerDocument?.defaultView ?? window;
-    view.addEventListener('click', swallow, true);
-    setTimeout(() => view.removeEventListener('click', swallow, true), 0);
+    setTimeout(onWindow(this.grid, 'click', swallow, true), 0);
     this.end(e, e.type === 'pointerup');
   }
 
-  /** The drag passed the threshold: `onDragStart`, then the copy and the marks. Returns whether it goes on. */
+  /** The drag passed the threshold: `onDragStart`, then the marks; the copy shows with the next frame. Returns whether it goes on. */
   private start(e: PointerEvent): boolean {
     const s = this.session!;
-    const aim: Aim<T> = { drag: this, local: this.model.localOf(s.fromIndex), inside: false, toIndex: s.fromIndex, line: null, target: null };
-    if (!this.ask('onDragStart', this.args(s.item, s.fromIndex, s.element, aim, e))) {
+    const aim: Aim<T> = { drag: this, local: this.model.localOf(s.fromIndex), inside: false, toIndex: s.fromIndex, line: null, target: null, shift: 0 };
+    if (!this.ask('onDragStart', this.args(s.item, s.fromIndex, s.part, aim, e))) {
       this.end(null, false);
       return false;
     }
     s.started = true;
     s.aim = aim;
-    s.element.setPointerCapture?.(e.pointerId);
-    this.host.root().toggleAttribute('data-row-dragging', true);
-    this.showGhost(e);
-    this.paint();
+    // The app's boundary is fixed for the drag after `onDragStart`, which may still set it.
+    s.boundary = this.appPart('boundary');
+    s.boxes = new DragBoxes(this.grid, this.aimable, stackCover);
+    s.stopScroll = onLayout(this.grid, 'scroll', this.rowsScrolled);
+    s.part.attr.add({ setPointerCapture: e.pointerId });
+    mark(this.grid, 'data-row-dragging', true);
     return true;
   }
 
-  /** The pointer moved while dragging: the copy follows, the grid under it shows the place, the rows scroll near the edges. */
-  private track(e: PointerEvent | null) {
+  /** The grids of the drag that it may land in (this one, then those of its group in the page), by the parts that scroll their rows. */
+  private readonly aimable = (): ComponentBase[] => {
+    const group = untracked(() => this.options.get('group'));
+    const out: ComponentBase[] = [];
+    for (const d of [this, ...DRAGGERS]) {
+      if (d !== this && (!group || untracked(() => d.options.get('group')) !== group)) continue;
+      const viewport = d.viewport;
+      if (viewport && !out.includes(viewport) && isInPage(viewport)) out.push(viewport);
+    }
+    return out;
+  };
+
+  /** Something scrolled under the dragged row: where it would land is worked out again. */
+  private readonly rowsScrolled = () => {
     const s = this.session;
     if (!s?.started) return;
-    const point = this.clamp(s.x, s.y);
+    if (!s.pending) s.event = null;
+    s.pending = true;
+    measure(this.grid, this.readFrame, this.drawFrame);
+  };
+
+  private readonly readFrame = (): FrameRead<T> | null => {
+    const s = this.session;
+    if (!s?.started || !s.boxes) return null;
+    return { session: s, aim: this.aimAt(s.boxes, this.clamp(s)), ghost: s.ghostShown ? null : this.readGhost(s) };
+  };
+
+  /** The frame of a drag: the copy shows (the first time) and follows, the grid under it shows the place, the grid there scrolls near its edges. */
+  private readonly drawFrame = (read: FrameRead<T> | null) => {
+    const s = read?.session;
+    if (!read || !s || s !== this.session) return;
+    s.pending = false;
+    if (read.ghost) this.showGhost(s, read.ghost);
+    this.track(s, read.aim);
+    this.followEdges(s);
+  };
+
+  /** The pointer moved while dragging: the copy follows, the grid under it shows the place. */
+  private track(s: Session<T>, aim: Aim<T> | null) {
+    const e = s.event;
     const before = s.aim;
-    const aim = this.aimAt(point.x, point.y);
     s.aim = aim;
     s.refused = false;
-    const args = () => this.args(s.item, s.fromIndex, s.element, aim, e ?? undefined);
+    const args = () => this.args(s.item, s.fromIndex, s.part, aim, e ?? undefined);
     if (!this.ask('onDragMove', args())) s.refused = true;
     const changed = (before?.drag ?? null) !== (aim?.drag ?? null) || before?.toIndex !== aim?.toIndex || before?.inside !== aim?.inside;
     if (changed && !s.refused && !this.ask('onDragChange', args())) s.refused = true;
@@ -288,16 +366,18 @@ export class RowDrag<T> {
     for (const stop of this.stops.splice(0)) stop();
     if (!s) return;
     this.session = null;
-    stopFrame(s.frame);
+    s.stopEdge?.();
+    s.stopScroll?.();
+    s.boxes?.stop();
     if (!s.started) return;
     this.host.ghost.hide();
     if (s.content && !s.content.isDisposed) void s.content.dispose({ skipLeaveTransition: true });
-    if (s.element.hasPointerCapture?.(s.pointerId)) s.element.releasePointerCapture(s.pointerId);
-    this.host.root().toggleAttribute('data-row-dragging', false);
+    s.part.attr.add({ releasePointerCapture: s.pointerId });
+    mark(this.grid, 'data-row-dragging', false);
     const aim = s.aim && !s.refused ? s.aim : null;
     const pending: PromiseLike<unknown>[] = [];
     if (drop) {
-      const ended = this.ask('onDragEnd', this.args(s.item, s.fromIndex, s.element, aim, e ?? undefined));
+      const ended = this.ask('onDragEnd', this.args(s.item, s.fromIndex, s.part, aim, e ?? undefined));
       if (ended && aim) pending.push(...this.drop(s, aim, e));
     }
     // The marks stay while the handlers' work runs.
@@ -312,7 +392,7 @@ export class RowDrag<T> {
   private drop(s: Session<T>, aim: Aim<T>, e: Event | null): PromiseLike<unknown>[] {
     const out: PromiseLike<unknown>[] = [];
     const make = (on: RowDrag<T>) => {
-      const args = on.args(s.item, s.fromIndex, s.element, aim, e ?? undefined, this);
+      const args = on.args(s.item, s.fromIndex, s.part, aim, e ?? undefined, this);
       delete (args as { cancel?: boolean }).cancel;
       return args as GridRowDropEventArgs<T>;
     };
@@ -337,7 +417,7 @@ export class RowDrag<T> {
   }
 
   /** The arguments of an event of this grid's handlers about the dragged row; `from` is the grid it comes from. */
-  private args(item: T, fromIndex: number, element: HTMLElement, aim: Aim<T> | null, event: Event | undefined, from: RowDrag<T> = this): GridRowDragEventArgs<T> {
+  private args(item: T, fromIndex: number, part: ComponentBase, aim: Aim<T> | null, event: Event | undefined, from: RowDrag<T> = this): GridRowDragEventArgs<T> {
     const to = aim?.drag ?? null;
     const toIndex = aim ? aim.toIndex : -1;
     return {
@@ -346,7 +426,7 @@ export class RowDrag<T> {
       toComponent: to?.grid ?? null,
       itemData: item,
       itemKey: from.keyOf(item),
-      itemElement: element,
+      itemPart: part,
       fromIndex,
       toIndex,
       toItemData: to && toIndex >= 0 ? to.dataRowAt(toIndex) : undefined,
@@ -372,37 +452,33 @@ export class RowDrag<T> {
   }
 
   /** Where a row dragged to the point would land in a grid of the drag (this one, or one of its group), or `null`. */
-  private aimAt(x: number, y: number): Aim<T> | null {
-    const group = untracked(() => this.options.get('group'));
-    for (const d of [this, ...DRAGGERS]) {
-      if (d !== this && (!group || untracked(() => d.options.get('group')) !== group)) continue;
-      const vp = d.host.viewport();
-      if (!vp || !vp.isConnected) continue;
-      const r = vp.getBoundingClientRect();
-      if (x < r.left || x >= r.right || y < r.top || y >= r.bottom) continue;
-      return d.placeAt(y, r, d === this ? this.session : null);
-    }
+  private aimAt(boxes: DragBoxes, point: Point): Aim<T> | null {
+    const viewport = boxes.at(point, this.grid);
+    if (!viewport) return null;
+    const rect = boxes.rectOf(viewport);
+    for (const d of [this, ...DRAGGERS]) if (d.viewport === viewport) return rect ? d.placeAt(point.y, rect, d === this ? this.session : null) : null;
     return null;
   }
 
-  /** Where a row dragged to `y` would land among this grid's rows; `source` is the drag when it comes from this grid. */
-  private placeAt(y: number, view: DOMRect, source: Session<T> | null): Aim<T> | null {
+  /** Where a row dragged to `y` would land among this grid's rows (`view`: the part of them on the screen); `source` is the drag when it comes from this grid. */
+  private placeAt(y: number, view: Rect, source: Session<T> | null): Aim<T> | null {
     const { model, options } = this;
     const own = source !== null;
     const reorder = untracked(() => options.get('allowReordering'));
     const insideOn = untracked(() => options.get('allowDropInsideItem'));
     if (own && !reorder && !insideOn) return null;
-    const rows = this.body.placed().filter((p) => p.bottom > view.top && p.top < view.bottom && model.localOf(p.index) >= 0);
+    const placed = this.body.placed();
+    const rows = placed.filter((p) => p.bottom > view.top && p.top < view.bottom && model.localOf(p.index) >= 0);
     const n = model.reachable();
-    const bodyTop = this.body.element.getBoundingClientRect().top;
+    const bodyTop = rectOf(this.body).top;
     if (!rows.length) {
       if (own) return null;
-      return { drag: this, local: 0, inside: false, toIndex: n ? model.viewAt(0) : 0, line: 0, target: null };
+      return { drag: this, local: 0, inside: false, toIndex: n ? model.viewAt(0) : 0, line: 0, target: null, shift: 0 };
     }
     const place = rowDropPlace(rows, y, (k) => insideOn && this.dataRowAt(rows[k].index) !== undefined && !(own && rows[k].index === source!.fromIndex));
     if (place.inside >= 0) {
       const p = rows[place.inside];
-      return { drag: this, local: model.localOf(p.index), inside: true, toIndex: p.index, line: null, target: p.element };
+      return { drag: this, local: model.localOf(p.index), inside: true, toIndex: p.index, line: null, target: p.part, shift: 0 };
     }
     if (own && !reorder) return null;
     const gap = place.gap < rows.length ? model.localOf(rows[place.gap].index) : model.localOf(rows[rows.length - 1].index) + 1;
@@ -410,10 +486,14 @@ export class RowDrag<T> {
     if (own) {
       const s = model.localOf(source!.fromIndex);
       const local = gap > s ? gap - 1 : gap;
-      return { drag: this, local, inside: false, toIndex: model.viewAt(local), line: local === s ? null : line, target: null };
+      const toIndex = model.viewAt(local);
+      // The row at the place: the dragged row stands at its bottom when it goes down, at its top when it goes up.
+      const at = placed.find((p) => p.index === toIndex);
+      const shift = local === s ? 0 : !at ? (local - s) * source!.height : local > s ? at.bottom - bodyTop - (source!.top + source!.height) : at.top - bodyTop - source!.top;
+      return { drag: this, local, inside: false, toIndex, line: local === s ? null : line, target: null, shift };
     }
     const toIndex = gap < n ? model.viewAt(gap) : n ? model.viewAt(n - 1) + 1 : 0;
-    return { drag: this, local: gap, inside: false, toIndex, line, target: null };
+    return { drag: this, local: gap, inside: false, toIndex, line, target: null, shift: 0 };
   }
 
   /** Draws the marks of every grid of the drag: the place it would land, the room made for it, the row it came from. */
@@ -431,8 +511,8 @@ export class RowDrag<T> {
     const { model, body } = this;
     const push = untracked(() => this.options.get('dropFeedbackMode')) === 'push' && !untracked(() => this.options.get('allowDropInsideItem'));
     this.marked = true;
-    this.host.root().toggleAttribute('data-row-dragging', true);
-    body.markDropTarget(aim?.inside ? aim.target : null);
+    mark(this.grid, 'data-row-dragging', true);
+    body.markDropRow(aim?.inside ? aim.target : null);
     body.showDropLine(!push && aim && !aim.inside ? aim.line : null);
     const from = source ? model.localOf(source.fromIndex) : -1;
     if (!push || !aim || aim.inside) {
@@ -443,7 +523,7 @@ export class RowDrag<T> {
     if (source) {
       // Within the grid: the rows between make room, the row itself shows where it would go.
       const to = aim.local;
-      const shift = to > from ? this.offsetBetween(source, aim, true) : to < from ? this.offsetBetween(source, aim, false) : 0;
+      const shift = aim.shift;
       body.setDragLook((i) => {
         const l = model.localOf(i);
         if (l === from) return shift;
@@ -457,101 +537,102 @@ export class RowDrag<T> {
     body.setDragLook((i) => (model.localOf(i) >= aim.local ? height : 0), -1, true);
   }
 
-  /** How far the dragged row moves to stand at the place it would land: to the bottom (`down`) or the top of the row there. */
-  private offsetBetween(source: Session<T>, aim: Aim<T>, down: boolean): number {
-    const bodyTop = this.body.element.getBoundingClientRect().top;
-    const at = this.body.placed().find((p) => p.index === aim.toIndex);
-    if (!at) return (aim.local - this.model.localOf(source.fromIndex)) * source.height;
-    return down ? at.bottom - bodyTop - (source.top + source.height) : at.top - bodyTop - source.top;
-  }
-
   private clearMarks() {
     if (!this.marked) return;
     this.marked = false;
-    if (!this.session) this.host.root().toggleAttribute('data-row-dragging', false);
-    this.body.markDropTarget(null);
+    if (!this.session) mark(this.grid, 'data-row-dragging', false);
+    this.body.markDropRow(null);
     this.body.showDropLine(null);
     this.body.setDragLook(null, -1, false);
   }
 
-  /** Scrolls the grid under the pointer (or this one) while the pointer is near its top or bottom edge, frame by frame. */
-  private autoScroll(x: number, y: number) {
-    const s = this.session;
-    if (!s) return;
-    stopFrame(s.frame);
+  /**
+   * Scrolls the grid under the pointer (or this one) while the pointer is near its top or bottom edge, below its sticky
+   * header, frame by frame; the scroll tells where the row would land again.
+   */
+  private followEdges(s: Session<T>) {
     const d = s.aim?.drag ?? this;
-    if (!untracked(() => d.options.get('autoScroll'))) return;
-    const vp = d.host.viewport();
-    if (!vp) return;
-    const r = vp.getBoundingClientRect();
-    if (x < r.left || x >= r.right) return;
-    const head = d.headHeight();
-    const step = scrollStep(y, r.top + head, r.bottom, untracked(() => d.options.get('scrollSensitivity')), untracked(() => d.options.get('scrollSpeed')));
-    if (!step) return;
-    const before = vp.scrollTop;
-    vp.scrollTop = before + step;
-    if (vp.scrollTop === before) return;
-    d.body.onScroll();
-    this.track(null);
-    s.frame = nextFrame(() => {
-      const point = this.clamp(s.x, s.y);
-      this.autoScroll(point.x, point.y);
+    if (s.edgeOf === d) return;
+    s.stopEdge?.();
+    s.edgeOf = d;
+    s.stopEdge = null;
+    const viewport = d.viewport;
+    if (!viewport || !untracked(() => d.options.get('autoScroll'))) return;
+    s.stopEdge = autoScroll(this.grid, viewport, () => (this.session === s ? this.clamp(s) : null), () => s.boxes?.moved(), {
+      axis: 'y',
+      top: d.host.head?.() ?? undefined,
+      zone: untracked(() => d.options.get('scrollSensitivity')),
+      speed: untracked(() => d.options.get('scrollSpeed')),
+      whileOver: true,
     });
   }
 
-  /** The height of the sticky header over the rows. */
-  private headHeight(): number {
-    const head = this.host.viewport()?.querySelector<HTMLElement>(':scope > .mx-data-grid__head');
-    return head?.getBoundingClientRect().height ?? 0;
+  /** The pointer kept inside `boundary`; read with the window's reads. */
+  private clamp(s: Session<T>): Point {
+    if (!s.boundary) return { x: s.x, y: s.y };
+    const b = rectOf(s.boundary);
+    return { x: Math.max(b.left, Math.min(b.right - 1, s.x)), y: Math.max(b.top, Math.min(b.bottom - 1, s.y)) };
   }
 
-  /** The point kept inside `boundary`. */
-  private clamp(x: number, y: number): { x: number; y: number } {
-    const b = elementOf(untracked(() => this.options.get('boundary')))?.getBoundingClientRect();
-    if (!b) return { x, y };
-    return { x: Math.max(b.left, Math.min(b.right - 1, x)), y: Math.max(b.top, Math.min(b.bottom - 1, y)) };
+  /** What the copy of the row takes from the grid: its columns, its width and sideways scroll, the row height, and the box it stays in. */
+  private readGhost(s: Session<T>): FrameRead<T>['ghost'] {
+    const viewport = this.viewport;
+    const box = viewport ? boxOf(viewport) : null;
+    return {
+      columns: viewport ? styleOf(viewport, ['--_columns'])['--_columns'] : null,
+      width: box?.clientWidth ?? 0,
+      scrolled: box?.scrollStart ?? 0,
+      rowHeight: styleOf(this.grid, ['--_row-height'])['--_row-height'],
+      bounds: s.boundary ? rectOf(s.boundary) : null,
+    };
   }
 
   /** The copy of the row (or the drag template) under the pointer. */
-  private showGhost(e: PointerEvent) {
-    const s = this.session!;
+  private showGhost(s: Session<T>, look: NonNullable<FrameRead<T>['ghost']>) {
     const { options } = this;
-    const vp = this.host.viewport();
+    s.ghostShown = true;
     const template = options.handlers.dragTemplate;
-    let content: Node;
+    let content: ComponentBase;
     if (typeof template === 'function') {
-      const made = untracked(() => template({ itemData: s.item, itemElement: s.element }));
+      const made = untracked(() => template({ itemData: s.item, itemPart: s.part }));
       if (made instanceof ComponentBase) {
-        this.grid.controls.add(made);
+        // The copy's box holds it, and it goes with the box.
         s.content = made;
-        content = made.element as Node;
-      } else content = isNode(made) ? made : document.createTextNode(String(made ?? ''));
-    } else {
-      const rows = document.createElement('div');
-      rows.className = 'mx-data-grid__ghost-rows';
-      rows.dataset.gridId = this.host.root().dataset.gridId ?? '';
-      if (vp) {
-        rows.style.setProperty('--_columns', getComputedStyle(vp).getPropertyValue('--_columns'));
-        rows.style.inlineSize = `${vp.clientWidth}px`;
+        content = made;
+      } else {
+        content = loose<HTMLSpanElement>('span');
+        textPart(content, String(made ?? ''));
       }
-      rows.style.setProperty('--_row-height', getComputedStyle(this.host.root()).getPropertyValue('--_row-height'));
-      const copy = this.host.ghost.copyOf(s.element, false);
-      copy.style.transform = '';
-      copy.style.translate = '';
-      copy.hidden = false;
-      copy.removeAttribute('data-drag-source');
-      if (vp?.scrollLeft) copy.style.marginInlineStart = `${-vp.scrollLeft}px`;
-      rows.append(copy);
-      content = rows;
+    } else {
+      const rowsPart = loose<HTMLDivElement>('div', 'mx-data-grid__ghost-rows');
+      rowsPart.attr.add({ 'data-grid-id': this.host.gridId ?? '' });
+      if (look.columns !== null) {
+        css(rowsPart, '--_columns', look.columns);
+        css(rowsPart, 'inline-size', `${look.width}px`);
+      }
+      css(rowsPart, '--_row-height', look.rowHeight);
+      const copy = this.host.ghost.copyPart(s.part, false);
+      copy.style({ transform: '', translate: '' });
+      mark(copy, 'hidden', false);
+      put(copy, 'data-drag-source', null);
+      if (look.scrolled) css(copy, 'margin-inline-start', `${-look.scrolled}px`);
+      rowsPart.controls.add(copy);
+      content = rowsPart;
     }
     const offset = this.cursorOffset() ?? s.offset;
-    const bounds = elementOf(untracked(() => options.get('boundary')))?.getBoundingClientRect() ?? null;
-    this.host.ghost.showAt(content, 'row', e.clientX, e.clientY, {
+    this.host.ghost.showAt(content, 'row', s.x, s.y, {
       offset,
-      root: elementOf(untracked(() => options.get('container'))),
+      root: this.appPart('container'),
       direction: untracked(() => options.get('dragDirection')),
-      bounds,
+      bounds: look.bounds,
     });
+  }
+
+  /** The app's `boundary` or `container` as a component: the one it gives, or the one its selector finds. */
+  private appPart(name: 'boundary' | 'container'): ComponentBase | null {
+    const given = untracked(() => this.options.get(name));
+    if (!given) return null;
+    return typeof given === 'string' ? componentOf(this.grid, given) : given;
   }
 
   /** `cursorOffset` as `{ x, y }`, or `null` when it is not given. */

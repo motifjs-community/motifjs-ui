@@ -27,7 +27,7 @@ function sized(signature: Signature) {
 function pen(signature: Signature, type: string, x: number, y: number, more: Record<string, unknown> = {}) {
     const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 });
     Object.assign(event, { pointerId: 1, pointerType: 'mouse', pressure: 0, ...more });
-    signature.padElement.dispatchEvent(event);
+    signature.padPart.element.dispatchEvent(event);
 }
 
 function sign(signature: Signature, from = 10, to = 90) {
@@ -58,8 +58,8 @@ describe('Signature', () => {
         expect(pad.isEmpty).toBe(true);
         expect(pad.placeholderPart.hidden).toBe(false);
         expect(pad.placeholderPart.textContent).toBe(enStrings.signatureHere);
-        expect(pad.padElement.getAttribute('aria-roledescription')).toBe(enStrings.signatureName);
-        expect(pad.padElement.getAttribute('aria-description')).toBe(enStrings.signatureEmpty);
+        expect(pad.padPart.element.getAttribute('aria-roledescription')).toBe(enStrings.signatureName);
+        expect(pad.padPart.element.getAttribute('aria-description')).toBe(enStrings.signatureEmpty);
         expect(pad.undoButton.hint).toBe(enStrings.signatureUndo);
         expect(pad.clearButton.hint).toBe(enStrings.clear);
         expect(pad.clearButton.enabled).toBe(false);
@@ -80,7 +80,7 @@ describe('Signature', () => {
         expect(changed).toHaveBeenCalledTimes(1);
         expect(pad.placeholderPart.hidden).toBe(true);
         expect(pad.undoButton.enabled).toBe(true);
-        expect(pad.padElement.getAttribute('aria-description')).toBe(enStrings.signatureSigned);
+        expect(pad.padPart.element.getAttribute('aria-description')).toBe(enStrings.signatureSigned);
     });
 
     it('takes a tap as a dot, and drops points too close to the last one', async () => {
@@ -167,7 +167,7 @@ describe('Signature', () => {
         await tick();
         pad.undo();
         expect(pad.value).toEqual([LINE]);
-        pad.padElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
+        pad.padPart.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
         expect(pad.isEmpty).toBe(true);
         expect(pad.placeholderPart.hidden).toBe(false);
         expect(pad.undoButton.enabled).toBe(false);
@@ -175,7 +175,7 @@ describe('Signature', () => {
         await tick();
         expect(pad.placeholderPart.hidden).toBe(true);
         expect(pad.clearButton.enabled).toBe(true);
-        pad.padElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
+        pad.padPart.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
         expect(pad.isEmpty).toBe(true);
     });
 
@@ -211,7 +211,7 @@ describe('Signature', () => {
         page(pad);
         await tick();
         expect(pad.actions.element.hidden).toBe(true);
-        expect(pad.guide.hidden).toBe(true);
+        expect(pad.guidePart.element.hidden).toBe(true);
         expect(pad.placeholderPart.hidden).toBe(true);
     });
 

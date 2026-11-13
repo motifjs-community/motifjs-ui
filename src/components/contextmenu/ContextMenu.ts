@@ -1,10 +1,15 @@
-import { Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, ComponentBase, Emitter, createSignal, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
+import { part } from '../../core/draw-parts';
+import { css, put } from '../../core/part-writes';
+import { isInPage, isRtl, measure, mediaOf, onLayout, pageOf, rectOf, sameWindow, visibleRectOf, type Point, type Rect } from '../../core/measure';
+import { placeOnPage } from '../../core/page-layer';
+import { onWindow } from '../../core/window-events';
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { follow } from '../../core/follow';
-import { deepActiveElement, isFocusable } from '../../core/focus';
+import { canTakeFocus, focusOn, holdsFocus, rememberFocus } from '../../core/focus';
+import type { FocusMark } from '../../core/focus-mark';
 import { givenField, givenList } from '../../core/given-field';
-import { isElement, isHtmlElement, isNode } from '../../core/node-kind';
+import { isElement } from '../../core/node-kind';
 import { MenuList } from '../../parts/menu/MenuList';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
@@ -24,26 +29,51 @@ const NO_ITEMS: readonly MenuItem[] = [];
 
 interface Parts {
   /** An invisible 1×1 point the popup opens next to: the pointer, or the focused element. */
-  anchor: HTMLDivElement;
+  anchor: Component<HTMLDivElement>;
   popup: Popup | null;
   list: MenuList | null;
   /** The action sheet it shows its items in on a touch screen. */
   sheet: ActionSheet | null;
-  /** The target as given; `undefined`: the element the menu is placed in. */
+  /** The target as given; `undefined`: the component the menu is placed in. */
   source: Bind<ContextMenuTarget | null | undefined> | undefined;
-  stopTarget: (() => void) | null;
-  attached: Element | null;
+  /** Whether the target's watch is made; `turn` reruns it when the target is given anew. */
+  watching: boolean;
+  turn: Signal<number>;
+  /** The component listened to for the target. */
+  attachedPart: ComponentBase | null;
+  /** Where focus goes back when the menu closes with focus in it: where focus was, or the component it opened at. */
+  returnFocus: FocusMark | ComponentBase | null;
   /** When a key last opened the menu: the `contextmenu` event the same key may send is not a second opening. */
   keyOpenedAt: number;
-  /** The element the menu opened on, and where the anchor sits from its corner: the menu goes along when it scrolls. */
-  follow: { element: Element; x: number; y: number } | null;
-  /** Listens on the target and, while open, on the window. */
+  /** The component the menu opened on: the menu goes along when it scrolls. */
+  follow: Follow | null;
+  /** Listens, while open, on the window. */
   listener: (e: Event) => void;
-  /** The window it listens on while open. */
-  view: Window | null;
+  /** Listens on the target's component. */
+  onTarget: (sender: ComponentBase, e: Event) => void;
+  /** What stops listening and watching while open. */
+  stopOpen: (() => void)[];
+  /** Where the component it opened on is after a scroll, and the menu moved along: the same two each time. */
+  readFollow: () => FollowRead | null;
+  moveAlong: (read: FollowRead | null) => void;
   opening: Emitter<ContextMenuOpeningEventArgs>;
   itemClick: Emitter<MenuItemClickEventArgs>;
   closed: Emitter<PopupCloseReason>;
+}
+
+/** The component the menu opened on, where the anchor sits from its corner, and where that corner was last. */
+interface Follow {
+  part: ComponentBase;
+  x: number;
+  y: number;
+  left: number;
+  top: number;
+}
+
+interface FollowRead {
+  follow: Follow;
+  box: Rect;
+  seen: boolean;
 }
 
 const PARTS = Symbol('mx.contextmenu');
@@ -52,14 +82,14 @@ const PARTS = Symbol('mx.contextmenu');
  * A menu that opens at the pointer on an element's right-click (or long press), and at the focused element
  * with the Menu key or Shift+F10. `onOpening` builds the items for the element it opened on, such as a list
  * row, or cancels. It closes on Escape, a click outside it and focus leaving it. When the page scrolls, it
- * follows that element and closes once the element is out of view. The items are `MenuItem`s: submenus, check and
+ * follows the component it opened on and closes once that is out of view. The items are `MenuItem`s: submenus, check and
  * radio items, shortcuts. Opened on an element in another document (a window the app opened), the menu appears there.
  *
  * @example
  * <ContextMenu target={() => this.list} items={[{ text: '&Copy', click: () => this.copy() }]} />
  *
  * const menu = new ContextMenu({ target: this.grid, items: this.rowItems });
- * menu.onOpening((e) => (e.items = this.itemsFor(e.target)));
+ * menu.onOpening((e) => (e.items = this.itemsFor(this.rows.find((row) => row.motif.isEventFrom(e.event)))));
  */
 export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   constructor(props?: IBaseProp<ContextMenuProps>) {
@@ -68,8 +98,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     const parts = this.parts;
     this.observeProperty<string>('text', (text) => {
       const label = parseAccessKey(text ?? '').text;
-      if (label) parts.list?.element.setAttribute('aria-label', label);
-      else parts.list?.element.removeAttribute('aria-label');
+      if (parts.list) put(parts.list, 'aria-label', label);
     });
     this.observeProperty('items', () => {
       if (parts.popup?.isOpen) parts.list!.setItems(this.peekProperty<readonly MenuItem[]>('items') ?? NO_ITEMS);
@@ -88,7 +117,6 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     else queueMicrotask(() => this.followTarget());
     this.motif.on('x:built', () => queueMicrotask(() => this.followTarget()));
     this.motif.setDisposable(() => {
-      parts.stopTarget?.();
       this.attach(null);
       this.stopClosing();
       parts.opening.dispose();
@@ -111,9 +139,9 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   set items(value: Bind<readonly MenuItem[]>) {
     this.assignProperty('items', value);
   }
-  /** The element the menu listens on. Reactive. Set it to an element, a component or a function that returns one. */
-  get target(): Element | null {
-    return this.getProperty<Element | null | undefined>('attached') ?? null;
+  /** The component the menu listens on. Reactive. Set it to a component or a function that returns one. */
+  get target(): ComponentBase | null {
+    return this.getProperty<ComponentBase | null | undefined>('attached') ?? null;
   }
   set target(value: Bind<ContextMenuTarget | null | undefined>) {
     this.parts.source = value;
@@ -149,9 +177,12 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     return !!this.getProperty<boolean>('opened');
   }
 
-  /** The element the menu was last opened on (clicked or focused), kept after it closes. Reactive. */
-  get targetElement(): Element | null {
-    return this.getProperty<Element | null | undefined>('targetElement') ?? null;
+  /**
+   * The component the menu was last opened on (the innermost one under the target that was clicked or focused), kept
+   * after it closes. Reactive. The element itself is `e.target` of `onOpening`.
+   */
+  get targetPart(): ComponentBase | null {
+    return this.getProperty<ComponentBase | null | undefined>('targetPart') ?? null;
   }
 
   /** Occurs before the menu opens. Set `e.items` for `e.target`, or cancel. */
@@ -167,15 +198,17 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   /**
-   * Opens the menu programmatically, at a point of the viewport, or at an element (its start corner,
-   * below it). `target` is the element that `onOpening` and `targetElement` report, by default the target element.
-   * Returns whether it opened.
+   * Opens the menu programmatically, at a point of the viewport, or at a component (its start corner,
+   * below it). `target` is the component `targetPart` and `onOpening` report, by default the target; focus goes back
+   * to it when the menu closes. Returns whether it opened.
    */
-  open(at: { x: number; y: number } | Element, target?: Element): boolean {
-    const point = isElement(at) ? pointOf(at) : at;
-    const element = target ?? (isElement(at) ? at : this.parts.attached);
-    if (!element) return false;
-    return this.show(point, element, new Event('open'), isElement(at), focusTarget(element));
+  open(at: { x: number; y: number } | ComponentBase, target?: ComponentBase): boolean {
+    const atPart = at instanceof ComponentBase ? at : null;
+    if (atPart && !elementOf(atPart)) return false;
+    const opener = target ?? atPart ?? this.parts.attachedPart;
+    if (!opener) return false;
+    const point = !atPart ? (at as Point) : atPart === opener ? null : pointOf(atPart);
+    return this.show(opener, point, new Event('open'), !!atPart, canTakeFocus(opener) ? opener : null);
   }
 
   close(): void {
@@ -215,23 +248,26 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   private createParts(): Parts {
-    this.element.classList.add('mx-context-menu');
-    const anchor = this.element.ownerDocument.createElement('div');
-    anchor.className = 'mx-context-menu__anchor';
-    anchor.style.inlineSize = anchor.style.blockSize = '1px';
-    this.element.append(anchor);
+    this.class.add('mx-context-menu');
+    const anchor = part<HTMLDivElement>(this, 'div', 'mx-context-menu__anchor');
+    anchor.style({ 'inline-size': '1px', 'block-size': '1px' });
     return {
       anchor,
+      attachedPart: null,
+      stopOpen: [],
       popup: null,
       list: null,
       sheet: null,
       source: undefined,
-      stopTarget: null,
-      attached: null,
+      watching: false,
+      turn: createSignal(0),
+      returnFocus: null,
       keyOpenedAt: -Infinity,
       follow: null,
       listener: (e) => this.handle(e),
-      view: null,
+      onTarget: (_: ComponentBase, e: Event) => this.handle(e),
+      readFollow: () => this.readFollow(),
+      moveAlong: (read) => this.moveAlong(read),
       opening: new Emitter(),
       itemClick: new Emitter(),
       closed: new Emitter(),
@@ -241,37 +277,52 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   private followTarget(): void {
     const parts = this.parts;
     if (this.isDisposed) return;
-    parts.stopTarget?.();
-    const source = parts.source;
-    if (source === undefined) {
-      parts.stopTarget = null;
-      this.attach(this.element.parentElement);
+    // One watch, read again when the target is given anew (`turn`), on a change of what it reads, and on reState.
+    if (parts.watching) {
+      const source = parts.source;
+      this.attachTo(source, source === undefined ? undefined : untracked(() => read(source)));
+      parts.turn.value = parts.turn.peek() + 1;
       return;
     }
-    parts.stopTarget = follow(
-      this,
-      'target',
-      () => read(source),
-      (target) => this.attach(target ? (isElement(target) ? target : (target.element as Element)) : null),
-    );
+    parts.watching = true;
+    this.bindings.watch(() => {
+      void parts.turn.value;
+      const source = parts.source;
+      const target = source === undefined ? undefined : read(source);
+      untracked(() => this.attachTo(source, target));
+    });
   }
 
-  private attach(element: Element | null): void {
-    const parts = this.parts;
-    if (parts.attached === element) return;
-    for (const type of ['contextmenu', 'keydown']) {
-      parts.attached?.removeEventListener(type, parts.listener);
-      element?.addEventListener(type, parts.listener);
+  private attachTo(source: unknown, target: ContextMenuTarget | null | undefined): void {
+    if (source !== undefined) {
+      this.attach(target ?? null);
+      return;
     }
-    parts.attached = element;
-    this.setProperty('attached', element);
+    // The component it is placed in: the nearest one above it with an element of its own (a fragment has none).
+    let around = this.parent;
+    while (around && !isElement(around.element)) around = around.parent;
+    this.attach(around);
+  }
+
+  private attach(component: ComponentBase | null): void {
+    const parts = this.parts;
+    const before = parts.attachedPart;
+    if (before === component) return;
+    if (before) {
+      void before.motif.off('contextmenu', parts.onTarget);
+      void before.motif.off('keydown', parts.onTarget);
+    }
+    if (component) {
+      void component.motif.on('contextmenu', parts.onTarget);
+      void component.motif.on('keydown', parts.onTarget);
+    }
+    parts.attachedPart = component;
+    this.setProperty('attached', component);
   }
 
   private handle(e: Event): void {
     if (e.type === 'contextmenu') this.onContextMenu(e as MouseEvent);
     else if (e.type === 'keydown') this.onKeyDown(e as KeyboardEvent);
-    else if (e.type === 'scroll') this.onScroll(e);
-    else if (e.type === 'scrollend') this.closeOutOfSight();
     else this.close();
   }
 
@@ -282,28 +333,36 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
       return;
     }
     if (e.defaultPrevented || !untracked(() => this.isEnabled)) return;
-    const target = isElement(e.target) ? e.target : parts.attached!;
-    // Sent by a key the page saw no keydown of: at the focused element.
+    if (!parts.attachedPart) return;
+    // Sent by a key the page saw no keydown of: it starts at the focused element.
     const fromKeys = e.button !== 2 && e.clientX === 0 && e.clientY === 0;
-    const focused = deepActiveElement(target) ?? target;
-    const point = fromKeys ? pointOf(focused) : { x: e.clientX, y: e.clientY };
-    this.show(point, fromKeys ? focused : target, e, fromKeys, deepActiveElement(target) ?? focusTarget(target));
+    this.show(partOfEvent(e, parts.attachedPart), fromKeys ? null : { x: e.clientX, y: e.clientY }, e, fromKeys, rememberFocus(e));
   }
 
   private onKeyDown(e: KeyboardEvent): void {
     const menuKey = e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey);
     if (!menuKey || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey) return;
     if (this.peekProperty('keyboard') === false || !untracked(() => this.isEnabled)) return;
-    const focused = (isNode(e.target) ? deepActiveElement(e.target) : null) ?? this.parts.attached!;
-    if (this.show(pointOf(focused), focused, e, true, focusTarget(focused))) this.parts.keyOpenedAt = performance.now();
+    // A key starts at the focused element.
+    const parts = this.parts;
+    if (!parts.attachedPart) return;
+    if (this.show(partOfEvent(e, parts.attachedPart), null, e, true, rememberFocus(e))) parts.keyOpenedAt = performance.now();
   }
 
   // Opening and closing.
 
-  private show(point: { x: number; y: number }, target: Element, event: Event, byKeyboard: boolean, returnFocus: HTMLElement | null): boolean {
+  /**
+   * Opens at `point`, or (`null`) at the start corner of `at`, the component it opened on: it goes along with `at` while
+   * the page scrolls. `onOpening` and `targetPart` report `at`.
+   */
+  private show(at: ComponentBase, point: Point | null, event: Event, byKeyboard: boolean, returnFocus: FocusMark | ComponentBase | null): boolean {
+    if (!elementOf(at)) return false;
     const parts = this.parts;
+    // Read before anything is written.
+    const box = rectOf(at);
+    const start = point ?? pointOf(at, box);
     const args: ContextMenuOpeningEventArgs = {
-      target,
+      part: at,
       items: this.peekProperty<readonly MenuItem[]>('items') ?? NO_ITEMS,
       cancel: false,
       byKeyboard,
@@ -314,20 +373,20 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     if (args.cancel || !givenList(args.items).some((item) => untracked(() => givenField(item, 'visible')) !== false)) return false;
     event.preventDefault();
     event.stopPropagation();
-    this.host(target.ownerDocument);
-    if (this.inSheet(event, byKeyboard)) return this.showSheet(args.items, target, byKeyboard);
+    this.host(at);
+    if (this.inSheet(event, byKeyboard)) return this.showSheet(args.items, at, byKeyboard);
     const popup = (parts.popup ??= this.createPopup());
     const list = parts.list!;
     list.closeSubmenu();
     list.setItems(args.items);
-    parts.anchor.style.left = `${point.x}px`;
-    parts.anchor.style.top = `${point.y}px`;
-    const box = target.getBoundingClientRect();
-    parts.follow = { element: target, x: point.x - box.left, y: point.y - box.top };
-    popup.open(parts.anchor, { toggle: parts.anchor, returnFocus: returnFocus ?? undefined });
-    this.setProperty('targetElement', target);
+    css(parts.anchor, 'left', `${start.x}px`);
+    css(parts.anchor, 'top', `${start.y}px`);
+    parts.follow = { part: at, x: start.x - box.left, y: start.y - box.top, left: box.left, top: box.top };
+    parts.returnFocus = returnFocus;
+    popup.open(parts.anchor);
+    this.setProperty('targetPart', at);
     this.setProperty('opened', true);
-    this.startClosing(target.ownerDocument.defaultView);
+    this.startClosing(popup);
     if (byKeyboard) list.focusItem('first');
     else list.focusList();
     return true;
@@ -340,18 +399,17 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     if (byKeyboard) return false;
     const kind = (event as PointerEvent).pointerType;
     if (kind) return kind === 'touch';
-    const view = this.element.ownerDocument.defaultView;
-    return !!view?.matchMedia?.('(hover: none) and (pointer: coarse)').matches;
+    return mediaOf(this, '(hover: none) and (pointer: coarse)');
   }
 
-  private showSheet(items: readonly MenuItem[], target: Element, byKeyboard: boolean): boolean {
+  private showSheet(items: readonly MenuItem[], at: ComponentBase, byKeyboard: boolean): boolean {
     const parts = this.parts;
     parts.popup?.close('code');
     const sheet = (parts.sheet ??= this.createSheet());
     sheet.label = parseAccessKey(this.peekProperty<string>('text') ?? '').text;
     sheet.items = items;
     if (!sheet.open(byKeyboard)) return false;
-    this.setProperty('targetElement', target);
+    this.setProperty('targetPart', at);
     this.setProperty('opened', true);
     return true;
   }
@@ -368,12 +426,12 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     return sheet;
   }
 
-  /** Made with `new` and never placed, it opens from the end of the page; on an element in another window, from the end of that one. */
-  private host(doc: Document): void {
-    if (!this.isBuilt) this.build();
-    if (this.element.isConnected && this.element.ownerDocument === doc) return;
+  /** Made with `new` and never placed, it opens from the end of the page; on a component in another window, from the end of that one. */
+  private host(near: ComponentBase): void {
+    if (this.isBuilt && isInPage(this) && sameWindow(this, near)) return;
     this.parts.popup?.close('code');
-    doc.body.append(this.element);
+    // The app's layer of that window holds it (the page itself without an app).
+    placeOnPage(near, this);
   }
 
   private createPopup(): Popup {
@@ -385,14 +443,15 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     list.source = this;
     list.openOnHover = this.peekProperty('openOnHover') !== false;
     const label = parseAccessKey(this.peekProperty<string>('text') ?? '').text;
-    if (label) list.element.setAttribute('aria-label', label);
+    if (label) put(list, 'aria-label', label);
     list.onChosen((e) => this.chosen(e));
     popup.controls.add(list);
     this.controls.add(popup);
     // Inside its own menu the right button opens nothing, not even the browser's menu.
-    popup.element.addEventListener('contextmenu', (e) => e.preventDefault());
+    popup.motif.on('contextmenu', (_, e) => e.preventDefault());
     popup.onClosed((reason) => {
       this.stopClosing();
+      this.giveFocusBack(popup, reason);
       this.setProperty('opened', false);
       parts.closed.fire(reason);
     });
@@ -400,23 +459,34 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     return popup;
   }
 
+  /** Focus left in the menu as it closes goes back to where it was when the menu opened; focus that moved away stays. */
+  private giveFocusBack(popup: Popup, reason: PopupCloseReason): void {
+    const parts = this.parts;
+    const back = parts.returnFocus;
+    parts.returnFocus = null;
+    if (!back || reason === 'focus') return;
+    // Focus that was in the menu is still in it, or nowhere now that it is hidden.
+    if (!holdsFocus(popup) && rememberFocus()) return;
+    if (back instanceof ComponentBase) focusOn(back);
+    else back.restore();
+  }
+
   private chosen(e: MenuItemClickEventArgs): void {
-    const at = this.targetElement;
     this.close();
-    runItem(e.item, e, e.source, e.event, at);
+    runItem(e.item, e, e.source, e.event, this.parts.attachedPart ?? this);
     this.parts.itemClick.fire(e);
   }
 
-  private startClosing(view: Window | null): void {
+  /** While open: the window changing size or losing focus closes it, and a scroll in the page (not in the menu) moves it along. */
+  private startClosing(popup: Popup): void {
     const parts = this.parts;
     this.stopListening();
-    parts.view = view;
-    if (!view) return;
     const listener = parts.listener;
-    view.addEventListener('scroll', listener, true);
-    view.addEventListener('scrollend', listener, true);
-    view.addEventListener('resize', listener);
-    view.addEventListener('blur', listener);
+    parts.stopOpen = [
+      onWindow(this, 'resize', listener),
+      onWindow(this, 'blur', listener),
+      onLayout(this, 'scroll', () => measure(this, parts.readFollow, parts.moveAlong), { except: popup }),
+    ];
   }
 
   private stopClosing(): void {
@@ -425,37 +495,36 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   private stopListening(): void {
-    const parts = this.parts;
-    const view = parts.view;
-    parts.view = null;
-    if (!view) return;
-    const listener = parts.listener;
-    view.removeEventListener('scroll', listener, true);
-    view.removeEventListener('scrollend', listener, true);
-    view.removeEventListener('resize', listener);
-    view.removeEventListener('blur', listener);
+    for (const stop of this.parts.stopOpen.splice(0)) stop();
+  }
+
+  private readFollow(): FollowRead | null {
+    const follow = this.parts.follow;
+    if (!follow) return null;
+    const part = follow.part;
+    const watching = this.peekProperty('closeOnScroll') !== false;
+    return { follow, box: rectOf(part), seen: !watching || (isInPage(part) && visibleRectOf(part) !== null) };
   }
 
   /**
    * A click that moves focus can make the browser scroll a moment later, and the reader may scroll
-   * too: the menu goes along with the element it opened on, and closes only once it is out of sight.
+   * too: the menu goes along with the component it opened on, and closes once that is out of sight.
    */
-  private onScroll(e: Event): void {
+  private moveAlong(read: FollowRead | null): void {
     const parts = this.parts;
     const follow = parts.follow;
-    const scrolled = e.target;
-    if (!follow || (isNode(scrolled) && parts.popup?.element.contains(scrolled))) return;
-    if (isElement(scrolled) && !scrolled.contains(follow.element)) return;
-    const box = follow.element.getBoundingClientRect();
-    parts.anchor.style.left = `${box.left + follow.x}px`;
-    parts.anchor.style.top = `${box.top + follow.y}px`;
-    if (!('onscrollend' in (follow.element.ownerDocument.defaultView ?? window))) this.closeOutOfSight();
-  }
-
-  private closeOutOfSight(): void {
-    const follow = this.parts.follow;
-    if (!follow || this.peekProperty('closeOnScroll') === false) return;
-    if (!follow.element.isConnected || !inSight(follow.element)) this.close();
+    // Only a move counts: the watch also tells once as it starts.
+    if (!read || !follow || read.follow !== follow || (read.box.left === follow.left && read.box.top === follow.top)) return;
+    if (!read.seen) {
+      this.close();
+      return;
+    }
+    follow.left = read.box.left;
+    follow.top = read.box.top;
+    css(parts.anchor, 'left', `${follow.left + follow.x}px`);
+    css(parts.anchor, 'top', `${follow.top + follow.y}px`);
+    // Placed by where the anchor is now, not where it was when the popup heard the scroll.
+    parts.popup?.place();
   }
 }
 
@@ -470,34 +539,22 @@ const SHEET_REASONS: Record<OverlayCloseReason, PopupCloseReason> = {
   owner: 'code',
 };
 
-/** Whether some of the element is on the screen and inside every box around it that clips it. */
-function inSight(element: Element): boolean {
-  const doc = element.ownerDocument;
-  const view = doc.defaultView ?? window;
-  const box = element.getBoundingClientRect();
-  let left = Math.max(box.left, 0);
-  let top = Math.max(box.top, 0);
-  let right = Math.min(box.right, view.innerWidth);
-  let bottom = Math.min(box.bottom, view.innerHeight);
-  for (let el = element.parentElement; el && el !== doc.body && el !== doc.documentElement; el = el.parentElement) {
-    if (!/auto|scroll|hidden|clip/.test(view.getComputedStyle(el).overflow)) continue;
-    const clip = el.getBoundingClientRect();
-    left = Math.max(left, clip.left);
-    top = Math.max(top, clip.top);
-    right = Math.min(right, clip.right);
-    bottom = Math.min(bottom, clip.bottom);
+/** The innermost component, `within` or under it, that the event started in: found down the component tree. */
+function partOfEvent(e: Event, within: ComponentBase): ComponentBase {
+  let found = within;
+  for (let at: ComponentBase | undefined = within; at; ) {
+    at = at.controls.items.find((child) => !child.isDisposed && child.motif.isEventFrom(e));
+    if (at) found = at;
   }
-  return right > left && bottom > top;
+  return found;
 }
 
-/** Where a menu opened at an element starts: its start corner, below it (inside the viewport). */
-function pointOf(element: Element): { x: number; y: number } {
-  const box = element.getBoundingClientRect();
-  const rtl = (element.ownerDocument.defaultView ?? window).getComputedStyle(element).direction === 'rtl';
-  const viewHeight = element.ownerDocument.documentElement.clientHeight;
-  return { x: rtl ? box.right : box.left, y: Math.max(0, Math.min(box.bottom, viewHeight)) };
+/** The element of a component (a fragment has none). */
+function elementOf(of: ComponentBase): Element | null {
+  return isElement(of.element) ? of.element : null;
 }
 
-function focusTarget(element: Element): HTMLElement | null {
-  return isHtmlElement(element) && isFocusable(element) ? element : null;
+/** Where a menu opened at a component starts: its start corner, below it (inside the viewport). */
+function pointOf(part: ComponentBase, box: Rect = rectOf(part)): Point {
+  return { x: isRtl(part) ? box.right : box.left, y: Math.max(0, Math.min(box.bottom, pageOf(part).height)) };
 }

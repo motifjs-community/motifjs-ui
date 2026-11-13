@@ -27,6 +27,17 @@
     white-space: nowrap;
   }
 
+  .mx-drop-down__value {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* What the app's template draws sits in the text as its own parts. */
+  .mx-drop-down__drawn {
+    display: contents;
+  }
+
   .mx-drop-down__chevron {
     transition: rotate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }

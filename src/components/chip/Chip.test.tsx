@@ -99,11 +99,11 @@ describe('Chip', () => {
   });
 
   it('puts an icon or an avatar before the text', async () => {
-    const icon = document.createElement('svg');
+    const icon = new Component('svg');
     const chip = new Chip({ text: 'Ada', icon });
     page(chip);
     await settle();
-    expect(part(chip, 'icon').firstChild).toBe(icon);
+    expect(part(chip, 'icon').firstChild).toBe(icon.element);
     expect(chip.element.dataset.lead).toBe('icon');
     chip.icon = null;
     chip.avatar = { name: 'Ada Lovelace' };

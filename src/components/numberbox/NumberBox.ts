@@ -1,5 +1,7 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { chevronDown, chevronUp, dashMark, plusMark } from '../../core/glyphs';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { clearParts, glyphPart, loose, part } from '../../core/draw-parts';
+import { mark, put } from '../../core/part-writes';
+import { orderControls } from '../../core/order-controls';
 import { LanguageLook } from '../../core/language-look';
 import { uiLocale } from '../../core/ui-locale';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
@@ -43,20 +45,22 @@ const TYPABLE = /^[\p{Nd}\s.,'’+\-−٫٬]*$/u;
 const PARTS = Symbol('mx.numberbox');
 
 interface Parts {
-  spin: HTMLSpanElement | null;
-  up: HTMLButtonElement | null;
-  down: HTMLButtonElement | null;
+  spin: Component<HTMLSpanElement> | null;
+  up: Component<HTMLButtonElement> | null;
+  down: Component<HTMLButtonElement> | null;
   stopSpinLabels: (() => void) | null;
   repeat: ReturnType<typeof setTimeout> | undefined;
   hasFocus: boolean;
   /** The value is being typed: the text stays as the user writes it. */
   typing: boolean;
+  /** The text in the field: what the user typed, or what was shown for the value. */
+  text: string;
   /** The text put in the field on focus, to tell whether the user changed it. */
   editText: string | null;
   keepSelection: boolean;
   formatKey: string;
   formatter: Intl.NumberFormat | null;
-  wheel: ((e: WheelEvent) => void) | null;
+  wheel: ((sender: ComponentBase, e: WheelEvent) => void) | null;
   enter: Emitter<EnterKeyEventArgs<number | null>>;
 }
 
@@ -79,13 +83,13 @@ function finite(value: unknown): number | null {
  */
 export class NumberBox extends Field<number | null, NumberBoxProps> {
   /** A spin layout not given is the design language's, or the one of the place the box sits in. */
-  private readonly spinLook = new LanguageLook(this.element, { layout: '--_number-box-spin-layout', order: '--_number-box-spin-order' }, () => this.renderSpin());
+  private readonly spinLook = new LanguageLook(this, { layout: '--_number-box-spin-layout', order: '--_number-box-spin-order' }, () => this.renderSpin());
 
   constructor(props?: IBaseProp<NumberBoxProps>) {
     super(props);
     this.motif.setDisposable(this.spinLook.watch());
     const own = (this.props ?? {}) as NumberBoxProps;
-    this.element.classList.add('mx-number-box');
+    this.class.add('mx-number-box');
 
     for (const name of ['min', 'max'] as const) this.observeProperty(name, () => this.renderRange());
     for (const name of SHOWN) this.observeProperty(name, () => this.renderShown());
@@ -96,7 +100,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     this.observeProperty('spinLayout', () => this.renderSpin());
     this.observeProperty<boolean>('wheel', (on) => this.renderWheel(!!on));
     this.observeProperty<string>('placeholder', (text) => this.renderPlaceholder(text));
-    this.observeProperty<string>('align', (align) => (this.element.dataset.align = align ?? 'start'));
+    this.observeProperty<string>('align', (align) => put(this, 'data-align', align ?? 'start'));
     this.observeProperty<string>('name', (name) => this.setAttribute('name', name));
     this.observeProperty<string>('autocomplete', (value) => this.setAttribute('autocomplete', value ?? 'off'));
 
@@ -232,8 +236,14 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     return value === null ? '' : this.formatter().format(value);
   }
 
-  get inputElement(): HTMLInputElement {
-    return this.focusElement as HTMLInputElement;
+  /** The text input as a component: write its attributes with `put` and call its methods through `attr`. */
+  get inputPart(): ComponentBase<HTMLInputElement> {
+    return this.controlPart as ComponentBase<HTMLInputElement>;
+  }
+
+  /** The text in the field now: what the user typed, or the value as it is shown. */
+  get inputText(): string {
+    return this.numberParts.text;
   }
 
   get onEnter(): MotifEvent<EnterKeyEventArgs<number | null>> {
@@ -250,19 +260,29 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     this.spin(-this.peekStep() * times);
   }
 
-  /** Selects all text. */
+  /** Selects all text, soon after the call: core runs it at its own time. */
   select(): void {
-    this.inputElement.select();
+    this.controlPart.attr.add({ select: true });
   }
 
-  protected createControl(): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.inputMode = 'decimal';
-    input.autocomplete = 'off';
-    input.className = 'mx-field__input';
-    input.setAttribute('role', 'spinbutton');
-    return input;
+  /**
+   * Puts `text` in the field as if the user typed it in place of what was there: what a number is not written with is
+   * not taken, the caret goes to its end, and the value follows as typing commits it (`updateOn`).
+   */
+  typeText(text: string): void {
+    if (this.peekProperty('readOnly') || !TYPABLE.test(text)) return;
+    this.controlPart.attr.add({ value: text, setSelectionRange: [text.length, text.length] });
+    this.typed(text);
+  }
+
+  protected override get controlTag(): string {
+    return 'input';
+  }
+
+  protected createControl(): ComponentBase {
+    const control = loose<HTMLInputElement>('input', 'mx-field__input');
+    control.attr.add({ type: 'text', inputmode: 'decimal', autocomplete: 'off', role: 'spinbutton' });
+    return control;
   }
 
   protected emptyValue(): number | null {
@@ -317,6 +337,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
       repeat: undefined,
       hasFocus: false,
       typing: false,
+      text: '',
       editText: null,
       keepSelection: false,
       formatKey: '',
@@ -382,7 +403,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
 
   /** What the field holds, as a value: `null` when empty, `NaN` when it is not a number. */
   private readText(): number | null {
-    const read = parseNumber(this.inputElement.value, this.peekLocale());
+    const read = parseNumber(this.numberParts.text, this.peekLocale());
     return read === null || Number.isNaN(read) ? read : shiftDecimal(read, -this.scale());
   }
 
@@ -404,29 +425,31 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     const value = this.peekValue();
     const text = parts.hasFocus ? this.editTextOf(value) : value === null ? '' : this.formatter().format(value);
     if (parts.hasFocus) parts.editText = text;
-    if (this.inputElement.value !== text) this.inputElement.value = text;
+    parts.text = text;
+    // Core writes the input's value only when it differs.
+    this.controlPart.attr.add({ value: text });
   }
 
   private listen(): void {
-    const input = this.inputElement;
+    const input = this.controlPart;
     // Only what a number is written with can be typed; a paste is read as well as it can be.
-    input.addEventListener('beforeinput', (e) => {
+    input.motif.on('beforeinput', (_, e) => {
       if (e.inputType === 'insertText' && e.data && !TYPABLE.test(e.data)) e.preventDefault();
     });
-    input.addEventListener('input', (e) => this.typed(e));
-    input.addEventListener('keydown', (e) => this.keyDown(e));
-    input.addEventListener('focus', () => this.gotFocus());
-    input.addEventListener('blur', (e) => this.lostFocus(e));
-    input.addEventListener('mouseup', (e) => {
+    input.motif.on('input', (_, e) => this.typed((e.target as HTMLInputElement).value, e));
+    input.motif.on('keydown', (_, e) => this.keyDown(e));
+    input.motif.on('focus', () => this.gotFocus());
+    input.motif.on('blur', (_, e) => this.lostFocus(e));
+    input.motif.on('mouseup', (_, e) => {
       if (!this.numberParts.keepSelection) return;
       this.numberParts.keepSelection = false;
       e.preventDefault();
     });
   }
 
-  private typed(e: Event): void {
+  private typed(text: string, e?: Event): void {
+    this.numberParts.text = text;
     if (this.peekProperty('updateOn') === 'change') return;
-    const text = this.inputElement.value;
     const value = this.readText();
     if (value === null) {
       if (this.peekProperty('allowEmpty') !== false) this.commitTyped(null, e);
@@ -439,7 +462,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     this.commitTyped(value, e);
   }
 
-  private commitTyped(value: number | null, e: Event): void {
+  private commitTyped(value: number | null, e?: Event): void {
     const parts = this.numberParts;
     parts.typing = true;
     try {
@@ -452,7 +475,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
   /** The text is entered (the field is left, Enter): read, rounded, kept in range and shown again. */
   private enterText(event?: Event): void {
     const parts = this.numberParts;
-    if (parts.editText !== null && this.inputElement.value === parts.editText) {
+    if (parts.editText !== null && parts.text === parts.editText) {
       this.showText();
       return;
     }
@@ -505,7 +528,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     if (bound === null || !this.canChange()) return false;
     this.commit(bound, e);
     this.showText();
-    this.inputElement.select();
+    this.controlPart.attr.add({ select: true });
     return true;
   }
 
@@ -529,7 +552,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     parts.hasFocus = true;
     this.showText();
     if (!this.peekProperty('selectOnFocus')) return;
-    this.inputElement.select();
+    this.select();
     parts.keepSelection = true;
   }
 
@@ -544,13 +567,12 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
   }
 
   private setAttribute(name: string, value: string | undefined): void {
-    if (value === undefined || value === null || value === '') this.inputElement.removeAttribute(name);
-    else this.inputElement.setAttribute(name, value);
+    put(this.controlPart, name, value);
   }
 
   private renderPlaceholder(text: string | undefined): void {
     this.setAttribute('placeholder', text);
-    this.element.toggleAttribute('data-placeholder', !!text);
+    mark(this, 'data-placeholder', !!text);
   }
 
   private renderShown(): void {
@@ -574,14 +596,14 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
   private renderWheel(on: boolean): void {
     const parts = this.numberParts;
     if (on && !parts.wheel) {
-      parts.wheel = (e: WheelEvent) => {
+      parts.wheel = (_: ComponentBase, e: WheelEvent) => {
         if (!parts.hasFocus || !e.deltaY) return;
         e.preventDefault();
         this.spin(e.deltaY < 0 ? this.peekStep() : -this.peekStep(), e);
       };
-      this.inputElement.addEventListener('wheel', parts.wheel, { passive: false });
+      this.controlPart.motif.on('wheel', parts.wheel);
     } else if (!on && parts.wheel) {
-      this.inputElement.removeEventListener('wheel', parts.wheel);
+      this.controlPart.motif.off('wheel', parts.wheel);
       parts.wheel = null;
     }
   }
@@ -595,7 +617,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     const parts = this.numberParts;
     const show = this.peekProperty('showSpinButtons') !== false;
     const layout = this.peekProperty<SpinLayout>('spinLayout') ?? (this.spinLook.get('layout') as SpinLayout | null) ?? 'stacked';
-    this.element.toggleAttribute('data-spin', show);
+    mark(this, 'data-spin', show);
     if (!show) {
       this.stopRepeat();
       parts.stopSpinLabels?.();
@@ -605,37 +627,38 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     }
     if (!parts.spin) {
       parts.spin = this.area('actions');
-      parts.spin.classList.add('mx-number-box__spin');
-      parts.up = this.spinButton(1);
-      parts.down = this.spinButton(-1);
+      parts.spin.class.add('mx-number-box__spin');
+      parts.up = this.spinButton(parts.spin, 1);
+      parts.down = this.spinButton(parts.spin, -1);
       const { up, down } = parts;
       parts.stopSpinLabels = onLanguage(this, () => {
         const strings = uiLocale.strings;
-        up.setAttribute('aria-label', strings.increase);
-        down.setAttribute('aria-label', strings.decrease);
+        put(up, 'aria-label', strings.increase);
+        put(down, 'aria-label', strings.decrease);
       });
     }
-    const { spin, up, down } = parts as { spin: HTMLSpanElement; up: HTMLButtonElement; down: HTMLButtonElement };
-    spin.dataset.layout = layout;
-    up.replaceChildren(layout === 'inline' ? plusMark() : chevronUp());
-    down.replaceChildren(layout === 'inline' ? dashMark() : chevronDown());
-    if (layout === 'inline') spin.replaceChildren(...(this.spinLook.get('order') === 'up-down' ? [up, down] : [down, up]));
-    else spin.replaceChildren(up, down);
+    const { spin, up, down } = parts as { spin: Component<HTMLSpanElement>; up: Component<HTMLButtonElement>; down: Component<HTMLButtonElement> };
+    put(spin, 'data-layout', layout);
+    clearParts(up);
+    glyphPart(up, layout === 'inline' ? 'plus' : 'chevron-up');
+    clearParts(down);
+    glyphPart(down, layout === 'inline' ? 'dash' : 'chevron-down');
+    // Inline, the language says which comes first; stacked, up is over down.
+    orderControls(spin, layout === 'inline' && this.spinLook.get('order') !== 'up-down' ? [down, up] : [up, down]);
     this.renderSpinState();
   }
 
-  private spinButton(direction: 1 | -1): HTMLButtonElement {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.tabIndex = -1;
-    button.className = 'mx-field__button mx-number-box__step';
-    button.dataset.step = direction > 0 ? 'up' : 'down';
+  private spinButton(spin: Component<HTMLSpanElement>, direction: 1 | -1): Component<HTMLButtonElement> {
+    const step = part<HTMLButtonElement>(spin, 'button', 'mx-field__button mx-number-box__step');
+    step.attr.add({ type: 'button' });
+    put(step, 'tabindex', '-1');
+    step.attr.add({ 'data-step': direction > 0 ? 'up' : 'down' });
     const delta = () => direction * this.peekStep();
-    button.addEventListener('pointerdown', (e) => {
+    step.motif.on('pointerdown', (_, e) => {
       if (e.button !== 0) return;
       e.preventDefault();
-      if (e.pointerType !== 'touch' && !this.numberParts.hasFocus) this.inputElement.focus();
-      button.setPointerCapture?.(e.pointerId);
+      if (e.pointerType !== 'touch' && !this.numberParts.hasFocus) this.focus();
+      step.attr.add({ setPointerCapture: e.pointerId });
       this.stopRepeat();
       if (!this.spin(delta(), e)) return;
       const parts = this.numberParts;
@@ -644,12 +667,14 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
       };
       parts.repeat = setTimeout(again, HOLD[0]);
     });
-    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, () => this.stopRepeat());
+    step.motif.on('pointerup', () => this.stopRepeat());
+    step.motif.on('pointercancel', () => this.stopRepeat());
+    step.motif.on('lostpointercapture', () => this.stopRepeat());
     // A click made with the pointer already counted; a click from assistive technology has no pointer.
-    button.addEventListener('click', (e) => {
+    step.motif.on('click', (_, e) => {
       if (e.detail === 0) this.spin(delta(), e);
     });
-    return button;
+    return step;
   }
 
   private stopRepeat(): void {
@@ -665,7 +690,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     const min = finite(this.peekProperty('min'));
     const max = finite(this.peekProperty('max'));
     const locked = !!this.peekProperty('readOnly');
-    up.disabled = locked || (value !== null && max !== null && value >= max);
-    down.disabled = locked || (value !== null && min !== null && value <= min);
+    mark(up, 'disabled', locked || (value !== null && max !== null && value >= max));
+    mark(down, 'disabled', locked || (value !== null && min !== null && value <= min));
   }
 }

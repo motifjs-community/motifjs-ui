@@ -1,4 +1,4 @@
-import type { Bind } from "@motifx/core";
+import type { Bind, ComponentBase } from "@motifx/core";
 import type { ControlProps } from "../../core/control";
 import type { BottomNavigationItem } from "./bottom-navigation-item";
 import type { BottomNavigationItemClickEventArgs } from "./bottom-navigation-item-click-event-args";
@@ -22,7 +22,7 @@ export interface BottomNavigationProps extends ControlProps {
     /** Moves the bar out of sight while scrolling down. The default is `false`. */
     hideOnScroll?: Bind<boolean>;
     /** What `hideOnScroll` watches. By default, the nearest ancestor that scrolls, else the page. */
-    scrollTarget?: Bind<HTMLElement | null>;
+    scrollTarget?: Bind<ComponentBase | null>;
     /** Occurs before the selection changes. Setting `cancel` keeps the current item. */
     onSelecting?: (e: BottomNavigationSelectingEventArgs) => void;
     /** Occurs after the selection changes. */

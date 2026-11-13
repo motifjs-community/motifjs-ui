@@ -5,7 +5,8 @@ import type { LinePiece } from '../model/line-piece';
 import type { StripPiece } from '../model/strip-piece';
 import type { TimedPiece } from '../model/timed-piece';
 import type { DragMode } from './AppointmentDrag';
-import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
+import { part } from '../../../core/draw-parts';
+import { css, flag, put, shown, text } from '../../../core/part-writes';
 import type { SchedulerHost } from './scheduler-host';
 
 type Piece<T> = TimedPiece<T> | StripPiece<T> | LinePiece<T>;
@@ -42,7 +43,7 @@ export class AppointmentBox<T> extends Component<HTMLDivElement, Props<T>> {
   private drawnItem: T | null = null;
   /** Being taken away (from `onDisposing`, before it leaves the page). */
   private leaving = false;
-  private readonly parts: Record<'start' | 'startGrip' | 'end' | 'endGrip' | 'time' | 'text' | 'details' | 'drop' | 'mark', HTMLElement | null> = {
+  private readonly parts: Record<'start' | 'startGrip' | 'end' | 'endGrip' | 'time' | 'text' | 'details' | 'drop' | 'mark', Component<HTMLElement> | null> = {
     start: null,
     startGrip: null,
     end: null,
@@ -74,39 +75,39 @@ export class AppointmentBox<T> extends Component<HTMLDivElement, Props<T>> {
   }
 
   override onConfigured(): void {
-    const el = this.element;
-    el.className = 'mx-scheduler__appointment';
-    el.setAttribute('role', 'button');
-    el.tabIndex = 0;
+    this.class.add('mx-scheduler__appointment');
+    this.attr.add({ role: 'button' });
+    put(this, 'tabindex', '0');
     const host = this.host;
-    el.addEventListener('pointerdown', this.press('move'));
-    el.addEventListener('click', (e) => host.appointmentClick(this.piece, e));
-    el.addEventListener('dblclick', (e) => host.appointmentDblClick(this.piece, e));
-    el.addEventListener('keydown', (e) => host.appointmentKey(this.piece, e));
+    const move = this.press('move');
+    this.motif.on('pointerdown', (_, e) => move(e));
+    this.motif.on('click', (_, e) => host.appointmentClick(this.piece, e));
+    this.motif.on('dblclick', (_, e) => host.appointmentDblClick(this.piece, e));
+    this.motif.on('keydown', (_, e) => host.appointmentKey(this.piece, e));
     // A box taken away while focused loses the focus too: that is not the user leaving it (a move by the keys goes on in
     // the box of its new place).
-    el.addEventListener('focusout', (e) => !this.leaving && this.drawnItem !== null && host.appointmentBlur(this.drawnItem, e));
+    this.motif.on('focusout', (_, e) => !this.leaving && this.drawnItem !== null && host.appointmentBlur(this.drawnItem, e));
     const parts = this.parts;
     const start = part(this, 'div', 'mx-scheduler__resize');
-    start.element.dataset.edge = 'start';
-    start.element.setAttribute('aria-hidden', 'true');
-    start.element.addEventListener('pointerdown', this.press('start'));
-    parts.start = start.element;
-    parts.startGrip = part(start, 'span', 'mx-scheduler__resize-grip').element;
+    start.attr.add({ 'data-edge': 'start', 'aria-hidden': 'true' });
+    const fromStart = this.press('start');
+    start.motif.on('pointerdown', (_, e) => fromStart(e));
+    parts.start = start;
+    parts.startGrip = part(start, 'span', 'mx-scheduler__resize-grip');
     this.content = part(this, 'div', 'mx-scheduler__appointment-content');
     this.fill();
     const drop = part(this, 'span', 'mx-glyph mx-scheduler__drop-mark');
-    drop.element.setAttribute('aria-hidden', 'true');
-    parts.drop = drop.element;
+    drop.attr.add({ 'aria-hidden': 'true' });
+    parts.drop = drop;
     const mark = part(this, 'span', 'mx-glyph mx-scheduler__mark');
-    mark.element.setAttribute('aria-hidden', 'true');
-    parts.mark = mark.element;
+    mark.attr.add({ 'aria-hidden': 'true' });
+    parts.mark = mark;
     const end = part(this, 'div', 'mx-scheduler__resize');
-    end.element.dataset.edge = 'end';
-    end.element.setAttribute('aria-hidden', 'true');
-    end.element.addEventListener('pointerdown', this.press('end'));
-    parts.end = end.element;
-    parts.endGrip = part(end, 'span', 'mx-scheduler__resize-grip').element;
+    end.attr.add({ 'data-edge': 'end', 'aria-hidden': 'true' });
+    const fromEnd = this.press('end');
+    end.motif.on('pointerdown', (_, e) => fromEnd(e));
+    parts.end = end;
+    parts.endGrip = part(end, 'span', 'mx-scheduler__resize-grip');
     this.made = true;
     this.draw();
     onReState(this, () => this.draw());
@@ -126,10 +127,10 @@ export class AppointmentBox<T> extends Component<HTMLDivElement, Props<T>> {
     if (template) {
       content.controls.add(template(this.templateContext()));
     } else {
-      parts.time = part(content, 'span', 'mx-scheduler__appointment-time').element;
-      parts.text = part(content, 'span', 'mx-scheduler__appointment-text').element;
+      parts.time = part(content, 'span', 'mx-scheduler__appointment-time');
+      parts.text = part(content, 'span', 'mx-scheduler__appointment-text');
     }
-    parts.details = part(content, 'span', 'mx-sr-only').element;
+    parts.details = part(content, 'span', 'mx-sr-only');
   }
 
   /** Everything the box shows of its piece, drawn by hand. */
@@ -137,33 +138,32 @@ export class AppointmentBox<T> extends Component<HTMLDivElement, Props<T>> {
     if (this.isDisposed || !this.made) return;
     if (this.host.template() !== this.template || (this.template && this.piece.version !== this.filledVersion)) this.fill();
     const { host, piece, parts } = this;
-    const box = this.element;
     const target = this.item();
     this.drawnItem = target;
     const draft = !!piece.draft;
-    put(box, 'data-kind', isTimed(piece) ? 'timed' : isLine(piece) ? 'line' : piece.timed ? 'chip' : 'bar');
-    put(box, 'data-piece', piece.id);
-    flag(box, 'data-before', piece.before);
-    flag(box, 'data-after', piece.after);
-    flag(box, 'data-short', isTimed(piece) && piece.end.getTime() - piece.start.getTime() <= 30 * 60_000);
-    flag(box, 'data-past', host.dimPast() && piece.end.getTime() <= host.model.state.now);
-    flag(box, 'data-disabled', piece.disabled);
-    flag(box, 'data-draft', draft);
-    flag(box, 'data-lifted', draft && host.liftedByTouch());
-    flag(box, 'data-selected', !draft && host.touchSelected(target));
-    flag(box, 'data-invalid', piece.invalid);
-    flag(box, 'data-copy', draft && piece.id.includes('~copy'));
-    flag(box, 'data-saving', host.isSaving(target));
-    flag(box, 'data-open', host.isOpen(target));
-    flag(box, 'data-draggable', host.canDrag(target));
-    flag(box, 'data-series', piece.series);
-    flag(box, 'data-exception', piece.exception);
-    flag(box, 'aria-disabled', piece.disabled);
+    put(this, 'data-kind', isTimed(piece) ? 'timed' : isLine(piece) ? 'line' : piece.timed ? 'chip' : 'bar');
+    put(this, 'data-piece', piece.id);
+    flag(this, 'data-before', piece.before);
+    flag(this, 'data-after', piece.after);
+    flag(this, 'data-short', isTimed(piece) && piece.end.getTime() - piece.start.getTime() <= 30 * 60_000);
+    flag(this, 'data-past', host.dimPast() && piece.end.getTime() <= host.model.state.now);
+    flag(this, 'data-disabled', piece.disabled);
+    flag(this, 'data-draft', draft);
+    flag(this, 'data-lifted', draft && host.liftedByTouch());
+    flag(this, 'data-selected', !draft && host.touchSelected(target));
+    flag(this, 'data-invalid', piece.invalid);
+    flag(this, 'data-copy', draft && piece.id.includes('~copy'));
+    flag(this, 'data-saving', host.isSaving(target));
+    flag(this, 'data-open', host.isOpen(target));
+    flag(this, 'data-draggable', host.canDrag(target));
+    flag(this, 'data-series', piece.series);
+    flag(this, 'data-exception', piece.exception);
+    flag(this, 'aria-disabled', piece.disabled);
     const place = this.place();
-    for (const name of this.placed) if (!(name in place)) box.style.removeProperty(name);
-    for (const [name, value] of Object.entries(place)) css(box, name, value);
+    for (const name of this.placed) if (!(name in place)) css(this, name, '');
+    for (const [name, value] of Object.entries(place)) css(this, name, value);
     this.placed = Object.keys(place);
-    shown(box, isTimed(piece) || !piece.hidden);
+    shown(this, isTimed(piece) || !piece.hidden);
     const canResize = this.resizable();
     const lifted = host.touchSelected(target);
     shown(parts.start, canResize && !piece.before);

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../../../tests/helpers';
+import { measureNow, whenMeasured } from '../../core/measure';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridCellSelectionChangedEventArgs } from './grid-cell-selection-changed-event-args';
@@ -59,7 +60,12 @@ async function make(props: Partial<DataGridProps<Row>>) {
   Object.defineProperty(vp, 'scrollTop', { configurable: true, get: () => top, set: (v: number) => (top = Math.max(0, Math.min(10_000, v))) });
   Object.defineProperty(vp, 'scrollLeft', { configurable: true, get: () => left, set: (v: number) => (left = Math.max(0, Math.min(300, v))) });
   Object.defineProperty(vp, 'clientHeight', { configurable: true, get: () => PLACE.height - HEAD });
+  // The edge scroll reads the room it scrolls and how far it can go.
+  Object.defineProperty(vp, 'clientWidth', { configurable: true, get: () => PLACE.width });
+  Object.defineProperty(vp, 'scrollHeight', { configurable: true, get: () => 10_000 + PLACE.height - HEAD });
+  Object.defineProperty(vp, 'scrollWidth', { configurable: true, get: () => 300 + PLACE.width });
   grids.set(vp, grid);
+  lastGrid = grid;
   (grid as any).measure();
   await settle();
   return grid;
@@ -73,10 +79,14 @@ const point = (grid: DataGrid<any>, i: number, field: string) => {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 };
 
+/** The grid made last: a drag draws with the window's next measuring round, run at once after each pointer event. */
+let lastGrid: DataGrid<any> | null = null;
+
 function pointer(type: string, target: EventTarget, x: number, y: number, init: MouseEventInit = {}) {
   const e = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, ...init });
   Object.defineProperty(e, 'pointerId', { value: 1 });
   target.dispatchEvent(e);
+  if (lastGrid && !lastGrid.isDisposed) measureNow(lastGrid);
   return e;
 }
 
@@ -87,6 +97,8 @@ async function drag(grid: DataGrid<any>, from: [number, string], over: [number, 
   for (const to of over) {
     const p = point(grid, ...to);
     pointer('pointermove', document.body, p.x, p.y + 1, init);
+    // The selection follows the pointer at each frame of the window.
+    await whenMeasured(grid);
   }
   if (!release) return settle();
   const end = over.length ? point(grid, ...over[over.length - 1]) : start;
@@ -128,11 +140,22 @@ describe('DataGrid: selecting rows by dragging', () => {
     grid.onSelectionChanged((e) => changes.push(e));
     await drag(grid, [1, 'name'], [[2, 'name'], [3, 'name'], [3, 'city'], [4, 'name']], {}, false);
     expect(grid.selectedKeys).toEqual([2, 3, 4, 5]);
+    // No text is selected meanwhile: the rows cancel their own selectstart and are marked unselectable.
+    const body = grid.element.querySelector('.mx-data-grid__body')!;
+    const selecting = new Event('selectstart', { bubbles: true, cancelable: true });
+    cellOf(grid, 3, 'name').dispatchEvent(selecting);
+    expect([selecting.defaultPrevented, body.hasAttribute('data-drag-select')]).toEqual([true, true]);
     expect(rowEl(grid, 2).hasAttribute('data-selected')).toBe(true);
     expect([cellOf(grid, 1, 'mx:select').dataset.run, cellOf(grid, 1, 'id').dataset.run, cellOf(grid, 4, 'city').dataset.run]).toEqual(['top start', 'top', 'bottom end']);
-    pointer('pointerup', document.body, 0, 0);
+    // Let go where the pointer is: the selection ends at the place the release reports.
+    const last = point(grid, 4, 'name');
+    pointer('pointerup', document.body, last.x, last.y + 1);
     await settle();
     expect(cellOf(grid, 2, 'id').hasAttribute('data-run')).toBe(false);
+    expect(body.hasAttribute('data-drag-select')).toBe(false);
+    const after = new Event('selectstart', { bubbles: true, cancelable: true });
+    cellOf(grid, 3, 'name').dispatchEvent(after);
+    expect(after.defaultPrevented).toBe(false);
     // The press, then rows 3, 4 and 5: one change each, all by dragging.
     expect(changes.map((c) => [c.selection.keys.length, c.byDrag])).toEqual([[1, true], [2, true], [3, true], [4, true]]);
     expect(await said(grid)).toBe('4 rows selected');
@@ -487,7 +510,8 @@ describe('DataGrid: cell ranges', () => {
 
     const grid = await make({ rows: makeRows(5), settings: { cellSelection: 'multiple', dragSelectionTouch: 'longPress' } });
     const vp = grid.element.querySelector('.mx-data-grid__viewport')!;
-    expect(added.some((a) => a.target === vp && a.passive === false)).toBe(true);
+    // On an element a listener is not passive unless asked: only the window, the document and the body default to passive.
+    expect(added.some((a) => a.target === vp && a.passive !== true)).toBe(true);
     grid.settings.dragSelectionTouch = 'scroll';
     await settle();
     expect(removed).toContain(vp);

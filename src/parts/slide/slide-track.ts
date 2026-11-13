@@ -1,3 +1,6 @@
+import type { ComponentBase } from "@motifx/core";
+import { css, mark } from "../../core/part-writes";
+import { afterStyle, boxOf, isRtl } from "../../core/measure";
 import { SwipeTracker } from "../overlay/swipe-tracker";
 import type { SlideTrackHost } from "./slide-track-host";
 
@@ -25,47 +28,55 @@ interface Drag {
  * children, each `1 / perView` of its width with `--_gap` between them.
  */
 export class SlideTrack {
-    viewport: HTMLElement;
-    track: HTMLElement;
+    viewport: ComponentBase<HTMLElement>;
+    track: ComponentBase<HTMLElement>;
     host: SlideTrackHost;
     drag: Drag | null = null;
-    wrapped: HTMLElement | null = null;
+    wrapped: ComponentBase | null = null;
+    /** Takes back the wait for the jump's styles; set while the motion is still off after a move around the ends. */
+    restoring: (() => void) | null = null;
+    /** A slide asked for while the motion is still off, made once it is back. */
+    queued: (() => void) | null = null;
     settleTimer = 0;
     swallowClick = false;
     stop: () => void;
 
-    constructor(viewport: HTMLElement, track: HTMLElement, host: SlideTrackHost) {
+    /** `viewport` and `track`: the components of the owner's viewport and of the track in it. */
+    constructor(viewport: ComponentBase, track: ComponentBase, host: SlideTrackHost) {
         this.viewport = viewport;
         this.track = track;
         this.host = host;
-        const down = (e: PointerEvent) => this.pointerDown(e);
-        const move = (e: PointerEvent) => this.pointerMove(e);
-        const up = (e: PointerEvent) => this.pointerUp(e, false);
-        const cancel = (e: PointerEvent) => this.pointerUp(e, true);
+        const down = (_: ComponentBase, e: PointerEvent) => this.pointerDown(e);
+        const move = (_: ComponentBase, e: PointerEvent) => this.pointerMove(e);
+        const up = (_: ComponentBase, e: PointerEvent) => this.pointerUp(e, false);
+        const cancel = (_: ComponentBase, e: PointerEvent) => this.pointerUp(e, true);
         // The click that follows a drag is not a click on what is under the pointer.
-        const click = (e: MouseEvent) => {
+        const click = (_: ComponentBase, e: MouseEvent) => {
             if (!this.swallowClick) return;
             this.swallowClick = false;
             e.stopPropagation();
             e.preventDefault();
         };
-        const ended = (e: TransitionEvent) => {
-            if (e.target === track && e.propertyName === 'translate') this.settle();
+        const ended = (_: ComponentBase, e: TransitionEvent | undefined) => {
+            if (e?.propertyName === 'translate') this.settle();
         };
-        viewport.addEventListener('pointerdown', down);
-        viewport.addEventListener('pointermove', move);
-        viewport.addEventListener('pointerup', up);
-        viewport.addEventListener('pointercancel', cancel);
-        viewport.addEventListener('click', click, true);
-        track.addEventListener('transitionend', ended);
+        void viewport.motif.on('pointerdown', down);
+        void viewport.motif.on('pointermove', move);
+        void viewport.motif.on('pointerup', up);
+        void viewport.motif.on('pointercancel', cancel);
+        void viewport.motif.on('click:capture', click);
+        void track.motif.on('transitionend:self', ended);
         this.stop = () => {
-            viewport.removeEventListener('pointerdown', down);
-            viewport.removeEventListener('pointermove', move);
-            viewport.removeEventListener('pointerup', up);
-            viewport.removeEventListener('pointercancel', cancel);
-            viewport.removeEventListener('click', click, true);
-            track.removeEventListener('transitionend', ended);
+            void viewport.motif.off('pointerdown', down);
+            void viewport.motif.off('pointermove', move);
+            void viewport.motif.off('pointerup', up);
+            void viewport.motif.off('pointercancel', cancel);
+            void viewport.motif.off('click:capture', click);
+            void track.motif.off('transitionend:self', ended);
             window.clearTimeout(this.settleTimer);
+            this.restoring?.();
+            this.restoring = null;
+            this.queued = null;
         };
     }
 
@@ -77,18 +88,22 @@ export class SlideTrack {
     /** Slides from one pane to another; around the ends the far pane is brought next to the one leaving. */
     slide(from: number, to: number): void {
         this.settle();
+        if (this.restoring) {
+            this.queued = () => this.slide(from, to);
+            return;
+        }
         const count = this.host.count();
         const wraps = this.host.loop() && this.host.perView() === 1 && count > 1 && from >= 0;
         const forward = from === count - 1 && to === 0;
         const backward = from === 0 && to === count - 1;
-        const pane = wraps && (forward || backward) ? this.host.pane(to) : null;
+        const pane = wraps && (forward || backward) ? this.host.panePart(to) : null;
         if (!pane) {
             this.layout();
             return;
         }
         // The pane is moved to the far side of the track for this one move, and the track slides on to it.
         this.wrapped = pane;
-        pane.style.translate = `calc(${-this.sign()} * ${forward ? count : -count} * ${this.step()}) 0`;
+        css(pane, 'translate', `calc(${-this.sign()} * ${forward ? count : -count} * ${this.step()}) 0`);
         this.place(forward ? count : -1, 0);
         this.settleTimer = window.setTimeout(() => this.settle(), SETTLE);
     }
@@ -105,12 +120,17 @@ export class SlideTrack {
         const pane = this.wrapped;
         if (!pane) return;
         this.wrapped = null;
-        pane.style.translate = '';
-        this.track.toggleAttribute('data-no-motion', true);
+        css(pane, 'translate', '');
+        mark(this.track, 'data-no-motion', true);
         this.layout();
-        // Read once so the jump is laid out before the motion comes back.
-        void this.track.offsetWidth;
-        this.track.removeAttribute('data-no-motion');
+        // The jump is styled before the motion comes back; a slide asked for meanwhile waits for it.
+        this.restoring = afterStyle(this.track, () => {
+            this.restoring = null;
+            mark(this.track, 'data-no-motion', false);
+            const queued = this.queued;
+            this.queued = null;
+            queued?.();
+        });
     }
 
     // The first pane in view: in a loop the index itself, else held so the last panes fill the viewport.
@@ -129,11 +149,11 @@ export class SlideTrack {
 
     // Which way the panes run: to the right, or to the left in a right-to-left page.
     sign(): number {
-        return getComputedStyle(this.track).direction === 'rtl' ? 1 : -1;
+        return isRtl(this.track) ? 1 : -1;
     }
 
     place(first: number, dx: number): void {
-        this.track.style.translate = `calc(${this.sign()} * ${first} * ${this.step()} + ${dx}px) 0`;
+        css(this.track, 'translate', `calc(${this.sign()} * ${first} * ${this.step()} + ${dx}px) 0`);
     }
 
     pointerDown(e: PointerEvent): void {
@@ -142,7 +162,7 @@ export class SlideTrack {
         this.settle();
         const tracker = new SwipeTracker();
         tracker.start(e.clientX, e.clientY);
-        this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, decided: false, taken: false, width: this.viewport.clientWidth || 1, tracker };
+        this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, decided: false, taken: false, width: boxOf(this.viewport).clientWidth || 1, tracker };
     }
 
     pointerMove(e: PointerEvent): void {
@@ -160,8 +180,8 @@ export class SlideTrack {
                 return;
             }
             drag.taken = true;
-            this.viewport.setPointerCapture(e.pointerId);
-            this.track.toggleAttribute('data-dragging', true);
+            this.viewport.attr.add({ setPointerCapture: e.pointerId });
+            mark(this.track, 'data-dragging', true);
             this.host.dragged(true);
         }
         e.preventDefault();
@@ -182,8 +202,9 @@ export class SlideTrack {
         if (!drag || e.pointerId !== drag.id) return;
         this.drag = null;
         if (!drag.taken) return;
-        if (this.viewport.hasPointerCapture(e.pointerId)) this.viewport.releasePointerCapture(e.pointerId);
-        this.track.removeAttribute('data-dragging');
+        // A taken drag set the capture.
+        this.viewport.attr.add({ releasePointerCapture: e.pointerId });
+        mark(this.track, 'data-dragging', false);
         this.host.dragged(false);
         this.swallowClick = true;
         window.setTimeout(() => (this.swallowClick = false), 0);

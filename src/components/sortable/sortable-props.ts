@@ -10,7 +10,7 @@ export interface SortableProps<T = unknown> extends ControlProps {
     items?: Bind<readonly T[]>;
     /** Creates the component for an item. It is not bound like the other props. The default is the item's text. */
     itemTemplate?: (item: T, index: number) => ComponentBase;
-    /** A selector inside an item for the part that handles dragging and the keyboard. Without it, the whole item does. */
+    /** A selector for a component inside an item that handles dragging and the keyboard. Without it, the whole item does. */
     handle?: Bind<string | null>;
     /** Sortables in the same group can exchange items. */
     group?: Bind<string | null>;

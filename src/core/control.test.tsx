@@ -1,5 +1,5 @@
 import { Component, effect, reactive } from '@motifx/core';
-import { rescueTarget } from './enable';
+import { rescueTarget } from './focus';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
 import { TestButton } from '../../tests/controls';
@@ -27,6 +27,12 @@ async function settle() {
 
 /** A container control: a div; core renders its JSX children. */
 class Panel extends Control<HTMLDivElement> {}
+class Win extends Control<HTMLDialogElement> {
+  static override elementTag = 'dialog';
+  override get isWindow(): boolean {
+    return true;
+  }
+}
 
 describe('Control properties', () => {
   it('costs nothing for properties nobody set, bound or read', () => {
@@ -313,13 +319,7 @@ describe('Control enabled cascade', () => {
   });
 
   it('does not disable a window (<dialog>) opened inside a disabled container', async () => {
-    const panel = new Panel({
-      childs: [
-        <dialog>
-          <input name="in-window" />
-        </dialog>,
-      ],
-    });
+    const panel = new Panel({ childs: [new Win({ childs: [<input name="in-window" />] })] });
     page(panel);
     await settle();
     panel.enabled = false;

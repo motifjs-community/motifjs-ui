@@ -1,17 +1,19 @@
 import type { ComponentBase } from '@motifx/core';
+import { mark, put } from '../../../core/part-writes';
 
 /** A cell's attributes, each written only when it changes. */
 export class CellAttributes {
   constructor(private readonly c: ComponentBase) {}
 
+  /** An attribute written as it is (an empty one too), or taken away with `null`. */
   put(name: string, value: string | null): this {
-    if (this.c.element.getAttribute(name) === value) return this;
-    if (value === null) this.c.attr.remove(name);
-    else this.c.attr.add({ [name]: value });
+    if (value === '') mark(this.c, name, true);
+    else put(this.c, name, value);
     return this;
   }
 
   flag(name: string, on: boolean): this {
-    return this.put(name, on ? '' : null);
+    mark(this.c, name, on);
+    return this;
   }
 }

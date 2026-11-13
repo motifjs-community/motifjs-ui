@@ -1,8 +1,9 @@
 import type { Bind, Component, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { glyphPart, mark, part, put, shown, text } from '../../core/draw-parts';
+import { glyphPart, part } from '../../core/draw-parts';
 import { LanguageLook } from '../../core/language-look';
 import { onLanguage } from '../../core/on-language';
+import { mark, put, shown, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import type { AvatarProps } from './avatar-props';
@@ -38,7 +39,7 @@ const PRESENCE: Record<AvatarStatus, keyof UiStrings> = {
  */
 export class Avatar extends Control<HTMLSpanElement, AvatarProps> {
   /** A shape or tone not given is the design language's. */
-  private readonly look = new LanguageLook(this.element, { tone: '--_avatar-tone', shape: '--_avatar-shape' }, () => this.renderLook());
+  private readonly look = new LanguageLook(this, { tone: '--_avatar-tone', shape: '--_avatar-shape' }, () => this.renderLook());
   private readonly initialsPart: Component<HTMLSpanElement>;
   private readonly iconPart: Component<HTMLSpanElement>;
   private readonly image: Component<HTMLImageElement>;
@@ -46,20 +47,22 @@ export class Avatar extends Control<HTMLSpanElement, AvatarProps> {
   /** The picture that loaded, and the one that could not. */
   private loaded: string | null = null;
   private failed: string | null = null;
+  /** The address given to the image last; `null` while it has none. */
+  private imageSrc: string | null = null;
 
   constructor(props?: IBaseProp<AvatarProps>) {
     super(props);
     const own = (this.props ?? {}) as AvatarProps;
-    this.element.classList.add('mx-avatar');
+    this.class.add('mx-avatar');
     this.iconPart = glyphPart(this, 'person', 'mx-avatar__icon');
     this.initialsPart = part(this, 'span', 'mx-avatar__initials');
-    this.initialsPart.element.setAttribute('aria-hidden', 'true');
+    this.initialsPart.attr.add({ 'aria-hidden': 'true' });
     this.image = part<HTMLImageElement>(this, 'img', 'mx-avatar__image');
-    this.image.element.alt = '';
+    this.image.attr.add({ alt: '' });
     void this.image.motif.on('load', () => this.pictureDone(true));
     void this.image.motif.on('error', () => this.pictureDone(false));
     this.statusPart = part(this, 'span', 'mx-avatar__status');
-    this.statusPart.element.setAttribute('aria-hidden', 'true');
+    this.statusPart.attr.add({ 'aria-hidden': 'true' });
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
 
     for (const name of SHOWN) this.observeProperty(name, () => this.renderShown());
@@ -138,49 +141,47 @@ export class Avatar extends Control<HTMLSpanElement, AvatarProps> {
   }
 
   private pictureDone(ok: boolean): void {
-    const src = this.image.element.getAttribute('src');
-    if (ok) this.loaded = src;
-    else this.failed = src;
+    if (ok) this.loaded = this.imageSrc;
+    else this.failed = this.imageSrc;
     this.renderShown();
   }
 
   private renderShown(): void {
     const src = this.peekProperty<string | null>('src') || null;
-    const img = this.image.element;
+    const img = this.image;
     const trying = !!src && src !== this.failed;
-    put(img, 'src', trying ? src : null);
+    this.imageSrc = trying ? src : null;
+    put(img, 'src', this.imageSrc);
     const picture = !!src && src === this.loaded;
     mark(img, 'data-pending', trying && !picture);
     shown(img, trying);
 
     const initials = this.shownInitials;
-    text(this.initialsPart.element, initials);
-    shown(this.initialsPart.element, !picture && !!initials);
-    shown(this.iconPart.element, !picture && !initials);
+    text(this.initialsPart, initials);
+    shown(this.initialsPart, !picture && !!initials);
+    shown(this.iconPart, !picture && !initials);
 
     const status = this.peekProperty<AvatarStatus | null>('status') ?? null;
-    put(this.statusPart.element, 'data-status', status);
-    shown(this.statusPart.element, !!status);
+    put(this.statusPart, 'data-status', status);
+    shown(this.statusPart, !!status);
     this.renderName(status);
   }
 
   /** What screen readers say: the label or the name, and the presence. */
   private renderName(status: AvatarStatus | null): void {
-    const el = this.element;
     const name = this.peekProperty<string>('label') || this.peekProperty<string>('name') || '';
     const presence = status ? uiLocale.text(PRESENCE[status]) : '';
     const said = name && presence ? uiLocale.text('avatarPresence', { name, presence }) : name || presence;
-    put(el, 'role', said ? 'img' : null);
-    put(el, 'aria-label', said);
+    put(this, 'role', said ? 'img' : null);
+    put(this, 'aria-label', said);
     // Without a name it says nothing to a screen reader.
-    put(el, 'aria-hidden', said ? null : 'true');
+    put(this, 'aria-hidden', said ? null : 'true');
   }
 
   private renderLook(): void {
-    const el = this.element;
-    put(el, 'data-size', this.peekProperty<AvatarSize>('size') ?? 'md');
-    put(el, 'data-shape', this.peekProperty<AvatarShape>('shape') ?? (this.look.get('shape') as AvatarShape | null) ?? 'circle');
+    put(this, 'data-size', this.peekProperty<AvatarSize>('size') ?? 'md');
+    put(this, 'data-shape', this.peekProperty<AvatarShape>('shape') ?? (this.look.get('shape') as AvatarShape | null) ?? 'circle');
     const tone = this.peekProperty<AvatarTone>('tone') ?? (this.look.get('tone') as AvatarTone | null) ?? 'standard';
-    put(el, 'data-tone', tone === 'auto' ? toneOfName(this.peekProperty<string>('name') ?? '') : tone);
+    put(this, 'data-tone', tone === 'auto' ? toneOfName(this.peekProperty<string>('name') ?? '') : tone);
   }
 }

@@ -15,13 +15,13 @@ function page(view: Component): Component {
 
 /** What the browser does when the user types: the text of the input changes, then `input` occurs. */
 function type(otp: OtpInput, value: string) {
-    const input = otp.input;
+    const input = otp.inputPart.element;
     input.value = value;
     input.setSelectionRange(value.length, value.length);
     input.dispatchEvent(new InputEvent('input', { bubbles: true }));
 }
 
-const chars = (otp: OtpInput) => otp.cells.map(cell => cell.char.textContent);
+const chars = (otp: OtpInput) => otp.cells.map(cell => cell.charPart.element.textContent);
 
 afterEach(async () => {
     for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
@@ -36,11 +36,11 @@ describe('OtpInput', () => {
         page(otp);
         await tick();
         expect(otp.cells).toHaveLength(6);
-        expect(otp.input.autocomplete).toBe('one-time-code');
-        expect(otp.input.inputMode).toBe('numeric');
+        expect(otp.inputPart.element.autocomplete).toBe('one-time-code');
+        expect(otp.inputPart.element.inputMode).toBe('numeric');
         expect(otp.element.querySelectorAll('input')).toHaveLength(1);
         expect(otp.element.querySelector('.mx-otp-input__cells')!.getAttribute('aria-hidden')).toBe('true');
-        expect(otp.element.querySelector('label')!.htmlFor).toBe(otp.input.id);
+        expect(otp.element.querySelector('label')!.htmlFor).toBe(otp.inputPart.element.id);
     });
 
     it('takes a value given before its length is known', async () => {
@@ -58,14 +58,14 @@ describe('OtpInput', () => {
         await tick();
         type(otp, '1a2-3 456');
         expect(otp.value).toBe('1234');
-        expect(otp.input.value).toBe('1234');
+        expect(otp.inputPart.element.value).toBe('1234');
     });
 
     it('takes a pasted code with a separator whole: nothing limits the input before the characters are left out', async () => {
         const otp = new OtpInput({ length: 6 });
         page(otp);
         await tick();
-        expect(otp.input.maxLength).toBe(-1);
+        expect(otp.inputPart.element.maxLength).toBe(-1);
         type(otp, '123-456');
         expect(otp.value).toBe('123456');
     });
@@ -76,7 +76,7 @@ describe('OtpInput', () => {
         await tick();
         type(otp, 'a1-b2');
         expect(otp.value).toBe('A1B2');
-        expect(otp.input.inputMode).toBe('text');
+        expect(otp.inputPart.element.inputMode).toBe('text');
         otp.pattern = /[ab]/i;
         await tick();
         type(otp, 'xaybz');
@@ -94,7 +94,7 @@ describe('OtpInput', () => {
         expect(s.code).toBe('123');
         s.code = '';
         await tick();
-        expect(otp.input.value).toBe('');
+        expect(otp.inputPart.element.value).toBe('');
         expect(chars(otp).join('')).toBe('');
     });
 
@@ -140,45 +140,55 @@ describe('OtpInput', () => {
         const otp = new OtpInput({ length: 4, value: '12' });
         page(otp);
         await tick();
-        otp.input.focus();
+        otp.inputPart.element.focus();
         await tick();
-        expect(otp.cells[2].box.hasAttribute('data-active')).toBe(true);
-        expect(otp.cells[2].caret.hidden).toBe(false);
-        otp.input.blur();
+        expect(otp.cells[2].boxPart.element.hasAttribute('data-active')).toBe(true);
+        expect(otp.cells[2].caretPart.element.hidden).toBe(false);
+        otp.inputPart.element.blur();
         await tick();
-        expect(otp.cells[2].box.hasAttribute('data-active')).toBe(false);
+        expect(otp.cells[2].boxPart.element.hasAttribute('data-active')).toBe(false);
     });
 
     it('keeps the caret in the last box when the code is complete', async () => {
         const otp = new OtpInput({ length: 3, value: '123' });
         page(otp);
         await tick();
-        otp.input.focus();
+        otp.inputPart.element.focus();
         await tick();
-        expect(otp.cells[2].box.hasAttribute('data-active')).toBe(true);
-        expect(otp.cells[2].caret.hidden).toBe(true);
+        expect(otp.cells[2].boxPart.element.hasAttribute('data-active')).toBe(true);
+        expect(otp.cells[2].caretPart.element.hidden).toBe(true);
     });
 
-    it('overwrites a filled box: the character after the caret is selected before it is typed', async () => {
+    /** What the browser does for a character typed or pasted at the caret: `beforeinput`, the text, then `input`. */
+    function insert(otp: OtpInput, at: number, data: string, inputType = 'insertText') {
+        const input = otp.inputPart.element;
+        input.setSelectionRange(at, at);
+        input.dispatchEvent(new InputEvent('beforeinput', { inputType, data, bubbles: true }));
+        input.value = input.value.slice(0, at) + data + input.value.slice(at);
+        input.setSelectionRange(at + data.length, at + data.length);
+        input.dispatchEvent(new InputEvent('input', { inputType, data, bubbles: true }));
+    }
+
+    it('overwrites a filled box: the character typed takes the place of the one after the caret', async () => {
         const otp = new OtpInput({ length: 4, value: '1234' });
         page(otp);
         await tick();
-        otp.input.setSelectionRange(1, 1);
-        otp.input.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: '9', bubbles: true }));
-        expect(otp.input.selectionStart).toBe(1);
-        expect(otp.input.selectionEnd).toBe(2);
+        insert(otp, 1, '9');
+        await tick();
+        expect(otp.value).toBe('1934');
+        expect([otp.inputPart.element.selectionStart, otp.inputPart.element.selectionEnd]).toEqual([2, 2]);
     });
 
-    it('does not select anything to overwrite at the end, or for a paste', async () => {
+    it('does not overwrite anything at the end, or for a paste', async () => {
         const otp = new OtpInput({ length: 4, value: '12' });
         page(otp);
         await tick();
-        otp.input.setSelectionRange(2, 2);
-        otp.input.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: '9', bubbles: true }));
-        expect(otp.input.selectionEnd).toBe(2);
-        otp.input.setSelectionRange(0, 0);
-        otp.input.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertFromPaste', data: '9', bubbles: true }));
-        expect(otp.input.selectionEnd).toBe(0);
+        insert(otp, 2, '9');
+        await tick();
+        expect(otp.value).toBe('129');
+        insert(otp, 0, '8', 'insertFromPaste');
+        await tick();
+        expect(otp.value).toBe('8129');
     });
 
     it('fails while incomplete, in the language of the kit, and passes when complete', async () => {
@@ -207,17 +217,35 @@ describe('OtpInput', () => {
         const otp = new OtpInput({ length: 4, value: '1234' });
         page(otp);
         await tick();
+        const [first, second] = otp.cells.map(cell => cell.boxPart.element);
         otp.length = 2;
         await tick();
         expect(otp.cells).toHaveLength(2);
         expect(otp.value).toBe('12');
+        expect(otp.element.querySelectorAll('.mx-otp-input__cell')).toHaveLength(2);
+        // The boxes that stay are the same; a group size puts a separator between them in place.
+        otp.groupSize = 1;
+        otp.length = 3;
+        await tick();
+        const boxes = [...otp.element.querySelectorAll('.mx-otp-input__cell')];
+        expect(boxes.slice(0, 2)).toEqual([first, second]);
+        expect(boxes[0]).toBe(first);
+        expect(boxes[1]).toBe(second);
+        expect(otp.element.querySelectorAll('.mx-otp-input__separator')).toHaveLength(2);
+        expect([...otp.element.querySelector('.mx-otp-input__cells')!.children].map(e => e.className)).toEqual([
+            'mx-otp-input__cell', 'mx-otp-input__separator', 'mx-otp-input__cell', 'mx-otp-input__separator', 'mx-otp-input__cell',
+        ]);
+        otp.groupSize = 0;
+        await tick();
+        expect(otp.element.querySelectorAll('.mx-otp-input__separator')).toHaveLength(0);
+        expect(otp.element.querySelector('.mx-otp-input__cell')).toBe(first);
     });
 
     it('is read-only and disabled through the input', async () => {
         const otp = new OtpInput({ length: 4, readOnly: true });
         page(otp);
         await tick();
-        expect(otp.input.readOnly).toBe(true);
+        expect(otp.inputPart.element.readOnly).toBe(true);
         otp.enabled = false;
         await tick();
         expect(otp.element.hasAttribute('data-disabled')).toBe(true);
@@ -230,7 +258,7 @@ describe('OtpInput', () => {
         otp.clear();
         await tick();
         expect(otp.value).toBe('');
-        expect(document.activeElement).toBe(otp.input);
-        expect(otp.cells[0].box.hasAttribute('data-active')).toBe(true);
+        expect(document.activeElement).toBe(otp.inputPart.element);
+        expect(otp.cells[0].boxPart.element.hasAttribute('data-active')).toBe(true);
     });
 });

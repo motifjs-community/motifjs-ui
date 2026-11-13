@@ -1,4 +1,4 @@
-import type { Bind } from '@motifx/core';
+import type { Bind, ComponentBase } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { WindowEdge } from '../../parts/window/window-edge';
 import type { ResizeEventArgs } from './resize-event-args';
@@ -25,8 +25,8 @@ export interface ResizableProps extends ControlProps {
     /** The maximum width and height, in pixels. `null` means no limit. The default is `null`. */
     maxWidth?: Bind<number | null>;
     maxHeight?: Bind<number | null>;
-    /** The area the box stays inside: its parent, or an element that contains it. The default is `null`, no limit. */
-    area?: Bind<'parent' | HTMLElement | null>;
+    /** The area the box stays inside: its parent, or a component that contains it. The default is `null`, no limit. */
+    area?: Bind<'parent' | ComponentBase | null>;
     /** Preserves the ratio of width to height. The default is `false`. */
     keepAspectRatio?: Bind<boolean>;
     /** The number of pixels an arrow key changes an edge. The default is `10`. */

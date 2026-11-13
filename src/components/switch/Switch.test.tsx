@@ -39,7 +39,7 @@ describe('Switch', () => {
     page(coded);
     await settle();
 
-    const input = jsx.inputElement;
+    const input = jsx.inputPart.element;
     expect(input.type).toBe('checkbox');
     expect(input.getAttribute('role')).toBe('switch');
     expect(jsx.element.querySelector('label')!.htmlFor).toBe(input.id);
@@ -49,7 +49,7 @@ describe('Switch', () => {
 
     coded.value = true;
     coded.size = 'sm';
-    expect(coded.inputElement.checked).toBe(true);
+    expect(coded.inputPart.element.checked).toBe(true);
     expect(coded.element.dataset.state).toBe('checked');
     expect(coded.element.dataset.size).toBe('sm');
   });
@@ -61,11 +61,11 @@ describe('Switch', () => {
     page(<Switch ref={(x: Switch) => (sw = x)} x-model={() => s.on} />);
     await settle();
     sw.onValueChanged((e) => seen.push(e));
-    sw.inputElement.click();
+    sw.inputPart.element.click();
     expect(s.on).toBe(true);
     s.on = false;
     await settle();
-    expect(sw.inputElement.checked).toBe(false);
+    expect(sw.inputPart.element.checked).toBe(false);
     expect(seen.map((e) => [e.value, e.byUser])).toEqual([
       [true, true],
       [false, false],
@@ -81,10 +81,10 @@ describe('Switch', () => {
     await settle();
     plain.on = true;
     await settle();
-    expect(sw.inputElement.checked).toBe(false);
+    expect(sw.inputPart.element.checked).toBe(false);
     host.reState();
-    expect(sw.inputElement.checked).toBe(true);
-    sw.inputElement.click();
+    expect(sw.inputPart.element.checked).toBe(true);
+    sw.inputPart.element.click();
     expect(plain.on).toBe(true);
     m.value = true;
     expect(s.on).toBe(true);
@@ -95,14 +95,14 @@ describe('Switch', () => {
     let sw!: Switch;
     page(<Switch ref={(x: Switch) => (sw = x)} readOnly={() => s.ro} x-model={() => s.on} />);
     await settle();
-    expect(press(sw.inputElement, 'Enter')).toBe(true);
+    expect(press(sw.inputPart.element, 'Enter')).toBe(true);
     expect(s.on).toBe(true);
     s.ro = true;
     await settle();
-    press(sw.inputElement, 'Enter');
-    sw.inputElement.click();
+    press(sw.inputPart.element, 'Enter');
+    sw.inputPart.element.click();
     expect(s.on).toBe(true);
-    expect(sw.inputElement.getAttribute('aria-readonly')).toBe('true');
+    expect(sw.inputPart.element.getAttribute('aria-readonly')).toBe('true');
   });
 
   it('shows its on / off text inside the track, beside it or not at all', async () => {
@@ -129,7 +129,7 @@ describe('Switch', () => {
     await settle();
     expect(await sw.validate()).toBe(false);
     expect(sw.element.querySelector('.mx-field__message')!.textContent).toBe('This field is required.');
-    sw.inputElement.click();
+    sw.inputPart.element.click();
     await settle();
     expect(sw.isValid).toBe(true);
   });
@@ -141,10 +141,10 @@ describe('Switch', () => {
     await settle();
     press(document.body, 's', { altKey: true, code: 'KeyS' });
     expect(s.on).toBe(true);
-    expect(document.activeElement).toBe(sw.inputElement);
+    expect(document.activeElement).toBe(sw.inputPart.element);
     s.enabled = false;
     await settle();
-    expect(sw.inputElement.disabled).toBe(true);
+    expect(sw.inputPart.element.disabled).toBe(true);
     press(document.body, 's', { altKey: true, code: 'KeyS' });
     expect(s.on).toBe(true);
   });

@@ -1,4 +1,4 @@
-import type { EventArgs } from '@motifx/core';
+import type { ComponentBase, EventArgs } from '@motifx/core';
 import type { GridRowType } from './grid-row-type';
 
 /**
@@ -14,7 +14,7 @@ export interface GridCellClickEventArgs<T> extends EventArgs {
   readonly rowType: GridRowType;
   /** On a group row, the group values from the top level down. */
   readonly groupKey?: readonly unknown[];
-  /** The cell element. */
-  readonly element: HTMLElement;
+  /** The cell's part. */
+  readonly part: ComponentBase;
   readonly event: MouseEvent;
 }

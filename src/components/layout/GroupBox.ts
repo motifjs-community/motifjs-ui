@@ -1,8 +1,10 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { deepActiveElement, keepsKeys, tabbableIn } from '../../core/focus';
-import { chevronDown } from '../../core/glyphs';
+import { glyphPart, part, partBefore, removePart } from '../../core/draw-parts';
+import { canTakeFocus, focusFirstIn, focusOn, hasFocusableIn, holdsFocus, isFocused, isRendered } from '../../core/focus';
+import { isElement } from '../../core/node-kind';
+import { mark, put } from '../../core/part-writes';
 import type { GroupBoxProps } from './group-box-props';
 import type { GroupBoxToggledEventArgs } from './group-box-toggled-event-args';
 import type { GroupBoxVariant } from './group-box-variant';
@@ -13,9 +15,9 @@ import { setSpace } from './set-space';
 const OWN = ['collapsible', 'collapsed', 'padding', 'gap', 'variant'] as const;
 
 interface Parts {
-  legend: HTMLLegendElement;
-  title: HTMLSpanElement;
-  toggle: HTMLButtonElement | null;
+  legend: Component<HTMLLegendElement>;
+  title: Component<HTMLSpanElement>;
+  toggle: Component<HTMLButtonElement> | null;
   /** The next change of `collapsed` comes from the user. */
   byUser: boolean;
   ready: boolean;
@@ -46,9 +48,9 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
     const parts = this.parts;
     if (own.text === undefined && own.title !== undefined) this.bindProperty('text', own.title);
     this.observeProperty<string>('text', (text) => this.renderTitle(text));
-    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(this.element, padding));
-    this.observeProperty<LayoutSpace>('gap', (gap) => setSpace(this.element, '--_gap', gap));
-    this.observeProperty<GroupBoxVariant>('variant', (variant) => (this.element.dataset.variant = variant ?? 'outline'));
+    this.observeProperty<LayoutSpace>('padding', (padding) => setPadding(this, padding));
+    this.observeProperty<LayoutSpace>('gap', (gap) => setSpace(this, '--_gap', gap));
+    this.observeProperty<GroupBoxVariant>('variant', (variant) => put(this, 'data-variant', variant ?? 'outline'));
     this.observeProperty('collapsible', () => this.renderToggle());
     this.observeProperty<boolean>('collapsed', (collapsed) => {
       this.renderCollapsed();
@@ -104,22 +106,26 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
     return this.parts.toggled.event;
   }
 
-  /** The `<legend>` element that holds the title. */
-  get legendElement(): HTMLLegendElement {
+  /** The `<legend>` part that holds the title. */
+  get legendPart(): Component<HTMLLegendElement> {
     return this.parts.legend;
   }
 
   override get canFocus(): boolean {
-    return this.isEnabled && this.element.isConnected && !!this.focusTarget();
+    // The legend holds nothing that takes focus but the toggle.
+    return this.isEnabled && isRendered(this) && (!!this.parts.toggle || hasFocusableIn(this));
   }
 
   /** Sets focus on the first control inside, expanding the content first if it is collapsed. */
   override focus(): boolean {
     if (!this.isEnabled) return false;
     if (this.isCollapsed) this.change(false);
-    const target = this.focusTarget();
-    target?.focus();
-    return !!target && deepActiveElement() === target;
+    const parts = this.parts;
+    if (this.focusFirstStop(this.controls.items)) return true;
+    // Nothing inside takes focus: the toggle does.
+    if (!parts.toggle) return false;
+    focusOn(parts.toggle);
+    return isFocused(parts.toggle);
   }
 
   override onAccessKey(): boolean {
@@ -136,20 +142,32 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
   }
 
   private createParts(): Parts {
-    this.element.classList.add('mx-group-box');
-    const legend = document.createElement('legend');
-    legend.className = 'mx-group-box__legend';
-    const title = document.createElement('span');
-    title.className = 'mx-group-box__title';
-    legend.append(title);
-    this.element.prepend(legend);
+    this.class.add('mx-group-box');
+    // The legend comes first, before the content.
+    const legend = partBefore<HTMLLegendElement>(this, this.controls.items[0] ?? null, 'legend', 'mx-group-box__legend');
+    const title = part<HTMLSpanElement>(legend, 'span', 'mx-group-box__title');
     return { legend, title, toggle: null, byUser: false, ready: false, toggled: new Emitter() };
   }
 
-  /** The first control inside the content, else the toggle. */
-  private focusTarget(): HTMLElement | null {
-    const legend = this.parts.legend;
-    return tabbableIn(this.element).find((el) => !legend.contains(el) && keepsKeys(el)) ?? this.parts.toggle;
+  /** Moves focus to the first Tab stop among `items` and inside them, in order, leaving out the legend and any window. */
+  private focusFirstStop(items: readonly ComponentBase[]): boolean {
+    for (const item of items) {
+      if (item === this.parts.legend || (item instanceof Control && item.isWindow)) continue;
+      // A list or a branch has no element of its own: what it holds stands in its place.
+      if (isElement(item.element) ? this.focusStop(item) : this.focusFirstStop(item.controls.items)) return true;
+    }
+    return false;
+  }
+
+  /** Moves focus to `item` when it takes focus itself, else to the first Tab stop inside it. */
+  private focusStop(item: ComponentBase): boolean {
+    // A control out of the Tab order (`tabStop` false) is passed over, as Tab passes it.
+    const inOrder = !(item instanceof Control) || untracked(() => item.tabStop);
+    if (inOrder && canTakeFocus(item)) {
+      focusOn(item);
+      if (isFocused(item)) return true;
+    }
+    return focusFirstIn(item, 'stop');
   }
 
   private change(collapsed: boolean): void {
@@ -166,26 +184,24 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
     const parsed = parseAccessKey(text ?? '');
     this.setAccessKey(parsed.key);
     renderAccessKey(this.parts.title, parsed);
-    this.parts.legend.hidden = !parsed.text;
+    mark(this.parts.legend, 'hidden', !parsed.text);
   }
 
   private renderToggle(): void {
     const parts = this.parts;
     const on = !!this.peekProperty('collapsible');
-    this.element.toggleAttribute('data-collapsible', on);
+    mark(this, 'data-collapsible', on);
     if (on && !parts.toggle) {
-      const toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'mx-group-box__toggle';
-      const chevron = chevronDown();
-      chevron.classList.add('mx-group-box__chevron');
-      toggle.append(chevron, parts.title);
-      toggle.addEventListener('click', () => this.change(!this.peekProperty('collapsed')));
-      parts.legend.append(toggle);
+      // The title moves into the toggle, after the chevron.
+      const toggle = part<HTMLButtonElement>(parts.legend, 'button', 'mx-group-box__toggle');
+      toggle.attr.add({ type: 'button' });
+      glyphPart(toggle, 'chevron-down', 'mx-group-box__chevron');
+      toggle.controls.add(parts.title);
+      toggle.motif.on('click', () => this.change(!this.peekProperty('collapsed')));
       parts.toggle = toggle;
     } else if (!on && parts.toggle) {
-      parts.legend.append(parts.title);
-      parts.toggle.remove();
+      parts.legend.controls.add(parts.title);
+      removePart(parts.toggle);
       parts.toggle = null;
     }
     this.renderCollapsed();
@@ -194,9 +210,8 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
   private renderCollapsed(): void {
     const parts = this.parts;
     const collapsed = this.isCollapsed;
-    const active = deepActiveElement();
-    if (collapsed && active && this.element.contains(active) && !parts.legend.contains(active)) parts.toggle?.focus();
-    this.element.toggleAttribute('data-collapsed', collapsed);
-    parts.toggle?.setAttribute('aria-expanded', String(!collapsed));
+    if (collapsed && parts.toggle && holdsFocus(this) && !holdsFocus(parts.legend)) focusOn(parts.toggle);
+    mark(this, 'data-collapsed', collapsed);
+    if (parts.toggle) put(parts.toggle, 'aria-expanded', String(!collapsed));
   }
 }

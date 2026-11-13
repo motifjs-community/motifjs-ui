@@ -1,3 +1,4 @@
+import type { ComponentBase } from '@motifx/core';
 import type { DataGrid } from '../DataGrid';
 import type { GridToolbarItem } from '../grid-toolbar-item';
 import type { GridToolbarItemName } from '../grid-toolbar-item-name';
@@ -14,8 +15,8 @@ export interface ToolbarHost {
   exportCommands(): ExportCommand[];
   /** The export button's name ("Export", or `export.texts.exportTo`). Reactive. */
   exportName(): string;
-  /** Opens the list of columns under `anchor`. */
-  openColumns(anchor: HTMLElement): void;
+  /** Opens the list of columns under `anchor`, the toolbar's button. */
+  openColumns(anchor: ComponentBase): void;
   /** Whether the list of columns has a column to show or hide. */
   hasColumns(): boolean;
   /** The group panel, which the toolbar holds while `groupPanel` is on. */

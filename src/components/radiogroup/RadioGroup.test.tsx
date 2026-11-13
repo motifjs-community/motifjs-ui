@@ -33,7 +33,9 @@ function press(el: Element, key: string, init: KeyboardEventInit = {}) {
 }
 
 const texts = <T,>(g: RadioGroup<T>) => Array.from(g.element.querySelectorAll('.mx-radio-group__text')).map((t) => t.textContent);
-const stops = <T,>(g: RadioGroup<T>) => g.inputs.map((i) => i.tabIndex);
+// The native radios, read from the group's parts.
+const inputs = <T,>(g: RadioGroup<T>) => g.inputParts.map((p) => p.element);
+const stops = <T,>(g: RadioGroup<T>) => inputs(g).map((i) => i.tabIndex);
 
 describe('RadioGroup', () => {
   it('is a labelled radiogroup of native radios, the same in JSX and programmatically', async () => {
@@ -43,23 +45,23 @@ describe('RadioGroup', () => {
     page(coded);
     await settle();
 
-    const list = jsx.listElement;
+    const list = jsx.listPart.element;
     const label = jsx.element.querySelector('.mx-field__label')!;
     expect(list.getAttribute('role')).toBe('radiogroup');
     expect(list.getAttribute('aria-labelledby')).toBe(label.id);
     expect(list.getAttribute('aria-orientation')).toBe('vertical');
     expect(list.getAttribute('aria-keyshortcuts')).toBe('Alt+S');
     expect(texts(jsx)).toEqual(['S', 'M', 'L']);
-    expect(jsx.inputs.every((i) => i.type === 'radio' && i.name === jsx.inputs[0].name && !!i.name)).toBe(true);
-    expect(jsx.inputs[0].closest('label')!.textContent).toBe('S');
+    expect(inputs(jsx).every((i) => i.type === 'radio' && i.name === inputs(jsx)[0].name && !!i.name)).toBe(true);
+    expect(inputs(jsx)[0].closest('label')!.textContent).toBe('S');
     expect(jsx.value).toBe(null);
     expect(stops(jsx)).toEqual([0, -1, -1]);
 
     coded.value = 'exp';
     expect(texts(coded)).toEqual(['Standard', 'Express']);
-    expect(coded.inputs.map((i) => i.checked)).toEqual([false, true]);
+    expect(inputs(coded).map((i) => i.checked)).toEqual([false, true]);
     expect(stops(coded)).toEqual([-1, 0]);
-    expect(coded.inputs[0].name).not.toBe(jsx.inputs[0].name);
+    expect(inputs(coded)[0].name).not.toBe(inputs(jsx)[0].name);
   });
 
   it('binds the value two-way with x-model', async () => {
@@ -67,13 +69,13 @@ describe('RadioGroup', () => {
     let g!: RadioGroup<string>;
     page(<RadioGroup ref={(x: RadioGroup<string>) => (g = x)} items={['S', 'M', 'L']} x-model={() => s.size} />);
     await settle();
-    expect(g.inputs[1].checked).toBe(true);
-    g.inputs[2].click();
+    expect(inputs(g)[1].checked).toBe(true);
+    inputs(g)[2].click();
     expect(s.size).toBe('L');
     expect(stops(g)).toEqual([-1, -1, 0]);
     s.size = 'S';
     await settle();
-    expect(g.inputs.map((i) => i.checked)).toEqual([true, false, false]);
+    expect(inputs(g).map((i) => i.checked)).toEqual([true, false, false]);
   });
 
   it('reads functions over plain data again on reState, and writes a value set programmatically to x-model', async () => {
@@ -92,9 +94,9 @@ describe('RadioGroup', () => {
     expect(texts(g)).toEqual(['Small', 'Large', 'Extra']);
     host.reState();
     expect(texts(g)).toEqual(['Small', 'Big', 'Extra']);
-    expect(g.inputs.map((i) => i.checked)).toEqual([false, true, false]);
-    expect(g.inputs[2].disabled).toBe(false);
-    g.inputs[0].click();
+    expect(inputs(g).map((i) => i.checked)).toEqual([false, true, false]);
+    expect(inputs(g)[2].disabled).toBe(false);
+    inputs(g)[0].click();
     expect(plain.size).toBe('L');
     expect(Object.keys(items[1])).toEqual(['value', 'text']);
     m.value = 'L';
@@ -112,21 +114,21 @@ describe('RadioGroup', () => {
     let g!: RadioGroup<number>;
     page(<RadioGroup ref={(x: RadioGroup<number>) => (g = x)} items={items} x-model={() => s.v} />);
     await settle();
-    expect(g.inputs[1].disabled).toBe(true);
+    expect(inputs(g)[1].disabled).toBe(true);
     expect(g.element.querySelectorAll('.mx-radio-group__item')[3].hasAttribute('hidden')).toBe(true);
 
     g.focus();
-    expect(document.activeElement).toBe(g.inputs[0]);
-    expect(press(g.inputs[0], 'ArrowDown')).toBe(true);
+    expect(document.activeElement).toBe(inputs(g)[0]);
+    expect(press(inputs(g)[0], 'ArrowDown')).toBe(true);
     expect(s.v).toBe(3);
-    expect(document.activeElement).toBe(g.inputs[2]);
-    press(g.inputs[2], 'ArrowRight');
+    expect(document.activeElement).toBe(inputs(g)[2]);
+    press(inputs(g)[2], 'ArrowRight');
     expect(s.v).toBe(1);
-    press(g.inputs[0], 'ArrowUp');
+    press(inputs(g)[0], 'ArrowUp');
     expect(s.v).toBe(3);
-    press(g.inputs[2], 'ArrowLeft');
+    press(inputs(g)[2], 'ArrowLeft');
     expect(s.v).toBe(1);
-    expect(press(g.inputs[0], 'Home')).toBe(false);
+    expect(press(inputs(g)[0], 'Home')).toBe(false);
   });
 
   it('turns the horizontal arrows around right to left', async () => {
@@ -136,10 +138,10 @@ describe('RadioGroup', () => {
     page(<RadioGroup ref={(x: RadioGroup<string>) => (g = x)} orientation="horizontal" items={['a', 'b', 'c']} x-model={() => s.v} />);
     await settle();
     expect(g.element.dataset.orientation).toBe('horizontal');
-    expect(g.listElement.getAttribute('aria-orientation')).toBe('horizontal');
-    press(g.inputs[0], 'ArrowLeft');
+    expect(g.listPart.element.getAttribute('aria-orientation')).toBe('horizontal');
+    press(inputs(g)[0], 'ArrowLeft');
     expect(s.v).toBe('b');
-    press(g.inputs[1], 'ArrowRight');
+    press(inputs(g)[1], 'ArrowRight');
     expect(s.v).toBe('a');
   });
 
@@ -173,13 +175,13 @@ describe('RadioGroup', () => {
       await settle();
       expect(texts(g)).toEqual(['Free', 'Pro+', 'Team']);
       expect(document.activeElement).toBe(focused);
-      expect(g.inputs[1].checked).toBe(true);
+      expect(inputs(g)[1].checked).toBe(true);
 
       plans.splice(0, 1);
       g.refresh();
       await settle();
       expect(texts(g)).toEqual(['Pro+', 'Team']);
-      expect(g.inputs[0].checked).toBe(true);
+      expect(inputs(g)[0].checked).toBe(true);
     });
 
     it('gives back the very item that is its own value', async () => {
@@ -188,7 +190,7 @@ describe('RadioGroup', () => {
       let g!: RadioGroup<{ text: string }>;
       page(<RadioGroup ref={(x: RadioGroup<{ text: string }>) => (g = x)} items={sizes} onValueChanged={changed} />);
       await settle();
-      g.inputs[1].click();
+      inputs(g)[1].click();
       await settle();
       expect(g.value).toBe(sizes[1]);
       expect(changed.mock.calls[0][0].value).toBe(sizes[1]);
@@ -213,13 +215,13 @@ describe('RadioGroup', () => {
     expect(std.title).toBe('The usual way');
     const help = exp.querySelector('.mx-radio-group__help')!;
     expect(help.textContent).toBe('Ships in a day');
-    expect(g.inputs[1].getAttribute('aria-describedby')).toBe(help.id);
-    expect(g.inputs[1].closest('label')!.textContent).toBe('Express');
-    expect(g.inputs[1].disabled).toBe(true);
+    expect(inputs(g)[1].getAttribute('aria-describedby')).toBe(help.id);
+    expect(inputs(g)[1].closest('label')!.textContent).toBe('Express');
+    expect(inputs(g)[1].disabled).toBe(true);
     s.can = true;
     s.help = 'Ships today';
     await settle();
-    expect(g.inputs[1].disabled).toBe(false);
+    expect(inputs(g)[1].disabled).toBe(false);
     expect(help.textContent).toBe('Ships today');
   });
 
@@ -228,13 +230,13 @@ describe('RadioGroup', () => {
     let g!: RadioGroup<string>;
     page(<RadioGroup ref={(x: RadioGroup<string>) => (g = x)} readOnly items={['a', 'b', 'c']} x-model={() => s.v} />);
     await settle();
-    expect(g.listElement.getAttribute('aria-readonly')).toBe('true');
-    g.inputs[1].click();
+    expect(g.listPart.element.getAttribute('aria-readonly')).toBe('true');
+    inputs(g)[1].click();
     expect(s.v).toBe('a');
-    expect(g.inputs[0].checked).toBe(true);
+    expect(inputs(g)[0].checked).toBe(true);
     g.focus();
-    press(g.inputs[0], 'ArrowDown');
-    expect(document.activeElement).toBe(g.inputs[1]);
+    press(inputs(g)[0], 'ArrowDown');
+    expect(document.activeElement).toBe(inputs(g)[1]);
     expect(s.v).toBe('a');
     expect(stops(g)).toEqual([-1, 0, -1]);
   });
@@ -246,11 +248,11 @@ describe('RadioGroup', () => {
     await settle();
     s.on = false;
     await settle();
-    expect(g.inputs.map((i) => i.disabled)).toEqual([true, true]);
+    expect(inputs(g).map((i) => i.disabled)).toEqual([true, true]);
     expect(g.focus()).toBe(false);
     s.on = true;
     await settle();
-    expect(g.inputs.map((i) => i.disabled)).toEqual([false, true]);
+    expect(inputs(g).map((i) => i.disabled)).toEqual([false, true]);
   });
 
   it('lays the options out in columns and takes them out of the Tab order on request', async () => {
@@ -259,14 +261,14 @@ describe('RadioGroup', () => {
     page(<RadioGroup ref={(x: RadioGroup<number>) => (g = x)} columns={() => s.columns} tabStop={() => s.tab} items={[1, 2, 3, 4, 5]} />);
     await settle();
     expect(g.element.hasAttribute('data-columns')).toBe(true);
-    expect(g.listElement.style.getPropertyValue('--_columns')).toBe('2');
-    expect(g.listElement.style.getPropertyValue('--_rows')).toBe('3');
+    expect(g.listPart.element.style.getPropertyValue('--_columns')).toBe('2');
+    expect(g.listPart.element.style.getPropertyValue('--_rows')).toBe('3');
     s.columns = 0;
     s.tab = false;
     await settle();
     expect(g.element.hasAttribute('data-columns')).toBe(false);
     expect(stops(g)).toEqual([-1, -1, -1, -1, -1]);
-    expect(g.listElement.hasAttribute('tabindex')).toBe(false);
+    expect(g.listPart.element.hasAttribute('tabindex')).toBe(false);
     s.tab = true;
     await settle();
     expect(stops(g)).toEqual([0, -1, -1, -1, -1]);
@@ -277,14 +279,14 @@ describe('RadioGroup', () => {
     let g!: RadioGroup<string>;
     page(<RadioGroup ref={(x: RadioGroup<string>) => (g = x)} label="Plan" required validationGroup={group} items={['a', 'b']} />);
     await settle();
-    expect(g.listElement.getAttribute('aria-required')).toBe('true');
+    expect(g.listPart.element.getAttribute('aria-required')).toBe('true');
     expect((await group.validate()).valid).toBe(false);
-    expect(document.activeElement).toBe(g.inputs[0]);
-    expect(g.listElement.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(inputs(g)[0]);
+    expect(g.listPart.element.getAttribute('aria-invalid')).toBe('true');
     await uiLocale.use('tr');
     await settle();
     expect(g.element.querySelector('.mx-field__message')!.textContent).toBe('Bu alan zorunludur.');
-    g.inputs[1].click();
+    inputs(g)[1].click();
     await settle();
     expect(g.isValid).toBe(true);
   });
@@ -294,14 +296,14 @@ describe('RadioGroup', () => {
     let g!: RadioGroup<string>;
     page(<RadioGroup ref={(x: RadioGroup<string>) => (g = x)} label="&Plan" name={() => s.name} items={['a', 'b']} value="b" />);
     await settle();
-    expect(g.inputs.map((i) => i.name)).toEqual(['plan', 'plan']);
+    expect(inputs(g).map((i) => i.name)).toEqual(['plan', 'plan']);
     press(document.body, 'p', { altKey: true, code: 'KeyP' });
-    expect(document.activeElement).toBe(g.inputs[1]);
+    expect(document.activeElement).toBe(inputs(g)[1]);
     (document.activeElement as HTMLElement).blur();
     (g.element.querySelector('.mx-field__label') as HTMLElement).click();
-    expect(document.activeElement).toBe(g.inputs[1]);
+    expect(document.activeElement).toBe(inputs(g)[1]);
     s.name = 'tier';
     await settle();
-    expect(g.inputs[0].name).toBe('tier');
+    expect(inputs(g)[0].name).toBe('tier');
   });
 });

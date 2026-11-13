@@ -2,7 +2,9 @@ import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
 import { LanguageLook } from '../../core/language-look';
+import { holderOf, isRtl, measure, styleOf } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
+import { css, mark, put, text as writeText } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { BadgePosition } from './badge-position';
 import type { BadgeProps } from './badge-props';
@@ -35,18 +37,18 @@ export class Badge extends Control<HTMLSpanElement, BadgeProps> {
   static attach(target: ComponentBase, props: BadgeProps = {}): Badge {
     const badge = new Badge({ position: 'top-end', ...props });
     // What it is on a corner of is its anchor.
-    (target.element as HTMLElement).classList.add('mx-badge-anchor');
+    target.class.add('mx-badge-anchor');
     target.controls.add(badge);
     return badge;
   }
 
   /** A tone, look or size not given is the design language's. */
-  private readonly look = new LanguageLook(this.element, { tone: '--_badge-tone', variant: '--_badge-variant' }, () => this.renderLook());
+  private readonly look = new LanguageLook(this, { tone: '--_badge-tone', variant: '--_badge-variant' }, () => this.renderLook());
 
   constructor(props?: IBaseProp<BadgeProps>) {
     super(props);
     const own = (this.props ?? {}) as BadgeProps;
-    this.element.classList.add('mx-badge');
+    this.class.add('mx-badge');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
 
     this.observeProperty('text', () => this.renderShown());
@@ -142,58 +144,62 @@ export class Badge extends Control<HTMLSpanElement, BadgeProps> {
   }
 
   private renderShown(): void {
-    const el = this.element;
     const dot = !!this.peekProperty('dot');
     const count = this.peekCount();
     const text = this.shownText;
-    if (el.textContent !== text) el.textContent = text;
-    el.toggleAttribute('data-dot', dot);
+    writeText(this, text);
+    mark(this, 'data-dot', dot);
     // Nothing to say: a count of 0 (unless shown), or no count, no text and no dot.
     const empty = dot ? count === 0 && !this.peekProperty('showZero') : count === null ? !text : count === 0 && !this.peekProperty('showZero');
-    el.toggleAttribute('data-empty', empty);
+    mark(this, 'data-empty', empty);
     const label = this.peekProperty<string>('label') ?? '';
     if (label) {
-      el.setAttribute('role', 'img');
-      el.setAttribute('aria-label', label);
-      el.removeAttribute('aria-hidden');
+      put(this, 'role', 'img');
+      put(this, 'aria-label', label);
+      put(this, 'aria-hidden', null);
     } else {
-      el.removeAttribute('role');
-      el.removeAttribute('aria-label');
+      put(this, 'role', null);
+      put(this, 'aria-label', null);
       // A dot without a name says nothing to a screen reader.
-      el.toggleAttribute('aria-hidden', dot);
+      mark(this, 'aria-hidden', dot);
     }
   }
 
   private renderLook(): void {
-    const data = this.element.dataset;
-    data.tone = this.peekProperty<BadgeTone>('tone') ?? (this.look.get('tone') as BadgeTone | null) ?? 'accent';
-    data.variant = this.peekProperty<BadgeVariant>('variant') ?? (this.look.get('variant') as BadgeVariant | null) ?? 'solid';
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
+    put(this, 'data-tone', this.peekProperty<BadgeTone>('tone') ?? (this.look.get('tone') as BadgeTone | null) ?? 'accent');
+    put(this, 'data-variant', this.peekProperty<BadgeVariant>('variant') ?? (this.look.get('variant') as BadgeVariant | null) ?? 'solid');
+    put(this, 'data-size', this.peekProperty<ControlSize>('size') ?? 'md');
     const position = this.peekProperty<BadgePosition | null>('position') ?? null;
-    if (position) data.position = position;
-    else delete data.position;
+    put(this, 'data-position', position);
     // What it is on a corner of is its anchor.
-    const parent = this.element.parentElement;
-    if (parent && position) {
-      parent.classList.add('mx-badge-anchor');
-      this.measureAnchor(parent);
+    const anchor = this.findAnchor();
+    if (anchor && position) {
+      anchor.class.add('mx-badge-anchor');
+      measure(this, this.readEdges, this.writeEdges);
     }
   }
 
-  /** The anchor's frame: the badge sits on its outer corner, not inside its border. */
-  private measureAnchor(anchor: HTMLElement): void {
-    if (typeof getComputedStyle !== 'function') return;
-    const style = getComputedStyle(anchor);
-    const rtl = style.direction === 'rtl';
-    const edges: [string, string][] = [
-      ['--_edge-top', style.borderTopWidth],
-      ['--_edge-bottom', style.borderBottomWidth],
-      ['--_edge-start', rtl ? style.borderRightWidth : style.borderLeftWidth],
-      ['--_edge-end', rtl ? style.borderLeftWidth : style.borderRightWidth],
-    ];
-    for (const [name, width] of edges) {
-      const value = width || '0px';
-      if (this.element.style.getPropertyValue(name) !== value) this.element.style.setProperty(name, value);
-    }
+  /** The component the badge sits in: its parent, or the nearest one above it with an element (a fragment has none). */
+  private findAnchor(): ComponentBase | null {
+    return this.parent ? holderOf(this.parent) : null;
   }
+
+  /** The anchor's frame: the badge sits on its outer corner, not inside its border. */
+  private readonly readEdges = (): [string, string][] | null => {
+    const anchor = this.findAnchor();
+    if (!anchor) return null;
+    const style = styleOf(anchor, ['border-top-width', 'border-bottom-width', 'border-left-width', 'border-right-width']);
+    const rtl = isRtl(anchor);
+    return [
+      ['--_edge-top', style['border-top-width']],
+      ['--_edge-bottom', style['border-bottom-width']],
+      ['--_edge-start', rtl ? style['border-right-width'] : style['border-left-width']],
+      ['--_edge-end', rtl ? style['border-left-width'] : style['border-right-width']],
+    ];
+  };
+
+  private readonly writeEdges = (edges: [string, string][] | null): void => {
+    if (!edges) return;
+    for (const [name, width] of edges) css(this, name, width || '0px');
+  };
 }

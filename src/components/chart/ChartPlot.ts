@@ -1,27 +1,33 @@
+import type { Component, ComponentBase } from '@motifx/core';
 import { nextId } from '../../core/next-id';
 import { areaPath, barPath, circlesPath, linePath, roundRectPath, smoothPath, stepPath, type Place } from '../../parts/chart/chart-paths';
 import { bandScale, linearScale, logScale, type ChartScale } from '../../parts/chart/chart-scale';
-import { formatNumber, motionOf, textWidth } from '../../parts/chart/chart-text';
+import { formatNumber } from '../../parts/chart/chart-text';
 import { logTicks, niceTicks } from '../../parts/chart/nice-ticks';
-import { svgPart, svgPut, TextPool } from '../../parts/chart/svg-parts';
+import { svgComponent } from '../../parts/chart/svg-parts';
+import { removePart } from '../../core/draw-parts';
+import { css, put } from '../../core/part-writes';
+import { canMeasure, everyFrame, styleOf } from '../../core/measure';
 import { thinOut } from '../../parts/chart/thin-out';
 import { timeTicks } from '../../parts/chart/time-ticks';
 import type { ChartModel, ModelPoint, ModelSeries, ModelSlot } from './chart-model';
 import type { ChartSeriesType } from './chart-series-type';
 import { laneText, pointText, positionText } from './plot-text';
 import type { HeatClass, PlotInput, PlotView, Rect } from './plot-view';
+import { TextParts } from './text-parts';
 
 export type { PlotInput } from './plot-view';
 
 interface SeriesPart {
-    group: SVGGElement;
-    area: SVGPathElement;
-    bars: SVGPathElement;
-    rise: SVGPathElement;
-    fall: SVGPathElement;
-    cells: SVGGElement;
-    line: SVGPathElement;
-    dots: SVGPathElement;
+    groupPart: Component<SVGGElement>;
+    area: Component<SVGPathElement>;
+    bars: Component<SVGPathElement>;
+    rise: Component<SVGPathElement>;
+    fall: Component<SVGPathElement>;
+    cells: Component<SVGGElement>;
+    cellPaths: Component<SVGPathElement>[];
+    linePart: Component<SVGPathElement>;
+    dotsPart: Component<SVGPathElement>;
 }
 
 interface Tick {
@@ -45,6 +51,14 @@ const heatOn = (model: ChartModel) => model.series.some(s => s.shown && s.type =
 const FROM_TOO: ReadonlySet<ChartSeriesType> = new Set(['bar', 'area', 'rangeBar', 'rangeArea', 'candlestick', 'ohlc', 'waterfall']);
 /** Past this many values a change is drawn at once: following each of them would cost more than it shows. */
 const MOST_TWEENED = 3000;
+/** The design language's normal motion: languages write it in seconds or in milliseconds. */
+const MOTION = '--mx-motion-duration-normal';
+
+const millisecondsOf = (text: string) => {
+    const number = parseFloat(text);
+    if (!Number.isFinite(number)) return 0;
+    return /ms$/.test(text) ? number : /s$/.test(text) ? number * 1000 : number;
+};
 
 /** Where a value was, so that a change can move it from there. */
 interface Was {
@@ -58,67 +72,70 @@ const ease = (t: number) => 1 - (1 - t) ** 3;
 
 /** The SVG of a chart: grid, marks, axes and what shows the value under the pointer. It reads a model and writes paths. */
 export class ChartPlot implements PlotView {
-    svg: SVGSVGElement;
-    clip: SVGRectElement;
-    grid: SVGPathElement;
-    marks: SVGGElement;
-    axis: SVGPathElement;
-    xLabels: TextPool;
-    yLabels: TextPool;
-    titles: TextPool;
-    dataLabels: TextPool;
-    cross: SVGPathElement;
-    activeBar: SVGPathElement;
-    activeDots: SVGGElement;
+    svgPart: Component<SVGSVGElement>;
+    clip: Component<SVGRectElement>;
+    grid: Component<SVGPathElement>;
+    marksPart: Component<SVGGElement>;
+    axis: Component<SVGPathElement>;
+    xLabels: TextParts;
+    yLabels: TextParts;
+    titles: TextParts;
+    dataLabels: TextParts;
+    cross: Component<SVGPathElement>;
+    activeBar: Component<SVGPathElement>;
+    activeDots: Component<SVGGElement>;
+    activeDotPaths: Component<SVGPathElement>[] = [];
     parts: SeriesPart[] = [];
     input: PlotInput | null = null;
+    /** The size of the last drawing. */
+    size = { width: 0, height: 0 };
     box: Rect = { left: 0, top: 0, width: 0, height: 0 };
     bars = new Map<ModelPoint, Rect>();
     order: ModelSlot[] = [];
     xFormat: Intl.DateTimeFormatOptions | undefined;
     /** The colors of a heat map, low to high, for its legend. */
     heatClasses: HeatClass[] = [];
-    refBands: SVGPathElement;
-    refLines: SVGPathElement;
-    refLabels: TextPool;
-    selectedMarks: SVGPathElement;
-    brush: SVGPathElement;
+    refBands: Component<SVGPathElement>;
+    refLines: Component<SVGPathElement>;
+    refLabels: TextParts;
+    selectedMarks: Component<SVGPathElement>;
+    brush: Component<SVGPathElement>;
     /** The model of the last drawing: where a change moves its values from. The chart may hand over the next one early, for its texts. */
     drawn: ChartModel | null = null;
     scales: { position: ChartScale & { size?: number }; value: ChartScale; measure: (text: string) => number } | null = null;
-    frame = 0;
+    /** Stops the move of the values under way, if one is. */
+    stopMove: (() => void) | null = null;
 
-    constructor(host: Element) {
-        const svg = svgPart(host, 'svg', 'mx-chart__svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-        this.svg = svg;
-        const defs = svgPart(svg, 'defs');
-        const clip = svgPart(defs, 'clipPath');
+    constructor(host: ComponentBase) {
+        const svg = svgComponent(host, 'svg', 'mx-chart__svg');
+        svg.attr.add({ 'aria-hidden': 'true', focusable: 'false' });
+        this.svgPart = svg;
+        const defs = svgComponent(svg, 'defs');
+        const clip = svgComponent(defs, 'clipPath');
         const id = nextId('chart');
-        clip.id = id;
-        this.clip = svgPart(clip, 'rect');
-        this.grid = svgPart(svg, 'path', 'mx-chart__grid');
-        this.refBands = svgPart(svg, 'path', 'mx-chart__reference-band');
-        this.marks = svgPart(svg, 'g', 'mx-chart__marks');
-        this.marks.setAttribute('clip-path', `url(#${id})`);
-        this.axis = svgPart(svg, 'path', 'mx-chart__axis');
-        this.xLabels = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks'));
-        this.yLabels = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks'));
-        this.titles = new TextPool(svgPart(svg, 'g', 'mx-chart__axis-title'));
-        this.dataLabels = new TextPool(svgPart(svg, 'g', 'mx-chart__labels'));
-        this.refLines = svgPart(svg, 'path', 'mx-chart__reference');
-        this.refLabels = new TextPool(svgPart(svg, 'g', 'mx-chart__reference-label'));
-        this.selectedMarks = svgPart(svg, 'path', 'mx-chart__selected');
-        this.brush = svgPart(svg, 'path', 'mx-chart__brush');
-        this.cross = svgPart(svg, 'path', 'mx-chart__crosshair');
-        this.activeBar = svgPart(svg, 'path', 'mx-chart__active-bar');
-        this.activeDots = svgPart(svg, 'g', 'mx-chart__active-dots');
+        clip.attr.add({ id });
+        this.clip = svgComponent(clip, 'rect');
+        this.grid = svgComponent(svg, 'path', 'mx-chart__grid');
+        this.refBands = svgComponent(svg, 'path', 'mx-chart__reference-band');
+        this.marksPart = svgComponent(svg, 'g', 'mx-chart__marks');
+        this.marksPart.attr.add({ 'clip-path': `url(#${id})` });
+        this.axis = svgComponent(svg, 'path', 'mx-chart__axis');
+        this.xLabels = new TextParts(svgComponent(svg, 'g', 'mx-chart__ticks'));
+        this.yLabels = new TextParts(svgComponent(svg, 'g', 'mx-chart__ticks'));
+        this.titles = new TextParts(svgComponent(svg, 'g', 'mx-chart__axis-title'));
+        this.dataLabels = new TextParts(svgComponent(svg, 'g', 'mx-chart__labels'));
+        this.refLines = svgComponent(svg, 'path', 'mx-chart__reference');
+        this.refLabels = new TextParts(svgComponent(svg, 'g', 'mx-chart__reference-label'));
+        this.selectedMarks = svgComponent(svg, 'path', 'mx-chart__selected');
+        this.brush = svgComponent(svg, 'path', 'mx-chart__brush');
+        this.cross = svgComponent(svg, 'path', 'mx-chart__crosshair');
+        this.activeBar = svgComponent(svg, 'path', 'mx-chart__active-bar');
+        this.activeDots = svgComponent(svg, 'g', 'mx-chart__active-dots');
     }
 
     /** The group whose style gives the font of the axis labels. */
-    get labelGroup(): SVGGElement {
-        return this.yLabels.group;
+    get labelPart(): Component<SVGGElement> {
+        return this.yLabels.part;
     }
 
     /** The position of a slot, as it reads. */
@@ -141,16 +158,16 @@ export class ChartPlot implements PlotView {
 
     draw(input: PlotInput): void {
         const before = input.animate && this.drawn ? this.snapshot(this.drawn) : null;
-        if (this.frame) cancelAnimationFrame(this.frame);
-        this.frame = 0;
+        this.stopMove?.();
+        this.stopMove = null;
         this.input = input;
         const { model, xAxis, yAxis, horizontal, rtl, width, height, look } = input;
-        const doc = this.svg.ownerDocument;
-        svgPut(this.svg, 'viewBox', `0 0 ${width} ${height}`);
-        svgPut(this.svg, 'width', width);
-        svgPut(this.svg, 'height', height);
+        this.size = { width, height };
+        put(this.svgPart, 'viewBox', `0 0 ${width} ${height}`);
+        put(this.svgPart, 'width', String(width));
+        put(this.svgPart, 'height', String(height));
 
-        const measure = (text: string) => textWidth(text, look.font, doc);
+        const measure = (text: string) => input.texts.width(text, look.font);
         const line = look.line;
         const xShown = xAxis.visible !== false;
         const yShown = yAxis.visible !== false;
@@ -194,10 +211,10 @@ export class ChartPlot implements PlotView {
         const box: Rect = { left, top: Math.ceil(top), width: Math.max(1, width - left - right), height: Math.max(1, height - Math.ceil(top) - Math.ceil(bottom)) };
         this.box = box;
         const room = look.markerSize;
-        svgPut(this.clip, 'x', box.left - room);
-        svgPut(this.clip, 'y', box.top - room);
-        svgPut(this.clip, 'width', box.width + room * 2);
-        svgPut(this.clip, 'height', box.height + room * 2);
+        put(this.clip, 'x', String(box.left - room));
+        put(this.clip, 'y', String(box.top - room));
+        put(this.clip, 'width', String(box.width + room * 2));
+        put(this.clip, 'height', String(box.height + room * 2));
 
         const from = horizontal ? (rtl ? box.left + box.width : box.left) : box.top + box.height;
         const to = horizontal ? (rtl ? box.left : box.left + box.width) : box.top;
@@ -242,13 +259,10 @@ export class ChartPlot implements PlotView {
                 if (from && p.y !== null) moves.push({ p, from, to: { px: p.px, py: p.py, rect: this.bars.get(p) } });
             }
         }
-        const view = this.svg.ownerDocument.defaultView;
-        const duration = motionOf(this.svg, '--mx-motion-duration-normal');
-        if (!moves.length || moves.length > MOST_TWEENED || duration <= 0 || !view?.requestAnimationFrame) return false;
+        // Where nothing is laid out, nothing is seen moving.
+        if (!moves.length || moves.length > MOST_TWEENED || !canMeasure(this.svgPart)) return false;
         const mix = (a: number, b: number, t: number) => a + (b - a) * t;
-        const start = view.performance.now();
-        const step = () => {
-            const t = Math.min(1, (view.performance.now() - start) / duration);
+        const step = (t: number) => {
             const e = ease(t);
             for (const { p, from, to } of moves) {
                 p.px = mix(from.px, to.px, e);
@@ -257,10 +271,23 @@ export class ChartPlot implements PlotView {
             }
             const scales = this.scales!;
             this.drawSeries(scales.position, scales.value, scales.measure);
-            this.frame = t < 1 ? view.requestAnimationFrame(step) : 0;
-            if (t >= 1) this.drawSelected();
         };
-        step();
+        const start = performance.now();
+        let duration: number | null = null;
+        step(0);
+        // The language's motion is read with the first frame; at 0 (reduced motion) the values land there at once.
+        this.stopMove = everyFrame(
+            this.svgPart,
+            () => ({ now: performance.now(), duration: (duration ??= millisecondsOf(styleOf(this.svgPart, [MOTION])[MOTION])) }),
+            frame => {
+                const t = frame.duration > 0 ? Math.min(1, (frame.now - start) / frame.duration) : 1;
+                step(t);
+                if (t < 1) return;
+                this.stopMove = null;
+                this.drawSelected();
+                return false;
+            },
+        );
         return true;
     }
 
@@ -281,12 +308,12 @@ export class ChartPlot implements PlotView {
     showBrush(from: number | null, to: number | null): void {
         const box = this.box;
         if (from === null || to === null || !this.input) {
-            svgPut(this.brush, 'd', null);
+            put(this.brush, 'd', null);
             return;
         }
         const low = Math.max(this.input.horizontal ? box.top : box.left, Math.min(from, to));
         const high = Math.min(this.input.horizontal ? box.top + box.height : box.left + box.width, Math.max(from, to));
-        svgPut(this.brush, 'd', this.input.horizontal ? `M${box.left} ${low}h${box.width}V${high}h${-box.width}z` : `M${low} ${box.top}H${high}v${box.height}H${low}z`);
+        put(this.brush, 'd', this.input.horizontal ? `M${box.left} ${low}h${box.width}V${high}h${-box.width}z` : `M${low} ${box.top}H${high}v${box.height}H${low}z`);
     }
 
     /** Lines and bands at the values and positions asked for, with their labels. */
@@ -324,8 +351,8 @@ export class ChartPlot implements PlotView {
             }
             if (r.label && labelAt) this.refLabels.add(r.label, labelAt[0], labelAt[1], 'start');
         }
-        svgPut(this.refBands, 'd', bands || null);
-        svgPut(this.refLines, 'd', lines || null);
+        put(this.refBands, 'd', bands || null);
+        put(this.refLines, 'd', lines || null);
         this.refLabels.done();
     }
 
@@ -345,7 +372,7 @@ export class ChartPlot implements PlotView {
                 }
             }
         }
-        svgPut(this.selectedMarks, 'd', d || null);
+        put(this.selectedMarks, 'd', d || null);
     }
 
     widestLabel(series: readonly ModelSeries[], measure: (text: string) => number): number {
@@ -559,13 +586,13 @@ export class ChartPlot implements PlotView {
         const down = (at: number) => (horizontal ? `M${box.left} ${edge(at)}h${box.width}` : `M${edge(at)} ${box.top}v${box.height}`);
         let grid = '';
         if (heatOn(model)) {
-            svgPut(this.grid, 'd', null);
-            svgPut(this.axis, 'd', null);
+            put(this.grid, 'd', null);
+            put(this.axis, 'd', null);
             return;
         }
         if (yAxis.grid !== false) for (const t of range.ticks) grid += across(value.at(t.value));
         if (xAxis.grid ?? (model.kind === 'linear' && !model.hasBars)) for (const t of positions) grid += down(position.at(t.value));
-        svgPut(this.grid, 'd', grid);
+        put(this.grid, 'd', grid);
 
         let axis = '';
         if (xAxis.visible !== false && (xAxis.line ?? true)) {
@@ -577,7 +604,7 @@ export class ChartPlot implements PlotView {
             const side = horizontal ? box.top + box.height : this.input!.rtl ? box.left + box.width : box.left;
             axis += horizontal ? `M${box.left} ${edge(side)}h${box.width}` : `M${edge(side)} ${box.top}v${box.height}`;
         }
-        svgPut(this.axis, 'd', axis);
+        put(this.axis, 'd', axis);
     }
 
     drawLabels(valueTicks: Tick[], value: ChartScale, positions: Tick[], position: ChartScale & { size?: number }, measure: (text: string) => number, on: { xLabelsOn: boolean; yLabelsOn: boolean }): void {
@@ -626,7 +653,7 @@ export class ChartPlot implements PlotView {
                         taken = [left, left + wide];
                     }
                     const label = this.xLabels.add(t.text, x, under, anchor);
-                    if (angle) label.setAttribute('transform', `rotate(${angle} ${Math.round(x)} ${Math.round(under)})`);
+                    if (angle) put(label, 'transform', `rotate(${angle} ${Math.round(x)} ${Math.round(under)})`);
                 });
             }
         }
@@ -641,8 +668,8 @@ export class ChartPlot implements PlotView {
         const bottom = height - look.line * 0.25;
         const side = rtl ? width - look.line * 0.75 : look.line * 0.75;
         const standing = (text: string) => {
-            const el = this.titles.add(text, side, middleY, 'middle');
-            el.setAttribute('transform', `rotate(${rtl ? 90 : -90} ${Math.round(side)} ${Math.round(middleY)})`);
+            const title = this.titles.add(text, side, middleY, 'middle');
+            put(title, 'transform', `rotate(${rtl ? 90 : -90} ${Math.round(side)} ${Math.round(middleY)})`);
         };
         if (xTitle) {
             if (horizontal) standing(xTitle);
@@ -655,20 +682,18 @@ export class ChartPlot implements PlotView {
         this.titles.done();
     }
 
-    partOf(s: ModelSeries): SeriesPart {
+    seriesPart(s: ModelSeries): SeriesPart {
         let part = this.parts[s.index];
         if (!part) {
-            const group = svgPart(this.marks, 'g', 'mx-chart__series');
-            part = {
-                group,
-                area: svgPart(group, 'path', 'mx-chart__area'),
-                bars: svgPart(group, 'path', 'mx-chart__bars'),
-                rise: svgPart(group, 'path', 'mx-chart__rise'),
-                fall: svgPart(group, 'path', 'mx-chart__fall'),
-                cells: svgPart(group, 'g', 'mx-chart__cells'),
-                line: svgPart(group, 'path', 'mx-chart__line'),
-                dots: svgPart(group, 'path', 'mx-chart__dots')
-            };
+            const group = svgComponent(this.marksPart, 'g', 'mx-chart__series');
+            const area = svgComponent(group, 'path', 'mx-chart__area');
+            const bars = svgComponent(group, 'path', 'mx-chart__bars');
+            const rise = svgComponent(group, 'path', 'mx-chart__rise');
+            const fall = svgComponent(group, 'path', 'mx-chart__fall');
+            const cells = svgComponent(group, 'g', 'mx-chart__cells');
+            const line = svgComponent(group, 'path', 'mx-chart__line');
+            const dots = svgComponent(group, 'path', 'mx-chart__dots');
+            part = { groupPart: group, area, bars, rise, fall, cells, cellPaths: [], linePart: line, dotsPart: dots };
             this.parts[s.index] = part;
         }
         return part;
@@ -677,13 +702,13 @@ export class ChartPlot implements PlotView {
     drawSeries(position: ChartScale, value: ChartScale, measure: (text: string) => number): void {
         const { model } = this.input!;
         const taken: Rect[] = [];
-        for (const part of this.parts.splice(model.series.length)) part.group.remove();
+        for (const part of this.parts.splice(model.series.length)) removePart(part.groupPart);
         for (const s of model.series) {
-            const part = this.partOf(s);
-            svgPut(part.group, 'data-type', s.type);
-            part.group.style.setProperty('--_mark', markOf(s));
-            part.group.style.display = s.shown ? '' : 'none';
-            svgPut(part.line, 'stroke-dasharray', s.wrapped ? '6 4' : null);
+            const part = this.seriesPart(s);
+            put(part.groupPart, 'data-type', s.type);
+            css(part.groupPart, '--_mark', markOf(s));
+            css(part.groupPart, 'display', s.shown ? '' : 'none');
+            put(part.linePart, 'stroke-dasharray', s.wrapped ? '6 4' : null);
             if (!s.shown) continue;
             this.drawSeriesMarks(s, part, value);
             if (s.source.labels && s.source.labels !== 'none') {
@@ -772,23 +797,24 @@ export class ChartPlot implements PlotView {
                 if (s.source.markers) for (const p of run) dots.push({ x: p.px, y: p.py, r: radius });
             }
         }
-        svgPut(part.line, 'd', line);
-        svgPut(part.area, 'd', area);
-        svgPut(part.bars, 'd', bars);
-        svgPut(part.rise, 'd', rise);
-        svgPut(part.fall, 'd', fall);
-        svgPut(part.dots, 'd', circlesPath(dots));
-        this.drawCells(part.cells, cells);
+        put(part.linePart, 'd', line);
+        put(part.area, 'd', area);
+        put(part.bars, 'd', bars);
+        put(part.rise, 'd', rise);
+        put(part.fall, 'd', fall);
+        put(part.dotsPart, 'd', circlesPath(dots));
+        this.drawCells(part, cells);
     }
 
     /** One path for each color of a heat map. */
-    drawCells(group: SVGGElement, cells: Map<number, string>): void {
+    drawCells(part: SeriesPart, cells: Map<number, string>): void {
         const used = [...cells.keys()].sort((a, b) => a - b);
-        while (group.children.length > used.length) group.lastElementChild!.remove();
+        const paths = part.cellPaths;
+        while (paths.length < used.length) paths.push(svgComponent(part.cells, 'path', 'mx-chart__cell'));
+        for (const extra of paths.splice(used.length)) removePart(extra);
         used.forEach((index, i) => {
-            const path = (group.children[i] as SVGPathElement | undefined) ?? svgPart(group, 'path', 'mx-chart__cell');
-            path.style.setProperty('--_mark', this.heatClasses[index].color);
-            svgPut(path, 'd', cells.get(index)!);
+            css(paths[i], '--_mark', this.heatClasses[index].color);
+            put(paths[i], 'd', cells.get(index)!);
         });
     }
 
@@ -990,9 +1016,9 @@ export class ChartPlot implements PlotView {
         const input = this.input;
         const box = this.box;
         if (!slot || !input) {
-            svgPut(this.cross, 'd', null);
-            svgPut(this.activeBar, 'd', null);
-            this.activeDots.replaceChildren();
+            put(this.cross, 'd', null);
+            put(this.activeBar, 'd', null);
+            for (const dot of this.activeDotPaths.splice(0)) removePart(dot);
             return;
         }
         const { model, horizontal, look } = input;
@@ -1001,21 +1027,21 @@ export class ChartPlot implements PlotView {
             return type === 'line' || type === 'area' || type === 'rangeArea';
         });
         const at = Math.round(slot.at) + 0.5;
-        svgPut(this.cross, 'd', crosshair && lines ? (horizontal ? `M${box.left} ${at}h${box.width}` : `M${at} ${box.top}v${box.height}`) : null);
+        put(this.cross, 'd', crosshair && lines ? (horizontal ? `M${box.left} ${at}h${box.width}` : `M${at} ${box.top}v${box.height}`) : null);
         const rect = point ? this.bars.get(point) : undefined;
-        svgPut(this.activeBar, 'd', rect ? `M${rect.left} ${rect.top}h${rect.width}v${rect.height}h${-rect.width}z` : null);
-        const dots = this.activeDots;
+        put(this.activeBar, 'd', rect ? `M${rect.left} ${rect.top}h${rect.width}v${rect.height}h${-rect.width}z` : null);
+        const dots = this.activeDotPaths;
         const wanted = slot.points.filter(p => {
             const type = model.series[p.series].type;
             return type === 'line' || type === 'area' || type === 'rangeArea' || p === point;
         }).filter(p => !this.bars.has(p));
-        while (dots.children.length > wanted.length) dots.lastElementChild!.remove();
+        while (dots.length < wanted.length) dots.push(svgComponent(this.activeDots, 'path', 'mx-chart__active-dot'));
+        for (const extra of dots.splice(wanted.length)) removePart(extra);
         wanted.forEach((p, i) => {
             const series = model.series[p.series];
-            const dot = (dots.children[i] as SVGPathElement | undefined) ?? svgPart(dots, 'path', 'mx-chart__active-dot');
-            dot.style.setProperty('--_mark', this.markOfPoint(p));
+            css(dots[i], '--_mark', this.markOfPoint(p));
             const r = series.type === 'bubble' ? this.bubbleRadius(p) : look.markerSize / 2 + (p === point ? 1 : 0);
-            svgPut(dot, 'd', circlesPath([{ x: p.px, y: p.py, r }]));
+            put(dots[i], 'd', circlesPath([{ x: p.px, y: p.py, r }]));
         });
     }
 }

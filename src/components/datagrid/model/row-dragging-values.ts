@@ -1,3 +1,5 @@
+import type { ComponentBase } from '@motifx/core';
+
 /** The `rowDragging` options as the grid reads them: values, not getters (the handlers are kept apart). */
 export interface RowDraggingValues {
   allowReordering: boolean;
@@ -8,8 +10,8 @@ export interface RowDraggingValues {
   group: string | undefined;
   data: unknown;
   dragDirection: 'both' | 'vertical' | 'horizontal';
-  boundary: string | HTMLElement | undefined;
-  container: string | HTMLElement | undefined;
+  boundary: string | ComponentBase | undefined;
+  container: string | ComponentBase | undefined;
   cursorOffset: { x?: number; y?: number } | string | undefined;
   autoScroll: boolean;
   scrollSpeed: number;

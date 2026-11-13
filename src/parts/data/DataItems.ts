@@ -2,6 +2,7 @@ import { Emitter, type Event as MotifEvent, type IDisposable } from '@motifx/cor
 import type { data } from '@motifx-community/data';
 import { givenList } from '../../core/given-field';
 import type { ItemSource } from '../list/item-source';
+import { isEmptyKey } from './empty-key';
 import type { KeyedItem } from './keyed-item';
 import { KeyedItems } from './KeyedItems';
 import { foldText } from '../../core/fold-text';
@@ -120,7 +121,7 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
   async find(value: unknown, valueOf: (item: T) => unknown, same: (a: unknown, b: unknown) => boolean = Object.is): Promise<T | undefined> {
     const near = this.findLoaded(value, valueOf, same);
     if (near !== undefined || !this.source) return near;
-    if (value === null || value === undefined) return undefined;
+    if (isEmptyKey(value)) return undefined;
     const known = KeyedItems.of<T>(this.source, this.valueField);
     await known.request([value]);
     return known.get(value)?.item;
@@ -133,13 +134,13 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
 
   /** What is known of the item `find` requested from the data source: loading, found, or not in the source. */
   known(value: unknown): KeyedItem<T> | undefined {
-    if (!this.source || value === null || value === undefined) return undefined;
+    if (!this.source || isEmptyKey(value)) return undefined;
     return KeyedItems.of<T>(this.source, this.valueField).get(value);
   }
 
   /** Requests the item of `value` from the data source again after its request failed. */
   async retry(value: unknown): Promise<T | undefined> {
-    if (!this.source || value === null || value === undefined) return undefined;
+    if (!this.source || isEmptyKey(value)) return undefined;
     const known = KeyedItems.of<T>(this.source, this.valueField);
     await known.retry([value]);
     return known.get(value)?.item;

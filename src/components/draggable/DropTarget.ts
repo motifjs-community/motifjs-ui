@@ -1,6 +1,6 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { mark } from "../../core/draw-parts";
+import { mark } from "../../core/part-writes";
 import type { DropEventArgs } from "./drop-event-args";
 import type { DropTargetProps } from "./drop-target-props";
 
@@ -25,7 +25,7 @@ export class DropTarget extends Control<HTMLDivElement, DropTargetProps> {
     constructor(props?: IBaseProp<DropTargetProps>) {
         super('div', props);
         const own = (this.props ?? {}) as DropTargetProps;
-        this.element.classList.add('mx-drop-target');
+        this.class.add('mx-drop-target');
         if (this.childs?.length) this.controls.add(...this.childs);
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onDragEntering) this.onDragEntering(own.onDragEntering);
@@ -67,31 +67,31 @@ export class DropTarget extends Control<HTMLDivElement, DropTargetProps> {
 
     /** @internal A drag of its group began or ended. */
     markActive(on: boolean): void {
-        mark(this.element, 'data-drop-active', on);
+        mark(this, 'data-drop-active', on);
         if (!on) {
-            mark(this.element, 'data-drop-over', false);
-            mark(this.element, 'data-drop-refused', false);
+            mark(this, 'data-drop-over', false);
+            mark(this, 'data-drop-refused', false);
         }
     }
 
     /** @internal The draggable came over it; `false` when it is refused. */
     enter(args: DropEventArgs): boolean {
         this.entered.fire(args);
-        mark(this.element, 'data-drop-over', !args.cancel);
-        mark(this.element, 'data-drop-refused', args.cancel);
+        mark(this, 'data-drop-over', !args.cancel);
+        mark(this, 'data-drop-refused', args.cancel);
         return !args.cancel;
     }
 
     /** @internal The draggable left it. */
     leave(args: DropEventArgs): void {
-        mark(this.element, 'data-drop-over', false);
-        mark(this.element, 'data-drop-refused', false);
+        mark(this, 'data-drop-over', false);
+        mark(this, 'data-drop-refused', false);
         this.left.fire(args);
     }
 
     /** @internal The draggable was dropped on it. */
     drop(args: DropEventArgs): void {
-        mark(this.element, 'data-drop-over', false);
+        mark(this, 'data-drop-over', false);
         this.dropped.fire(args);
     }
 }

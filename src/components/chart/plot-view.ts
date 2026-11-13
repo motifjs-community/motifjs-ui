@@ -1,3 +1,5 @@
+import type { Component } from '@motifx/core';
+import type { DrawnTexts } from '../../parts/chart/chart-text';
 import type { ChartAxis } from './chart-axis';
 import type { ChartLook } from './chart-look';
 import type { ChartModel, ModelPoint, ModelSlot } from './chart-model';
@@ -13,6 +15,8 @@ export interface PlotInput {
     width: number;
     height: number;
     look: ChartLook;
+    /** The widths of the plot's texts in the chart's font: estimates until measured, then drawn again. */
+    texts: DrawnTexts;
     locale: string;
     /** The part of the positions in view, once zoomed or following live data; null for all of them. */
     window?: { from: number; to: number } | null;
@@ -43,8 +47,11 @@ export interface HeatClass {
  * The chart talks to each the same way: it draws, finds what is under a place, and shows a position and a value.
  */
 export interface PlotView {
-    svg: SVGSVGElement;
-    marks: SVGGElement;
+    svgPart: Component<SVGSVGElement>;
+    /** The group the marks are drawn in. */
+    marksPart: Component<SVGGElement>;
+    /** The size of the last drawing. */
+    size: { width: number; height: number };
     input: PlotInput | null;
     box: Rect;
     /** The positions in the order the keyboard walks them. */

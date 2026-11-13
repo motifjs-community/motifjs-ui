@@ -271,11 +271,14 @@ describe('editing events and methods', () => {
     const { grid } = make({ settings: { editable: true } });
     await settle();
     grid.editCell(0, 'name');
+    // The selection is written through the input's own method, which core calls a moment later.
+    await settle();
     let input = document.activeElement as HTMLInputElement;
     expect([input.selectionStart, input.selectionEnd]).toEqual([0, 6]);
     key(input, 'Escape');
     grid.settings.selectTextOnEditStart = false;
     grid.editCell(0, 'name');
+    await settle();
     input = document.activeElement as HTMLInputElement;
     expect([input.selectionStart, input.selectionEnd]).toEqual([6, 6]);
     await grid.dispose();

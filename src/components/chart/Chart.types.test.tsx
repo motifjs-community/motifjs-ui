@@ -1,6 +1,7 @@
 import type { ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { Chart } from './Chart';
 import type { ChartProps } from './chart-props';
 import { PartsPlot } from './PartsPlot';
@@ -11,9 +12,14 @@ function make(props: ChartProps): Chart {
     const chart = new Chart(props);
     hosts.push(mountHost(chart));
     chart.onMounted();
+    measureNow(chart);
     return chart;
 }
-const settle = () => Promise.resolve().then(() => Promise.resolve());
+// The changes land, then the draw they asked for runs with the window's next frame, here at once.
+const settle = async () => {
+    await Promise.resolve().then(() => Promise.resolve());
+    for (const host of hosts) if (!host.isDisposed) measureNow(host);
+};
 const $ = (chart: Chart, selector: string) => chart.element.querySelector(selector) as HTMLElement;
 const $$ = (chart: Chart, selector: string) => [...chart.element.querySelectorAll(selector)] as HTMLElement[];
 const key = (el: HTMLElement, name: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
@@ -29,7 +35,7 @@ describe('Chart, the parts of a whole', () => {
         const chart = make({ data: SHARES, xField: 'k', series: [{ type: 'pie', yField: 'v', name: 'Visits' }] });
         expect(chart.plot).toBeInstanceOf(PartsPlot);
         expect($$(chart, '.mx-chart__slice')).toHaveLength(3);
-        expect((chart.cartesian.svg as unknown as HTMLElement).style.display).toBe('none');
+        expect((chart.cartesian.svgPart.element as unknown as HTMLElement).style.display).toBe('none');
     });
 
     it('lists the parts in the legend, even for one series, and keeps their colors when one is hidden', async () => {
@@ -39,12 +45,16 @@ describe('Chart, the parts of a whole', () => {
         const items = $$(chart, '.mx-chart__legend-item');
         expect(items.map(i => i.textContent)).toEqual(['Search', 'Direct', 'Email']);
         const color = $$(chart, '.mx-chart__slice')[2].style.getPropertyValue('--_mark');
+        const slices = $$(chart, '.mx-chart__slice');
         items[0].click();
         await settle();
         expect(toggled.mock.calls[0][0].part).toBe(0);
         expect(toggled.mock.calls[0][0].visible).toBe(false);
         expect($$(chart, '.mx-chart__slice')).toHaveLength(2);
         expect($$(chart, '.mx-chart__slice')[1].style.getPropertyValue('--_mark')).toBe(color);
+        // The parts that stay are the same slices, drawn again in place.
+        expect($$(chart, '.mx-chart__slice')[0]).toBe(slices[1]);
+        expect($$(chart, '.mx-chart__slice')[1]).toBe(slices[2]);
     });
 
     it('writes the shares on the slices with room, and the total in a donut', () => {
@@ -89,6 +99,19 @@ describe('Chart, around a center', () => {
         expect($(chart, '.mx-chart__line').getAttribute('d')).toMatch(/Z$/);
         key($(chart, '.mx-chart__plot'), 'ArrowRight');
         expect(chart.activeSlot?.key).toBe('b');
+    });
+
+    it('writes new data into the shapes it has', async () => {
+        const chart = make({ data: [{ k: 'a', x: 1, y: 3 }, { k: 'b', x: 2, y: 2 }, { k: 'c', x: 3, y: 1 }], xField: 'k', series: [{ type: 'radar', yField: 'x' }, { type: 'radar', yField: 'y' }] });
+        const groups = $$(chart, '.mx-chart__series');
+        const line = $(chart, '.mx-chart__line');
+        const before = line.getAttribute('d');
+        chart.data = [{ k: 'a', x: 3, y: 1 }, { k: 'b', x: 1, y: 2 }, { k: 'c', x: 2, y: 3 }];
+        await settle();
+        expect($$(chart, '.mx-chart__series')).toEqual(groups);
+        expect($$(chart, '.mx-chart__series')[0]).toBe(groups[0]);
+        expect($(chart, '.mx-chart__line')).toBe(line);
+        expect(line.getAttribute('d')).not.toBe(before);
     });
 });
 

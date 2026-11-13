@@ -1,5 +1,6 @@
 import { reactive, type Component, type ComponentBase } from '@motifx/core';
 import { part } from '../../core/draw-parts';
+import { put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from '../datagrid/DataGrid';
 import type { GridColumn } from '../datagrid/grid-column';
@@ -39,15 +40,11 @@ export class ChartTable {
 
     constructor(owner: ComponentBase) {
         this.host = part<HTMLDivElement>(owner, 'div', 'mx-chart__table');
-        this.host.element.setAttribute('role', 'region');
-    }
-
-    get element(): HTMLDivElement {
-        return this.host.element;
+        this.host.attr.add({ role: 'region' });
     }
 
     draw(model: ChartModel, plot: PlotView, name: string, position: string): void {
-        this.element.setAttribute('aria-label', name);
+        put(this.host, 'aria-label', name);
         const shape = shapeOf(model, plot, position);
         this.shape = shape;
         const key = shape.columns.map(c => `${c.field}:${c.title}`).join('|');

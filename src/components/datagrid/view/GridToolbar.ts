@@ -1,8 +1,9 @@
 import { ComponentBase, untracked } from '@motifx/core';
-import { css, handOver } from '../../../core/draw-parts';
+import { handOver, loose, part, textPart } from '../../../core/draw-parts';
+import { css, mark, put, text } from '../../../core/part-writes';
+import { orderControls } from '../../../core/order-controls';
 import { follow } from '../../../core/follow';
 import { columnsMark, downloadMark, plusMark, saveMark, searchMark, undoMark } from '../../../core/glyphs';
-import { isHtmlElement, isNode } from '../../../core/node-kind';
 import { Button } from '../../button/Button';
 import { TextBox } from '../../textbox/TextBox';
 import { Toolbar } from '../../toolbar/Toolbar';
@@ -28,8 +29,23 @@ type Field = (typeof FIELDS)[number];
 
 /** `shape`: the export button is a menu while it offers more than one command, else a plain button. */
 type Entry = { key: string; name: GridToolbarItemName | null; item: GridToolbarItem; shape?: 'menu' | 'plain' };
-/** `group`: the row actions, kit buttons that stand after the item's element. */
-type Made = { item: GridToolbarItem; shape?: 'menu' | 'plain'; control: ComponentBase | null; element: HTMLElement; draw: () => void; drop?: () => void; group?: BarButtons<any> };
+/**
+ * `control`: the part the bar holds; `own`: the control an app reaches (`controlOf`), if the item has one. `group`: the row
+ * actions, kit buttons that stand after the item's part. `kept`: the bar takes it out without disposing it. `box`: the
+ * item the part follows; `takes`: the part follows another item object given for its key (a new list of the same
+ * items), so it is not made again. An app's content is its own part, made again for another item.
+ */
+type Made = {
+  box: { item: GridToolbarItem };
+  takes: boolean;
+  shape?: 'menu' | 'plain';
+  control: ComponentBase;
+  own: ComponentBase | null;
+  draw: () => void;
+  drop?: () => void;
+  group?: BarButtons<any>;
+  kept?: boolean;
+};
 
 const isOwnName = (name: string | undefined): name is GridToolbarItemName => !!name && (ORDER as readonly string[]).includes(name);
 const same = (a: readonly unknown[], b: readonly unknown[]) => a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
@@ -44,9 +60,9 @@ const same = (a: readonly unknown[], b: readonly unknown[]) => a.length === b.le
 export class GridToolbar<T> {
   readonly bar: Toolbar;
   private made = new Map<string, Made>();
-  /** The elements in the order they stand: the `before` items, the gap, the `after` items. */
-  private order: { element: HTMLElement; control: ComponentBase | null }[] = [];
-  private readonly spacer: HTMLElement;
+  /** The parts in the order they stand: the `before` items, the gap, the `after` items. */
+  private order: ComponentBase[] = [];
+  private readonly spacer: ComponentBase;
   private readonly ids = new WeakMap<object, string>();
   private nextId = 0;
   /** The list last placed, to place again when the row actions get another button. */
@@ -55,6 +71,8 @@ export class GridToolbar<T> {
   private listSeen: unknown[] = [];
   /** The fields of the app's items, as the follow read them last. */
   private values = new WeakMap<GridToolbarItem, Partial<Record<Field, unknown>>>();
+  /** The `data-overflow` written last on each part. */
+  private readonly overflows = new WeakMap<ComponentBase, string>();
   private stopItems: (() => void) | null = null;
   private disposed = false;
 
@@ -65,11 +83,10 @@ export class GridToolbar<T> {
     private readonly owner: ComponentBase,
   ) {
     this.bar = new Toolbar({ size: 'sm' });
-    this.bar.element.classList.add('mx-data-grid__toolbar');
-    this.spacer = document.createElement('span');
-    this.spacer.className = 'mx-data-grid__toolbar-gap';
-    this.spacer.setAttribute('aria-hidden', 'true');
-    this.bar.element.append(this.spacer);
+    this.bar.class.add('mx-data-grid__toolbar');
+    const spacer = part<HTMLSpanElement>(this.bar, 'span', 'mx-data-grid__toolbar-gap');
+    spacer.attr.add({ 'aria-hidden': 'true' });
+    this.spacer = spacer;
     owner.motif.setDisposable(() => {
       this.disposed = true;
       this.stopItems?.();
@@ -85,12 +102,7 @@ export class GridToolbar<T> {
 
   /** The control made for an item (`'searchPanel'`, `'exportButton'`, or a name of the app's own), while it is in the bar. */
   controlOf(name: string): ComponentBase | null {
-    return this.made.get(name)?.control ?? null;
-  }
-
-  /** The element of an item while it is in the bar. */
-  elementOf(name: string): HTMLElement | null {
-    return this.made.get(name)?.element ?? null;
+    return this.made.get(name)?.own ?? null;
   }
 
   /** Whether the bar shows: as `visible` says, else while an item shows. */
@@ -225,31 +237,30 @@ export class GridToolbar<T> {
     const next = new Map<string, Made>();
     for (const entry of list) {
       const old = this.made.get(entry.key);
-      next.set(entry.key, old && old.item === entry.item && old.shape === entry.shape ? old : this.make(entry));
+      const content = !entry.name && !!entry.item.content;
+      const keep = !!old && old.shape === entry.shape && (old.box.item === entry.item || (old.takes && !content));
+      // Kept: the part follows the item given now, and its draw writes what differs.
+      if (keep) old.box.item = entry.item;
+      next.set(entry.key, keep ? old : this.make(entry));
     }
     for (const [key, old] of this.made) {
       if (next.get(key) === old) continue;
       old.drop?.();
-      if (old.control) bar.controls.remove(old.control);
-      else old.element.remove();
+      if (old.control.parent !== bar) continue;
+      if (old.kept) bar.controls.silentDetach(old.control);
+      else bar.controls.remove(old.control);
     }
     this.made = next;
-    // An item stands for its element and, for the row actions, the buttons after it.
-    const parts = (made: Made) => [made, ...(made.group?.all().map((b) => ({ element: b.element, control: b as ComponentBase })) ?? [])];
+    // An item stands for its part and, for the row actions, the buttons after it.
+    const parts = (made: Made): ComponentBase[] => [made.control, ...(made.group?.all() ?? [])];
     const items = list.map((e) => next.get(e.key)!);
-    this.order = [...items.filter((_, i) => !after[i]).flatMap(parts), { element: this.spacer, control: null }, ...items.filter((_, i) => after[i]).flatMap(parts)];
-    for (const { control } of this.order) if (control && !bar.controls.items.includes(control)) bar.controls.add(control);
+    this.order = [...items.filter((_, i) => !after[i]).flatMap(parts), this.spacer, ...items.filter((_, i) => after[i]).flatMap(parts)];
     this.arrange();
   }
 
-  /** Puts the elements in order again (building the bar appends its controls after the gap). */
+  /** Puts the parts in order again (building the bar adds its own controls after the gap). */
   arrange() {
-    const bar = this.bar.element;
-    let before: ChildNode | null = bar.firstChild;
-    for (const { element } of this.order) {
-      if (element !== before) bar.insertBefore(element, before);
-      before = element.nextSibling;
-    }
+    orderControls(this.bar, this.order);
   }
 
   private make(entry: Entry): Made {
@@ -265,12 +276,14 @@ export class GridToolbar<T> {
     const grid = this.host.grid;
     const own = name ? this.ownButton(name) : null;
     const button = new Button(shape === 'menu' ? { menu: [] } : {});
-    if (own) button.element.classList.add(own.className);
-    if (own?.keepFocus) button.element.addEventListener('pointerdown', (e) => e.preventDefault());
+    const box = { item };
+    if (own) button.class.add(own.className);
+    if (own?.keepFocus) button.motif.on('pointerdown', (_, e) => e.preventDefault());
     if (shape !== 'menu') {
-      button.element.addEventListener('click', (event) => {
+      button.motif.on('click', (_, event) => {
+        const item = box.item;
         if (item.click) item.click({ item, grid, event });
-        else own?.run(button.element);
+        else own?.run(button);
       });
     }
     // The grid's own icon is created once; the app's is given again only when the follow reads another.
@@ -278,6 +291,7 @@ export class GridToolbar<T> {
     let icon: unknown = undefined;
     let menu: unknown[] | null = null;
     const draw = () => {
+      const item = box.item;
       const text = this.field(item, 'text') ?? own?.text() ?? '';
       const iconOnly = (this.field(item, 'showText') ?? (name ? 'inMenu' : 'always')) === 'inMenu' && (item.icon !== undefined || !!own);
       button.text = iconOnly ? '' : text;
@@ -298,9 +312,9 @@ export class GridToolbar<T> {
           button.menu = commands.map((c) => ({ text: c.text, enabled: c.enabled, click: () => c.run() }));
         }
       }
-      this.overflow(button.element, item, name ? 'auto' : 'never');
+      this.overflow(button, item, name ? 'auto' : 'never');
     };
-    return { item, shape, control: button, element: button.element, draw };
+    return { box, takes: true, shape, control: button, own: button, draw };
   }
 
   /** What one of the grid's buttons shows and does. */
@@ -326,7 +340,7 @@ export class GridToolbar<T> {
           run: () => this.host.exportCommands()[0]?.run(),
         };
       default:
-        return { className: 'mx-data-grid__columns', text: t('gridColumnChooser'), icon: columnsMark(), enabled: () => true, run: (anchor: HTMLElement) => this.host.openColumns(anchor) };
+        return { className: 'mx-data-grid__columns', text: t('gridColumnChooser'), icon: columnsMark(), enabled: () => true, run: (anchor: ComponentBase) => this.host.openColumns(anchor) };
     }
   }
 
@@ -346,8 +360,10 @@ export class GridToolbar<T> {
       },
       onEnter: () => search.flush(),
     });
-    box.element.classList.add('mx-data-grid__search');
+    box.class.add('mx-data-grid__search');
+    const given = { item };
     const draw = () => {
+      const item = given.item;
       box.label = model.text('gridSearch');
       box.placeholder = settings.get('searchPlaceholder') || model.text('gridSearchPlaceholder');
       box.hint = this.field(item, 'hint') ?? '';
@@ -355,76 +371,74 @@ export class GridToolbar<T> {
       box.visible = this.field(item, 'visible') !== false;
       handOver(box, search.state.text);
       const w = settings.get('searchPanelWidth');
-      css(box.element, 'inline-size', typeof w === 'number' ? `${w}px` : w);
-      this.overflow(box.element, item, 'never');
+      css(box, 'inline-size', typeof w === 'number' ? `${w}px` : w);
+      this.overflow(box, item, 'never');
     };
-    return { item, control: box, element: box.element, draw };
+    return { box: given, takes: true, control: box, own: box, draw };
   }
 
+  /** The grid's group panel; it lives as long as the grid, so the bar only takes it out. */
   private makeGroupPanel(item: GridToolbarItem): Made {
-    const element = this.host.groupPanel().element;
+    const panel = this.host.groupPanel();
+    const box = { item };
     const draw = () => {
-      const on = this.field(item, 'visible') !== false;
-      if (element.hasAttribute('hidden') === on) element.toggleAttribute('hidden', !on);
-      this.overflow(element, item, 'never');
+      mark(panel.part, 'hidden', this.field(box.item, 'visible') === false);
+      this.overflow(panel.part, box.item, 'never');
     };
-    return { item, control: null, element, draw };
+    return { box, takes: true, control: panel.part, own: null, draw, kept: true };
   }
 
-  /** The actions of the target rows: a hidden element that says what they act on, then their buttons. */
+  /** The actions of the target rows: a hidden part that says what they act on, then their buttons. */
   private makeRowActions(item: GridToolbarItem): Made {
-    const element = document.createElement('span');
-    element.className = 'mx-data-grid__bar-target';
-    element.id = `${this.host.gridId}-bar-target`;
-    element.hidden = true;
+    const id = `${this.host.gridId}-bar-target`;
+    const target = loose<HTMLSpanElement>('span', 'mx-data-grid__bar-target');
+    target.attr.add({ id, hidden: true });
     let made: Made | null = null;
+    const box = { item };
     const group = new BarButtons<T>(this.model, 'toolbar', {
       run: (entry) => this.host.runBarAction(entry, 'toolbar'),
-      visible: () => this.field(item, 'visible') !== false,
-      describedBy: element.id,
+      visible: () => this.field(box.item, 'visible') !== false,
+      describedBy: id,
       added: () => {
         // A button made later is put in its place; the first ones are placed with the item.
         if (made && this.placed && this.made.get('rowActions') === made) this.place(this.placed.list, this.placed.after);
       },
     });
     const draw = () => {
-      const label = this.model.actionSets.targetLabel();
-      if (element.textContent !== label) element.textContent = label;
+      text(target, this.model.actionSets.targetLabel());
       group.draw();
-      for (const button of group.all()) this.overflow(button.element, item, 'auto');
+      for (const button of group.all()) this.overflow(button, box.item, 'auto');
     };
     const drop = () => {
       group.dispose();
       if (!this.bar.isDisposed) for (const button of group.all()) this.bar.controls.remove(button);
     };
-    made = { item, control: null, element, draw, drop, group };
+    made = { box, takes: true, control: target, own: null, draw, drop, group };
     return made;
   }
 
   private makeContent(item: GridToolbarItem): Made {
     const content = item.content!();
-    const control = content instanceof ComponentBase ? content : null;
-    let element: HTMLElement;
-    if (control) element = control.element as HTMLElement;
-    else if (isHtmlElement(content)) element = content;
+    const own = content instanceof ComponentBase ? content : null;
+    let control: ComponentBase;
+    if (own) control = own;
     else {
-      element = document.createElement('span');
-      if (isNode(content)) element.append(content);
-      else if (content !== undefined && content !== null) element.textContent = String(content);
+      control = loose<HTMLSpanElement>('span');
+      if (content !== undefined && content !== null) textPart(control, String(content));
     }
     const draw = () => {
-      const on = this.field(item, 'visible') !== false;
-      if (element.hasAttribute('hidden') === on) element.toggleAttribute('hidden', !on);
-      this.overflow(element, item, 'never');
+      mark(control, 'hidden', this.field(item, 'visible') === false);
+      this.overflow(control, item, 'never');
     };
-    return { item, control, element, draw };
+    return { box: { item }, takes: false, control, own, draw };
   }
 
   /** Writes whether the element may go into the "more" menu where the toolbar reads it, and lays the bar out again when it changes. */
-  private overflow(element: HTMLElement, item: GridToolbarItem, fallback: 'auto' | 'always' | 'never') {
+  private overflow(control: ComponentBase, item: GridToolbarItem, fallback: 'auto' | 'always' | 'never') {
     const value = this.field(item, 'overflow') ?? fallback;
-    if (element.dataset.overflow === value) return;
-    element.dataset.overflow = value;
+    if (this.overflows.get(control) === value) return;
+    this.overflows.set(control, value);
+    put(control, 'data-overflow', value);
     this.bar.updateOverflow();
   }
 }

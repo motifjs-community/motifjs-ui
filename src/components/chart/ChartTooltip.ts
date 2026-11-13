@@ -1,4 +1,7 @@
-import { css, shown, text } from '../../core/draw-parts';
+import { Component, type ComponentBase } from '@motifx/core';
+import { part, partBefore, removePart } from '../../core/draw-parts';
+import { boxOf, measure } from '../../core/measure';
+import { css, kept, mark, shown, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { shareText } from './plot-text';
 import type { ChartPoint } from './chart-point';
@@ -16,68 +19,94 @@ interface TooltipRow {
  * reaches them too. Names are written as text, since they come from data.
  */
 export class ChartTooltip {
-    element: HTMLDivElement;
+    part: Component<HTMLDivElement>;
+    /** Where the last `place` asked for it, until its size is read. */
+    at: { x: number; y: number; width: number; height: number; gap: number } | null = null;
+    /** The parts of the tooltip, made the first time they are needed and written in place after. */
+    private title: Component<HTMLDivElement> | null = null;
+    private lines: { line: Component<HTMLDivElement>; key: Component<HTMLSpanElement>; value: Component<HTMLSpanElement>; name: Component<HTMLSpanElement> }[] = [];
+    /** Where the app's format shows, and the component it gave last. */
+    private custom: Component<HTMLDivElement> | null = null;
+    private given: ComponentBase | null = null;
 
-    constructor(doc: Document) {
-        this.element = doc.createElement('div');
-        this.element.className = 'mx-chart__tooltip';
-        this.element.setAttribute('aria-hidden', 'true');
-        shown(this.element, false);
+    /** The tooltip is a part of `parent` (the plot). */
+    constructor(parent: ComponentBase) {
+        this.part = part<HTMLDivElement>(parent, 'div', 'mx-chart__tooltip');
+        this.part.attr.add({ 'aria-hidden': 'true' });
+        shown(this.part, false);
     }
 
     hide(): void {
-        shown(this.element, false);
+        shown(this.part, false);
     }
 
-    show(context: ChartTooltipContext, rows: readonly TooltipRow[], format: ((context: ChartTooltipContext) => string | Node) | undefined): void {
-        const el = this.element;
+    show(context: ChartTooltipContext, rows: readonly TooltipRow[], format: ((context: ChartTooltipContext) => string | ComponentBase) | undefined): void {
         if (format) {
             const content = format(context);
-            if (typeof content === 'string') text(el, content);
-            else el.replaceChildren(content);
+            this.write('', []);
+            if (!this.custom) this.custom = part<HTMLDivElement>(this.part, 'div', 'mx-chart__tooltip-custom');
+            // What the app's format gives: a text written in place, a component put in place of the one before.
+            if (this.given && this.given !== content) removePart(this.given);
+            this.given = null;
+            if (typeof content === 'string') text(this.custom, content);
+            else {
+                text(this.custom, '');
+                if (content.parent !== this.custom) this.custom.controls.add(content);
+                this.given = content;
+            }
+            kept(this.custom, true);
         } else {
             this.write(context.title, rows);
         }
-        shown(el, true);
+        shown(this.part, true);
     }
 
+    /** The title and one row per point, written into the parts the tooltip has; rows are added or taken away at the end. */
     write(title: string, rows: readonly TooltipRow[]): void {
-        const el = this.element;
-        const doc = el.ownerDocument;
-        el.replaceChildren();
-        if (title) {
-            const head = doc.createElement('div');
-            head.className = 'mx-chart__tooltip-title';
-            head.textContent = title;
-            el.append(head);
+        const tip = this.part;
+        if (this.custom) kept(this.custom, false);
+        if (title && !this.title) this.title = partBefore<HTMLDivElement>(tip, this.lines[0]?.line ?? null, 'div', 'mx-chart__tooltip-title');
+        if (this.title) {
+            if (title) text(this.title, title);
+            kept(this.title, !!title);
         }
-        for (const row of rows) {
-            const line = doc.createElement('div');
-            line.className = 'mx-chart__tooltip-row';
-            if (row.active) line.setAttribute('data-active', '');
-            const key = doc.createElement('span');
-            key.className = 'mx-chart__tooltip-key';
-            css(key, '--_mark', row.mark);
-            const value = doc.createElement('span');
-            value.className = 'mx-chart__tooltip-value';
+        while (this.lines.length > rows.length) removePart(this.lines.pop()!.line);
+        while (this.lines.length < rows.length) {
+            const line = part<HTMLDivElement>(tip, 'div', 'mx-chart__tooltip-row');
+            this.lines.push({
+                line,
+                key: part<HTMLSpanElement>(line, 'span', 'mx-chart__tooltip-key'),
+                value: part<HTMLSpanElement>(line, 'span', 'mx-chart__tooltip-value'),
+                name: part<HTMLSpanElement>(line, 'span', 'mx-chart__tooltip-name'),
+            });
+        }
+        rows.forEach((row, i) => {
+            const own = this.lines[i];
+            mark(own.line, 'data-active', row.active);
+            css(own.key, '--_mark', row.mark);
             const size = row.point.size === null ? '' : ` (${row.point.size})`;
             const share = row.point.share === null ? '' : ` · ${shareText(uiLocale.locale, row.point.share)}`;
-            value.textContent = row.point.yText + size + share;
-            const name = doc.createElement('span');
-            name.className = 'mx-chart__tooltip-name';
-            name.textContent = row.point.series;
-            line.append(key, value, name);
-            el.append(line);
-        }
+            text(own.value, row.point.yText + size + share);
+            text(own.name, row.point.series);
+        });
     }
 
-    /** Beside the position, on the side with room, and always inside the plot. */
+    /** Beside the position, on the side with room, and always inside the plot: placed with the next frame, once its size is read. */
     place(x: number, y: number, width: number, height: number, gap: number): void {
-        const el = this.element;
-        const wide = el.offsetWidth;
-        const tall = el.offsetHeight;
-        const left = x + gap + wide > width ? x - gap - wide : x + gap;
-        const top = Math.max(0, Math.min(height - tall, y - tall / 2));
-        css(el, 'transform', `translate(${Math.round(Math.max(0, left))}px, ${Math.round(top)}px)`);
+        this.at = { x, y, width, height, gap };
+        measure(this.part, this.readSize, this.writePlace);
     }
+
+    private readonly readSize = () => {
+        const box = boxOf(this.part);
+        return { wide: box.offsetWidth, tall: box.offsetHeight };
+    };
+
+    private readonly writePlace = ({ wide, tall }: { wide: number; tall: number }) => {
+        const at = this.at;
+        if (!at) return;
+        const left = at.x + at.gap + wide > at.width ? at.x - at.gap - wide : at.x + at.gap;
+        const top = Math.max(0, Math.min(at.height - tall, at.y - tall / 2));
+        css(this.part, 'transform', `translate(${Math.round(Math.max(0, left))}px, ${Math.round(top)}px)`);
+    };
 }

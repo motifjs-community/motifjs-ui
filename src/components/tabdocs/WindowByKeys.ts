@@ -1,5 +1,7 @@
 import { untracked } from '@motifx/core';
 import { isChord } from '../../core/keyboard';
+import { mark, put } from '../../core/part-writes';
+import { onWindow } from '../../core/window-events';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabRect } from './tab-rect';
 import type { TabWindow } from './TabWindow';
@@ -22,22 +24,17 @@ export class WindowByKeys {
   start(w: TabWindow): boolean {
     const m = this.manager;
     if (this.current || w.isMaximized || !m.windowChanging('moveWindow', w, true)) return false;
-    const view = m.element.ownerDocument.defaultView ?? window;
     const key = (e: KeyboardEvent) => untracked(() => this.key(e));
     const away = () => untracked(() => this.end(true));
-    view.addEventListener('keydown', key, true);
-    view.addEventListener('pointerdown', away, true);
-    view.addEventListener('blur', away);
+    const stops = [onWindow(m.element, 'keydown', key, true), onWindow(m.element, 'pointerdown', away, true), onWindow(m.element, 'blur', away)];
     this.current = {
       window: w,
       start: { ...w.rect },
       stop: () => {
-        view.removeEventListener('keydown', key, true);
-        view.removeEventListener('pointerdown', away, true);
-        view.removeEventListener('blur', away);
+        for (const stop of stops) stop();
       },
     };
-    w.element.toggleAttribute('data-keys', true);
+    mark(w.part, 'data-keys', true);
     m.sayText(m.textOf('tabDocsWindowKeys'));
     return true;
   }
@@ -49,7 +46,7 @@ export class WindowByKeys {
     this.current = null;
     c.stop();
     const w = c.window;
-    w.element.removeAttribute('data-keys');
+    put(w.part, 'data-keys', null);
     if (!keep) w.place(c.start);
     const r = w.rect;
     const resized = r.width !== c.start.width || r.height !== c.start.height;

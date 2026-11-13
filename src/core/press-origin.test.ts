@@ -1,26 +1,30 @@
+import { Component } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
+import { mountHost } from '../../tests/helpers';
 import { onLookChanged } from './look-watch';
-import { installPressOrigin } from './press-origin';
+import { installPressOrigin, showsPresses } from './press-origin';
 
-const parts: HTMLElement[] = [];
+const hosts: Component<HTMLDivElement>[] = [];
 function part(): HTMLElement {
-  const el = document.body.appendChild(document.createElement('button'));
-  el.setAttribute('data-mx-press', '');
+  const button = new Component<HTMLButtonElement>('button');
+  showsPresses(button);
+  hosts.push(mountHost(button));
+  const el = button.element;
   el.getBoundingClientRect = () => ({ left: 10, top: 20, width: 100, height: 40, right: 110, bottom: 60, x: 10, y: 20, toJSON() {} }) as DOMRect;
   Object.defineProperty(el, 'offsetWidth', { value: 100 });
   Object.defineProperty(el, 'offsetHeight', { value: 40 });
-  parts.push(el);
   return el;
 }
 
-afterEach(() => {
-  for (const el of parts.splice(0)) el.remove();
+afterEach(async () => {
+  for (const host of hosts.splice(0)) await host.dispose();
 });
 
 describe('press origin', () => {
   it('writes where a pointer pressed, and takes the mark away when it is let go', () => {
     installPressOrigin();
     const el = part();
+    expect(el.hasAttribute('data-mx-press')).toBe(true);
     el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 40, clientY: 30 }));
     expect(el.hasAttribute('data-pressed')).toBe(true);
     expect([el.style.getPropertyValue('--_press-x'), el.style.getPropertyValue('--_press-y')]).toEqual(['30px', '10px']);
@@ -56,5 +60,20 @@ describe('look changes', () => {
     await new Promise((done) => setTimeout(done, 0));
     expect(told).toBe(1);
     inner.remove();
+  });
+
+  it('tells when fonts finish loading, where the browser can say so', async () => {
+    const fonts = new EventTarget();
+    Object.defineProperty(document, 'fonts', { value: fonts, configurable: true });
+    let told = 0;
+    const stop = onLookChanged(() => told++);
+    fonts.dispatchEvent(new Event('loadingdone'));
+    await new Promise((done) => setTimeout(done, 0));
+    expect(told).toBe(1);
+    stop();
+    fonts.dispatchEvent(new Event('loadingdone'));
+    await new Promise((done) => setTimeout(done, 0));
+    expect(told).toBe(1);
+    delete (document as { fonts?: unknown }).fonts;
   });
 });

@@ -1,4 +1,4 @@
-import { effect, untracked } from '@motifx/core';
+import { Component, effect, untracked } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mount } from '../../../tests/helpers';
@@ -202,13 +202,13 @@ describe.each(dataKinds)('DataGrid with %s data', (_, kind) => {
         autoExpandAll: true,
         template: (ctx) => {
           seen.push(ctx.row);
-          const el = document.createElement('span');
-          el.className = 'detail-text';
+          const part = new Component<HTMLSpanElement>('span');
+          part.class.add('detail-text');
           effect(() => {
             const row = ctx.row;
-            el.textContent = untracked(() => row.name);
+            part.setText(untracked(() => row.name));
           });
-          return el;
+          return part;
         },
       },
     });

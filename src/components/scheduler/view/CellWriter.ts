@@ -8,7 +8,6 @@ import { CellAttributes } from './CellAttributes';
  */
 export class CellWriter<K> {
   private readonly cells = new Map<number, { key: K; c: ComponentBase }>();
-  private readonly keys = new WeakMap<Element, K>();
 
   constructor(
     /** Writes what the cell shows: its place, its day and time, its words. */
@@ -21,7 +20,6 @@ export class CellWriter<K> {
   add(id: number, key: K, c: ComponentBase): void {
     untracked(() => {
       this.cells.set(id, { key, c });
-      this.keys.set(c.element, key);
       const cell = new CellAttributes(c);
       this.look(key, cell);
       this.focus(key, cell);
@@ -41,6 +39,11 @@ export class CellWriter<K> {
   /** Every cell's key, to see which show something else now (`write` them). */
   forEach(fn: (key: K, id: number) => void): void {
     untracked(() => this.cells.forEach(({ key }, id) => fn(key, id)));
+  }
+
+  /** Every cell with its key, as it is now (another cell template fills the same cells again). */
+  each(fn: (key: K, c: ComponentBase) => void): void {
+    untracked(() => this.cells.forEach(({ key, c }) => fn(key, c)));
   }
 
   /** A cell again, all of it: its key shows something else now. */
@@ -69,9 +72,14 @@ export class CellWriter<K> {
     });
   }
 
-  /** The cell an event is on (`selector` names the cells). */
-  placeOf(e: Event, selector: string): K | undefined {
-    const el = (e.target as Element | null)?.closest?.(selector);
-    return el ? this.keys.get(el) : undefined;
+  /** The key of the first cell `test` picks. */
+  find(test: (cell: ComponentBase) => boolean): K | undefined {
+    for (const { key, c } of this.cells.values()) if (test(c)) return key;
+    return undefined;
+  }
+
+  /** The cell an event is on: the cell itself or what it holds. */
+  placeOf(e: Event): K | undefined {
+    return this.find((cell) => cell.motif.isEventFrom(e));
   }
 }

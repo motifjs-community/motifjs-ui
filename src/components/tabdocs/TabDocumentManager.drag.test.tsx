@@ -1,6 +1,7 @@
 import { Component } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
@@ -86,6 +87,8 @@ function pointer(type: string, target: EventTarget, x: number, y: number, init: 
   Object.defineProperty(e, 'pointerId', { value: 1 });
   Object.defineProperty(e, 'pointerType', { value: init.pointerType ?? 'mouse' });
   target.dispatchEvent(e);
+  // A frame between pointer events, as in a browser: what the event asked to measure lands now.
+  if (hosts.length) measureNow(hosts[0]);
   return e;
 }
 
@@ -446,13 +449,14 @@ describe('TabDocumentManager: dragging a tab', () => {
     const add = EventTarget.prototype.addEventListener;
     const held = new Set<EventTarget>();
     vi.spyOn(EventTarget.prototype, 'addEventListener').mockImplementation(function (this: EventTarget, type: string, fn: any, options?: any) {
-      if (type === 'touchmove' && typeof options === 'object' && options.passive === false) held.add(this);
+      // On an element a listener is not passive unless asked: only the window, the document and the body default to passive.
+      if (type === 'touchmove' && !(typeof options === 'object' && options?.passive)) held.add(this);
       return add.call(this, type, fn, options);
     });
     vi.useFakeTimers();
     const m = managerWith([['A', 'B'], ['C']], { longPressDelay: 400 });
     lay(m);
-    expect(m.groups.every((g) => held.has(g.barElement))).toBe(true);
+    expect(m.groups.every((g) => held.has(g.barPart.element))).toBe(true);
     const move = () => {
       const e = new Event('touchmove', { bubbles: true, cancelable: true });
       header(m, 'A').dispatchEvent(e);

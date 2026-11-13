@@ -1,10 +1,11 @@
 import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { iconPart, mark, part, put, shown, text } from "../../core/draw-parts";
+import { iconPart, part } from "../../core/draw-parts";
 import { glyph } from "../../core/glyphs";
 import type { IconSource } from "../../core/icon-source";
 import { onLanguage } from "../../core/on-language";
-import { scrollParent, watchScroll } from "../../core/scroll-watch";
+import { mark, put, shown, text } from "../../core/part-writes";
+import { boxOf, measure, onLayout, pageOf, scrollerOf } from "../../core/measure";
 import { uiLocale } from "../../core/ui-locale";
 import { Button } from "../button/Button";
 import { Toolbar } from "../toolbar/Toolbar";
@@ -46,13 +47,17 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
     navigationButton: Button | null = null;
     logoPart: ComponentBase | null = null;
     placed: ComponentBase | null = null;
+    /** What `scrollBehavior` watches when the app gives it (`scrollTarget`). */
+    scrollPart: ComponentBase | null = null;
     stopScroll: (() => void) | null = null;
+    /** What scrolled at the last look and how far, to tell which way it moved; undefined before the first. */
+    lastScroller: ComponentBase | null | undefined = undefined;
+    lastTop = 0;
 
     constructor(props?: IBaseProp<AppBarProps>) {
         super('header', props);
         const own = (this.props ?? {}) as AppBarProps;
-        const el = this.element;
-        el.classList.add('mx-app-bar');
+        this.class.add('mx-app-bar');
         this.row = part<HTMLDivElement>(this, 'div', 'mx-app-bar__row');
         this.start = part<HTMLDivElement>(this.row, 'div', 'mx-app-bar__start');
         this.logoHost = part<HTMLSpanElement>(this.start, 'span', 'mx-app-bar__logo');
@@ -74,22 +79,21 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
         for (const name of ['title', 'subtitle', 'headingLevel'] as const) this.observeProperty(name, () => this.drawTitles());
         for (const name of ['navigation', 'navigationGlyph', 'navigationLabel'] as const) this.observeProperty(name, () => this.drawNavigation());
         for (const name of ['titleAlign', 'tone', 'prominent', 'position'] as const) this.observeProperty(name, () => this.drawLook());
-        for (const name of ['scrollBehavior', 'scrollTarget'] as const) this.observeProperty(name, () => this.followScroll());
+        this.observeProperty('scrollBehavior', () => this.followScroll());
+        this.observeProperty<ComponentBase | null | undefined>('scrollTarget', target => {
+            this.scrollPart = target ?? null;
+            this.followScroll();
+        });
         this.observeProperty('logo', () => this.drawLogo());
         this.observeProperty('actions', () => this.drawActions());
         this.observeProperty('content', () => this.placeContent());
         onLanguage(this, () => this.drawNavigation());
         // A hidden bar comes back for the keyboard, or focus would be out of sight.
-        el.addEventListener('focusin', () => mark(el, 'data-hidden', false));
+        this.motif.on('focusin', () => mark(this, 'data-hidden', false));
         this.motif.setDisposable(() => {
             this.stopScroll?.();
             this.navigationClick.dispose();
         });
-    }
-
-    // In the page now: what scrolls around the bar can be found.
-    override onMounted(): void {
-        this.followScroll();
     }
 
     // Properties (see AppBarProps).
@@ -193,10 +197,10 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
     set scrollBehavior(value: Bind<AppBarScrollBehavior>) {
         this.assignProperty('scrollBehavior', value);
     }
-    get scrollTarget(): HTMLElement | null {
-        return this.getProperty<HTMLElement | null | undefined>('scrollTarget') ?? null;
+    get scrollTarget(): ComponentBase | null {
+        return this.getProperty<ComponentBase | null | undefined>('scrollTarget') ?? null;
     }
-    set scrollTarget(value: Bind<HTMLElement | null>) {
+    set scrollTarget(value: Bind<ComponentBase | null>) {
         this.assignProperty('scrollTarget', value);
     }
     get onNavigationClick(): MotifEvent<AppBarNavigationClickEventArgs> {
@@ -204,13 +208,13 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
     }
 
     drawTitles(): void {
-        const title = this.titlePart.element;
+        const title = this.titlePart;
         const level = this.headingLevel;
         text(title, this.title);
-        text(this.subtitlePart.element, this.subtitle);
+        text(this.subtitlePart, this.subtitle);
         shown(title, this.title !== '');
-        shown(this.subtitlePart.element, this.subtitle !== '');
-        shown(this.titles.element, this.title !== '' || this.subtitle !== '');
+        shown(this.subtitlePart, this.subtitle !== '');
+        shown(this.titles, this.title !== '' || this.subtitle !== '');
         put(title, 'role', level ? 'heading' : null);
         put(title, 'aria-level', level ? String(level) : null);
     }
@@ -224,12 +228,12 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
                 hint: () => this.navigationLabel,
                 onclick: (e: Event) => this.navigationClick.fire({ navigation: this.navigation, originalEvent: e, source: this })
             });
-            this.navigationButton.element.classList.add('mx-app-bar__navigation');
+            this.navigationButton.class.add('mx-app-bar__navigation');
             this.start.controls.insert(0, this.navigationButton);
         }
         if (this.navigationButton) {
-            shown(this.navigationButton.element, on);
-            mark(this.navigationButton.element, 'data-back', this.navigation === 'back');
+            shown(this.navigationButton, on);
+            mark(this.navigationButton, 'data-back', this.navigation === 'back');
         }
         this.drawStart();
     }
@@ -241,12 +245,12 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
     }
 
     drawStart(): void {
-        shown(this.logoHost.element, !!this.logoPart);
-        shown(this.start.element, !!this.logoPart || this.navigation !== 'none');
+        shown(this.logoHost, !!this.logoPart);
+        shown(this.start, !!this.logoPart || this.navigation !== 'none');
     }
 
     drawActions(): void {
-        shown(this.actionsHost.element, this.actions.length > 0);
+        shown(this.actionsHost, this.actions.length > 0);
     }
 
     placeContent(): void {
@@ -257,28 +261,38 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
             this.placed = control;
             if (control) this.contentHost.controls.add(control);
         }
-        shown(this.contentHost.element, !!control || !!this.childs?.length);
+        shown(this.contentHost, !!control || !!this.childs?.length);
     }
 
     drawLook(): void {
-        const el = this.element;
-        put(el, 'data-tone', this.tone);
-        put(el, 'data-position', this.position);
-        put(el, 'data-title-align', this.titleAlign);
-        mark(el, 'data-prominent', this.prominent);
+        put(this, 'data-tone', this.tone);
+        put(this, 'data-position', this.position);
+        put(this, 'data-title-align', this.titleAlign);
+        mark(this, 'data-prominent', this.prominent);
     }
 
     followScroll(): void {
         this.stopScroll?.();
         this.stopScroll = null;
-        const el = this.element;
-        mark(el, 'data-lifted', false);
-        mark(el, 'data-hidden', false);
-        if (this.scrollBehavior === 'none' || !el.isConnected) return;
-        this.stopScroll = watchScroll(this.scrollTarget ?? scrollParent(el), (top, moved) => {
-            mark(el, 'data-lifted', top > 0);
-            if (this.scrollBehavior !== 'hide' || moved === 0) return;
-            mark(el, 'data-hidden', moved > 0 && top > el.offsetHeight);
-        });
+        this.lastScroller = undefined;
+        mark(this, 'data-lifted', false);
+        mark(this, 'data-hidden', false);
+        if (this.scrollBehavior === 'none') return;
+        this.stopScroll = onLayout(this, 'scroll', () => measure(this, this.readScroll, this.drawScroll));
     }
+
+    // What scrolls around the bar (null for the page), how far, and the bar's own height.
+    private readonly readScroll = () => {
+        const scroller = this.scrollPart ?? (this.parent ? scrollerOf(this.parent, 'y') : null);
+        return { scroller, top: scroller ? boxOf(scroller).scrollTop : pageOf(this).scrollTop, height: boxOf(this).offsetHeight };
+    };
+
+    private readonly drawScroll = (now: { scroller: ComponentBase | null; top: number; height: number }) => {
+        const moved = this.lastScroller === now.scroller ? now.top - this.lastTop : 0;
+        this.lastScroller = now.scroller;
+        this.lastTop = now.top;
+        mark(this, 'data-lifted', now.top > 0);
+        if (this.scrollBehavior !== 'hide' || moved === 0) return;
+        mark(this, 'data-hidden', moved > 0 && now.top > now.height);
+    };
 }

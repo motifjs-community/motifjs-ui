@@ -1,9 +1,13 @@
-import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
+import { Emitter, createSignal, untracked, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
-import { css, glyphPart, mark, part, put, shown, text } from "../../core/draw-parts";
+import { glyphPart, loose, part } from "../../core/draw-parts";
+import { canTakeFocus, focusGoesInto, focusOn } from "../../core/focus";
+import { onDocument } from "../../core/window-events";
 import { follow } from "../../core/follow";
+import { isRtl, mediaOf, onMedia } from "../../core/measure";
 import { givenField, givenList, givenValue } from "../../core/given-field";
 import { onLanguage } from "../../core/on-language";
+import { css, kept, mark, put, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { SlideTrack } from "../../parts/slide/slide-track";
 import type { GalleryItem } from "./gallery-item";
@@ -13,6 +17,7 @@ import type { SlideChangedEventArgs } from "./slide-changed-event-args";
 import type { SlideChangingEventArgs } from "./slide-changing-event-args";
 
 const OWN = ['items', 'value', 'loop', 'showNavButtons', 'showIndicator', 'slideInterval', 'pauseOnHover', 'swipeEnabled', 'itemsPerPage', 'stretchImages', 'height', 'label'] as const;
+const REDUCED = '(prefers-reduced-motion: reduce)';
 
 interface Look {
     item: unknown;
@@ -24,16 +29,19 @@ interface Look {
     content: (() => ComponentBase) | null;
 }
 
-interface Pane {
+/** A slide's place: the same while its item is given (an item given twice has two). */
+interface Entry {
     item: unknown;
-    pane: Component<HTMLDivElement>;
-    figure: Component<HTMLDivElement>;
-    image: HTMLImageElement | null;
-    content: ComponentBase | null;
-    caption: Component<HTMLDivElement>;
-    title: Component<HTMLSpanElement>;
-    description: Component<HTMLSpanElement>;
+    pane: Component<HTMLDivElement> | null;
 }
+
+/** A dot's place: the same while there is a slide at its index. */
+interface DotSlot {
+    index: number;
+    dot: Component<HTMLButtonElement> | null;
+}
+
+const IMAGE = Symbol('mx.gallery.image');
 
 type Hold = 'hover' | 'focus' | 'drag';
 
@@ -59,9 +67,15 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
     viewport: Component<HTMLDivElement>;
     list: Component<HTMLDivElement>;
     slide: SlideTrack;
-    panes: Pane[] = [];
-    dots: HTMLButtonElement[] = [];
-    looks: Look[] = [];
+    /** The slides, in item order. */
+    entries: Entry[] = [];
+    /** The dots by index. */
+    dotSlots: DotSlot[] = [];
+    stopVisibility: (() => void) | null = null;
+    /** What the items say, in order. */
+    looksNow = createSignal<Look[]>([]);
+    /** Counted up by `refresh()` and a new language: what the slides say is read again. */
+    revision = createSignal(0);
     stopItems: (() => void) | null = null;
     previousIndex = -1;
     byUser = false;
@@ -70,47 +84,55 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
     playing = true;
     holds = new Set<Hold>();
     timer = 0;
-    reduced: MediaQueryList | null;
+    stopReduced: (() => void) | null = null;
 
     constructor(props?: IBaseProp<GalleryProps>) {
         super('section', props);
         const own = (this.props ?? {}) as GalleryProps;
-        this.element.classList.add('mx-gallery');
-        this.element.setAttribute('role', 'region');
-        this.element.setAttribute('aria-roledescription', 'carousel');
+        this.class.add('mx-gallery');
+        this.attr.add({ role: 'region', 'aria-roledescription': 'carousel' });
         // The slideshow button and the dots come first, so the keys reach them before the panes.
         this.bar = part(this, 'div', 'mx-gallery__bar');
         this.playButton = part(this.bar, 'button', 'mx-gallery__play');
-        this.playButton.element.type = 'button';
+        this.playButton.attr.add({ type: 'button' });
         glyphPart(this.playButton, 'play', 'mx-gallery__play-glyph');
         this.indicator = part(this.bar, 'div', 'mx-gallery__indicator');
-        this.indicator.element.setAttribute('role', 'group');
+        this.indicator.attr.add({ role: 'group' });
         this.previousButton = this.makeNav('previous');
         this.viewport = part(this, 'div', 'mx-gallery__viewport');
-        this.viewport.element.setAttribute('role', 'group');
-        this.viewport.element.tabIndex = 0;
+        this.viewport.attr.add({ role: 'group' });
+        put(this.viewport, 'tabindex', '0');
         this.list = part(this.viewport, 'div', 'mx-gallery__track');
         this.nextButton = this.makeNav('next');
-        this.slide = new SlideTrack(this.viewport.element, this.list.element, {
+        this.slide = new SlideTrack(this.viewport, this.list, {
             count: () => this.looks.length,
             index: () => this.selectedIndex,
             perView: () => this.perView,
             loop: () => this.loop,
-            pane: index => this.panes[index]?.pane.element ?? null,
+            panePart: index => this.entries[index]?.pane ?? null,
             canDrag: () => this.swipeEnabled && this.isEnabled,
             swipeTo: to => void this.go(to, true),
             dragged: on => {
-                mark(this.element, 'data-dragging', on);
+                mark(this, 'data-dragging', on);
                 this.hold('drag', on);
             }
         });
-        this.reduced = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onSlideChanging) this.onSlideChanging(own.onSlideChanging);
         if (own.onSlideChanged) this.onSlideChanged(own.onSlideChanged);
         if (own.onItemClick) this.onItemClick(own.onItemClick);
 
         this.observeProperty('items', () => this.renderItems());
+        // Built once: a slide stays while its item is given, a dot while there is a slide at its index; a changed item
+        // or value changes only what shows it.
+        this.list.bindings.list(
+            () => {
+                void this.looks;
+                return this.entries;
+            },
+            (entry: Entry) => this.makePane(entry)
+        );
+        this.indicator.bindings.list(() => this.dotSlots.slice(0, this.looks.length), (slot: DotSlot) => this.makeDot(slot));
         this.observeProperty<number | string | null>('value', () => {
             const index = this.selectedIndex;
             this.drawStates();
@@ -122,25 +144,26 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         });
         for (const name of ['loop', 'showNavButtons', 'showIndicator', 'swipeEnabled'] as const) this.observeProperty(name, () => this.drawStates());
         this.observeProperty('itemsPerPage', () => {
-            css(this.list.element, '--_per', String(this.perView));
+            css(this.list, '--_per', String(this.perView));
             this.drawStates();
             this.slide.layout();
         });
-        this.observeProperty<boolean>('stretchImages', on => mark(this.element, 'data-stretch', on === true));
-        this.observeProperty<string | number | null>('height', h => css(this.element, 'block-size', typeof h === 'number' ? `${h}px` : h ?? ''));
+        this.observeProperty<boolean>('stretchImages', on => mark(this, 'data-stretch', on === true));
+        this.observeProperty<string | number | null>('height', h => css(this, 'block-size', typeof h === 'number' ? `${h}px` : h ?? ''));
         for (const name of ['slideInterval', 'pauseOnHover'] as const) this.observeProperty(name, () => this.schedule());
         this.observeProperty<string>('label', () => this.renderName());
         onLanguage(this, () => {
             this.renderName();
             this.drawStates();
+            this.revision.value = this.revision.peek() + 1;
         });
         this.listen();
         this.motif.setDisposable(() => {
             this.stopItems?.();
             this.slide.dispose();
             window.clearTimeout(this.timer);
-            this.reduced?.removeEventListener('change', this.schedule);
-            document.removeEventListener('visibilitychange', this.schedule);
+            this.stopReduced?.();
+            this.stopVisibility?.();
             this.changing.dispose();
             this.changed.dispose();
             this.itemClick.dispose();
@@ -241,6 +264,11 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         return this.itemClick.event;
     }
 
+    /** What the items say, in order; followed where it is read in a binding. */
+    get looks(): Look[] {
+        return this.looksNow.value;
+    }
+
     /** The index of the current slide, or -1 if there is none. */
     get selectedIndex(): number {
         return this.indexOf(this.peekProperty<string | number | null | undefined>('value'));
@@ -294,6 +322,7 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
     /** Re-reads the items after they have been changed in place. */
     refresh(): void {
         this.renderItems();
+        this.revision.value = this.revision.peek() + 1;
     }
 
     /** Returns the index that a value identifies: a key, otherwise an index in range, or -1 if there is none. */
@@ -311,11 +340,11 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
 
     renderName(): void {
         const strings = uiLocale.strings;
-        put(this.element, 'aria-label', this.peekProperty<string>('label') || strings.gallery);
-        put(this.viewport.element, 'aria-label', strings.gallerySlides);
-        put(this.indicator.element, 'aria-label', strings.galleryChoose);
-        put(this.previousButton.element, 'aria-label', strings.galleryPrevious);
-        put(this.nextButton.element, 'aria-label', strings.galleryNext);
+        put(this, 'aria-label', this.peekProperty<string>('label') || strings.gallery);
+        put(this.viewport, 'aria-label', strings.gallerySlides);
+        put(this.indicator, 'aria-label', strings.galleryChoose);
+        put(this.previousButton, 'aria-label', strings.galleryPrevious);
+        put(this.nextButton, 'aria-label', strings.galleryNext);
     }
 
     renderItems(): void {
@@ -327,8 +356,19 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
             'items',
             () => items.map(item => this.lookOf(item)),
             looks => {
-                this.looks = looks;
-                this.drawPanes();
+                // A slide stays with its item: the same entry while the item is given.
+                const old = new Map<unknown, Entry[]>();
+                for (const entry of this.entries) {
+                    const same = old.get(entry.item);
+                    if (same) same.push(entry);
+                    else old.set(entry.item, [entry]);
+                }
+                this.entries = looks.map(look => old.get(look.item)?.shift() ?? { item: look.item, pane: null });
+                for (let index = this.dotSlots.length; index < looks.length; index++) this.dotSlots.push({ index, dot: null });
+                this.looksNow.value = looks;
+                this.drawStates();
+                this.slide.layout();
+                this.schedule();
             }
         );
     }
@@ -348,104 +388,107 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         };
     }
 
-    // The panes are recreated when the items are others; otherwise written in place.
-    drawPanes(): void {
-        const stale = this.panes.length !== this.looks.length || this.panes.some((pane, i) => pane.item !== this.looks[i].item);
-        if (stale) {
-            for (const pane of this.panes) void pane.pane.dispose();
-            this.panes = this.looks.map(look => this.makePane(look));
-            this.drawDots();
-        }
-        this.looks.forEach((look, i) => this.writePane(this.panes[i], look));
-        this.drawStates();
-        this.slide.layout();
-        this.schedule();
-    }
-
-    makePane(look: Look): Pane {
-        const pane = new Component<HTMLDivElement>('div');
-        pane.element.className = 'mx-gallery__item';
-        pane.element.setAttribute('role', 'group');
-        pane.element.setAttribute('aria-roledescription', 'slide');
-        this.list.controls.add(pane);
+    /** A slide, built once: its content is made once, and what its item says or where the gallery is changes only what shows it. */
+    makePane(entry: Entry): Component<HTMLDivElement> {
+        const pane = loose<HTMLDivElement>('div', 'mx-gallery__item');
+        pane.attr.add({ role: 'group', 'aria-roledescription': 'slide' });
+        entry.pane = pane;
+        pane.motif.setDisposable(() => {
+            if (entry.pane === pane) entry.pane = null;
+        });
         const figure = part<HTMLDivElement>(pane, 'div', 'mx-gallery__figure');
-        let content: ComponentBase | null = null;
-        if (look.content) {
-            content = look.content();
-            figure.controls.add(content);
-        }
+        // First in the figure, before a content given.
+        figure.bindings.list(() => (this.lookOf(entry.item).image ? [IMAGE] : []), () => this.makeImage(entry));
+        const content = untracked(() => this.lookOf(entry.item).content);
+        if (content) figure.controls.add(untracked(content));
         const caption = part<HTMLDivElement>(pane, 'div', 'mx-gallery__caption');
         const title = part<HTMLSpanElement>(caption, 'span', 'mx-gallery__title');
         const description = part<HTMLSpanElement>(caption, 'span', 'mx-gallery__description');
-        return { item: look.item, pane, figure, image: null, content, caption, title, description };
-    }
-
-    writePane(pane: Pane, look: Look): void {
-        if (look.image && !pane.image) {
-            const image = document.createElement('img');
-            image.className = 'mx-gallery__image';
-            image.draggable = false;
-            image.loading = 'lazy';
-            pane.figure.element.prepend(image);
-            pane.image = image;
-        } else if (!look.image && pane.image) {
-            pane.image.remove();
-            pane.image = null;
-        }
-        if (pane.image) {
-            if (pane.image.getAttribute('src') !== look.image) pane.image.src = look.image;
-            pane.image.alt = look.alt;
-        }
-        text(pane.title.element, look.text);
-        text(pane.description.element, look.description);
-        shown(pane.title.element, look.text !== '');
-        shown(pane.description.element, look.description !== '');
-        shown(pane.caption.element, look.text !== '' || look.description !== '');
-    }
-
-    drawDots(): void {
-        this.indicator.element.replaceChildren();
-        this.dots = this.looks.map((_, index) => {
-            const dot = document.createElement('button');
-            dot.type = 'button';
-            dot.className = 'mx-gallery__dot';
-            dot.addEventListener('click', e => void this.go(index, true, e));
-            this.indicator.element.append(dot);
-            return dot;
+        pane.bindings.watch(() => {
+            void this.revision.value;
+            const look = this.lookOf(entry.item);
+            untracked(() => {
+                text(title, look.text);
+                text(description, look.description);
+                kept(title, look.text !== '');
+                kept(description, look.description !== '');
+                kept(caption, look.text !== '' || look.description !== '');
+            });
         });
+        // Which slides are seen and read: the slides, the current one and the options that change how many are in view.
+        pane.bindings.watch(() => {
+            const count = this.looks.length;
+            void [this.getProperty('value'), this.getProperty('itemsPerPage'), this.getProperty('loop'), this.revision.value];
+            untracked(() => {
+                const at = this.entries.indexOf(entry);
+                const index = this.selectedIndex;
+                const first = this.slide.first(index);
+                const inView = at >= first && at < first + this.perView;
+                put(pane, 'aria-label', uiLocale.text('gallerySlideOf', { index: at + 1, count }));
+                put(pane, 'aria-hidden', inView ? null : 'true');
+                mark(pane, 'inert', !inView);
+                mark(pane, 'data-current', at === index);
+            });
+        });
+        return pane;
     }
 
-    // What depends on the pane in view: which panes are seen and read, the buttons, the dots, the slideshow.
+    makeImage(entry: Entry): Component<HTMLImageElement> {
+        const image = loose<HTMLImageElement>('img', 'mx-gallery__image');
+        image.attr.add({ draggable: 'false', loading: 'lazy' });
+        image.bindings.watch(() => {
+            void this.revision.value;
+            const look = this.lookOf(entry.item);
+            untracked(() => {
+                put(image, 'src', look.image);
+                if (image.attr.get('alt') !== look.alt) image.attr.add({ alt: look.alt });
+            });
+        });
+        return image;
+    }
+
+    /** A dot, built once: it follows the number of slides and the current one. */
+    makeDot(slot: DotSlot): Component<HTMLButtonElement> {
+        const dot = loose<HTMLButtonElement>('button', 'mx-gallery__dot');
+        dot.attr.add({ type: 'button' });
+        dot.motif.on('click', (_, e) => void this.go(slot.index, true, e));
+        slot.dot = dot;
+        dot.motif.setDisposable(() => {
+            if (slot.dot === dot) slot.dot = null;
+        });
+        dot.bindings.watch(() => {
+            const count = this.looks.length;
+            void [this.getProperty('value'), this.revision.value];
+            untracked(() => {
+                const i = slot.index;
+                const index = this.selectedIndex;
+                put(dot, 'aria-label', uiLocale.text('gallerySlideOf', { index: i + 1, count }));
+                put(dot, 'aria-current', i === index ? 'true' : null);
+                put(dot, 'tabindex', i === index || (index < 0 && i === 0) ? '0' : '-1');
+            });
+        });
+        return dot;
+    }
+
+    // What depends on the pane in view outside the slides: the buttons, the dots' bar, the slideshow.
     drawStates(): void {
         const count = this.looks.length;
-        const index = this.selectedIndex;
         const per = this.perView;
         const loop = this.loop;
-        const first = this.slide.first(index);
         const strings = uiLocale.strings;
-        this.panes.forEach((pane, i) => {
-            const inView = i >= first && i < first + per;
-            put(pane.pane.element, 'aria-label', uiLocale.text('gallerySlideOf', { index: i + 1, count }));
-            put(pane.pane.element, 'aria-hidden', inView ? null : 'true');
-            pane.pane.element.inert = !inView;
-            mark(pane.pane.element, 'data-current', i === index);
-        });
-        this.dots.forEach((dot, i) => {
-            put(dot, 'aria-label', uiLocale.text('gallerySlideOf', { index: i + 1, count }));
-            put(dot, 'aria-current', i === index ? 'true' : null);
-            dot.tabIndex = i === index || (index < 0 && i === 0) ? 0 : -1;
-        });
         const navs = this.showNavButtons && count > per;
-        shown(this.previousButton.element, navs);
-        shown(this.nextButton.element, navs);
-        put(this.previousButton.element, 'aria-disabled', !loop && index <= 0 ? 'true' : null);
-        put(this.nextButton.element, 'aria-disabled', !loop && index >= count - per ? 'true' : null);
-        shown(this.indicator.element, this.showIndicator && count > 1);
-        shown(this.playButton.element, this.slideInterval > 0 && count > 1);
-        shown(this.bar.element, !this.indicator.element.hidden || !this.playButton.element.hidden);
-        put(this.playButton.element, 'aria-label', this.playing ? strings.galleryPause : strings.galleryPlay);
-        mark(this.element, 'data-playing', this.playing && this.slideInterval > 0);
-        mark(this.element, 'data-swipe', this.swipeEnabled && (count > per || loop));
+        shown(this.previousButton, navs);
+        shown(this.nextButton, navs);
+        put(this.previousButton, 'aria-disabled', this.atEnd('previous') ? 'true' : null);
+        put(this.nextButton, 'aria-disabled', this.atEnd('next') ? 'true' : null);
+        const dots = this.showIndicator && count > 1;
+        const play = this.slideInterval > 0 && count > 1;
+        shown(this.indicator, dots);
+        shown(this.playButton, play);
+        shown(this.bar, dots || play);
+        put(this.playButton, 'aria-label', this.playing ? strings.galleryPause : strings.galleryPlay);
+        mark(this, 'data-playing', this.playing && this.slideInterval > 0);
+        mark(this, 'data-swipe', this.swipeEnabled && (count > per || loop));
     }
 
     // The slideshow's next step, when nothing holds it.
@@ -454,11 +497,11 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         this.timer = 0;
         if (this.isDisposed) return;
         const interval = this.slideInterval;
-        const on = this.playing && interval > 0 && this.holds.size === 0 && !this.reduced?.matches && !document.hidden && this.looks.length > 1;
+        const on = this.playing && interval > 0 && this.holds.size === 0 && !mediaOf(this, REDUCED) && !document.hidden && this.looks.length > 1;
         if (on) this.timer = window.setTimeout(() => void this.go((this.selectedIndex + 1) % this.looks.length, false), interval);
-        put(this.viewport.element, 'aria-live', on ? 'off' : 'polite');
-        put(this.playButton.element, 'aria-label', this.playing ? uiLocale.strings.galleryPause : uiLocale.strings.galleryPlay);
-        mark(this.element, 'data-playing', this.playing && interval > 0);
+        put(this.viewport, 'aria-live', on ? 'off' : 'polite');
+        put(this.playButton, 'aria-label', this.playing ? uiLocale.strings.galleryPause : uiLocale.strings.galleryPlay);
+        mark(this, 'data-playing', this.playing && interval > 0);
     };
 
     hold(reason: Hold, on: boolean): void {
@@ -491,47 +534,58 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
 
     makeNav(direction: 'previous' | 'next'): Component<HTMLButtonElement> {
         const nav = part<HTMLButtonElement>(this, 'button', 'mx-gallery__nav');
-        nav.element.type = 'button';
-        put(nav.element, 'data-direction', direction);
+        nav.attr.add({ type: 'button' });
+        put(nav, 'data-direction', direction);
         glyphPart(nav, direction === 'previous' ? 'chevron-start' : 'chevron-end', 'mx-gallery__arrow');
-        nav.element.addEventListener('click', e => {
-            if (nav.element.getAttribute('aria-disabled') === 'true') return;
+        nav.motif.on('click', (_, e) => {
+            if (this.atEnd(direction)) return;
             void this.go(this.selectedIndex + (direction === 'next' ? 1 : -1), true, e);
         });
         return nav;
     }
 
+    /** Whether a side button has nowhere to go: the first or the last pane is in view, and `loop` is off. */
+    atEnd(direction: 'previous' | 'next'): boolean {
+        if (this.loop) return false;
+        const index = this.selectedIndex;
+        return direction === 'previous' ? index <= 0 : index >= this.looks.length - this.perView;
+    }
+
     listen(): void {
-        const el = this.element;
-        this.playButton.element.addEventListener('click', () => (this.playing ? this.pause() : this.play()));
-        this.viewport.element.addEventListener('keydown', e => this.keyDown(e, false));
-        this.indicator.element.addEventListener('keydown', e => this.keyDown(e, true));
-        // A click on a button or a link inside the pane is that control's, not the pane's.
-        this.list.element.addEventListener('click', e => {
-            const target = e.target as Element;
-            const el = target.closest('.mx-gallery__item');
-            const index = this.panes.findIndex(pane => pane.pane.element === el);
-            if (index < 0) return;
-            const control = target.closest('button, a, input, select, textarea, [role="button"], [role="link"]');
-            if (control && el!.contains(control)) return;
+        this.playButton.motif.on('click', () => (this.playing ? this.pause() : this.play()));
+        this.viewport.motif.on('keydown', (_, e) => this.keyDown(e, false));
+        this.indicator.motif.on('keydown', (_, e) => this.keyDown(e, true));
+        // A click on a control inside the pane (a button, a link, a field) is that control's, not the pane's.
+        this.list.motif.on('click', (_, e) => {
+            const index = this.entries.findIndex(entry => entry.pane?.motif.isEventFrom(e));
+            const pane = this.entries[index]?.pane;
+            if (!pane || this.fromFocusable(e, pane)) return;
             this.itemClick.fire({ index, item: this.looks[index].item, source: this, event: e });
         });
-        el.addEventListener('pointerenter', e => {
+        this.motif.on('pointerenter', (_, e) => {
             if (e.pointerType === 'mouse' && this.pauseOnHover) this.hold('hover', true);
         });
-        el.addEventListener('pointerleave', () => this.hold('hover', false));
-        el.addEventListener('focusin', () => this.hold('focus', true));
-        el.addEventListener('focusout', e => {
-            if (!el.contains(e.relatedTarget as Node | null)) this.hold('focus', false);
+        this.motif.on('pointerleave', () => this.hold('hover', false));
+        this.motif.on('focusin', () => this.hold('focus', true));
+        // Focus that leaves (for the page, another window or nowhere) lets the slideshow go on; a move inside keeps it waiting.
+        this.motif.on('focusout', (_, e) => {
+            if (!focusGoesInto(this, e)) this.hold('focus', false);
         });
-        this.reduced?.addEventListener('change', this.schedule);
-        document.addEventListener('visibilitychange', this.schedule);
+        this.stopReduced = onMedia(this, REDUCED, this.schedule);
+        // A hidden page plays nothing.
+        this.stopVisibility = onDocument(this, 'visibilitychange', this.schedule);
+    }
+
+    /** Whether an event came from something inside `from` that takes focus: a button, a link, a field. */
+    fromFocusable(e: Event, from: ComponentBase): boolean {
+        const inside = from.controls.items.find(c => c.motif.isEventFrom(e));
+        return !!inside && (canTakeFocus(inside) || this.fromFocusable(e, inside));
     }
 
     // Left and Right (the other way round in a right-to-left page), Home and End; on the dots the keys move focus too.
     keyDown(e: KeyboardEvent, onDots: boolean): void {
         if (e.altKey || e.ctrlKey || e.metaKey || this.looks.length === 0) return;
-        const rtl = getComputedStyle(this.element).direction === 'rtl';
+        const rtl = isRtl(this);
         const forward = rtl ? 'ArrowLeft' : 'ArrowRight';
         const back = rtl ? 'ArrowRight' : 'ArrowLeft';
         const index = Math.max(0, this.selectedIndex);
@@ -543,7 +597,9 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         if (to === undefined) return;
         e.preventDefault();
         void this.go(to, true, e).then(() => {
-            if (onDots) this.dots[this.selectedIndex]?.focus();
+            if (!onDots) return;
+            const dot = this.dotSlots[this.selectedIndex]?.dot;
+            if (dot) focusOn(dot);
         });
     }
 }

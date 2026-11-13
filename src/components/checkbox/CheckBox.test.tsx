@@ -40,7 +40,7 @@ describe('CheckBox', () => {
     page(coded);
     await settle();
 
-    const input = jsx.inputElement;
+    const input = jsx.inputPart.element;
     const label = jsx.element.querySelector('label')!;
     expect(input.type).toBe('checkbox');
     expect(jsx.element.className).toContain('mx-check-box');
@@ -56,7 +56,7 @@ describe('CheckBox', () => {
     coded.size = 'lg';
     coded.labelPosition = 'start';
     coded.label = 'News';
-    expect(coded.inputElement.checked).toBe(true);
+    expect(coded.inputPart.element.checked).toBe(true);
     expect({ ...coded.element.dataset }).toMatchObject({ size: 'lg', labelPosition: 'start', state: 'checked' });
     expect(coded.element.querySelector('label')!.textContent).toBe('News');
   });
@@ -66,16 +66,16 @@ describe('CheckBox', () => {
     let b!: CheckBox;
     page(<CheckBox ref={(x: CheckBox) => (b = x)} label="On" x-model={() => s.on} />);
     await settle();
-    expect(b.inputElement.checked).toBe(true);
+    expect(b.inputPart.element.checked).toBe(true);
 
-    b.inputElement.click();
+    b.inputPart.element.click();
     expect(s.on).toBe(false);
     expect(b.value).toBe(false);
     expect(b.element.dataset.state).toBe('unchecked');
 
     s.on = true;
     await settle();
-    expect(b.inputElement.checked).toBe(true);
+    expect(b.inputPart.element.checked).toBe(true);
   });
 
   it('reads functions over plain data again on reState, and writes a value set programmatically to x-model', async () => {
@@ -90,11 +90,11 @@ describe('CheckBox', () => {
     await settle();
     Object.assign(plain, { on: true, label: 'Keep me signed in' });
     await settle();
-    expect(b.inputElement.checked).toBe(false);
+    expect(b.inputPart.element.checked).toBe(false);
     host.reState();
-    expect(b.inputElement.checked).toBe(true);
+    expect(b.inputPart.element.checked).toBe(true);
     expect(b.element.textContent).toContain('Keep me signed in');
-    b.inputElement.click();
+    b.inputPart.element.click();
     expect(plain.on).toBe(true);
     m.value = true;
     expect(s.on).toBe(true);
@@ -108,26 +108,26 @@ describe('CheckBox', () => {
     page(<CheckBox ref={(x: CheckBox) => (b = x)} label="All" threeState={() => s.three} x-model={() => s.all} />);
     await settle();
     expect(b.value).toBe(null);
-    expect(b.inputElement.indeterminate).toBe(true);
+    expect(b.inputPart.element.indeterminate).toBe(true);
     expect(b.element.dataset.state).toBe('mixed');
 
     // Two states: indeterminate goes to checked, then back and forth.
-    b.inputElement.click();
+    b.inputPart.element.click();
     expect(s.all).toBe(true);
-    expect(b.inputElement.indeterminate).toBe(false);
-    b.inputElement.click();
+    expect(b.inputPart.element.indeterminate).toBe(false);
+    b.inputPart.element.click();
     expect(s.all).toBe(false);
 
     s.three = true;
     await settle();
     const seen: (boolean | null)[] = [];
     for (let i = 0; i < 3; i++) {
-      b.inputElement.click();
+      b.inputPart.element.click();
       seen.push(s.all);
     }
     expect(seen).toEqual([true, null, false]);
-    expect(b.inputElement.checked).toBe(false);
-    expect(b.inputElement.indeterminate).toBe(false);
+    expect(b.inputPart.element.checked).toBe(false);
+    expect(b.inputPart.element.indeterminate).toBe(false);
   });
 
   it('reports changes with null as it is, by the user and by code', async () => {
@@ -138,8 +138,8 @@ describe('CheckBox', () => {
     await settle();
     s.v = null;
     await settle();
-    b.inputElement.click();
-    b.inputElement.click();
+    b.inputPart.element.click();
+    b.inputPart.element.click();
     expect(seen.map((e) => [e.previousValue, e.value, e.byUser])).toEqual([
       [false, null, false],
       [null, false, true],
@@ -152,18 +152,18 @@ describe('CheckBox', () => {
     let b!: CheckBox;
     page(<CheckBox ref={(x: CheckBox) => (b = x)} label="Locked" readOnly={() => s.ro} x-model={() => s.on} />);
     await settle();
-    expect(b.inputElement.getAttribute('aria-readonly')).toBe('true');
+    expect(b.inputPart.element.getAttribute('aria-readonly')).toBe('true');
     expect(b.element.hasAttribute('data-readonly')).toBe(true);
     expect(b.focus()).toBe(true);
-    b.inputElement.click();
+    b.inputPart.element.click();
     b.element.querySelector('label')!.click();
     expect(s.on).toBe(false);
-    expect(b.inputElement.checked).toBe(false);
+    expect(b.inputPart.element.checked).toBe(false);
 
     s.ro = false;
     await settle();
-    expect(b.inputElement.hasAttribute('aria-readonly')).toBe(false);
-    b.inputElement.click();
+    expect(b.inputPart.element.hasAttribute('aria-readonly')).toBe(false);
+    b.inputPart.element.click();
     expect(s.on).toBe(true);
   });
 
@@ -174,7 +174,7 @@ describe('CheckBox', () => {
     await settle();
     s.on = false;
     await settle();
-    expect(b.inputElement.disabled).toBe(true);
+    expect(b.inputPart.element.disabled).toBe(true);
     expect(b.element.hasAttribute('data-disabled')).toBe(true);
     expect(b.focus()).toBe(false);
   });
@@ -185,7 +185,7 @@ describe('CheckBox', () => {
     page(<CheckBox ref={(x: CheckBox) => (b = x)} label="&Agree" x-model={() => s.on} />);
     await settle();
     press(document.body, 'a', { altKey: true, code: 'KeyA' });
-    expect(document.activeElement).toBe(b.inputElement);
+    expect(document.activeElement).toBe(b.inputPart.element);
     expect(s.on).toBe(true);
     b.toggle();
     expect(s.on).toBe(false);
@@ -196,20 +196,20 @@ describe('CheckBox', () => {
     let b!: CheckBox;
     page(<CheckBox ref={(x: CheckBox) => (b = x)} label="I accept" required validationGroup={group} />);
     await settle();
-    expect(b.inputElement.getAttribute('aria-required')).toBe('true');
+    expect(b.inputPart.element.getAttribute('aria-required')).toBe('true');
     expect(b.element.querySelector('.mx-field__required')).not.toBeNull();
 
     const result = await group.validate();
     expect(result.valid).toBe(false);
-    expect(document.activeElement).toBe(b.inputElement);
+    expect(document.activeElement).toBe(b.inputPart.element);
     expect(message(b)).toBe('This field is required.');
-    expect(b.inputElement.getAttribute('aria-invalid')).toBe('true');
+    expect(b.inputPart.element.getAttribute('aria-invalid')).toBe('true');
 
     await uiLocale.use('tr');
     await settle();
     expect(message(b)).toBe('Bu alan zorunludur.');
 
-    b.inputElement.click();
+    b.inputPart.element.click();
     await settle();
     expect(b.isValid).toBe(true);
     expect(message(b)).toBe('');
@@ -220,12 +220,12 @@ describe('CheckBox', () => {
     let b!: CheckBox;
     page(<CheckBox ref={(x: CheckBox) => (b = x)} name={() => s.name} size={() => s.size} labelPosition={() => s.place} />);
     await settle();
-    expect(b.inputElement.name).toBe('news');
+    expect(b.inputPart.element.name).toBe('news');
     s.name = 'letters';
     s.size = 'lg';
     s.place = 'start';
     await settle();
-    expect(b.inputElement.name).toBe('letters');
+    expect(b.inputPart.element.name).toBe('letters');
     expect(b.element.dataset.size).toBe('lg');
     expect(b.element.dataset.labelPosition).toBe('start');
   });

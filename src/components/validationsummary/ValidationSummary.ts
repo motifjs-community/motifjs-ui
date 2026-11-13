@@ -1,9 +1,11 @@
 import { Component, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { parseAccessKey } from "../../core/access-key";
 import { Control } from "../../core/control";
-import { glyphPart, mark, part, shown, text } from "../../core/draw-parts";
+import { glyphPart, part } from "../../core/draw-parts";
+import { focusOn, isFocused } from "../../core/focus";
 import { follow } from "../../core/follow";
 import { onLanguage } from "../../core/on-language";
+import { mark, shown, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { ValidationGroup } from "../../parts/validation/ValidationGroup";
 import type { ValidationTarget } from "../../parts/validation/validation-target";
@@ -48,9 +50,8 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
     constructor(props?: IBaseProp<ValidationSummaryProps>) {
         super('div', props);
         const own = (this.props ?? {}) as ValidationSummaryProps;
-        const el = this.element;
-        el.classList.add('mx-validation-summary');
-        el.setAttribute('aria-live', 'polite');
+        this.class.add('mx-validation-summary');
+        this.attr.add({ 'aria-live': 'polite' });
         this.head = part<HTMLParagraphElement>(this, 'p', 'mx-validation-summary__header');
         glyphPart(this.head, 'danger', 'mx-validation-summary__icon');
         this.headText = part<HTMLSpanElement>(this.head, 'span', 'mx-validation-summary__header-text');
@@ -61,7 +62,7 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
         this.observeProperty('group', () => this.renderTargets());
         for (const name of ['header', 'showHeader'] as const) this.observeProperty(name, () => this.drawHeader());
         onLanguage(this, () => this.drawHeader());
-        this.list.element.addEventListener('click', e => this.click(e));
+        this.list.motif.on('click', (_, e) => this.click(e));
         this.motif.setDisposable(() => {
             this.stopTargets?.();
             this.itemClick.dispose();
@@ -146,12 +147,12 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
         return typeof told.validationMessage === 'string' ? told.validationMessage : '';
     }
 
-    // The field's label and message, as a field tells them; another target gives its element's name.
-    textOf(target: ValidationTarget): string {
-        const told = target as unknown as Told;
+    // The field's label and message, as a field tells them; another target gives its name (its part's `aria-label`).
+    textOf(row: Row): string {
+        const told = row.target as unknown as Told;
         // A label's access key marker is for the field, not for this text.
-        const label = typeof told.label === 'string' ? parseAccessKey(told.label).text : target.element.getAttribute('aria-label') ?? '';
-        const message = this.messageOf(target);
+        const label = typeof told.label === 'string' ? parseAccessKey(told.label).text : row.target.part.attr.get('aria-label') ?? '';
+        const message = this.messageOf(row.target);
         return label && message ? `${label}: ${message}` : label || message;
     }
 
@@ -159,51 +160,50 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
     draw(): void {
         const failed = this.targets.filter(target => !target.isValid);
         const keep = new Set(failed);
-        const focused = this.element.ownerDocument.activeElement;
         let lostAt = -1;
         this.rows.forEach((row, index) => {
             if (keep.has(row.target)) return;
-            if (row.button.element === focused) lostAt = index;
+            if (isFocused(row.button)) lostAt = index;
             void row.li.dispose();
         });
         const old = new Map(this.rows.map(row => [row.target, row]));
         this.rows = failed.map((target, index) => {
             const row = old.get(target);
             if (!row) return this.addLine(target, index);
-            if (this.list.element.children[index] !== row.li.element) this.list.controls.moveToIndex(row.li, index);
-            const line = this.textOf(target);
+            if (this.list.controls.items[index] !== row.li) this.list.controls.moveToIndex(row.li, index);
+            const line = this.textOf(row);
             if (line !== row.text) {
-                text(row.button.element, line);
+                text(row.button, line);
                 row.text = line;
             }
             return row;
         });
         // The focused line went away: its neighbour takes focus, as in any list.
-        if (lostAt >= 0 && this.rows.length) this.rows[Math.min(lostAt, this.rows.length - 1)].button.element.focus();
+        if (lostAt >= 0 && this.rows.length) focusOn(this.rows[Math.min(lostAt, this.rows.length - 1)].button);
         // Out of sight while nothing has failed; `hidden` is the page's, so an attribute of its own.
-        mark(this.element, 'data-empty', this.rows.length === 0);
+        mark(this, 'data-empty', this.rows.length === 0);
         this.drawHeader();
     }
 
     addLine(target: ValidationTarget, index: number): Row {
         const li = new Component<HTMLLIElement>('li');
-        li.element.className = 'mx-validation-summary__line';
+        li.class.add('mx-validation-summary__line');
         this.list.controls.insert(index, li);
         const button = part<HTMLButtonElement>(li, 'button', 'mx-validation-summary__item');
-        button.element.type = 'button';
-        const line = this.textOf(target);
-        text(button.element, line);
-        return { target, text: line, li, button };
+        button.attr.add({ type: 'button' });
+        const row: Row = { target, text: '', li, button };
+        row.text = this.textOf(row);
+        text(button, row.text);
+        return row;
     }
 
     drawHeader(): void {
-        text(this.headText.element, this.peekProperty<string>('header') || uiLocale.strings.validationSummary);
-        shown(this.head.element, this.showHeader);
+        text(this.headText, this.peekProperty<string>('header') || uiLocale.strings.validationSummary);
+        shown(this.head, this.showHeader);
     }
 
     click(e: MouseEvent): void {
-        const button = (e.target as Element).closest('.mx-validation-summary__item');
-        const row = this.rows.find(r => r.button.element === button);
+        const row = this.rows.find(r => r.button.motif.isEventFrom(e));
         if (!row) return;
         this.itemClick.fire({ target: row.target, text: row.text, source: this, event: e });
         if (this.focusOnClick) row.target.focus();

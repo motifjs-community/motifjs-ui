@@ -1,4 +1,4 @@
-import type { ComponentBase } from '@motifx/core';
+import { untracked, type ComponentBase } from '@motifx/core';
 
 /** The return type of a panel's `content` factory. */
 export type ContentFactory = () => ComponentBase | readonly ComponentBase[];
@@ -28,7 +28,9 @@ export class PanelContent {
       if (this.children.length) this.host.controls.add(...this.children);
     }
     if (this.factory && !this.made) {
-      const made = this.factory();
+      // The app's factory: what it reads is not followed by whoever builds the panel.
+      const factory = this.factory;
+      const made = untracked(() => factory());
       this.made = Array.isArray(made) ? [...made] : [made as ComponentBase];
       this.host.controls.add(...this.made);
     }

@@ -1,5 +1,7 @@
-import { untracked } from '@motifx/core';
+import { untracked, type ComponentBase } from '@motifx/core';
 import { isChord } from '../../core/keyboard';
+import { isRtl } from '../../core/measure';
+import { onWindow } from '../../core/window-events';
 import type { UiStrings } from '../../core/ui-strings';
 import type { SplitDirection } from './split-direction';
 import type { TabDockSide } from './tab-dock-side';
@@ -74,21 +76,17 @@ export class MoveByKeys {
   }
 
   /** Starts it for a document (its tab is `source`) or a group. */
-  start(subject: TabDragSubject, source: HTMLElement | null): boolean {
+  start(subject: TabDragSubject, source: ComponentBase | null): boolean {
     const m = this.manager;
     if (this.stop || !this.drag.begin(subject, 'keyboard', source)) return false;
-    // The keys come to the window the move started in: the main one, or a new window.
-    const view = (source ?? subject.group.element).ownerDocument.defaultView ?? window;
+    // The keys come to the window the move started in (its group's): the main one, or a new window.
+    const from = subject.group;
     const key = (e: KeyboardEvent) => untracked(() => this.key(e));
     // A click anywhere, or the window losing focus, ends it.
     const away = () => untracked(() => this.end(false));
-    view.addEventListener('keydown', key, true);
-    view.addEventListener('pointerdown', away, true);
-    view.addEventListener('blur', away);
+    const stops = [onWindow(from, 'keydown', key, true), onWindow(from, 'pointerdown', away, true), onWindow(from, 'blur', away)];
     this.stop = () => {
-      view.removeEventListener('keydown', key, true);
-      view.removeEventListener('pointerdown', away, true);
-      view.removeEventListener('blur', away);
+      for (const stop of stops) stop();
     };
     // It starts at the next group, or beside its own when there is none.
     const own = subject.group;
@@ -176,8 +174,7 @@ export class MoveByKeys {
   }
 
   private rtl(): boolean {
-    const el = this.manager.element;
-    return el.ownerDocument.defaultView?.getComputedStyle(el).direction === 'rtl';
+    return isRtl(this.manager);
   }
 
   /** Every group it can go to: this manager's, then those of the managers of its `dragGroup`. */

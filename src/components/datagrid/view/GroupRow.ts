@@ -1,6 +1,6 @@
-import { ComponentBase, createSignal, untracked } from '@motifx/core';
-import { chevronEnd } from '../../../core/glyphs';
-import { isNode } from '../../../core/node-kind';
+import { Component, ComponentBase, createSignal, untracked } from '@motifx/core';
+import { glyphPart, loose, part, removePart, textPart } from '../../../core/draw-parts';
+import { css, flag, mark, put, text } from '../../../core/part-writes';
 import type { GroupCellContext } from '../group-cell-context';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
@@ -14,62 +14,65 @@ import { fillSummaryCell } from './summary-cell';
  * the first of them. Like the data rows it is created once and shows other groups while the user
  * scrolls; a column's own `groupCell` content is created the first time the row shows a group of that
  * column, and kept. It follows nothing: it is drawn when it shows another group, and the body draws
- * again the parts that read what the grid tells (`drawLook`, `drawText`, `drawSummary`).
+ * again the parts that read what the grid tells (`drawLook`, `drawText`, `drawSummary`). The row,
+ * its cell and the places a `groupCell` content goes are components, so that content is a child of
+ * its place.
  */
 export class GroupRow<T> {
+  /** The row's component, a child of the body. */
+  readonly part: Component<HTMLDivElement>;
   readonly element: HTMLDivElement;
   readonly cell: HTMLDivElement;
+  /** The group's cell, which spans the columns up to the first aligned item. */
+  readonly cellPart: Component<HTMLDivElement>;
+  /** The arrow that opens and closes the group. */
+  readonly arrowPart: Component<HTMLSpanElement>;
   /** Grid index; -1 while the row is not used. */
   index = -1;
   node: GroupNode | null = null;
   /** Grows with each other group shown: what a column's own content reads of its context follows it. */
   private readonly shown = createSignal(0);
-  private readonly text: HTMLSpanElement;
-  private readonly caption = document.createTextNode('');
-  private readonly count = document.createTextNode('');
-  private readonly summary = document.createTextNode('');
+  /** Holds the arrow, the columns' own contents and the text, in that order. */
+  private readonly contentPart: Component<HTMLSpanElement>;
+  private readonly textPart: Component<HTMLSpanElement>;
+  private readonly caption: ComponentBase;
+  private readonly count: ComponentBase;
+  private readonly summary: ComponentBase;
   /** Cells of the items aligned by column, by field; made when first needed. */
-  private readonly aligned = new Map<string, HTMLDivElement>();
+  private readonly aligned = new Map<string, Component<HTMLDivElement>>();
   private visible: string[] = [];
-  /** Columns' own contents, by field, and those that are components. */
-  private readonly own = new Map<string, HTMLElement>();
-  private readonly contents = new Map<string, ComponentBase>();
+  /** The places of the columns' own contents, by field. */
+  private readonly own = new Map<string, Component<HTMLSpanElement>>();
 
-  constructor(
-    private readonly model: GridModel<T>,
-    /** Holds the components of `groupCell` contents, so they live and go with it. */
-    private readonly host: ComponentBase,
-  ) {
-    const el = document.createElement('div');
-    el.className = 'mx-data-grid__row mx-data-grid__group-row';
-    el.setAttribute('role', 'row');
-    el.hidden = true;
-    const cell = document.createElement('div');
-    cell.className = 'mx-data-grid__group-cell';
-    cell.setAttribute('role', 'gridcell');
-    cell.setAttribute('aria-colindex', '1');
-    cell.tabIndex = -1;
-    const content = document.createElement('span');
-    content.className = 'mx-data-grid__group-content';
-    const toggle = document.createElement('span');
-    toggle.className = 'mx-data-grid__group-toggle';
-    toggle.setAttribute('aria-hidden', 'true');
-    toggle.append(chevronEnd());
-    this.text = document.createElement('span');
-    this.text.className = 'mx-data-grid__group-text';
-    const count = document.createElement('span');
-    count.className = 'mx-data-grid__group-count';
-    count.append(this.count);
-    const summary = document.createElement('span');
-    summary.className = 'mx-data-grid__group-summary';
-    summary.append(this.summary);
-    this.text.append(this.caption, count, summary);
-    content.append(toggle, this.text);
-    cell.append(content);
-    el.append(cell);
+  constructor(private readonly model: GridModel<T>) {
+    this.part = new Component<HTMLDivElement>('div');
+    const el = this.part.element;
+    this.part.class.add('mx-data-grid__row mx-data-grid__group-row');
+    this.part.attr.add({ role: 'row' });
+    mark(this.part, 'hidden', true);
+    const cellPart = part<HTMLDivElement>(this.part, 'div', 'mx-data-grid__group-cell');
+    const cell = cellPart.element;
+    cellPart.attr.add({ role: 'gridcell', 'aria-colindex': '1' });
+    put(cellPart, 'tabindex', '-1');
+    this.contentPart = part<HTMLSpanElement>(cellPart, 'span', 'mx-data-grid__group-content');
+    const toggle = part<HTMLSpanElement>(this.contentPart, 'span', 'mx-data-grid__group-toggle');
+    toggle.attr.add({ 'aria-hidden': 'true' });
+    glyphPart(toggle, 'chevron-end');
+    this.textPart = part<HTMLSpanElement>(this.contentPart, 'span', 'mx-data-grid__group-text');
+    this.caption = textPart(this.textPart, '');
+    this.count = textPart(part(this.textPart, 'span', 'mx-data-grid__group-count'), '');
+    this.summary = textPart(part(this.textPart, 'span', 'mx-data-grid__group-summary'), '');
     this.element = el;
     this.cell = cell;
+    this.cellPart = cellPart;
+    this.arrowPart = toggle;
     this.draw();
+  }
+
+  /** The cell of items aligned by column that an event came from. */
+  alignedFrom(e: Event): ComponentBase | undefined {
+    for (const cell of this.aligned.values()) if (cell.motif.isEventFrom(e)) return cell;
+    return undefined;
   }
 
   /** Draws the whole row as the grid is now. */
@@ -89,8 +92,8 @@ export class GroupRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    this.element.hidden = false;
-    this.element.style.transform = `translateY(${top}px)`;
+    mark(this.part, 'hidden', false);
+    css(this.part, 'transform', `translateY(${top}px)`);
   }
 
   /** Draws the row again as it is. */
@@ -107,7 +110,7 @@ export class GroupRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    this.element.hidden = true;
+    mark(this.part, 'hidden', true);
   }
 
   /** The cell spans the visible columns, up to the first one holding an aligned item. */
@@ -123,35 +126,37 @@ export class GroupRow<T> {
 
   /** A column removed, or recreated: its aligned cell and its own content go. */
   removeColumn(field: string) {
-    this.aligned.get(field)?.remove();
+    removePart(this.aligned.get(field));
     this.aligned.delete(field);
-    this.own.get(field)?.remove();
+    // Its own content goes with its place.
+    const own = this.own.get(field);
     this.own.delete(field);
-    const content = this.contents.get(field);
-    this.contents.delete(field);
-    if (content && !content.isDisposed) void content.dispose({ skipLeaveTransition: true });
+    if (own) this.contentPart.controls.remove(own);
     this.redraw();
   }
 
-  dispose() {}
+  dispose() {
+    if (this.part.parent) this.part.parent.controls.remove(this.part);
+    else if (!this.part.isDisposed) void this.part.dispose({ skipLeaveTransition: true });
+  }
 
   drawLook() {
     const { model, node, index, element } = this;
     if (!node || index < 0) {
-      element.removeAttribute('aria-rowindex');
+      put(this.part, 'aria-rowindex', null);
       return;
     }
-    element.setAttribute('aria-rowindex', String(model.ariaRowIndex(index)));
-    element.setAttribute('aria-level', String(node.level + 1));
+    put(this.part, 'aria-rowindex', String(model.ariaRowIndex(index)));
+    put(this.part, 'aria-level', String(node.level + 1));
     const open = model.groups.isExpanded(node);
-    element.toggleAttribute('data-locked', !model.canCollapse(node));
-    element.dataset.expand = model.expandModeOf(node);
-    element.setAttribute('aria-expanded', String(open));
-    element.toggleAttribute('data-expanded', open);
-    element.toggleAttribute('data-active', model.state.activeRow === index);
-    element.style.setProperty('--_level', String(node.level));
+    mark(this.part, 'data-locked', !model.canCollapse(node));
+    put(this.part, 'data-expand', model.expandModeOf(node));
+    put(this.part, 'aria-expanded', String(open));
+    mark(this.part, 'data-expanded', open);
+    mark(this.part, 'data-active', model.state.activeRow === index);
+    css(this.part, '--_level', String(node.level));
     const ev = model.events;
-    if (ev.listened(ev.rowPrepared)) ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'group', groupKey: [...node.path], isSelected: false, element });
+    if (ev.listened(ev.rowPrepared)) ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'group', groupKey: [...node.path], isSelected: false, part: this.part });
   }
 
   /**
@@ -175,29 +180,26 @@ export class GroupRow<T> {
       }
     }
     const separator = model.text('gridSummarySeparator');
-    this.summary.data = inText.length ? separator + inText.join(separator) : '';
+    text(this.summary, inText.length ? separator + inText.join(separator) : '');
     let first = visible.length;
     for (const field of aligned.keys()) first = Math.min(first, visible.indexOf(field));
-    this.cell.style.gridColumn = first < visible.length ? `1 / ${first + 1}` : '';
-    this.cell.setAttribute('aria-colspan', String(Math.max(1, first)));
+    css(this.cellPart, 'grid-column', first < visible.length ? `1 / ${first + 1}` : '');
+    put(this.cellPart, 'aria-colspan', String(Math.max(1, first)));
     for (const [field, parts] of aligned) {
       let cell = this.aligned.get(field);
       if (!cell) {
-        cell = document.createElement('div');
-        cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
-        cell.setAttribute('role', 'gridcell');
-        cell.dataset.field = field;
-        this.element.append(cell);
+        cell = part<HTMLDivElement>(this.part, 'div', 'mx-data-grid__cell mx-data-grid__summary-cell');
+        cell.attr.add({ role: 'gridcell', 'data-field': field });
         this.aligned.set(field, cell);
       }
       const at = visible.indexOf(field);
       // While columns are virtual, an item under a column without cells waits for it.
-      cell.hidden = !model.columnWindow.has(field);
-      cell.style.gridColumn = String(at + 1);
-      cell.setAttribute('aria-colindex', String(at + 1));
+      mark(cell, 'hidden', !model.columnWindow.has(field));
+      css(cell, 'grid-column', String(at + 1));
+      put(cell, 'aria-colindex', String(at + 1));
       fillSummaryCell(cell, parts, separator);
     }
-    for (const [field, cell] of this.aligned) if (!aligned.has(field)) cell.hidden = true;
+    for (const [field, cell] of this.aligned) if (!aligned.has(field)) mark(cell, 'hidden', true);
   }
 
   drawText() {
@@ -206,34 +208,29 @@ export class GroupRow<T> {
     const col = model.columns.defs.get(node.field);
     if (!col) return;
     const custom = col.groupCell || model.groupCell ? this.ownContent(node.field) : null;
-    for (const [field, el] of this.own) el.hidden = field !== node.field;
-    this.text.hidden = !!custom;
+    for (const [field, own] of this.own) mark(own, 'hidden', field !== node.field);
+    mark(this.textPart, 'hidden', !!custom);
     if (custom) return;
     // Lookup keys are requested once the body is measured, as cells do.
     const value = model.groupValue(node, model.state.measured);
-    this.caption.data = `${model.text('gridGroupText', { title: model.columns.title(node.field), value: value.text })} `;
-    this.count.data = model.columns.can(node.field, 'groupCount') ? model.text('gridGroupCount', { count: model.formatter.count(node.count) }) : '';
-    if (value.state === 'loading') this.cell.setAttribute('aria-busy', 'true');
-    else this.cell.removeAttribute('aria-busy');
+    text(this.caption, `${model.text('gridGroupText', { title: model.columns.title(node.field), value: value.text })} `);
+    text(this.count, model.columns.can(node.field, 'groupCount') ? model.text('gridGroupCount', { count: model.formatter.count(node.count) }) : '');
+    flag(this.cellPart, 'aria-busy', value.state === 'loading');
   }
 
   /** A column's own content, made the first time this row shows one of its groups. */
-  private ownContent(field: string): HTMLElement {
-    let el = this.own.get(field);
-    if (el) return el;
-    el = document.createElement('span');
-    el.className = 'mx-data-grid__group-own';
+  private ownContent(field: string): Component<HTMLSpanElement> {
+    const known = this.own.get(field);
+    if (known) return known;
+    const own = loose<HTMLSpanElement>('span', 'mx-data-grid__group-own');
     const col = this.model.columns.get(field);
     const content = (col.groupCell ?? this.model.groupCell)!(this.context(field));
-    if (content instanceof ComponentBase) {
-      this.host.controls.add(content);
-      el.append(content.element as Node);
-      this.contents.set(field, content);
-    } else if (isNode(content)) el.append(content);
-    else if (content !== undefined && content !== null) el.append(String(content));
-    this.text.before(el);
-    this.own.set(field, el);
-    return el;
+    if (content instanceof ComponentBase) own.controls.add(content);
+    else if (content !== undefined && content !== null) textPart(own, String(content));
+    // Before the text.
+    this.contentPart.controls.insert(this.contentPart.controls.items.indexOf(this.textPart), own);
+    this.own.set(field, own);
+    return own;
   }
 
   private context(field: string): GroupCellContext<T> {

@@ -1,3 +1,4 @@
+import { errorHandler } from '@motifx/core';
 import type { GridActionRanEventArgs } from '../grid-action-ran-event-args';
 import type { GridActionRun } from '../grid-action-run';
 import type { GridSelection } from '../grid-selection';
@@ -127,7 +128,8 @@ export class ActionRunner<T> {
     const ran: GridActionRanEventArgs<T> = { action, rows, location, done, failed, canceled, errors };
     const ev = model.events;
     if (ev.listened(ev.actionRan)) ev.actionRan.fire(ran);
-    else for (const { error } of errors) console.error(error);
+    // Nobody listens: the app's errors go to its error handling.
+    else for (const { error } of errors) errorHandler.report(error instanceof Error ? error : new Error(String(error)));
     return ran;
   }
 

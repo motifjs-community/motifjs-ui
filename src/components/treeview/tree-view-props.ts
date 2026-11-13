@@ -33,7 +33,7 @@ export interface TreeViewProps<T> extends ControlProps {
    * the list flat.
    */
   parentField?: Bind<ItemField<T>>;
-  /** The default is `'icon'`: an image address, an element or a component. */
+  /** The default is `'icon'`: an image address or a component, a new one for each row (a function field builds it). */
   iconField?: Bind<ItemField<T>>;
   /** The default is `'enabled'`. With `false` in this field, the row cannot be selected or checked. */
   enabledField?: Bind<ItemField<T>>;

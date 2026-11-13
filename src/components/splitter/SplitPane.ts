@@ -1,4 +1,6 @@
 import { read, type Bind, type ComponentBase, type IBaseProp } from "@motifx/core";
+import { givenField } from "../../core/given-field";
+import { nextId } from "../../core/next-id";
 import { Panel } from "../layout/Panel";
 import type { PanelProps } from "../layout/panel-props";
 import type { SplitPaneProps } from "./split-pane-props";
@@ -20,11 +22,12 @@ const OWN = ['key', 'size', 'minSize', 'maxSize', 'collapsible', 'collapsed', 'r
  */
 export class SplitPane extends Panel {
     owner: Splitter | null = null;
+    private ownId = '';
 
     constructor(props?: IBaseProp<SplitPaneProps>) {
         super(props as IBaseProp<PanelProps> | undefined);
         const own = (this.props ?? {}) as SplitPaneProps;
-        this.element.classList.add('mx-splitter__pane');
+        this.class.add('mx-splitter__pane');
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         const made = own.content?.();
         if (made) this.controls.add(...(Array.isArray(made) ? made : [made as ComponentBase]));
@@ -81,6 +84,12 @@ export class SplitPane extends Panel {
     }
     set resizable(value: Bind<boolean>) {
         this.assignProperty('resizable', value);
+    }
+
+    /** The id the pane goes by, which the handle after it names: the `id` it was given, else one made here. */
+    get paneId(): string {
+        if (!this.ownId) this.ownId = String(givenField(this.props, 'id') ?? '') || nextId('split-pane');
+        return this.ownId;
     }
 
     /** Indicates whether the adjacent handles can collapse it: its own `collapsible`, otherwise the splitter's. */

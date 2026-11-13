@@ -24,9 +24,9 @@ async function settle(rounds = 8) {
   for (let i = 0; i < rounds; i++) await tick();
 }
 
-function type(c: { inputElement: HTMLInputElement }, text: string) {
-  c.inputElement.value = text;
-  c.inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+function type(c: { inputPart: { element: HTMLInputElement } }, text: string) {
+  c.inputPart.element.value = text;
+  c.inputPart.element.dispatchEvent(new InputEvent('input', { bubbles: true }));
 }
 
 function press(el: Element, key: string, init: KeyboardEventInit = {}) {
@@ -57,7 +57,7 @@ describe('TagBox', () => {
     let c!: TagBox<string, string>;
     page(<TagBox ref={(x: TagBox<string, string>) => (c = x)} label="&Skills" items={SKILLS} x-model={() => s.skills} />);
     await settle();
-    const input = c.inputElement;
+    const input = c.inputPart.element;
     expect(input.getAttribute('role')).toBe('combobox');
     expect(input.getAttribute('aria-autocomplete')).toBe('list');
     expect(c.element.querySelector('.mx-tag-box__tags')!.getAttribute('role')).toBe('list');
@@ -66,6 +66,7 @@ describe('TagBox', () => {
 
     input.focus();
     type(c, 'script');
+    await settle();
     expect(c.opened).toBe(true);
     expect(c.element.querySelector('[role="listbox"]')!.getAttribute('aria-multiselectable')).toBe('true');
     expect(texts(c)).toEqual(['JavaScript', 'TypeScript']);
@@ -76,12 +77,14 @@ describe('TagBox', () => {
     expect(s.skills).toEqual(['CSS', 'JavaScript']);
     expect(before).toEqual(['CSS']);
     expect(input.value).toBe('');
+    await settle();
     expect(c.opened).toBe(true);
     expect(texts(c)).toEqual(SKILLS);
     expect(checked(c)).toEqual(['CSS', 'JavaScript']);
 
     option(c, 'CSS').click();
     expect(s.skills).toEqual(['JavaScript']);
+    await tick();
     expect(tagTexts(c)).toEqual(['JavaScript']);
 
     s.skills = ['Rust', 'HTML'];
@@ -116,13 +119,14 @@ describe('TagBox', () => {
     const c = new TagBox<string, string>({ items: SKILLS, value: ['CSS', 'HTML', 'Rust', 'Python'] });
     page(c);
     await settle();
-    const input = c.inputElement;
+    const input = c.inputPart.element;
     input.focus();
     press(input, 'Backspace');
     expect(c.value).toEqual(['CSS', 'HTML', 'Rust']);
     tags(c)[1].querySelector('button')!.click();
     expect(c.value).toEqual(['CSS', 'Rust']);
     expect(document.activeElement).toBe(input);
+    await tick();
 
     press(input, 'ArrowLeft');
     expect(document.activeElement).toBe(tags(c)[1]);
@@ -137,6 +141,31 @@ describe('TagBox', () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it('keeps the tags of the values that stay when a value comes or goes', async () => {
+    const c = new TagBox<string, string>({ items: SKILLS, value: ['CSS', 'HTML', 'Rust'], maxTags: 2 });
+    page(c);
+    await settle();
+    const [css, , more] = tags(c);
+    const label = css.querySelector('.mx-tag-box__tag-text');
+    c.value = ['CSS', 'Python', 'HTML', 'Rust'];
+    await settle();
+    expect(tagTexts(c)).toEqual(['CSS', 'Python', '+2']);
+    expect(tags(c)[0]).toBe(css);
+    expect(tags(c)[0].querySelector('.mx-tag-box__tag-text')).toBe(label);
+    expect(tags(c)[2]).toBe(more);
+    c.value = ['HTML', 'CSS'];
+    await settle();
+    expect(tagTexts(c)).toEqual(['HTML', 'CSS']);
+    const html = tags(c)[0];
+    expect(tags(c)[1]).toBe(css);
+    c.value = ['CSS', 'Rust', 'HTML'];
+    await settle();
+    expect(tags(c)[0]).toBe(css);
+    expect(tags(c)[2]).toBe(more);
+    expect(more.title).toBe('HTML');
+    expect(html.isConnected).toBe(false);
+  });
+
   it('shows the rest as "+N", limits the choice and hides the chosen items', async () => {
     const c = new TagBox<string, string>({ items: SKILLS, value: ['CSS', 'HTML', 'Rust', 'Python'], maxTags: 2, maxSelected: 4, hideSelected: true });
     page(c);
@@ -144,6 +173,7 @@ describe('TagBox', () => {
     expect(tagTexts(c)).toEqual(['CSS', 'HTML', '+2']);
     expect(tags(c)[2].title).toBe('Rust, Python');
     c.open();
+    await settle();
     expect(texts(c)).toEqual(['JavaScript', 'TypeScript']);
     expect(option(c, 'JavaScript').getAttribute('aria-disabled')).toBe('true');
     option(c, 'JavaScript').click();
@@ -151,9 +181,11 @@ describe('TagBox', () => {
     c.maxSelected = 0;
     option(c, 'JavaScript').click();
     expect(c.value).toEqual(['CSS', 'HTML', 'Rust', 'Python', 'JavaScript']);
+    await settle();
     expect(texts(c)).toEqual(['TypeScript']);
     expect(tagTexts(c)).toEqual(['CSS', 'HTML', '+3']);
     c.maxTags = 0;
+    await tick();
     expect(tagTexts(c).length).toBe(5);
   });
 
@@ -170,20 +202,21 @@ describe('TagBox', () => {
       />,
     );
     await settle();
-    c.inputElement.focus();
+    c.inputPart.element.focus();
     type(c, 'go');
-    press(c.inputElement, 'Enter');
+    press(c.inputPart.element, 'Enter');
     expect(s.tags).toEqual(['GO']);
     type(c, 'x');
-    press(c.inputElement, 'Enter');
+    press(c.inputPart.element, 'Enter');
     expect(s.tags).toEqual(['GO']);
     type(c, 'rust');
-    press(c.inputElement, 'Enter');
+    press(c.inputPart.element, 'Enter');
     expect(s.tags).toEqual(['GO', 'Rust']);
     type(c, 'Ty');
-    press(c.inputElement, 'ArrowDown');
+    press(c.inputPart.element, 'ArrowDown');
+    await settle();
     expect(active(c)).toBe('TypeScript');
-    press(c.inputElement, 'Enter');
+    press(c.inputPart.element, 'Enter');
     expect(s.tags).toEqual(['GO', 'Rust', 'TypeScript']);
   });
 
@@ -191,11 +224,12 @@ describe('TagBox', () => {
     const c = new TagBox<string, string>({ items: SKILLS, selectAll: true, closeOnSelect: true });
     page(c);
     await settle();
-    c.inputElement.focus();
-    press(c.inputElement, 'ArrowDown');
+    c.inputPart.element.focus();
+    press(c.inputPart.element, 'ArrowDown');
+    await settle();
     expect(c.opened).toBe(true);
     expect(active(c)).toBe('Select all');
-    press(c.inputElement, 'Enter');
+    press(c.inputPart.element, 'Enter');
     await settle();
     expect(c.value).toEqual(SKILLS);
     expect(c.opened).toBe(false);
@@ -221,13 +255,14 @@ describe('TagBox', () => {
     await settle(30);
     expect(tagTexts(c)).toEqual(['Row 4321']);
     expect(c.selectedItems.map((r) => r.name)).toEqual(['Row 4321']);
-    c.inputElement.focus();
+    c.inputPart.element.focus();
     type(c, '0012');
     await settle(30);
     expect(c.listItems.count).toBe(1);
     expect(texts(c)).toEqual(['Row 0012']);
-    press(c.inputElement, 'Enter');
+    press(c.inputPart.element, 'Enter');
     expect(c.value).toEqual([4321, 12]);
+    await tick();
     expect(tagTexts(c)).toEqual(['Row 4321', 'Row 0012']);
     c.open();
     await settle(30);
@@ -238,10 +273,10 @@ describe('TagBox', () => {
     const c = new TagBox<string, string>({ label: 'Skills', placeholder: 'Pick some', clearButton: true });
     page(c);
     await settle();
-    expect(c.inputElement.placeholder).toBe('Pick some');
+    expect(c.inputPart.element.placeholder).toBe('Pick some');
     c.items = SKILLS;
     c.value = ['CSS', 'HTML'];
-    expect(c.inputElement.hasAttribute('placeholder')).toBe(false);
+    expect(c.inputPart.element.hasAttribute('placeholder')).toBe(false);
     await uiLocale.use('tr');
     await settle();
     expect(tags(c)[0].querySelector('button')!.getAttribute('aria-label')).toBe('CSS öğesini kaldır');
@@ -249,16 +284,16 @@ describe('TagBox', () => {
     expect(c.value).toEqual([]);
     c.required = true;
     expect(await c.validate()).toBe(false);
-    expect(c.inputElement.getAttribute('aria-invalid')).toBe('true');
+    expect(c.inputPart.element.getAttribute('aria-invalid')).toBe('true');
     c.readOnly = true;
     expect(c.open()).toBe(false);
     c.readOnly = false;
     c.showDropDownButton = false;
     expect(c.element.querySelector('.mx-tag-box__arrow')).toBeNull();
-    c.inputElement.focus();
-    press(c.inputElement, 'ArrowDown');
+    c.inputPart.element.focus();
+    press(c.inputPart.element, 'ArrowDown');
     expect(c.opened).toBe(true);
-    press(c.inputElement, 'Escape');
+    press(c.inputPart.element, 'Escape');
     expect(c.opened).toBe(false);
   });
 
@@ -272,6 +307,7 @@ describe('TagBox', () => {
       await settle();
       changed.mockClear();
       c.open();
+      await settle();
       option(c, 'HTML').click();
       await settle();
       expect(c.value[0]).toBe(skills[1]);

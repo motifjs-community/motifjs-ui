@@ -72,6 +72,66 @@ afterEach(() => {
   delete (document as any).execCommand;
 });
 
+describe('copy to the clipboard, where the window has the clipboard API and where it has not', () => {
+  afterEach(() => {
+    delete (navigator as { clipboard?: unknown }).clipboard;
+    delete (window as { ClipboardItem?: unknown }).ClipboardItem;
+  });
+
+  it('goes through the clipboard API: both forms where it takes a ClipboardItem, else the text', async () => {
+    const grid = make({ rows: makeRows(3) });
+    await settle();
+    const written: unknown[] = [];
+    const clipboard = { write: vi.fn(async (items: unknown[]) => void written.push(...items)), writeText: vi.fn(async (t: string) => void written.push(t)) };
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: clipboard });
+    (window as any).ClipboardItem = class {
+      constructor(readonly items: Record<string, Blob>) {}
+    };
+    const command = fakeCopyCommand();
+    cellOf(grid, 1, 'name').focus();
+    expect(grid.copy()).toBe('Name 2');
+    const item = written[0] as { items: Record<string, Blob> };
+    expect([Object.keys(item.items), await item.items['text/plain'].text(), await item.items['text/html'].text()]).toEqual([
+      ['text/plain', 'text/html'],
+      'Name 2',
+      '<table><tbody><tr><td>Name 2</td></tr></tbody></table>',
+    ]);
+    delete (window as { ClipboardItem?: unknown }).ClipboardItem;
+    expect(grid.copy()).toBe('Name 2');
+    expect([clipboard.writeText.mock.calls, command.length]).toEqual([[['Name 2']], 0]);
+  });
+
+  it('goes through the copy command elsewhere: a hidden text area in the page holds the text for it, then goes, and focus comes back', async () => {
+    const grid = make({ rows: makeRows(3) });
+    await settle();
+    const seen: (string | boolean)[] = [];
+    (document as any).execCommand = vi.fn((command: string) => {
+      const area = document.activeElement as HTMLTextAreaElement;
+      seen.push(command, area.localName, area.value, area.selectionStart === 0 && area.selectionEnd === area.value.length, grid.element.contains(area));
+      const { event, store } = clipboardEvent('copy');
+      area.dispatchEvent(event);
+      seen.push(store['text/html']);
+      return true;
+    });
+    const cell = cellOf(grid, 1, 'name');
+    cell.focus();
+    expect(grid.copy()).toBe('Name 2');
+    expect(seen).toEqual(['copy', 'textarea', 'Name 2', true, false, '<table><tbody><tr><td>Name 2</td></tr></tbody></table>']);
+    expect([document.querySelector('textarea'), document.activeElement]).toEqual([null, cell]);
+  });
+
+  it('takes the copy command when the clipboard API refuses', async () => {
+    const grid = make({ rows: makeRows(3) });
+    await settle();
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn(() => Promise.reject(new Error('not allowed'))) } });
+    const held = fakeCopyCommand();
+    cellOf(grid, 1, 'name').focus();
+    expect(grid.copy()).toBe('Name 2');
+    await settle();
+    expect(held.map((h) => h['text/plain'])).toEqual(['Name 2']);
+  });
+});
+
 describe('copy', () => {
   it('copies the active cell as it shows, or its value', async () => {
     const grid = make({ rows: makeRows(5) });

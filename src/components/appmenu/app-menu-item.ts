@@ -14,7 +14,7 @@ export interface AppMenuItem {
     text: Bind<string>;
     /** The name of a glyph. */
     glyph?: Bind<string>;
-    /** An image, an element or a component, used instead of `glyph`. */
+    /** An image address or a component, used instead of `glyph`. */
     icon?: Bind<IconSource | null | undefined>;
     /** A longer description, shown as a tooltip. */
     hint?: Bind<string>;

@@ -1,11 +1,15 @@
+import type { ComponentBase } from '@motifx/core';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { ContextMenu } from './ContextMenu';
 
-/** Provides data for `onOpening`. Change the items for the element, or cancel the opening. */
+/** Provides data for `onOpening`. Change the items for the component, or cancel the opening. */
 export interface ContextMenuOpeningEventArgs {
-  /** The element that was right-clicked, or the focused element when a key opened the menu. */
-  target: Element;
-  /** The items to show. Set it to build the menu for `target`. */
+  /**
+   * The component the menu opens for (`targetPart`): the innermost component of the target that was right-clicked,
+   * or that holds focus when a key opened the menu, or the one given to `open()`.
+   */
+  part: ComponentBase;
+  /** The items to show. Set it to build the menu for `part`. */
   items: readonly MenuItem[];
   /** With `true`, the menu does not open and the browser shows its own. */
   cancel: boolean;

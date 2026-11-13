@@ -1,6 +1,8 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { clearParts, glyphPart, loose, part, removePart } from '../../core/draw-parts';
+import { focusOn, isFocused } from '../../core/focus';
+import { put } from '../../core/part-writes';
 import { functionValue } from '../../core/function-value';
-import { calendarMark, clockMark } from '../../core/glyphs';
 import { uiLocale } from '../../core/ui-locale';
 import type { DateKind } from '../../parts/dates/date-kind';
 import { datePatternOf } from '../../parts/dates/date-pattern-of';
@@ -43,7 +45,7 @@ interface Parts {
   pattern: DatePattern;
   /** The text is not a whole, real date yet. */
   unfinished: boolean;
-  toggle: HTMLButtonElement | null;
+  toggle: Component<HTMLButtonElement> | null;
   stopLabels: (() => void) | null;
   popup: Popup | null;
   calendar: Calendar | null;
@@ -64,17 +66,14 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
   constructor(props?: IBaseProp<DateBoxProps>) {
     super(props);
     const own = (this.props ?? {}) as DateBoxProps;
-    this.element.classList.add('mx-date-box');
+    this.class.add('mx-date-box');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.disabledDates !== undefined) this.bindProperty('disabledDates', functionValue(own.disabledDates));
 
     for (const name of ['type', 'locale', 'showSeconds'] as const) this.observeProperty(name, () => this.renderPattern());
     // The kit's language: the date's pattern and how it is written.
     onLanguage(this, () => this.renderPattern());
-    this.observeProperty<string>('placeholder', (text) => {
-      if (text) this.inputElement.placeholder = text;
-      else this.inputElement.removeAttribute('placeholder');
-    });
+    this.observeProperty<string>('placeholder', (text) => put(this.controlPart, 'placeholder', text || null));
     this.observeProperty('clearButton', () => this.renderClear());
     this.observeProperty('showPickerButton', () => this.renderToggle());
     this.observeProperty('displayFormat', () => this.renderValue(this.peekValue()));
@@ -85,8 +84,8 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     // The kit's language, or another kind of box: the button and the popup are named again.
     const drawLabels = () => {
       const label = this.peekProperty<DateKind | undefined>('type') === 'time' ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate;
-      parts.toggle?.setAttribute('aria-label', label);
-      parts.popup?.element.setAttribute('aria-label', label);
+      if (parts.toggle) put(parts.toggle, 'aria-label', label);
+      if (parts.popup) put(parts.popup, 'aria-label', label);
     };
     parts.stopLabels = onLanguage(this, drawLabels);
     this.observeProperty('type', drawLabels);
@@ -183,8 +182,9 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     this.assignProperty('showPickerButton', value, Boolean);
   }
 
-  get inputElement(): HTMLInputElement {
-    return this.focusElement as HTMLInputElement;
+  /** The text input as a component: write its attributes with `put` and call its methods through `attr`. */
+  get inputPart(): ComponentBase<HTMLInputElement> {
+    return this.controlPart as ComponentBase<HTMLInputElement>;
   }
 
   /** Indicates that the typed text is not yet a complete, valid date. */
@@ -215,13 +215,13 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     const popup = (parts.popup ??= this.createPopup());
     if (popup.isOpen) return true;
     this.fillPopup();
-    popup.open(this.inputElement.parentElement!, { toggle: this.inputElement.parentElement!, returnFocus: this.inputElement });
+    popup.open(this.boxPart, { returnFocus: this.controlPart });
     this.setProperty('opened', true);
-    parts.toggle?.setAttribute('aria-expanded', 'true');
+    if (parts.toggle) put(parts.toggle, 'aria-expanded', 'true');
     // The times scroll to the chosen one now that they can be seen.
     if (parts.times && parts.times.activeIndex >= 0) parts.times.setActive(parts.times.activeIndex);
     if (parts.calendar) parts.calendar.focus();
-    else parts.times?.element.focus();
+    else if (parts.times) focusOn(parts.times);
     parts.opened.fire();
     return true;
   }
@@ -235,13 +235,14 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     this.commit(null);
   }
 
-  protected createControl(): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'mx-field__input';
-    input.inputMode = 'numeric';
-    input.autocomplete = 'off';
-    return input;
+  protected override get controlTag(): string {
+    return 'input';
+  }
+
+  protected createControl(): ComponentBase {
+    const control = loose<HTMLInputElement>('input', 'mx-field__input');
+    control.attr.add({ type: 'text', inputmode: 'numeric', autocomplete: 'off' });
+    return control;
   }
 
   protected emptyValue(): Date | null {
@@ -286,7 +287,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     if (!self[PARTS]) {
       const pattern = datePatternOf(uiLocale.locale, 'date');
       self[PARTS] = {
-        mask: new InputMask(this.focusElement as HTMLInputElement, { mask: pattern.mask }),
+        mask: new InputMask(this.controlPart, { mask: pattern.mask }),
         pattern,
         unfinished: false,
         toggle: null,
@@ -306,7 +307,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     const kind = this.peekProperty<DateKind>('type') ?? 'date';
     parts.pattern = datePatternOf(this.peekProperty<string>('locale') || uiLocale.locale, kind, !!this.peekProperty('showSeconds'));
     parts.mask.update({ mask: parts.pattern.mask });
-    this.element.dataset.type = kind;
+    put(this, 'data-type', kind);
     this.renderToggle();
     this.renderValue(this.peekValue());
     if (parts.popup) {
@@ -317,10 +318,10 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
   }
 
   private listen(): void {
-    const input = this.inputElement;
-    input.addEventListener('input', (e) => this.typed(e));
-    input.addEventListener('blur', () => this.showDisplayText());
-    input.addEventListener('keydown', (e) => {
+    const input = this.controlPart;
+    input.motif.on('input', (_, e) => this.typed(e));
+    input.motif.on('blur', () => this.showDisplayText());
+    input.motif.on('keydown', (_, e) => {
       if (e.key === 'ArrowDown' && e.altKey) {
         e.preventDefault();
         this.open();
@@ -355,35 +356,31 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
   private showDisplayText(): void {
     const value = this.peekValue();
     const format = this.peekProperty<Intl.DateTimeFormatOptions | null>('displayFormat');
-    const input = this.inputElement;
-    if (!value || !format || document.activeElement === input || this.dateParts.unfinished) return;
-    input.value = new Intl.DateTimeFormat(this.peekProperty<string>('locale') || uiLocale.locale, format).format(value);
+    if (!value || !format || isFocused(this.controlPart) || this.dateParts.unfinished) return;
+    this.controlPart.attr.add({ value: new Intl.DateTimeFormat(this.peekProperty<string>('locale') || uiLocale.locale, format).format(value) });
   }
 
   private renderToggle(): void {
     const parts = this.dateParts;
     const on = this.peekProperty('showPickerButton') !== false;
     if (!on) {
-      parts.toggle?.remove();
+      removePart(parts.toggle);
       parts.toggle = null;
       return;
     }
     const time = this.peekProperty<DateKind>('type') === 'time';
     if (!parts.toggle) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'mx-field__button mx-date-box__toggle';
-      button.setAttribute('aria-haspopup', 'dialog');
-      button.setAttribute('aria-expanded', 'false');
-      button.addEventListener('click', () => {
+      const toggle = part<HTMLButtonElement>(this.area('actions'), 'button', 'mx-field__button mx-date-box__toggle');
+      toggle.attr.add({ type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' });
+      toggle.motif.on('click', () => {
         if (this.dateParts.popup?.isOpen) this.close();
         else this.open();
       });
-      this.area('actions').append(button);
-      parts.toggle = button;
+      parts.toggle = toggle;
     }
-    parts.toggle.replaceChildren(time ? clockMark() : calendarMark());
-    parts.toggle.setAttribute('aria-label', time ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate);
+    clearParts(parts.toggle);
+    glyphPart(parts.toggle, time ? 'clock' : 'calendar');
+    put(parts.toggle, 'aria-label', time ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate);
   }
 
   private renderClear(): void {
@@ -403,13 +400,12 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     const parts = this.dateParts;
     const popup = new Popup();
     popup.matchWidth = false;
-    popup.element.classList.add('mx-date-box__popup');
-    popup.element.setAttribute('role', 'dialog');
-    popup.element.setAttribute('aria-label', this.peekProperty('type') === 'time' ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate);
+    popup.class.add('mx-date-box__popup');
+    popup.attr.add({ role: 'dialog', 'aria-label': this.peekProperty('type') === 'time' ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate });
     this.controls.add(popup);
     popup.onClosed((reason) => {
       this.setProperty('opened', false);
-      parts.toggle?.setAttribute('aria-expanded', 'false');
+      if (parts.toggle) put(parts.toggle, 'aria-expanded', 'false');
       parts.closed.fire(reason);
     });
     return popup;
@@ -442,10 +438,10 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
         const value = this.peekValue();
         return !!value && value.getHours() === time.getHours() && value.getMinutes() === time.getMinutes();
       };
-      times.element.tabIndex = 0;
-      times.element.classList.add('mx-date-box__times');
-      times.element.addEventListener('keydown', (e) => {
-        if (times.handleKey(e)) times.element.setAttribute('aria-activedescendant', times.idOf(times.activeIndex));
+      put(times, 'tabindex', '0');
+      times.class.add('mx-date-box__times');
+      times.motif.on('keydown', (_, e) => {
+        if (times.handleKey(e)) put(times, 'aria-activedescendant', times.idOf(times.activeIndex));
       });
       times.onChosen((e) => {
         const base = this.peekValue() ?? dayStart(new Date());
@@ -485,7 +481,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
       const at = value ? list.findIndex((t) => t.getHours() * 60 + t.getMinutes() >= value.getHours() * 60 + value.getMinutes()) : list.findIndex((t) => t.getHours() >= 9);
       if (at >= 0) {
         times.setActive(at);
-        times.element.setAttribute('aria-activedescendant', times.idOf(at));
+        put(times, 'aria-activedescendant', times.idOf(at));
       }
     }
   }

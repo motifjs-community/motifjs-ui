@@ -1,7 +1,7 @@
-import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { css } from '../../core/draw-parts';
-import { glyph } from '../../core/glyphs';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { glyphPart, loose } from '../../core/draw-parts';
 import { onLanguage } from '../../core/on-language';
+import { css, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { formatColor, parseColor } from '../../parts/color/colors';
 import { Field } from '../../parts/field/Field';
@@ -19,8 +19,8 @@ const PARTS = Symbol('mx.colorbox');
 
 /** Made with the field, before the subclass's fields exist. */
 interface Parts {
-  swatch: HTMLSpanElement;
-  toggle: HTMLButtonElement;
+  swatchPart: Component<HTMLSpanElement>;
+  togglePart: Component<HTMLButtonElement>;
   popup: Popup | null;
   picker: ColorPicker | null;
   /** The text typed is not a color. */
@@ -43,23 +43,19 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     super(props);
     const own = (this.props ?? {}) as ColorBoxProps;
     const parts = this.colorParts;
-    const input = this.inputElement;
-    this.element.classList.add('mx-color-box');
+    this.class.add('mx-color-box');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     // The field took the value before `alpha` was known: it is given again to fit it.
     if (own.value !== undefined) this.value = own.value;
 
-    this.area('start').append(parts.swatch);
-    this.area('actions').append(parts.toggle);
-    parts.toggle.addEventListener('click', () => (parts.popup?.isOpen ? this.close() : this.open()));
-    this.observeProperty<string>('placeholder', (text) => {
-      if (text) input.placeholder = text;
-      else input.removeAttribute('placeholder');
-    });
+    this.area('start').controls.add(parts.swatchPart);
+    this.area('actions').controls.add(parts.togglePart);
+    parts.togglePart.motif.on('click', () => (parts.popup?.isOpen ? this.close() : this.open()));
+    this.observeProperty<string>('placeholder', (text) => put(this.controlPart, 'placeholder', text));
     this.observeProperty('clearButton', () => this.showClearButton(!!this.peekProperty('clearButton'), (e) => this.cleared(e), 'mx-color-box__clear'));
     for (const name of ['alpha', 'palette'] as const) this.observeProperty(name, () => this.syncPicker());
-    input.addEventListener('change', (e) => this.typed(e));
-    input.addEventListener('keydown', (e) => {
+    this.controlPart.motif.on('change', (_, e) => this.typed(e));
+    this.controlPart.motif.on('keydown', (_, e) => {
       if (e.key === 'ArrowDown' && e.altKey) {
         e.preventDefault();
         this.open();
@@ -69,8 +65,8 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     });
     // The button and the popup are named in the kit's language.
     onLanguage(this, () => {
-      parts.toggle.setAttribute('aria-label', uiLocale.strings.chooseColor);
-      parts.popup?.element.setAttribute('aria-label', uiLocale.strings.chooseColor);
+      put(parts.togglePart, 'aria-label', uiLocale.strings.chooseColor);
+      if (parts.popup) put(parts.popup, 'aria-label', uiLocale.strings.chooseColor);
     });
     this.motif.setDisposable(() => {
       parts.opened.dispose();
@@ -109,8 +105,9 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     this.assignProperty('placeholder', value);
   }
 
-  get inputElement(): HTMLInputElement {
-    return this.focusElement as HTMLInputElement;
+  /** The text input as a component: write its attributes with `put` and call its methods through `attr`. */
+  get inputPart(): ComponentBase<HTMLInputElement> {
+    return this.controlPart as ComponentBase<HTMLInputElement>;
   }
 
   /** The picker in the popup, after it has been opened. */
@@ -137,9 +134,9 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     const popup = (parts.popup ??= this.createPopup());
     if (popup.isOpen) return true;
     this.syncPicker();
-    const anchor = this.inputElement.parentElement!;
-    popup.open(anchor, { toggle: anchor, returnFocus: this.inputElement });
-    parts.toggle.setAttribute('aria-expanded', 'true');
+    // Under the box: a press on the input or its buttons is not outside.
+    popup.open(this.boxPart, { toggle: this.boxPart, returnFocus: this.controlPart });
+    put(parts.togglePart, 'aria-expanded', 'true');
     parts.picker?.focus();
     parts.opened.fire();
     return true;
@@ -154,13 +151,14 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     this.commit(null);
   }
 
-  protected createControl(): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'mx-field__input';
-    input.autocomplete = 'off';
-    input.spellcheck = false;
-    return input;
+  protected override get controlTag(): string {
+    return 'input';
+  }
+
+  protected createControl(): ComponentBase {
+    const control = loose<HTMLInputElement>('input', 'mx-field__input');
+    control.attr.add({ type: 'text', autocomplete: 'off', spellcheck: 'false' });
+    return control;
   }
 
   protected emptyValue(): string | null {
@@ -178,9 +176,9 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
   protected renderValue(value: string | null): void {
     const parts = this.colorParts;
     parts.unfinished = false;
-    this.inputElement.value = value ?? '';
-    css(parts.swatch, '--_color', value ?? 'transparent');
-    parts.swatch.toggleAttribute('data-empty', !value);
+    this.controlPart.attr.add({ value: value ?? '' });
+    css(parts.swatchPart, '--_color', value ?? 'transparent');
+    mark(parts.swatchPart, 'data-empty', !value);
     this.syncPicker();
   }
 
@@ -197,17 +195,14 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
   private get colorParts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
     if (!self[PARTS]) {
-      const swatch = document.createElement('span');
-      swatch.className = 'mx-color-box__swatch';
-      swatch.setAttribute('aria-hidden', 'true');
-      const toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.tabIndex = -1;
-      toggle.className = 'mx-field__button mx-color-box__toggle';
-      toggle.setAttribute('aria-haspopup', 'dialog');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.append(glyph('chevron-down'));
-      self[PARTS] = { swatch, toggle, popup: null, picker: null, unfinished: false, opened: new Emitter(), closed: new Emitter() };
+      // Placed in their areas by the constructor.
+      const swatchPart = loose<HTMLSpanElement>('span', 'mx-color-box__swatch');
+      swatchPart.attr.add({ 'aria-hidden': 'true' });
+      const togglePart = loose<HTMLButtonElement>('button', 'mx-field__button mx-color-box__toggle');
+      togglePart.attr.add({ type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' });
+      put(togglePart, 'tabindex', '-1');
+      glyphPart(togglePart, 'chevron-down');
+      self[PARTS] = { swatchPart, togglePart, popup: null, picker: null, unfinished: false, opened: new Emitter(), closed: new Emitter() };
     }
     return self[PARTS]!;
   }
@@ -215,7 +210,7 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
   /** What is typed becomes the value when it is a color; empty text empties it. */
   private typed(e: Event): void {
     const parts = this.colorParts;
-    const text = this.inputElement.value.trim();
+    const text = (e.target as HTMLInputElement).value.trim();
     if (!text) {
       parts.unfinished = false;
       this.commit(null, e);
@@ -225,23 +220,22 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     parts.unfinished = !color;
     if (color) {
       this.commit(color, e);
-      this.inputElement.value = color;
+      this.controlPart.attr.add({ value: color });
     } else if (this.isValid === false) void this.validate();
   }
 
   private cleared(e: Event): void {
     this.colorParts.unfinished = false;
     this.commit(null, e);
-    this.inputElement.value = '';
+    this.controlPart.attr.add({ value: '' });
   }
 
   private createPopup(): Popup {
     const parts = this.colorParts;
     const popup = new Popup();
     popup.matchWidth = false;
-    popup.element.classList.add('mx-color-box__popup');
-    popup.element.setAttribute('role', 'dialog');
-    popup.element.setAttribute('aria-label', uiLocale.strings.chooseColor);
+    popup.class.add('mx-color-box__popup');
+    popup.attr.add({ role: 'dialog', 'aria-label': uiLocale.strings.chooseColor });
     this.controls.add(popup);
     const picker = new ColorPicker({
       onValueChanged: (e) => {
@@ -252,15 +246,15 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     parts.picker = picker;
     const buttons = new Button({ text: uiLocale.strings.ok, onclick: () => this.applyChosen() });
     const cancel = new Button({ text: uiLocale.strings.cancel, variant: 'ghost', onclick: () => this.close() });
-    buttons.element.classList.add('mx-color-box__ok');
-    cancel.element.classList.add('mx-color-box__cancel');
+    buttons.class.add('mx-color-box__ok');
+    cancel.class.add('mx-color-box__cancel');
     popup.controls.add(cancel, buttons);
     onLanguage(this, () => {
       buttons.text = uiLocale.strings.ok;
       cancel.text = uiLocale.strings.cancel;
     });
     popup.onClosed((reason) => {
-      parts.toggle.setAttribute('aria-expanded', 'false');
+      put(parts.togglePart, 'aria-expanded', 'false');
       parts.closed.fire(reason);
     });
     return popup;
@@ -278,7 +272,7 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     const parts = this.colorParts;
     const picker = parts.picker;
     const buttons = this.peekProperty('apply') === 'useButtons';
-    parts.popup?.element.toggleAttribute('data-buttons', buttons);
+    if (parts.popup) mark(parts.popup, 'data-buttons', buttons);
     if (!picker) return;
     picker.alpha = !!this.peekProperty('alpha');
     picker.palette = this.peekProperty<readonly string[] | null>('palette') ?? null;

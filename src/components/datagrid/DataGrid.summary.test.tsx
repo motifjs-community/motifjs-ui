@@ -141,9 +141,14 @@ describe('total summary', () => {
   it('follows the filter and the search, and rows added to the array', async () => {
     const rows = makeRows();
     const grid = await make({ summary: { totalItems: [{ column: 'id', summaryType: 'count' }, { column: 'qty', summaryType: 'sum' }] }, settings: { filterRow: true } }, rows);
+    const items = () => [...totalRow(grid).querySelectorAll('.mx-data-grid__summary-item')];
+    const before = items();
     grid.filters = { city: { op: '=', value: 'ank' } };
     await settle();
     expect([totals(grid, 'id'), totals(grid, 'qty')]).toEqual([['Count: 4'], ['Sum: 220']]);
+    // A new total is written into the items the cells have.
+    expect(items()).toEqual(before);
+    expect(items().every((item, i) => item === before[i])).toBe(true);
     grid.filters = {};
     grid.searchText = 'Bursa';
     await settle();
@@ -270,7 +275,7 @@ describe('group summary', () => {
     expect([footer.getAttribute('role'), footer.getAttribute('aria-level'), footer.getAttribute('aria-rowindex')]).toEqual(['row', '2', '7']);
     expect(grid.getGroupSummaryValue(['ank'], 'sum_qty')).toBe(220);
     expect(grid.getGroupSummaryValue(['brs'], 3)).toBe(4);
-    expect(grid.getVisibleRows().find((r) => r.element === footer)?.rowType).toBe('groupFooter');
+    expect(grid.getVisibleRows().find((r) => r.part.element === footer)?.rowType).toBe('groupFooter');
     // A closed group has no footer.
     grid.collapseGroup(['ank']);
     await settle();

@@ -1,3 +1,5 @@
+import type { ComponentBase } from '@motifx/core';
+import { windowOf } from '../../core/page-documents';
 import { motionOf } from './chart-text';
 
 /**
@@ -5,14 +7,14 @@ import { motionOf } from './chart-text';
  * driven, by a drag or a fast feed: they are drawn at once, so what is drawn keeps up with them.
  */
 export class ValueMotion {
-    element: Element;
+    owner: ComponentBase;
     draw: (values: readonly (number | null)[]) => void;
     shown: (number | null)[] = [];
     frame = 0;
     changedAt = -Infinity;
 
-    constructor(element: Element, draw: (values: readonly (number | null)[]) => void) {
-        this.element = element;
+    constructor(owner: ComponentBase, draw: (values: readonly (number | null)[]) => void) {
+        this.owner = owner;
         this.draw = draw;
     }
 
@@ -24,8 +26,8 @@ export class ValueMotion {
 
     move(values: readonly (number | null)[]): void {
         this.stop();
-        const view = this.element.ownerDocument.defaultView;
-        const duration = motionOf(this.element, '--mx-motion-duration-normal');
+        const view = windowOf(this.owner);
+        const duration = motionOf(this.owner, '--mx-motion-duration-normal');
         const start = view?.performance.now() ?? 0;
         const driven = start - this.changedAt < duration;
         this.changedAt = start;
@@ -49,7 +51,7 @@ export class ValueMotion {
     }
 
     stop(): void {
-        if (this.frame) cancelAnimationFrame(this.frame);
+        if (this.frame) windowOf(this.owner)?.cancelAnimationFrame(this.frame);
         this.frame = 0;
     }
 }

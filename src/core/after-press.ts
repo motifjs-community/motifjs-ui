@@ -1,4 +1,5 @@
 import { eachDocument } from './page-documents';
+import { onDocument } from './window-events';
 
 let down = false;
 let installed = false;
@@ -17,13 +18,9 @@ function install(): void {
     });
   };
   eachDocument((doc) => {
-    doc.addEventListener('pointerdown', press, true);
-    doc.addEventListener('pointerup', release, true);
-    doc.addEventListener('pointercancel', release, true);
+    const stops = [onDocument(doc, 'pointerdown', press, true), onDocument(doc, 'pointerup', release, true), onDocument(doc, 'pointercancel', release, true)];
     return () => {
-      doc.removeEventListener('pointerdown', press, true);
-      doc.removeEventListener('pointerup', release, true);
-      doc.removeEventListener('pointercancel', release, true);
+      for (const stop of stops) stop();
     };
   });
 }

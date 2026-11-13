@@ -1,8 +1,9 @@
 import { Component, untracked } from '@motifx/core';
-import { put } from '../../../core/draw-parts';
+import { part, removePart } from '../../../core/draw-parts';
+import { put } from '../../../core/part-writes';
+import { orderControls } from '../../../core/order-controls';
 import type { GridModel } from '../model/GridModel';
 import { fillSummaryCell } from './summary-cell';
-import { placeInOrder } from './place-in-order';
 
 /**
  * The row of totals under the rows: a cell per column, holding the items of `summary.totalItems`
@@ -12,8 +13,8 @@ import { placeInOrder } from './place-in-order';
  * change, and writes its cells (and tells `rowPrepared`) only when what they show changed.
  */
 export class TotalRow<T> extends Component<HTMLDivElement> {
-  /** Cell elements by field. */
-  readonly cells = new Map<string, HTMLDivElement>();
+  /** Cell components by field. */
+  readonly cells = new Map<string, Component<HTMLDivElement>>();
   /** What the cells show, as last written: `''` writes them again. */
   private drawnKey = '';
 
@@ -24,9 +25,13 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
   override onConfigured() {
     const { grid } = this;
     this.class.add('mx-data-grid__row mx-data-grid__total-row');
-    this.element.setAttribute('role', 'row');
+    this.attr.add({ role: 'row' });
     for (const field of grid.columns.state.order) if (grid.columnWindow.has(field)) this.makeCell(field);
     this.motif.setDisposable(grid.notices.on(() => this.draw()));
+    // Cells taken out while columns are virtual go too.
+    this.motif.setDisposable(() => {
+      for (const cell of this.cells.values()) if (!cell.parent && !cell.isDisposed) void cell.dispose({ skipLeaveTransition: true });
+    });
     this.draw();
   }
 
@@ -36,6 +41,11 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
     this.draw();
   }
 
+  /** The cell of a column, while the row has one. */
+  cellPart(field: string): Component<HTMLDivElement> | undefined {
+    return this.cells.get(field);
+  }
+
   /** A column's cell (one added at run time too; placed by the next `arrange`). */
   addColumn(field: string) {
     if (this.isConfigured) this.makeCell(field);
@@ -43,17 +53,14 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
 
   private makeCell(field: string) {
     if (this.cells.has(field)) return;
-    const cell = document.createElement('div');
-    cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
-    cell.setAttribute('role', 'gridcell');
-    cell.dataset.field = field;
+    const cell = part<HTMLDivElement>(this, 'div', 'mx-data-grid__cell mx-data-grid__summary-cell');
+    cell.attr.add({ role: 'gridcell', 'data-field': field });
     this.cells.set(field, cell);
-    this.element.append(cell);
     this.drawnKey = '';
   }
 
   removeColumn(field: string) {
-    this.cells.get(field)?.remove();
+    removePart(this.cells.get(field));
     this.cells.delete(field);
   }
 
@@ -62,21 +69,21 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
     if (!this.isConfigured) return;
     const drawn = this.grid.columnWindow;
     const shown = new Set(visible);
-    const desired: HTMLElement[] = [];
+    const desired: Component<HTMLDivElement>[] = [];
     visible.forEach((field, i) => {
       if (!drawn.has(field)) return;
       this.makeCell(field);
       const cell = this.cells.get(field)!;
       desired.push(cell);
-      cell.setAttribute('aria-colindex', String(i + 1));
+      put(cell, 'aria-colindex', String(i + 1));
     });
     for (const [field, cell] of this.cells) {
       if (shown.has(field) && drawn.has(field)) continue;
-      cell.removeAttribute('aria-colindex');
+      put(cell, 'aria-colindex', null);
       if (drawn.all) desired.push(cell);
-      else cell.remove();
+      else if (cell.parent === this) this.controls.silentDetach(cell);
     }
-    placeInOrder(this.element, desired);
+    orderControls(this, desired);
     if (!drawn.all) this.drawnKey = '';
     this.draw();
   }
@@ -89,19 +96,19 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
       const el = this.element;
       const s = grid.summaries;
       const status = s.state.status;
-      put(el, 'aria-rowindex', String(grid.count + grid.headRows + 1 + grid.openDetailCount()));
-      put(el, 'tabindex', grid.settings.get('totalSummaryTabStop') && s.showsTotal() ? '0' : null);
-      put(el, 'aria-busy', status === 'loading' ? 'true' : null);
-      put(el, 'data-state', status === 'ready' ? null : status);
+      put(this, 'aria-rowindex', String(grid.count + grid.headRows + 1 + grid.openDetailCount()));
+      put(this, 'tabindex', grid.settings.get('totalSummaryTabStop') && s.showsTotal() ? '0' : null);
+      put(this, 'aria-busy', status === 'loading' ? 'true' : null);
+      put(this, 'data-state', status === 'ready' ? null : status);
       const parts = s.partsByColumn(s.totalItems(), s.total);
       const some = !grid.columnWindow.all;
-      const filled = [...this.cells].filter(([, cell]) => !some || cell.parentElement === el);
+      const filled = [...this.cells].filter(([, cell]) => !some || cell.parent === this);
       const key = JSON.stringify(filled.map(([field]) => [field, parts.get(field) ?? []]));
       if (key === this.drawnKey) return;
       this.drawnKey = key;
       for (const [field, cell] of filled) fillSummaryCell(cell, parts.get(field) ?? [], null);
       const ev = grid.events;
-      if (ev.listened(ev.rowPrepared)) ev.rowPrepared.fire({ row: undefined, rowIndex: grid.count, rowType: 'totalFooter', isSelected: false, element: el });
+      if (ev.listened(ev.rowPrepared)) ev.rowPrepared.fire({ row: undefined, rowIndex: grid.count, rowType: 'totalFooter', isSelected: false, part: this });
     });
   }
 }

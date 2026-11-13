@@ -25,7 +25,7 @@ async function settle() {
   for (let i = 0; i < 6; i++) await tick();
 }
 
-const thumb = (s: Slider, i = 0) => s.thumbElements[i] as HTMLElement;
+const thumb = (s: Slider, i = 0) => s.thumbParts[i].element as HTMLElement;
 const now = (s: Slider, i = 0) => Number(thumb(s, i).getAttribute('aria-valuenow'));
 
 function press(el: Element, key: string) {
@@ -271,6 +271,14 @@ describe('Slider', () => {
     await settle();
     expect(marks().map((t) => t.textContent)).toEqual(['0%', '50%', '100%']);
     expect(marks()[1].getAttribute('style')).toContain('--_at: 50%');
+    // The ticks that stay are the same parts, moved and written in place.
+    const [first, second] = marks();
+    s.ticks = 4;
+    await settle();
+    expect(marks().map((t) => t.textContent)).toEqual(['0%', '25%', '50%', '75%', '100%']);
+    expect(marks()[0]).toBe(first);
+    expect(marks()[1]).toBe(second);
+    expect(second.getAttribute('style')).toContain('--_at: 25%');
     s.ticks = false;
     await settle();
     expect(marks().map((t) => [t.textContent, t.hasAttribute('data-mark')])).toEqual([

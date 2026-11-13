@@ -1,5 +1,10 @@
-import { read, untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { read, untracked, type Bind, type Component, type ComponentBase, type IBaseProp } from '@motifx/core';
+import { loose, part, removePart } from '../../core/draw-parts';
+import { focusOn } from '../../core/focus';
+import { css, flag, kept, mark, put, text as writeText } from '../../core/part-writes';
 import { LanguageLook } from '../../core/language-look';
+import { isRtl, rectOf, type Rect } from '../../core/measure';
+import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
 import { Field } from '../../parts/field/Field';
 import type { SliderOrientation } from './slider-orientation';
@@ -31,6 +36,9 @@ type Own = (typeof OWN)[number];
 /** More marks than this are not drawn: they would only make a gray bar. */
 const MAX_TICKS = 1000;
 
+/** The label of a tick, made the first time labels show. */
+const TICK_LABELS = new WeakMap<ComponentBase, Component<HTMLSpanElement>>();
+
 const PARTS = Symbol('mx.slider');
 
 interface Drag {
@@ -44,17 +52,29 @@ interface Drag {
   focus: boolean;
 }
 
+/** The track as read at the start of a pointer event: where it is and which way it grows. */
+interface TrackRead {
+  rect: Rect;
+  vertical: boolean;
+  rtl: boolean;
+}
+
 interface Parts {
-  control: HTMLDivElement;
-  track: HTMLDivElement;
+  /** The control as a component, the field's control: the track and the ticks are its parts. */
+  controlPart: Component<HTMLDivElement>;
+  trackPart: Component<HTMLDivElement>;
   /** Carries `--_from` / `--_to` and what lies at each end of the active segment. */
-  rail: HTMLDivElement;
-  ticks: HTMLDivElement;
+  rail: Component<HTMLDivElement>;
+  ticksPart: Component<HTMLDivElement>;
   /** The values of the marks drawn, in their order. */
   tickValues: number[];
-  thumbs: HTMLDivElement[];
-  bubbles: HTMLSpanElement[];
-  inputs: HTMLInputElement[];
+  /** The marks drawn, in the same order. */
+  tickParts: Component<HTMLSpanElement>[];
+  thumbParts: Component<HTMLDivElement>[];
+  /** The ids of the thumbs, `[start, end]`: a range names each thumb by the label and its own name. */
+  thumbIds: string[];
+  bubbles: Component<HTMLSpanElement>[];
+  inputParts: Component<HTMLInputElement>[];
   /** The value drawn while a thumb moves with `updateOn: 'change'`. */
   shown: SliderValue | null;
   drag: Drag | null;
@@ -64,24 +84,17 @@ interface Parts {
   ready: boolean;
 }
 
-function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
-  const el = document.createElement(tag);
-  el.className = className;
-  return el;
-}
-
-function createThumb(name: 'start' | 'end'): HTMLDivElement {
-  const thumb = element('div', 'mx-slider__thumb');
-  thumb.dataset.thumb = name;
-  thumb.setAttribute('role', 'slider');
-  thumb.tabIndex = 0;
+/** A thumb as a part of the track, with the value's bubble. */
+function createThumb(track: ComponentBase, name: 'start' | 'end', id: string): { thumb: Component<HTMLDivElement>; bubble: Component<HTMLSpanElement> } {
+  const thumb = part<HTMLDivElement>(track, 'div', 'mx-slider__thumb');
+  thumb.attr.add({ id, 'data-thumb': name, role: 'slider' });
+  put(thumb, 'tabindex', '0');
   // The thumb is the pressable area; what shows is drawn inside it: a halo, the knob with its core, the value.
-  const knob = element('span', 'mx-slider__knob');
-  knob.append(element('span', 'mx-slider__core'));
-  const bubble = element('span', 'mx-slider__bubble');
-  bubble.setAttribute('aria-hidden', 'true');
-  thumb.append(element('span', 'mx-slider__halo'), knob, bubble);
-  return thumb;
+  part(thumb, 'span', 'mx-slider__halo');
+  part(part(thumb, 'span', 'mx-slider__knob'), 'span', 'mx-slider__core');
+  const bubble = part<HTMLSpanElement>(thumb, 'span', 'mx-slider__bubble');
+  bubble.attr.add({ 'aria-hidden': 'true' });
+  return { thumb, bubble };
 }
 
 function toNumber(value: unknown, fallback: number): number {
@@ -113,13 +126,13 @@ function decimals(n: number): number {
  */
 export class Slider extends Field<SliderValue, SliderProps> {
   /** What the design language decides: a track split around the thumbs (a gap there). */
-  private readonly trackLook = new LanguageLook(this.element, { gap: '--_slider-track-gap', originGap: '--_slider-origin-gap' }, () => this.renderTrack());
+  private readonly trackLook = new LanguageLook(this, { gap: '--_slider-track-gap', originGap: '--_slider-origin-gap' }, () => this.renderTrack());
 
   constructor(props?: IBaseProp<SliderProps>) {
     super(props);
     this.motif.setDisposable(this.trackLook.watch());
     const own = (this.props ?? {}) as SliderProps;
-    this.element.classList.add('mx-slider');
+    this.class.add('mx-slider');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.valueText) this.setProperty('valueText', own.valueText);
 
@@ -132,16 +145,13 @@ export class Slider extends Field<SliderValue, SliderProps> {
     this.observeProperty('locale', () => this.renderFormat());
     onLanguage(this, () => this.renderFormat());
     this.observeProperty('valueText', () => this.draw());
-    this.observeProperty<SliderShowValue>('showValue', (show) => (this.element.dataset.showValue = show ?? 'never'));
+    this.observeProperty<SliderShowValue>('showValue', (show) => put(this, 'data-show-value', show ?? 'never'));
     this.observeProperty('name', () => this.renderInputs());
     this.observeProperty('text', () => this.renderNames());
     // A slider always has a value, and ARIA has no aria-required for it.
-    this.observeProperty('required', () => this.sliderParts.control.removeAttribute('aria-required'));
+    this.observeProperty('required', () => put(this.sliderParts.controlPart, 'aria-required', null));
     this.observeProperty<boolean>('invalid', (on) => {
-      for (const thumb of this.sliderParts.thumbs) {
-        if (on) thumb.setAttribute('aria-invalid', 'true');
-        else thumb.removeAttribute('aria-invalid');
-      }
+      for (const thumb of this.sliderParts.thumbParts) flag(thumb, 'aria-invalid', on);
     });
 
     const parts = this.sliderParts;
@@ -254,9 +264,9 @@ export class Slider extends Field<SliderValue, SliderProps> {
     this.setProperty('valueText', value);
   }
 
-  /** The thumb elements, `[start, end]`. The end thumb is hidden without a range. */
-  get thumbElements(): readonly HTMLElement[] {
-    return this.sliderParts.thumbs;
+  /** The thumbs as components, `[start, end]`. The end thumb is hidden without a range. */
+  get thumbParts(): readonly ComponentBase<HTMLDivElement>[] {
+    return [...this.sliderParts.thumbParts];
   }
 
   /** Formats a value the same way as the tooltip and the tick labels. */
@@ -276,8 +286,8 @@ export class Slider extends Field<SliderValue, SliderProps> {
 
   // For Field.
 
-  protected createControl(): HTMLElement {
-    return this.sliderParts.control;
+  protected createControl(): ComponentBase {
+    return this.sliderParts.controlPart;
   }
 
   protected emptyValue(): SliderValue {
@@ -319,11 +329,8 @@ export class Slider extends Field<SliderValue, SliderProps> {
   }
 
   protected override renderReadOnly(on: boolean): void {
-    this.element.toggleAttribute('data-readonly', on);
-    for (const thumb of this.sliderParts.thumbs) {
-      if (on) thumb.setAttribute('aria-readonly', 'true');
-      else thumb.removeAttribute('aria-readonly');
-    }
+    mark(this, 'data-readonly', on);
+    for (const thumb of this.sliderParts.thumbParts) flag(thumb, 'aria-readonly', on);
   }
 
   override onMounted(): void {
@@ -331,19 +338,19 @@ export class Slider extends Field<SliderValue, SliderProps> {
     this.trackLook.read();
   }
 
-  protected override get focusElement(): HTMLElement {
-    return this.sliderParts.thumbs[0];
+  override get focusPart(): ComponentBase {
+    return this.sliderParts.thumbParts[0];
   }
 
   protected override applyProperty(name: string, value: unknown): void {
     super.applyProperty(name, value);
-    if (name === 'tabStop') this.sliderParts.thumbs[1].tabIndex = value === false ? -1 : 0;
+    if (name === 'tabStop') put(this.sliderParts.thumbParts[1], 'tabindex', value === false ? '-1' : '0');
     // The label sits outside the thumbs: this marks it as the text of a disabled control too.
     else if (name === 'enabled') {
-      if (value === false) this.element.setAttribute('aria-disabled', 'true');
-      else this.element.removeAttribute('aria-disabled');
+      if (value === false) put(this, 'aria-disabled', 'true');
+      else put(this, 'aria-disabled', null);
       // A disabled field sends nothing with its form, as a native one.
-      for (const input of this.sliderParts.inputs) input.disabled = value === false;
+      for (const input of this.sliderParts.inputParts) mark(input, 'disabled', value === false);
     }
   }
 
@@ -355,26 +362,29 @@ export class Slider extends Field<SliderValue, SliderProps> {
   }
 
   private buildParts(): Parts {
-    const control = element('div', 'mx-slider__control');
-    const track = control.appendChild(element('div', 'mx-slider__track'));
-    const rail = track.appendChild(element('div', 'mx-slider__rail'));
+    const controlPart = loose<HTMLDivElement>('div', 'mx-slider__control');
+    const trackPart = part<HTMLDivElement>(controlPart, 'div', 'mx-slider__track');
+    const rail = part<HTMLDivElement>(trackPart, 'div', 'mx-slider__rail');
     // The inactive segments before and after the active one (the fill); they draw only on a split track.
-    for (const side of ['before', 'after']) rail.appendChild(element('div', 'mx-slider__segment')).dataset.side = side;
-    rail.appendChild(element('div', 'mx-slider__fill'));
-    const thumbs = [createThumb('start'), createThumb('end')];
-    track.append(...thumbs);
-    const ticks = control.appendChild(element('div', 'mx-slider__ticks'));
-    ticks.setAttribute('aria-hidden', 'true');
-    ticks.hidden = true;
+    for (const side of ['before', 'after']) part<HTMLDivElement>(rail, 'div', 'mx-slider__segment').attr.add({ 'data-side': side });
+    part(rail, 'div', 'mx-slider__fill');
+    const id = nextId('slider');
+    const thumbIds = [`${id}-start`, `${id}-end`];
+    const made = [createThumb(trackPart, 'start', thumbIds[0]), createThumb(trackPart, 'end', thumbIds[1])];
+    const ticksPart = part<HTMLDivElement>(controlPart, 'div', 'mx-slider__ticks');
+    ticksPart.attr.add({ 'aria-hidden': 'true' });
+    mark(ticksPart, 'hidden', true);
     return {
-      control,
-      track,
+      controlPart,
+      trackPart,
       rail,
-      ticks,
+      ticksPart,
       tickValues: [],
-      thumbs,
-      bubbles: thumbs.map((thumb) => thumb.lastElementChild as HTMLSpanElement),
-      inputs: [],
+      tickParts: [],
+      thumbParts: made.map((m) => m.thumb),
+      thumbIds,
+      bubbles: made.map((m) => m.bubble),
+      inputParts: [],
       shown: null,
       drag: null,
       formatter: null,
@@ -466,20 +476,20 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const [from, to] = this.activeSpan(value);
     const origin = this.originValue();
     const rail = parts.rail;
-    rail.style.setProperty('--_from', Array.isArray(value) || origin !== null ? at(from) : '0%');
-    rail.style.setProperty('--_to', at(to));
+    css(rail, '--_from', Array.isArray(value) || origin !== null ? at(from) : '0%');
+    css(rail, '--_to', at(to));
     // An origin at an end of the track is that end; a thumb on the origin has the thumb on both sides.
     const { min: low, max: high } = this.bounds;
     const fromKind = Array.isArray(value) || (origin !== null && value <= origin) ? 'thumb' : origin === null || origin <= low ? 'start' : 'origin';
     const toKind = Array.isArray(value) || origin === null || value >= origin ? 'thumb' : origin >= high ? 'end' : 'origin';
-    rail.dataset.from = fromKind;
-    rail.dataset.to = toKind;
-    rail.toggleAttribute('data-start-active', from <= min);
-    rail.toggleAttribute('data-end-active', to >= max);
+    put(rail, 'data-from', fromKind);
+    put(rail, 'data-to', toKind);
+    mark(rail, 'data-start-active', from <= min);
+    mark(rail, 'data-end-active', to >= max);
     this.markTicks(from, to);
     const committed = this.peekValue();
     const values = Array.isArray(committed) ? committed : [committed];
-    parts.inputs.forEach((input, i) => (input.value = String(values[i] ?? '')));
+    parts.inputParts.forEach((input, i) => input.attr.add({ value: String(values[i] ?? '') }));
   }
 
   /** The values the active segment spans: from the start, the origin or the first thumb to the value or the second thumb. */
@@ -502,34 +512,34 @@ export class Slider extends Field<SliderValue, SliderProps> {
   /** Marks inside the active segment are drawn in its color. */
   private markTicks(from: number, to: number): void {
     const parts = this.sliderParts;
-    parts.tickValues.forEach((v, i) => parts.ticks.children[i]?.toggleAttribute('data-active', v >= from && v <= to));
+    parts.tickParts.forEach((tick, i) => mark(tick, 'data-active', parts.tickValues[i] >= from && parts.tickValues[i] <= to));
   }
 
   private renderTrack(): void {
     const look = this.trackLook;
     const zero = (v: string | null) => v === null || parseFloat(v) === 0;
-    this.element.toggleAttribute('data-split', !zero(look.get('gap')) || !zero(look.get('originGap')));
+    mark(this, 'data-split', !zero(look.get('gap')) || !zero(look.get('originGap')));
   }
 
   private drawThumb(index: number, value: number, low: number, high: number, at: (v: number) => string): void {
     const parts = this.sliderParts;
-    const thumb = parts.thumbs[index];
-    thumb.style.setProperty('--_at', at(value));
-    thumb.setAttribute('aria-valuenow', String(value));
-    thumb.setAttribute('aria-valuemin', String(low));
-    thumb.setAttribute('aria-valuemax', String(high));
+    const thumb = parts.thumbParts[index];
+    css(thumb, '--_at', at(value));
+    put(thumb, 'aria-valuenow', String(value));
+    put(thumb, 'aria-valuemin', String(low));
+    put(thumb, 'aria-valuemax', String(high));
     const describe = this.peekProperty<((value: number) => string) | null>('valueText');
     const text = describe ? describe(value) : this.peekProperty('format') ? this.formatValue(value) : '';
-    if (text) thumb.setAttribute('aria-valuetext', text);
-    else thumb.removeAttribute('aria-valuetext');
-    parts.bubbles[index].textContent = this.formatValue(value);
+    if (text) put(thumb, 'aria-valuetext', text);
+    else put(thumb, 'aria-valuetext', null);
+    writeText(parts.bubbles[index], this.formatValue(value));
   }
 
   private renderRange(): void {
     const parts = this.sliderParts;
     const range = !!this.peekProperty('range');
-    this.element.toggleAttribute('data-range', range);
-    parts.thumbs[1].hidden = !range;
+    mark(this, 'data-range', range);
+    mark(parts.thumbParts[1], 'hidden', !range);
     if (range && !parts.stopNames) {
       // The thumb names come from uiLocale.
       parts.stopNames = onLanguage(this, () => this.renderNames());
@@ -544,35 +554,32 @@ export class Slider extends Field<SliderValue, SliderProps> {
   private renderNames(): void {
     const parts = this.sliderParts;
     if (!parts.ready) return;
-    const control = parts.control;
-    const label = this.element.querySelector<HTMLElement>('.mx-field__label');
-    const message = this.element.querySelector<HTMLElement>('.mx-field__message');
-    const labelId = label && !label.hidden ? label.id : '';
+    const control = parts.controlPart;
+    const labelId = this.labelId;
     const range = !!this.peekProperty('range');
     // One thumb carries the name itself; two are a group named by the label, each thumb by its end.
     if (range) {
-      control.setAttribute('role', 'group');
-      if (labelId) control.setAttribute('aria-labelledby', labelId);
+      put(control, 'role', 'group');
+      if (labelId) put(control, 'aria-labelledby', labelId);
     } else {
-      control.removeAttribute('role');
-      control.removeAttribute('aria-labelledby');
+      put(control, 'role', null);
+      put(control, 'aria-labelledby', null);
     }
     const names = [uiLocale.strings.minimum, uiLocale.strings.maximum];
-    parts.thumbs.forEach((thumb, i) => {
-      thumb.id ||= `${control.id}-${i ? 'end' : 'start'}`;
-      if (range) thumb.setAttribute('aria-label', names[i]);
-      else thumb.removeAttribute('aria-label');
-      const ids = labelId && range ? `${labelId} ${thumb.id}` : labelId;
-      if (ids) thumb.setAttribute('aria-labelledby', ids);
-      else thumb.removeAttribute('aria-labelledby');
-      if (message) thumb.setAttribute('aria-describedby', message.id);
+    parts.thumbParts.forEach((thumb, i) => {
+      if (range) put(thumb, 'aria-label', names[i]);
+      else put(thumb, 'aria-label', null);
+      const ids = labelId && range ? `${labelId} ${parts.thumbIds[i]}` : labelId;
+      if (ids) put(thumb, 'aria-labelledby', ids);
+      else put(thumb, 'aria-labelledby', null);
+      put(thumb, 'aria-describedby', this.messageId);
     });
   }
 
   private renderOrientation(): void {
     const vertical = this.peekProperty('orientation') === 'vertical';
-    this.element.dataset.orientation = vertical ? 'vertical' : 'horizontal';
-    for (const thumb of this.sliderParts.thumbs) thumb.setAttribute('aria-orientation', vertical ? 'vertical' : 'horizontal');
+    put(this, 'data-orientation', vertical ? 'vertical' : 'horizontal');
+    for (const thumb of this.sliderParts.thumbParts) put(thumb, 'aria-orientation', vertical ? 'vertical' : 'horizontal');
   }
 
   private renderFormat(): void {
@@ -599,19 +606,23 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const marks = values.length > 0;
     if (!marks && labels && max > min) values.push(min, max);
     const span = max - min || 1;
-    parts.ticks.replaceChildren(
-      ...values.map((v) => {
-        const tick = element('span', 'mx-slider__tick');
-        tick.style.setProperty('--_at', `${((v - min) / span) * 100}%`);
-        if (marks) tick.dataset.mark = '';
-        if (labels) tick.appendChild(element('span', 'mx-slider__tick-label')).textContent = this.formatValue(v);
-        return tick;
-      }),
-    );
+    // A tick stays in its place and is moved and written there; only the ticks no longer needed go.
+    while (parts.tickParts.length > values.length) removePart(parts.tickParts.pop());
+    values.forEach((v, i) => {
+      const tick = parts.tickParts[i] ?? part<HTMLSpanElement>(parts.ticksPart, 'span', 'mx-slider__tick');
+      parts.tickParts[i] = tick;
+      css(tick, '--_at', `${((v - min) / span) * 100}%`);
+      mark(tick, 'data-mark', marks);
+      let label = TICK_LABELS.get(tick);
+      if (labels && !label) TICK_LABELS.set(tick, (label = part<HTMLSpanElement>(tick, 'span', 'mx-slider__tick-label')));
+      if (!label) return;
+      if (labels) writeText(label, this.formatValue(v));
+      kept(label, labels);
+    });
     parts.tickValues = values;
-    parts.ticks.hidden = !values.length;
-    this.element.toggleAttribute('data-ticks', marks);
-    this.element.toggleAttribute('data-tick-labels', labels && values.length > 0);
+    mark(parts.ticksPart, 'hidden', !values.length);
+    mark(this, 'data-ticks', marks);
+    mark(this, 'data-tick-labels', labels && values.length > 0);
     this.markTicks(...this.activeSpan(parts.shown ?? this.peekValue()));
   }
 
@@ -621,16 +632,15 @@ export class Slider extends Field<SliderValue, SliderProps> {
     if (!parts.ready) return;
     const name = this.peekProperty<string>('name');
     const count = name ? (this.peekProperty('range') ? 2 : 1) : 0;
-    while (parts.inputs.length > count) parts.inputs.pop()!.remove();
-    while (parts.inputs.length < count) {
-      const input = element('input', 'mx-slider__input');
-      input.type = 'hidden';
-      parts.inputs.push(input);
-      this.element.append(input);
+    while (parts.inputParts.length > count) removePart(parts.inputParts.pop());
+    while (parts.inputParts.length < count) {
+      const input = part<HTMLInputElement>(this, 'input', 'mx-slider__input');
+      input.attr.add({ type: 'hidden' });
+      parts.inputParts.push(input);
     }
-    for (const input of parts.inputs) {
-      input.name = name ?? '';
-      input.disabled = !this.enabled;
+    for (const input of parts.inputParts) {
+      put(input, 'name', name ?? '');
+      mark(input, 'disabled', !this.enabled);
     }
     this.draw();
   }
@@ -641,31 +651,33 @@ export class Slider extends Field<SliderValue, SliderProps> {
     return this.peekProperty('orientation') === 'vertical';
   }
 
-  private get rtl(): boolean {
-    return getComputedStyle(this.sliderParts.track).direction === 'rtl';
+  /** Read first in a pointer event, before anything is written. */
+  private readTrack(): TrackRead {
+    const track = this.sliderParts.trackPart;
+    return { rect: rectOf(track), vertical: this.vertical, rtl: isRtl(track) };
   }
 
   private listen(): void {
     const parts = this.sliderParts;
-    parts.control.addEventListener('pointerdown', (e) => this.pointerDown(e));
-    parts.control.addEventListener('pointermove', (e) => this.pointerMove(e));
-    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
-      parts.control.addEventListener(type, (e) => this.pointerUp(e));
-    }
-    parts.thumbs.forEach((thumb, i) => thumb.addEventListener('keydown', (e) => this.keyDown(e, i)));
+    const control = parts.controlPart;
+    control.motif.on('pointerdown', (_, e) => this.pointerDown(e));
+    control.motif.on('pointermove', (_, e) => this.pointerMove(e));
+    control.motif.on('pointerup', (_, e) => this.pointerUp(e));
+    control.motif.on('pointercancel', (_, e) => this.pointerUp(e));
+    control.motif.on('lostpointercapture', (_, e) => this.pointerUp(e));
+    parts.thumbParts.forEach((thumb, i) => thumb.motif.on('keydown', (_, e) => this.keyDown(e, i)));
   }
 
   /** How far a point is from the `min` end of the track, in pixels; `null` while the track has no size. */
-  private positionOf(point: { clientX: number; clientY: number }): number | null {
-    const rect = this.sliderParts.track.getBoundingClientRect();
-    if (this.vertical) return rect.height > 0 ? rect.bottom - point.clientY : null;
+  private positionOf(track: TrackRead, point: { clientX: number; clientY: number }): number | null {
+    const { rect } = track;
+    if (track.vertical) return rect.height > 0 ? rect.bottom - point.clientY : null;
     if (rect.width <= 0) return null;
-    return this.rtl ? rect.right - point.clientX : point.clientX - rect.left;
+    return track.rtl ? rect.right - point.clientX : point.clientX - rect.left;
   }
 
-  private valueAt(position: number): number {
-    const rect = this.sliderParts.track.getBoundingClientRect();
-    const length = this.vertical ? rect.height : rect.width;
+  private valueAt(track: TrackRead, position: number): number {
+    const length = track.vertical ? track.rect.height : track.rect.width;
     const { min, max } = this.bounds;
     return min + Math.min(1, Math.max(0, position / length)) * (max - min);
   }
@@ -683,35 +695,37 @@ export class Slider extends Field<SliderValue, SliderProps> {
   private pointerDown(e: PointerEvent): void {
     const parts = this.sliderParts;
     if (e.button !== 0 || parts.drag || !this.isEnabled) return;
-    const hit = (e.target as Element).closest('.mx-slider__thumb');
-    const position = this.positionOf(e);
-    let thumb = hit ? parts.thumbs.indexOf(hit as HTMLDivElement) : -1;
-    if (thumb < 0) thumb = position === null ? 0 : this.nearestThumb(this.valueAt(position));
+    const hit = parts.thumbParts.findIndex((t) => t.motif.isEventFrom(e));
+    const track = this.readTrack();
+    const box = hit >= 0 ? rectOf(parts.thumbParts[hit]) : null;
+    const position = this.positionOf(track, e);
+    const value = position === null ? null : this.valueAt(track, position);
+    const thumb = hit >= 0 ? hit : value === null ? 0 : this.nearestThumb(value);
     const moving = !this.peekProperty('readOnly') && position !== null;
     let offset = 0;
-    if (hit && position !== null) {
-      const box = hit.getBoundingClientRect();
-      offset = position - (this.positionOf({ clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }) ?? position);
+    if (box && position !== null) {
+      offset = position - (this.positionOf(track, { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }) ?? position);
     }
     // A click on a thumb focuses it the browser's way; a click beside it focuses it on release,
     // after the browser's own focus handling, so the keyboard focus ring stays away in both cases.
-    parts.drag = { thumb, offset, pointer: e.pointerId, moving, focus: !hit };
+    parts.drag = { thumb, offset, pointer: e.pointerId, moving, focus: hit < 0 };
     try {
-      parts.control.setPointerCapture(e.pointerId);
+      parts.controlPart.attr.add({ setPointerCapture: e.pointerId });
     } catch {
       // Not a real pointer (a synthetic event): moves are still followed on the control.
     }
     if (!moving) return;
-    parts.thumbs[thumb].toggleAttribute('data-dragging', true);
-    this.element.toggleAttribute('data-dragging', true);
-    if (!hit && position !== null) this.moveTo(thumb, this.valueAt(position), e);
+    mark(parts.thumbParts[thumb], 'data-dragging', true);
+    mark(this, 'data-dragging', true);
+    if (hit < 0 && value !== null) this.moveTo(thumb, value, e);
   }
 
   private pointerMove(e: PointerEvent): void {
     const drag = this.sliderParts.drag;
     if (!drag?.moving || e.pointerId !== drag.pointer) return;
-    const position = this.positionOf(e);
-    if (position !== null) this.moveTo(drag.thumb, this.valueAt(position - drag.offset), e);
+    const track = this.readTrack();
+    const position = this.positionOf(track, e);
+    if (position !== null) this.moveTo(drag.thumb, this.valueAt(track, position - drag.offset), e);
   }
 
   private pointerUp(e: PointerEvent): void {
@@ -719,9 +733,9 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const drag = parts.drag;
     if (!drag || e.pointerId !== drag.pointer) return;
     parts.drag = null;
-    if (drag.focus) parts.thumbs[drag.thumb].focus({ preventScroll: true });
-    parts.thumbs[drag.thumb].removeAttribute('data-dragging');
-    this.element.removeAttribute('data-dragging');
+    if (drag.focus) focusOn(parts.thumbParts[drag.thumb], { preventScroll: true });
+    mark(parts.thumbParts[drag.thumb], 'data-dragging', false);
+    mark(this, 'data-dragging', false);
     const shown = parts.shown;
     parts.shown = null;
     if (shown !== null) this.commit(shown, e);
@@ -741,13 +755,13 @@ export class Slider extends Field<SliderValue, SliderProps> {
 
   private keyDown(e: KeyboardEvent, thumb: number): void {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
+    // In a right-to-left page a horizontal slider grows to the left.
+    const back = !this.vertical && isRtl(this.sliderParts.trackPart);
     const { min, max } = this.bounds;
     const unit = this.unit;
     const large = toNumber(this.peekProperty('largeStep'), unit * 10);
     const current = this.peekValue();
     const value = Array.isArray(current) ? current[thumb] : current;
-    // In a right-to-left page a horizontal slider grows to the left.
-    const back = !this.vertical && this.rtl;
     let next: number;
     switch (e.key) {
       case 'ArrowUp':

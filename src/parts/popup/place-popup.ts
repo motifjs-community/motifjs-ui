@@ -1,3 +1,6 @@
+import type { ComponentBase } from '@motifx/core';
+import { isRtl, pageOf, rectOf } from '../../core/measure';
+import { css, put } from '../../core/part-writes';
 import type { PopupPlacement } from './popup-placement';
 
 function within(at: number, size: number, room: number): number {
@@ -15,32 +18,34 @@ function line(align: string, from: number, to: number, size: number, reversed: b
  * when that has more room. It stays inside the viewport and scrolls inside when it is taller. The gap
  * is the popup's CSS margin on the side it opens on (`data-side`).
  */
-export function placePopup(popup: HTMLElement, anchor: Element, placement: PopupPlacement, matchWidth: boolean): void {
-  const style = popup.style;
-  const box = anchor.getBoundingClientRect();
+export function placePopup(popup: ComponentBase, anchor: ComponentBase, placement: PopupPlacement, matchWidth: boolean): void {
+  placeBeside(popup, anchor, placement, matchWidth);
+}
+
+/** Places the fixed popup `part` next to `anchorPart` (what `placePopup` does). */
+export function placeBeside(part: ComponentBase, anchorPart: ComponentBase, placement: PopupPlacement, matchWidth: boolean): void {
+  const box = rectOf(anchorPart);
   const [side, align = 'center'] = placement.split('-');
   const across = side === 'start' || side === 'end';
-  style.minInlineSize = matchWidth && !across ? `${box.width}px` : '';
-  style.maxBlockSize = '';
-  style.top = style.bottom = style.left = style.right = '';
+  css(part, 'min-inline-size', matchWidth && !across ? `${box.width}px` : '');
+  css(part, 'max-block-size', '');
+  for (const edge of ['top', 'bottom', 'left', 'right']) css(part, edge, '');
 
-  const size = popup.getBoundingClientRect();
+  const size = rectOf(part);
   // The viewport of the popup's own window (a window the app opened has its own).
-  const root = popup.ownerDocument.documentElement;
-  const viewWidth = root.clientWidth;
-  const viewHeight = root.clientHeight;
-  const rtl = (anchor.ownerDocument.defaultView ?? window).getComputedStyle(anchor).direction === 'rtl';
+  const { width: viewWidth, height: viewHeight } = pageOf(part);
+  const rtl = isRtl(anchorPart);
 
   if (!across) {
     const below = viewHeight - box.bottom;
     const above = box.top;
     const wantsBelow = side === 'bottom';
     const down = size.height <= (wantsBelow ? below : above) ? wantsBelow : below >= above;
-    popup.dataset.side = down ? 'bottom' : 'top';
-    if (down) style.top = `${box.bottom}px`;
-    else style.bottom = `${viewHeight - box.top}px`;
-    style.maxBlockSize = `calc(${down ? below : above}px - 2 * var(--mx-popup-offset))`;
-    style.left = `${within(line(align, box.left, box.right, size.width, rtl), size.width, viewWidth)}px`;
+    put(part, 'data-side', down ? 'bottom' : 'top');
+    if (down) css(part, 'top', `${box.bottom}px`);
+    else css(part, 'bottom', `${viewHeight - box.top}px`);
+    css(part, 'max-block-size', `calc(${down ? below : above}px - 2 * var(--mx-popup-offset))`);
+    css(part, 'left', `${within(line(align, box.left, box.right, size.width, rtl), size.width, viewWidth)}px`);
     return;
   }
 
@@ -49,9 +54,9 @@ export function placePopup(popup: HTMLElement, anchor: Element, placement: Popup
   const left = box.left;
   const wantsRight = (side === 'end') !== rtl;
   const toRight = size.width <= (wantsRight ? right : left) ? wantsRight : right >= left;
-  popup.dataset.side = toRight !== rtl ? 'end' : 'start';
-  if (toRight) style.left = `${box.right}px`;
-  else style.right = `${viewWidth - box.left}px`;
-  style.maxBlockSize = `calc(${viewHeight}px - 2 * var(--mx-popup-offset))`;
-  style.top = `${within(line(align, box.top, box.bottom, size.height, false), Math.min(size.height, viewHeight), viewHeight)}px`;
+  put(part, 'data-side', toRight !== rtl ? 'end' : 'start');
+  if (toRight) css(part, 'left', `${box.right}px`);
+  else css(part, 'right', `${viewWidth - box.left}px`);
+  css(part, 'max-block-size', `calc(${viewHeight}px - 2 * var(--mx-popup-offset))`);
+  css(part, 'top', `${within(line(align, box.top, box.bottom, size.height, false), Math.min(size.height, viewHeight), viewHeight)}px`);
 }

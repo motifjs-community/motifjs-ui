@@ -1744,7 +1744,12 @@ export class GridModel<T> {
       });
     const column = (field: string) => (this.columns.defs.get(field) ?? { field, title: '' }) as GridColumn<T>;
     const adapter = new GridRowsAdapter<T & object>(
-      { data: () => (read(props.rows) ?? []) as (T & object)[], key: props.rowKey as data.KeyExpr<T & object>, locale: this.formatter.locale },
+      {
+        data: () => (read(props.rows) ?? []) as (T & object)[],
+        // Rows taken as they are need no key of their own: without `rowKey` a row is known by itself.
+        key: (props.rowKey ?? ((row: T & object) => row)) as data.KeyExpr<T & object>,
+        locale: this.formatter.locale,
+      },
       column as (field: string) => GridColumn<T & object>,
       {
         sortValue: (field) => this.lookups.sortValue(column(field)) as ((row: T & object) => unknown) | undefined,

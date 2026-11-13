@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { Button } from '../button/Button';
 import { addTooltip } from './add-tooltip';
 import { Tooltip } from './Tooltip';
@@ -75,6 +76,9 @@ describe('Tooltip', () => {
     expect(shown(tip)).toBe(true);
     expect(tip.opened).toBe(true);
     expect(button.getAttribute('aria-describedby')).toBe(tip.element.id);
+    // Placed after the browser shows it, in the next measuring round (timers are fake here).
+    await settle();
+    measureNow(tip);
     expect(tip.element.dataset.side).toBeDefined();
 
     over(elsewhere(host));
@@ -85,11 +89,12 @@ describe('Tooltip', () => {
     expect(button.hasAttribute('aria-describedby')).toBe(false);
   });
 
-  it('works programmatically: new Tooltip with an element, open() and close(), properties set later', async () => {
-    const target = document.createElement('span');
-    target.textContent = 'Help';
-    document.body.append(target);
-    const tip = new Tooltip({ target, text: 'Opens the guide' });
+  it('works programmatically: new Tooltip with a component, open() and close(), properties set later', async () => {
+    const targetPart = new Component<HTMLSpanElement>('span');
+    targetPart.element.textContent = 'Help';
+    const host = page(targetPart);
+    const target = targetPart.element;
+    const tip = new Tooltip({ target: targetPart, text: 'Opens the guide' });
     const opened = vi.fn();
     const closed = vi.fn();
     tip.onOpened(opened);
@@ -97,7 +102,9 @@ describe('Tooltip', () => {
 
     expect(tip.element.isConnected).toBe(false);
     expect(tip.open()).toBe(true);
-    expect(tip.element.parentElement).toBe(document.body);
+    // It places itself next to its target.
+    expect(tip.parent).toBe(host);
+    expect(tip.element.previousElementSibling).toBe(target);
     expect(shown(tip)).toBe(true);
     expect(target.getAttribute('aria-describedby')).toBe(tip.element.id);
     expect(opened).toHaveBeenCalledTimes(1);
@@ -105,6 +112,9 @@ describe('Tooltip', () => {
     tip.text = 'Opens the user guide';
     tip.placement = 'bottom';
     expect(tip.element.textContent).toBe('Opens the user guide');
+    // Placed after the browser shows it, in the next measuring round.
+    await settle();
+    measureNow(tip);
     expect(tip.element.dataset.side).toBe('bottom');
 
     tip.close();
@@ -120,16 +130,17 @@ describe('Tooltip', () => {
 
   it('follows getter props', async () => {
     const s = reactive({ text: 'One', placement: 'top' as 'top' | 'bottom', on: true });
-    const target = document.createElement('button');
+    const target = new Component<HTMLButtonElement>('button');
     let tip!: Tooltip;
     page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text={() => s.text} placement={() => s.placement} enabled={() => s.on} />);
-    document.body.append(target);
+    page(target);
     await settle();
     tip.open();
     s.text = 'Two';
     s.placement = 'bottom';
     await settle();
     expect(tip.element.textContent).toBe('Two');
+    measureNow(tip);
     expect(tip.element.dataset.side).toBe('bottom');
     s.on = false;
     await settle();
@@ -139,10 +150,10 @@ describe('Tooltip', () => {
 
   it('reads functions over plain data again on reState', async () => {
     const plain = { text: 'One', placement: 'top' as 'top' | 'bottom' };
-    const target = document.createElement('button');
+    const target = new Component<HTMLButtonElement>('button');
     let tip!: Tooltip;
     const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text={() => plain.text} placement={() => plain.placement} />);
-    document.body.append(target);
+    page(target);
     await settle();
     tip.open();
     Object.assign(plain, { text: 'Two', placement: 'bottom' });
@@ -151,14 +162,16 @@ describe('Tooltip', () => {
     host.reState();
     await settle();
     expect(tip.element.textContent).toBe('Two');
+    measureNow(tip);
     expect(tip.element.dataset.side).toBe('bottom');
   });
 
   it('can be hovered: the pointer moves onto it without closing it', async () => {
-    const target = document.createElement('button');
+    const targetPart = new Component<HTMLButtonElement>('button');
+    const target = targetPart.element;
     let tip!: Tooltip;
-    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text="Hover me" />);
-    (host.element as HTMLElement).append(target);
+    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={targetPart} text="Hover me" />);
+    host.controls.add(targetPart);
     await settle();
     over(target);
     vi.advanceTimersByTime(500);
@@ -198,12 +211,14 @@ describe('Tooltip', () => {
   });
 
   it('a press on the target hides it, and it stays hidden while the pointer stays there', async () => {
-    const target = document.createElement('button');
-    const inner = document.createElement('span');
-    target.append(inner);
+    const targetPart = new Component<HTMLButtonElement>('button');
+    const innerPart = new Component<HTMLSpanElement>('span');
+    targetPart.controls.add(innerPart);
+    const target = targetPart.element;
+    const inner = innerPart.element;
     let tip!: Tooltip;
-    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text="Tip" />);
-    (host.element as HTMLElement).append(target);
+    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={targetPart} text="Tip" />);
+    host.controls.add(targetPart);
     await settle();
     over(target);
     vi.advanceTimersByTime(500);
@@ -219,17 +234,19 @@ describe('Tooltip', () => {
   });
 
   it('only one is open at a time, and the next one shows at once soon after', async () => {
-    const a = document.createElement('button');
-    const b = document.createElement('button');
+    const aPart = new Component<HTMLButtonElement>('button');
+    const bPart = new Component<HTMLButtonElement>('button');
+    const a = aPart.element;
+    const b = bPart.element;
     let ta!: Tooltip;
     let tb!: Tooltip;
     const host = page(
       <div>
-        <Tooltip ref={(t: Tooltip) => (ta = t)} target={a} text="A" />
-        <Tooltip ref={(t: Tooltip) => (tb = t)} target={b} text="B" />
+        <Tooltip ref={(t: Tooltip) => (ta = t)} target={aPart} text="A" />
+        <Tooltip ref={(t: Tooltip) => (tb = t)} target={bPart} text="B" />
       </div>,
     );
-    (host.element as HTMLElement).append(a, b);
+    host.controls.add(aPart, bPart);
     await settle();
     over(a);
     vi.advanceTimersByTime(500);
@@ -258,10 +275,11 @@ describe('Tooltip', () => {
 
   it('showOn: focus ignores the pointer; manual shows only programmatically; touch never shows it', async () => {
     const s = reactive({ showOn: 'focus' as 'focus' | 'manual' | 'hover-focus' });
-    const target = document.createElement('button');
+    const targetPart = new Component<HTMLButtonElement>('button');
+    const target = targetPart.element;
     let tip!: Tooltip;
-    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text="Tip" showOn={() => s.showOn} />);
-    (host.element as HTMLElement).append(target);
+    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={targetPart} text="Tip" showOn={() => s.showOn} />);
+    host.controls.add(targetPart);
     await settle();
     over(target);
     vi.advanceTimersByTime(1000);
@@ -291,10 +309,11 @@ describe('Tooltip', () => {
   });
 
   it('delay and hideDelay are its own', async () => {
-    const target = document.createElement('button');
+    const targetPart = new Component<HTMLButtonElement>('button');
+    const target = targetPart.element;
     let tip!: Tooltip;
-    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text="Tip" delay={100} hideDelay={0} />);
-    (host.element as HTMLElement).append(target);
+    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={targetPart} text="Tip" delay={100} hideDelay={0} />);
+    host.controls.add(targetPart);
     await settle();
     over(target);
     vi.advanceTimersByTime(100);
@@ -305,7 +324,7 @@ describe('Tooltip', () => {
   });
 
   it('shows any content, made only when first shown', async () => {
-    const target = document.createElement('button');
+    const target = new Component<HTMLButtonElement>('button');
     let tip!: Tooltip;
     const content = new Component<HTMLDivElement>('div');
     content.element.className = 'rich';
@@ -314,7 +333,7 @@ describe('Tooltip', () => {
         <kbd>Ctrl+B</kbd>
       </Tooltip>,
     );
-    (host.element as HTMLElement).append(target);
+    host.controls.add(target);
     await settle();
     expect(tip.element.querySelector('kbd')!.textContent).toBe('Ctrl+B');
     expect(tip.element.querySelector('.rich')).toBeNull();
@@ -336,43 +355,44 @@ describe('Tooltip', () => {
     expect(el.isConnected).toBe(false);
   });
 
-  it('addTooltip: one for many elements, each made on first use, removable', async () => {
+  it('addTooltip: one for many components, each made on first use, removable', async () => {
     const host = page(new Component<HTMLDivElement>('div'));
     const cells = Array.from({ length: 50 }, (_, i) => {
-      const cell = document.createElement('span');
-      cell.textContent = `Cell ${i}`;
-      (host.element as HTMLElement).append(cell);
+      const cell = new Component<HTMLSpanElement>('span');
+      cell.element.textContent = `Cell ${i}`;
+      host.controls.add(cell);
       return cell;
     });
     const removers = cells.map((cell, i) => addTooltip(cell, i === 3 ? { text: 'Third', placement: 'bottom' } : `Tip ${i}`));
     expect(document.querySelectorAll('.mx-tooltip').length).toBe(0);
-    over(cells[7]);
+    over(cells[7].element);
     vi.advanceTimersByTime(500);
     const tips = document.querySelectorAll<HTMLElement>('.mx-tooltip');
     expect(tips.length).toBe(1);
     expect(tips[0].textContent).toBe('Tip 7');
     expect(tips[0].hidden).toBe(false);
-    over(cells[3]);
-    expect(document.querySelector<HTMLElement>(`#${cells[3].getAttribute('aria-describedby')}`)!.textContent).toBe('Third');
+    over(cells[3].element);
+    expect(document.querySelector<HTMLElement>(`#${cells[3].element.getAttribute('aria-describedby')}`)!.textContent).toBe('Third');
 
     removers[3]();
-    expect(cells[3].hasAttribute('aria-describedby')).toBe(false);
+    expect(cells[3].element.hasAttribute('aria-describedby')).toBe(false);
     over(elsewhere(host));
     vi.advanceTimersByTime(1000);
-    over(cells[3]);
+    over(cells[3].element);
     vi.advanceTimersByTime(1000);
     expect(document.querySelectorAll('.mx-tooltip:not([hidden])').length).toBe(0);
     for (const remove of removers) remove();
   });
 
   it('describes the focusable part of a composite target, and keeps other descriptions', async () => {
-    const field = document.createElement('div');
-    const input = document.createElement('input');
+    // The focusable part is found among the target's components.
+    const field = new Component<HTMLDivElement>('div');
+    const inputPart = new Component<HTMLInputElement>('input');
+    field.controls.add(inputPart);
+    const input = inputPart.element;
     input.setAttribute('aria-describedby', 'help');
-    field.append(input);
     let tip!: Tooltip;
-    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={field} text="Your name" />);
-    (host.element as HTMLElement).append(field);
+    page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={field} text="Your name" />, field);
     await settle();
     tip.open();
     expect(input.getAttribute('aria-describedby')).toBe(`help ${tip.element.id}`);
@@ -381,13 +401,23 @@ describe('Tooltip', () => {
   });
 
   it('closes when the page scrolls', async () => {
-    const target = document.createElement('button');
+    const targetPart = new Component<HTMLButtonElement>('button');
+    const target = targetPart.element;
     let tip!: Tooltip;
-    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text="Tip" />);
-    (host.element as HTMLElement).append(target);
+    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={targetPart} text="Tip" />);
+    host.controls.add(targetPart);
     await settle();
+    const at = { top: 100 };
+    target.getBoundingClientRect = () => ({ top: at.top, bottom: at.top + 30, left: 10, right: 90, width: 80, height: 30, x: 10, y: at.top, toJSON: () => ({}) });
     tip.open();
+    // Scrolls are heard once core tells it is mounted (a timer, fake here); where its target is, in the next round.
+    vi.advanceTimersByTime(0);
+    await settle();
+    measureNow(tip);
+    // A scroll that moves the target closes it, once the round sees it moved.
+    at.top = 60;
     document.dispatchEvent(new Event('scroll'));
+    measureNow(tip);
     expect(shown(tip)).toBe(false);
   });
   it('one shown for focus follows its target through scrolling, and closes if the target ends up off the screen', async () => {
@@ -404,20 +434,27 @@ describe('Tooltip', () => {
     save.element.getBoundingClientRect = () => ({ top: at.top, bottom: at.top + 30, left: 10, right: 90, width: 80, height: 30, x: 10, y: at.top, toJSON: () => ({}) });
     save.focus();
     expect(shown(tip)).toBe(true);
+    // Scrolls are heard once core tells it is mounted (a timer, fake here); each scroll and its end, in the next round.
+    vi.advanceTimersByTime(0);
+    await settle();
+    measureNow(tip);
     document.dispatchEvent(new Event('scroll'));
+    measureNow(tip);
     expect(shown(tip)).toBe(true);
     at.top = -500;
     document.dispatchEvent(new Event('scroll'));
+    measureNow(tip);
     expect(shown(tip)).toBe(true);
     document.dispatchEvent(new Event('scrollend'));
+    measureNow(tip);
     expect(shown(tip)).toBe(false);
   });
 
   it('a manual one stays through presses and scrolling until code or Escape closes it', async () => {
-    const target = document.createElement('button');
+    const target = new Component<HTMLButtonElement>('button');
     let tip!: Tooltip;
     const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text="Tip" showOn="manual" />);
-    (host.element as HTMLElement).append(target);
+    host.controls.add(target);
     await settle();
     tip.open();
     press(elsewhere(host));
@@ -428,15 +465,16 @@ describe('Tooltip', () => {
   });
 
   it('made programmatically, it goes next to its target, never inside a button', () => {
-    const panel = document.createElement('div');
-    const button = document.createElement('button');
-    const icon = document.createElement('span');
-    button.append(icon);
-    panel.append(button);
-    document.body.append(panel);
+    // A part inside a kit button: the button keeps its parts for itself, so it goes after the button.
+    const panel = new Component<HTMLDivElement>('div');
+    const button = new Button({ text: 'Save' });
+    panel.controls.add(button);
+    page(panel);
+    const icon = button.controls.items[0];
+    expect(icon).toBeDefined();
     const tip = new Tooltip({ target: icon, text: 'Icon' });
     tip.open();
-    expect(tip.element.parentElement).toBe(panel);
+    expect(tip.element.parentElement).toBe(panel.element);
     void tip.dispose();
   });
 });

@@ -1,10 +1,11 @@
+import type { ComponentBase } from '@motifx/core';
+
 /** What selecting by dragging asks of the grid it works in. */
 export interface DragSelectHost {
-  /** The grid's own element. */
-  root(): HTMLElement;
-  viewport(): HTMLElement | null;
-  /** The header cell of a column, to find the column under the pointer. */
-  headerCell(field: string): HTMLElement | undefined;
+  /** The grid itself, marked while a drag selection runs. */
+  readonly grid?: ComponentBase;
+  /** The header cell part of a column, to find the column under the pointer. */
+  headerCellPart?(field: string): ComponentBase | undefined;
   isRtl(): boolean;
   /** The rows scrolled sideways: virtual columns follow. */
   columnsScrolled(): void;

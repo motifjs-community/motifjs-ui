@@ -1,9 +1,13 @@
 import { Component, type Bind, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { controlOf } from '../../core/control-map';
-import { deepActiveElement } from '../../core/focus';
+import { loose, part, removePart } from '../../core/draw-parts';
+import { put, text as writeText } from '../../core/part-writes';
+import { onDocument } from '../../core/window-events';
+import { placeOnPage } from '../../core/page-layer';
+import { afterStyle, measure, transitionTime } from '../../core/measure';
+import { holdsFocus, rememberFocus } from '../../core/focus';
+import type { FocusMark } from '../../core/focus-mark';
 import { addShortcut } from '../../core/keyboard';
-import { isHtmlElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import { Toast } from './Toast';
 import type { ToastPosition } from './toast-position';
@@ -15,21 +19,25 @@ const OWN = ['position', 'max', 'hotkey', 'pauseOnHover'] as const;
 
 /** The parts of a toaster. On one object made on first use: the base constructor already renders. */
 interface Parts {
-  stacks: Map<ToastPosition, HTMLDivElement>;
-  polite: HTMLDivElement;
-  assertive: HTMLDivElement;
+  /** A stack per position, a component of the toaster: its toasts are its children. */
+  stacks: Map<ToastPosition, Component<HTMLDivElement>>;
+  polite: Component<HTMLDivElement>;
+  assertive: Component<HTMLDivElement>;
   /** Each shown toast's line in a live area. */
-  lines: Map<Toast, HTMLDivElement>;
+  lines: Map<Toast, Component<HTMLDivElement>>;
   shown: Toast[];
   waiting: Toast[];
   hovered: boolean;
   focused: boolean;
   /** Where focus was before it came into the toasts. */
-  returnFocus: HTMLElement | null;
+  returnFocus: FocusMark | null;
+  /** Where focus is while it is outside the toasts: `returnFocus` once it comes in. */
+  focusOutside: FocusMark | null;
+  /** Stops following focus on the page, which starts with the first toast shown. */
+  stopFocusWatch: (() => void) | null;
   removeHotkey: (() => void) | null;
   placedItself: boolean;
   /** The page element it placed itself in, when it is in no component tree. */
-  holder: HTMLElement | null;
   /** Made by `Toaster.default` itself, not by the app. */
   made: boolean;
 }
@@ -38,15 +46,14 @@ const PARTS = Symbol('mx.toaster');
 
 let defaultToaster: Toaster | null = null;
 
-/** The longest of a list of CSS times (`0.2s, 83ms`), in milliseconds. */
-function longest(list: string): number {
-  return Math.max(0, ...(list || '0s').split(',').map((v) => parseFloat(v) * (v.trim().endsWith('ms') ? 1 : 1000) || 0));
-}
-
-function transitionTime(el: Element): number {
-  const style = getComputedStyle(el);
-  return longest(style.transitionDuration) + longest(style.transitionDelay);
-}
+/**
+ * The toasters of each hotkey: they share one shortcut (two would clash, and only the first would run), and the key
+ * goes to the newest toast among them, as from anywhere on the page.
+ */
+const hotkeyHolders = new Map<string, { toasters: Set<Toaster>; remove: () => void }>();
+/** The order the toasts came on the screen in, across toasters: the newest is the hotkey's. */
+const presentedAt = new WeakMap<Toast, number>();
+let presentations = 0;
 
 /**
  * The region that shows toasts: a landmark named "Notifications" (`uiLocale`) holding a stack at
@@ -83,47 +90,38 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     super('section', props);
     const own = (this.props ?? {}) as ToasterProps;
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
-    const el = this.element;
     const parts = this.parts;
-    const drawName = () => el.setAttribute('aria-label', this.text || uiLocale.strings.notifications);
+    const drawName = () => put(this, 'aria-label', this.text || uiLocale.strings.notifications);
     const stopName = onLanguage(this, drawName);
     this.observeProperty('text', drawName);
     this.observeProperty('hotkey', () => this.renderHotkey());
     this.observeProperty('max', () => this.fill());
     this.observeProperty('pauseOnHover', () => this.updatePause());
 
-    el.addEventListener('pointerenter', () => {
+    this.motif.on('pointerenter', () => {
       parts.hovered = true;
       this.updatePause();
     });
-    el.addEventListener('pointerleave', () => {
+    this.motif.on('pointerleave', () => {
       parts.hovered = false;
       this.updatePause();
     });
-    el.addEventListener('focusin', (e) => {
-      const from = e.relatedTarget as HTMLElement | null;
-      if (from && !el.contains(from)) parts.returnFocus = from;
-      parts.focused = true;
-      this.updatePause();
-    });
-    el.addEventListener('focusout', (e) => {
-      if (el.contains(e.relatedTarget as Node | null)) return;
+    // Focus that goes nowhere (to the page itself, or another window) lands nowhere: no `focusLanded` follows.
+    this.motif.on('focusout', (_, e) => {
+      if (e.relatedTarget) return;
       parts.focused = false;
       this.updatePause();
     });
-    el.addEventListener('keydown', (e) => this.keyDown(e));
-    const onVisibility = () => this.updatePause();
-    document.addEventListener('visibilitychange', onVisibility);
+    this.motif.on('keydown', (_, e) => this.keyDown(e));
+    // A hidden page lets no toast time out.
+    const stopVisibility = onDocument(this, 'visibilitychange', () => this.updatePause());
     this.motif.setDisposable(() => {
       stopName();
-      document.removeEventListener('visibilitychange', onVisibility);
+      stopVisibility();
+      parts.stopFocusWatch?.();
       parts.removeHotkey?.();
       for (const t of parts.waiting.splice(0)) void t.dispose();
       parts.shown.length = 0;
-      if (parts.placedItself) {
-        el.remove();
-        parts.holder?.remove();
-      }
       if (defaultToaster === this) defaultToaster = null;
     });
   }
@@ -203,12 +201,10 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     for (const t of [...parts.shown]) t.close('code');
   }
 
-  /** Moves focus to the newest toast. Returns `false` if there is none. */
+  /** Moves focus to the newest toast. Returns `false` if there is none or it cannot take focus. */
   focusNewest(): boolean {
     const newest = this.parts.shown.at(-1);
-    if (!newest) return false;
-    newest.element.focus();
-    return true;
+    return !!newest && newest.focus();
   }
 
   /** @internal Whether `toast` is on the screen here. */
@@ -219,17 +215,17 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
   /** @internal Reads `toast` out in the live area of its tone. */
   announce(toast: Toast): void {
     const parts = this.parts;
-    parts.lines.get(toast)?.remove();
+    removePart(parts.lines.get(toast));
     const text = toast.announcement;
     if (!text) return;
-    const line = document.createElement('div');
+    const line = loose<HTMLDivElement>('div');
     parts.lines.set(toast, line);
     const live = toast.tone === 'danger' || toast.tone === 'caution' ? parts.assertive : parts.polite;
     // A moment later, so the live area exists before what it reads changes.
     setTimeout(() => {
       if (parts.lines.get(toast) !== line) return;
-      line.textContent = text;
-      live.append(line);
+      writeText(line, text);
+      live.controls.add(line);
     }, 50);
   }
 
@@ -245,23 +241,24 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     const at = parts.shown.indexOf(toast);
     if (at < 0) return;
     parts.shown.splice(at, 1);
-    parts.lines.get(toast)?.remove();
+    removePart(parts.lines.get(toast));
     parts.lines.delete(toast);
-    const el = toast.element;
-    if (el.contains(deepActiveElement())) {
-      const next = [el.nextElementSibling, el.previousElementSibling].find((n) => isHtmlElement(n) && n.dataset.state !== 'leaving');
-      const target = (next as HTMLElement | undefined) ?? (parts.returnFocus?.isConnected ? parts.returnFocus : null);
-      target?.focus();
+    if (holdsFocus(toast)) {
+      // To the toast beside it in its stack, else back where focus came from.
+      const next = [toast.siblings.next(), toast.siblings.prev()].find((t): t is Toast => t instanceof Toast && this.isShowing(t));
+      if (!next?.focus()) parts.returnFocus?.restore();
     }
-    el.dataset.state = 'leaving';
+    put(toast, 'data-state', 'leaving');
     const position = this.positionOf(toast);
     const done = () => {
-      this.controls.remove(toast);
+      toast.parent?.controls.remove(toast);
       this.fill(position);
     };
-    const time = transitionTime(el);
-    if (time > 0) setTimeout(done, time);
-    else done();
+    // Read once the leaving style is in effect: its transition is the one to wait for.
+    measure(this, () => transitionTime(toast), (time) => {
+      if (time > 0) setTimeout(done, time);
+      else done();
+    });
   }
 
   // Parts.
@@ -272,16 +269,12 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
   }
 
   private createParts(): Parts {
-    const el = this.element;
-    el.classList.add('mx-toaster');
-    el.setAttribute('role', 'region');
-    const polite = document.createElement('div');
-    polite.className = 'mx-sr-only';
-    polite.setAttribute('role', 'status');
-    const assertive = document.createElement('div');
-    assertive.className = 'mx-sr-only';
-    assertive.setAttribute('role', 'alert');
-    el.append(polite, assertive);
+    this.class.add('mx-toaster');
+    this.attr.add({ role: 'region' });
+    const polite = part<HTMLDivElement>(this, 'div', 'mx-sr-only');
+    polite.attr.add({ role: 'status' });
+    const assertive = part<HTMLDivElement>(this, 'div', 'mx-sr-only');
+    assertive.attr.add({ role: 'alert' });
     return {
       stacks: new Map(),
       polite,
@@ -292,21 +285,18 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
       hovered: false,
       focused: false,
       returnFocus: null,
+      focusOutside: null,
+      stopFocusWatch: null,
       removeHotkey: null,
       placedItself: false,
-      holder: null,
       made: false,
     };
   }
 
   private placeInPage(): void {
-    if (this.element.isConnected) return;
-    // In no component tree: under a root of its own in the page, so what its toasts show mounts.
-    const holder = document.body.appendChild(document.createElement('div'));
-    const root = new Component<HTMLDivElement>(holder);
-    root.build();
-    root.controls.add(this);
-    this.parts.holder = holder;
+    if (this.parent) return;
+    // In no component tree: in the page's layer, so what its toasts show mounts.
+    placeOnPage(this, this);
     this.parts.placedItself = true;
   }
 
@@ -318,14 +308,14 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     return this.parts.shown.filter((t) => this.positionOf(t) === position).length;
   }
 
-  private stack(position: ToastPosition): HTMLDivElement {
+  private stack(position: ToastPosition): Component<HTMLDivElement> {
     const parts = this.parts;
     let stack = parts.stacks.get(position);
     if (!stack) {
-      stack = document.createElement('div');
-      stack.className = 'mx-toaster__stack';
-      stack.dataset.position = position;
-      this.element.append(stack);
+      stack = new Component<HTMLDivElement>('div');
+      stack.class.add('mx-toaster__stack');
+      stack.attr.add({ 'data-position': position });
+      this.controls.add(stack);
       parts.stacks.set(position, stack);
     }
     return stack;
@@ -334,16 +324,17 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
   private present(toast: Toast): void {
     const position = this.positionOf(toast);
     const stack = this.stack(position);
+    this.followFocus();
     this.parts.shown.push(toast);
-    this.controls.add(toast);
-    const el = toast.element;
+    presentedAt.set(toast, ++presentations);
     // Newest nearest the edge: first at the top, last at the bottom.
-    if (position.startsWith('top')) stack.prepend(el);
-    else stack.append(el);
-    el.dataset.state = 'entering';
+    if (position.startsWith('top')) stack.controls.insert(0, toast);
+    else stack.controls.add(toast);
+    put(toast, 'data-state', 'entering');
     // The entering style must be in effect before it changes, for the transition to run.
-    void getComputedStyle(el).opacity;
-    el.dataset.state = 'shown';
+    afterStyle(toast, () => {
+      if (this.isShowing(toast)) put(toast, 'data-state', 'shown');
+    });
     this.announce(toast);
     toast.restart();
   }
@@ -369,39 +360,77 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     }
   }
 
+  /** From the first toast on, follows where focus lands on the page, so focus brought in by Tab, a press, the hotkey or code can go back. */
+  private followFocus(): void {
+    const parts = this.parts;
+    if (parts.stopFocusWatch) return;
+    parts.focusOutside = rememberFocus();
+    parts.stopFocusWatch = onDocument(this, 'focusin', (e) => this.focusLanded(e), true);
+  }
+
+  /** Where focus lands outside the toasts is where it goes back to once it comes into them. */
+  private focusLanded(e: FocusEvent): void {
+    const parts = this.parts;
+    const inside = this.motif.isEventFrom(e);
+    if (!inside) parts.focusOutside = rememberFocus(e);
+    else if (!parts.focused) parts.returnFocus = parts.focusOutside ?? parts.returnFocus;
+    if (parts.focused === inside) return;
+    parts.focused = inside;
+    this.updatePause();
+  }
+
   private renderHotkey(): void {
     const parts = this.parts;
     const hotkey = this.peekProperty<string>('hotkey') ?? 'F8';
     parts.removeHotkey?.();
     parts.removeHotkey = null;
     if (!hotkey) {
-      this.element.removeAttribute('aria-keyshortcuts');
+      put(this, 'aria-keyshortcuts', null);
       return;
     }
-    this.element.setAttribute('aria-keyshortcuts', hotkey);
-    parts.removeHotkey = addShortcut(hotkey, () => this.hotkeyPressed(), {
-      inEditable: true,
-      name: 'toaster.focus',
-      text: () => uiLocale.strings.toasterFocusKey,
-      category: () => uiLocale.strings.shortcutsNotifications,
-    });
+    put(this, 'aria-keyshortcuts', hotkey);
+    parts.removeHotkey = Toaster.holdHotkey(hotkey, this);
   }
 
-  private hotkeyPressed(): boolean {
-    const parts = this.parts;
-    if (this.element.contains(deepActiveElement())) {
-      if (!parts.returnFocus?.isConnected) return false;
-      parts.returnFocus.focus();
-      return true;
+  /** Joins `toaster` to the toasters of `hotkey`, the first one adding its shortcut; returns what takes it out (the last one removes it). */
+  private static holdHotkey(hotkey: string, toaster: Toaster): () => void {
+    let held = hotkeyHolders.get(hotkey);
+    if (!held) {
+      const toasters = new Set<Toaster>();
+      const remove = addShortcut(hotkey, () => Toaster.hotkeyPressed(toasters), {
+        inEditable: true,
+        name: 'toaster.focus',
+        text: () => uiLocale.strings.toasterFocusKey,
+        category: () => uiLocale.strings.shortcutsNotifications,
+      });
+      held = { toasters, remove };
+      hotkeyHolders.set(hotkey, held);
     }
-    return this.focusNewest();
+    const own = held;
+    own.toasters.add(toaster);
+    return () => {
+      if (!own.toasters.delete(toaster) || own.toasters.size) return;
+      own.remove();
+      if (hotkeyHolders.get(hotkey) === own) hotkeyHolders.delete(hotkey);
+    };
+  }
+
+  /** In a toast, focus goes back where it was; elsewhere, to the newest toast of these toasters. */
+  private static hotkeyPressed(toasters: ReadonlySet<Toaster>): boolean {
+    const all = [...toasters];
+    const inside = all.find((t) => holdsFocus(t));
+    if (inside) return !!inside.parts.returnFocus?.restore();
+    const newest = (t: Toaster) => {
+      const last = t.parts.shown.at(-1);
+      return last ? (presentedAt.get(last) ?? 0) : -1;
+    };
+    return all.sort((a, b) => newest(b) - newest(a)).some((t) => t.focusNewest());
   }
 
   private keyDown(e: KeyboardEvent): void {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
-    const el = (e.target as Element).closest('.mx-toast');
-    const toast = el && controlOf(el);
-    if (!(toast instanceof Toast) || toast.toaster !== this) return;
+    const toast = this.parts.shown.find((t) => t.motif.isEventFrom(e));
+    if (!toast) return;
     e.preventDefault();
     e.stopPropagation();
     toast.close('escape');

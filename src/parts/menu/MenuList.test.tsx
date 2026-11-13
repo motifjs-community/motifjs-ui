@@ -39,6 +39,20 @@ const open = (menu: Element) => !menu.closest<HTMLElement>('.mx-popup')!.hidden;
 const label = (el: Element) => el.querySelector('.mx-menu__label')!.textContent;
 
 describe('MenuList submenus', () => {
+  it('changes an item in place: a new text or check keeps its button', async () => {
+    const list = new MenuList();
+    page(list);
+    const state = reactive({ text: 'Open', checked: false });
+    list.setItems([{ text: () => state.text, checked: () => state.checked }]);
+    const button = itemsOf(list.element)[0];
+    state.text = 'Close';
+    state.checked = true;
+    await settle();
+    expect(itemsOf(list.element)[0]).toBe(button);
+    expect(label(button)).toBe('Close');
+    expect(button.getAttribute('aria-checked')).toBe('true');
+  });
+
   const tree = (log: string[]): MenuItem[] => [
     { text: '&New', shortcut: 'Ctrl+N', click: () => void log.push('new') },
     {
@@ -310,7 +324,7 @@ describe('MenuList submenus', () => {
   it('can keep the icon of a checked item, the mark in a column of its own, and a check for a chosen radio item', async () => {
     const list = new MenuList();
     page(list);
-    const icon = () => document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const icon = () => <svg />;
     const items = [
       { text: 'index.ts', icon, group: 'doc', checked: true },
       { text: 'app.ts', icon, group: 'doc', checked: false },
@@ -326,7 +340,7 @@ describe('MenuList submenus', () => {
     expect(list.element.hasAttribute('data-marks-apart')).toBe(true);
     expect(itemsOf(list.element)[0].querySelector('.mx-menu__icon svg')).not.toBeNull();
     expect(mark()).not.toBe(dot);
-    expect(mark()).toBe(checkMark().dataset.icon);
+    expect(mark()).toBe(checkMark().element.dataset.icon);
     expect(itemsOf(list.element)[0].getAttribute('role')).toBe('menuitemradio');
   });
 

@@ -26,7 +26,7 @@ async function settle() {
   for (let i = 0; i < 6; i++) await tick();
 }
 
-const input = (n: NumberBox) => n.inputElement;
+const input = (n: NumberBox) => n.inputPart.element;
 const message = (n: NumberBox) => n.element.querySelector('.mx-field__message')!.textContent;
 const spinButton = (n: NumberBox, step: 'up' | 'down') => n.element.querySelector<HTMLButtonElement>(`.mx-number-box__step[data-step="${step}"]`)!;
 
@@ -122,6 +122,23 @@ describe('NumberBox', () => {
       [null, true],
       [7, false],
     ]);
+  });
+
+  it('takes typed text from code as typing does, and only what a number is written with', async () => {
+    const s = reactive({ n: 5 as number | null });
+    let n!: NumberBox;
+    page(<NumberBox ref={(x: NumberBox) => (n = x)} locale="en" x-model={() => s.n} />);
+    await settle();
+    input(n).focus();
+    n.typeText('3');
+    await settle();
+    expect(input(n).value).toBe('3');
+    expect(s.n).toBe(3);
+    expect([input(n).selectionStart, input(n).selectionEnd]).toEqual([1, 1]);
+    n.typeText('a');
+    await settle();
+    expect(input(n).value).toBe('3');
+    expect(s.n).toBe(3);
   });
 
   it('rounds a value given with more decimals than asked from the start, and writes it to x-model', async () => {

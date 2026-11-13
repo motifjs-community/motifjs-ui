@@ -1,8 +1,11 @@
-import { Emitter, type Bind, type Component, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { css, handOver, mark, part, put, shown } from '../../core/draw-parts';
+import { handOver, part, removePart } from '../../core/draw-parts';
+import { focusOn, isFocused } from '../../core/focus';
 import { glyph } from '../../core/glyphs';
+import { rectOf } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
+import { css, mark, put, shown } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { ColorHsva } from '../../parts/color/color-hsva';
 import { formatColor, hsvaToRgba, parseColor, rgbaToHsva } from '../../parts/color/colors';
@@ -50,6 +53,9 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
   private readonly channels: NumberBox[];
   private readonly opacity: NumberBox;
   private readonly swatches: Component<HTMLDivElement>;
+  /** The preset buttons drawn, each with its color as the value writes it (`null` for one that is not a color). */
+  /** The swatches of the palette, in its order: `given` as the palette has it, `color` as the value would read. */
+  private presets: { swatch: Component<HTMLButtonElement>; given: string; color: string | null }[] = [];
   private readonly picker: Button;
   private byUser = false;
   private ready = false;
@@ -57,7 +63,7 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
   constructor(props?: IBaseProp<ColorPickerProps>) {
     super('div', props);
     const own = (this.props ?? {}) as ColorPickerProps;
-    this.element.classList.add('mx-color-picker');
+    this.class.add('mx-color-picker');
 
     this.area = this.track('mx-color-picker__area', (x, y) => {
       this.hsva.s = x;
@@ -69,23 +75,23 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
     this.hue = this.track('mx-color-picker__strip mx-color-picker__hue', (x) => (this.hsva.h = x * 360), strips);
     this.alphaTrack = this.track('mx-color-picker__strip mx-color-picker__alpha', (x) => (this.hsva.a = Math.round(x * 100) / 100), strips);
     this.picker = new Button({ icon: glyph('eyedropper'), variant: 'ghost', onclick: () => void this.pickFromScreen() });
-    this.picker.element.classList.add('mx-color-picker__pick');
+    this.picker.class.add('mx-color-picker__pick');
     row.controls.add(this.picker);
 
     this.inputs = part(this, 'div', 'mx-color-picker__inputs');
     this.hex = new TextBox({ size: 'sm', updateOn: 'change', autocomplete: 'off', onValueChanged: (e) => e.byUser && this.typedHex(String(e.value ?? '')) });
-    this.hex.element.classList.add('mx-color-picker__hex');
+    this.hex.class.add('mx-color-picker__hex');
     this.channels = [0, 1, 2].map((i) => {
       const box = new NumberBox({ size: 'sm', min: 0, max: 255, step: 1, decimals: 0, showSpinButtons: false, onValueChanged: (e) => e.byUser && this.typedChannel(i, e.value) });
-      box.element.classList.add('mx-color-picker__channel');
+      box.class.add('mx-color-picker__channel');
       return box;
     });
     // In percent, from 0 to 100.
     this.opacity = new NumberBox({ size: 'sm', min: 0, max: 100, step: 1, decimals: 0, showSpinButtons: false, onValueChanged: (e) => e.byUser && this.typedAlpha(e.value) });
-    this.opacity.element.classList.add('mx-color-picker__channel');
+    this.opacity.class.add('mx-color-picker__channel');
     this.inputs.controls.add(this.hex, ...this.channels, this.opacity);
     this.swatches = part(this, 'div', 'mx-color-picker__swatches');
-    this.swatches.element.setAttribute('role', 'group');
+    this.swatches.attr.add({ role: 'group' });
 
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onValueChanged) this.onValueChanged(own.onValueChanged);
@@ -141,41 +147,50 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
 
   /** Sets focus on the handle of the area. */
   override focus(): boolean {
-    this.area.thumb.element.focus();
-    return document.activeElement === this.area.thumb.element;
+    focusOn(this.area.thumb);
+    return isFocused(this.area.thumb);
   }
 
   /** An area or a strip with its handle: pressed or dragged, the position sets the color; the handle takes the keys. */
   private track(className: string, set: (x: number, y: number) => void, parent: Control | Component = this): Track {
     const box = part<HTMLDivElement>(parent as Control, 'div', className);
     const thumb = part<HTMLDivElement>(box, 'div', 'mx-color-picker__thumb');
-    thumb.element.tabIndex = 0;
-    thumb.element.setAttribute('role', 'slider');
+    put(thumb, 'tabindex', '0');
+    thumb.attr.add({ role: 'slider' });
     const t: Track = { box, thumb, set };
+    // The box is read first; the color and the handles are written after.
     const at = (e: PointerEvent) => {
-      const r = box.element.getBoundingClientRect();
-      const x = r.width ? Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1) : 0;
-      const y = r.height ? Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1) : 0;
+      const r = rectOf(box);
+      return {
+        x: r.width ? Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1) : 0,
+        y: r.height ? Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1) : 0,
+      };
+    };
+    const setAt = (e: PointerEvent) => {
+      const { x, y } = at(e);
       set(x, y);
       this.moved();
     };
-    box.element.addEventListener('pointerdown', (e) => {
+    box.motif.on('pointerdown', (_, e) => {
       if (e.button !== 0 || !this.isEnabled) return;
       e.preventDefault();
-      box.element.setPointerCapture?.(e.pointerId);
-      thumb.element.focus();
-      at(e);
-      const move = (m: PointerEvent) => at(m);
+      const { x, y } = at(e);
+      box.attr.add({ setPointerCapture: e.pointerId });
+      focusOn(thumb);
+      set(x, y);
+      this.moved();
+      // Each move reads the point itself, not how far it went.
+      const move = (_: ComponentBase, m: PointerEvent) => setAt(m);
       const up = () => {
-        box.element.removeEventListener('pointermove', move);
-        box.element.removeEventListener('pointerup', up);
-        box.element.removeEventListener('pointercancel', up);
+        void box.motif.off('pointermove', move);
+        void box.motif.off('pointerup', up);
+        void box.motif.off('pointercancel', up);
       };
-      box.element.addEventListener('pointermove', move);
-      box.element.addEventListener('pointerup', up);
-      box.element.addEventListener('pointercancel', up);
+      void box.motif.on('pointermove', move);
+      void box.motif.on('pointerup', up);
+      void box.motif.on('pointercancel', up);
     });
-    thumb.element.addEventListener('keydown', (e) => this.keyDown(t, e));
+    thumb.motif.on('keydown', (_, e) => this.keyDown(t, e));
     return t;
   }
 
@@ -271,23 +286,22 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
     const solid = `rgb(${rgba.r} ${rgba.g} ${rgba.b})`;
     const seen = `rgb(${rgba.r} ${rgba.g} ${rgba.b} / ${this.peekProperty('alpha') ? rgba.a : 1})`;
     // The area: the hue at full strength, washed to white along and darkened to black down.
-    css(this.area.box.element, 'background', `linear-gradient(to top, rgb(0 0 0), transparent), linear-gradient(to right, rgb(255 255 255), hsl(${Math.round(h.h)} 100% 50%))`);
-    css(this.hue.box.element, 'background', HUES);
-    css(this.alphaTrack.box.element, '--_shade', `linear-gradient(to right, transparent, ${solid})`);
+    css(this.area.box, 'background', `linear-gradient(to top, rgb(0 0 0), transparent), linear-gradient(to right, rgb(255 255 255), hsl(${Math.round(h.h)} 100% 50%))`);
+    css(this.hue.box, 'background', HUES);
+    css(this.alphaTrack.box, '--_shade', `linear-gradient(to right, transparent, ${solid})`);
     this.place(this.area, h.s, 1 - h.v, solid);
     this.place(this.hue, h.h / 360, 0.5, `hsl(${Math.round(h.h)} 100% 50%)`);
     this.place(this.alphaTrack, h.a, 0.5, seen);
-    css(this.preview.element, '--_color', seen);
+    css(this.preview, '--_color', seen);
     this.renderInputs();
     this.renderSwatchState();
     this.renderNames();
   }
 
   private place(t: Track, x: number, y: number, color: string): void {
-    const el = t.thumb.element;
-    css(el, 'left', `${x * 100}%`);
-    css(el, 'top', `${y * 100}%`);
-    css(el, 'background-color', color);
+    css(t.thumb, 'left', `${x * 100}%`);
+    css(t.thumb, 'top', `${y * 100}%`);
+    css(t.thumb, 'background-color', color);
   }
 
   private renderInputs(): void {
@@ -303,12 +317,11 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
     const s = uiLocale.strings;
     const h = this.hsva;
     const name = (t: Track, label: string, now: number, max: number, text?: string) => {
-      const el = t.thumb.element;
-      put(el, 'aria-label', label);
-      put(el, 'aria-valuemin', '0');
-      put(el, 'aria-valuemax', String(max));
-      put(el, 'aria-valuenow', String(Math.round(now)));
-      put(el, 'aria-valuetext', text ?? null);
+      put(t.thumb, 'aria-label', label);
+      put(t.thumb, 'aria-valuemin', '0');
+      put(t.thumb, 'aria-valuemax', String(max));
+      put(t.thumb, 'aria-valuenow', String(Math.round(now)));
+      put(t.thumb, 'aria-valuetext', text ?? null);
     };
     name(this.area, s.colorArea, h.s * 100, 100, uiLocale.text('colorAreaValue', { s: Math.round(h.s * 100), v: Math.round(h.v * 100) }));
     name(this.hue, s.colorHue, h.h, 360);
@@ -318,16 +331,16 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
       if (this.channels[i].label !== label) this.channels[i].label = label;
     });
     if (this.opacity.label !== s.colorAlpha) this.opacity.label = s.colorAlpha;
-    put(this.swatches.element, 'aria-label', s.colorPresets);
+    put(this.swatches, 'aria-label', s.colorPresets);
     if (this.picker.hint !== s.colorPick) this.picker.hint = s.colorPick;
   }
 
   private renderParts(): void {
     const alpha = !!this.peekProperty('alpha');
-    mark(this.element, 'data-alpha', alpha);
-    shown(this.alphaTrack.box.element, alpha);
+    mark(this, 'data-alpha', alpha);
+    shown(this.alphaTrack.box, alpha);
     if (this.opacity.visible !== alpha) this.opacity.visible = alpha;
-    shown(this.inputs.element, this.peekProperty('showInputs') !== false);
+    shown(this.inputs, this.peekProperty('showInputs') !== false);
     const canPick = typeof (globalThis as { EyeDropper?: unknown }).EyeDropper === 'function';
     if (this.picker.visible !== (canPick && this.peekProperty('eyeDropper') !== false)) this.picker.visible = canPick && this.peekProperty('eyeDropper') !== false;
     this.renderColor();
@@ -335,27 +348,32 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
 
   private renderSwatches(): void {
     const palette = this.peekProperty<readonly string[] | null>('palette') ?? [];
-    this.swatches.controls.clear();
-    for (const color of palette) {
+    // A swatch stays in its place and takes the palette's color there; swatches are added or taken away at the end.
+    while (this.presets.length > palette.length) removePart(this.presets.pop()!.swatch);
+    while (this.presets.length < palette.length) {
       const swatch = part<HTMLButtonElement>(this.swatches, 'button', 'mx-color-picker__swatch');
-      swatch.element.type = 'button';
-      swatch.element.dataset.color = color;
-      swatch.element.setAttribute('aria-label', color);
-      css(swatch.element, '--_color', color);
-      swatch.element.addEventListener('click', () => this.typedHex(color));
+      swatch.attr.add({ type: 'button' });
+      const preset = { swatch, given: '', color: null as string | null };
+      swatch.motif.on('click', () => this.typedHex(preset.given));
+      this.presets.push(preset);
     }
-    shown(this.swatches.element, palette.length > 0);
+    palette.forEach((color, i) => {
+      const preset = this.presets[i];
+      const rgba = parseColor(color);
+      preset.given = color;
+      preset.color = rgba ? formatColor(rgba) : null;
+      put(preset.swatch, 'data-color', color);
+      put(preset.swatch, 'aria-label', color);
+      css(preset.swatch, '--_color', color);
+    });
+    shown(this.swatches, palette.length > 0);
     this.renderSwatchState();
   }
 
   private renderSwatchState(): void {
     const now = this.peekProperty<string | null>('value');
-    const current = now ? parseColor(now) : null;
-    for (const swatch of this.swatches?.controls.items ?? []) {
-      const el = swatch.element as HTMLElement;
-      const color = parseColor(el.dataset.color);
-      const on = !!current && !!color && formatColor(color) === formatColor(current);
-      put(el, 'aria-pressed', String(on));
-    }
+    const rgba = now ? parseColor(now) : null;
+    const current = rgba ? formatColor(rgba) : null;
+    for (const preset of this.presets) put(preset.swatch, 'aria-pressed', String(!!current && preset.color === current));
   }
 }

@@ -1,6 +1,7 @@
 import { reactive, type ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { Sparkline } from './Sparkline';
 import type { SparklineProps } from './sparkline-props';
 
@@ -8,7 +9,8 @@ const hosts: ComponentBase[] = [];
 function make(props: SparklineProps): Sparkline {
     const spark = new Sparkline(props);
     hosts.push(mountHost(spark));
-    spark.onMounted();
+    spark.refresh();
+    measureNow(spark);
     return spark;
 }
 const settle = () => Promise.resolve().then(() => Promise.resolve());
@@ -74,6 +76,8 @@ describe('Sparkline', () => {
         s.values = [1, 2, 30];
         await settle();
         await settle();
+        // The new values are drawn in the next measuring round.
+        measureNow(spark);
         expect(spark.element.getAttribute('aria-label')).toContain('30');
     });
 

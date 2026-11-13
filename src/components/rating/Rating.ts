@@ -1,7 +1,9 @@
-import type { Bind, IBaseProp } from '@motifx/core';
-import { css, put } from '../../core/draw-parts';
+import type { Bind, Component, ComponentBase, IBaseProp } from '@motifx/core';
+import { loose, part, removePart } from '../../core/draw-parts';
 import { LanguageLook } from '../../core/language-look';
+import { isRtl, shareAlong } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
+import { css, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Field } from '../../parts/field/Field';
 import type { RatingProps } from './rating-props';
@@ -11,8 +13,8 @@ const OWN = ['max', 'step', 'allowClear', 'preview', 'tone', 'emptyIcon', 'fille
 
 /** One star: its box, the empty shape and the filled one over it. */
 interface Star {
-  item: HTMLSpanElement;
-  fill: HTMLSpanElement;
+  part: Component<HTMLSpanElement>;
+  fill: Component<HTMLSpanElement>;
 }
 
 /** A shape as the mask of a star: a name of the kit's icon set, or an image address. */
@@ -31,7 +33,7 @@ const maskOf = (icon: string | null | undefined): string =>
  */
 export class Rating extends Field<number | null, RatingProps> {
   /** A tone not given is the design language's. */
-  private readonly look = new LanguageLook(this.element, { tone: '--_rating-tone' }, () => this.renderTone());
+  private readonly look = new LanguageLook(this,{ tone: '--_rating-tone' }, () => this.renderTone());
   private readonly stars: Star[] = [];
   /** The value the pointer points at, shown until it leaves. */
   private pointed: number | null = null;
@@ -39,8 +41,8 @@ export class Rating extends Field<number | null, RatingProps> {
   constructor(props?: IBaseProp<RatingProps>) {
     super(props);
     const own = (this.props ?? {}) as RatingProps;
-    const row = this.focusElement;
-    this.element.classList.add('mx-rating');
+    const row = this.controlPart;
+    this.class.add('mx-rating');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     // The field took the value before the step and the count were known: it is given again to fit them.
     if (own.value !== undefined) this.value = own.value;
@@ -48,14 +50,14 @@ export class Rating extends Field<number | null, RatingProps> {
     this.observeProperty('max', () => this.renderStars());
     this.observeProperty('step', () => this.renderValue(this.peekValue()));
     this.observeProperty('tone', () => this.renderTone());
-    this.observeProperty<string | null>('emptyIcon', (icon) => css(this.element, '--_rating-star-icon', maskOf(icon)));
-    this.observeProperty<string | null>('filledIcon', (icon) => css(this.element, '--_rating-fill-icon', maskOf(icon)));
+    this.observeProperty<string | null>('emptyIcon', (icon) => css(this, '--_rating-star-icon', maskOf(icon)));
+    this.observeProperty<string | null>('filledIcon', (icon) => css(this, '--_rating-fill-icon', maskOf(icon)));
     // The value is said in the kit's language.
     onLanguage(this, () => this.renderValue(this.peekValue()));
-    row.addEventListener('pointermove', (e) => this.point(e));
-    row.addEventListener('pointerleave', () => this.point(null));
-    row.addEventListener('click', (e) => this.pressed(e));
-    row.addEventListener('keydown', (e) => this.keyDown(e));
+    row.motif.on('pointermove', (_, e) => this.point(e));
+    row.motif.on('pointerleave', () => this.point(null));
+    row.motif.on('click', (_, e) => this.pressed(e));
+    row.motif.on('keydown', (_, e) => this.keyDown(e));
     this.motif.setDisposable(this.look.watch());
   }
 
@@ -110,13 +112,11 @@ export class Rating extends Field<number | null, RatingProps> {
     this.renderTone();
   }
 
-  protected createControl(): HTMLElement {
-    const row = document.createElement('div');
-    row.className = 'mx-rating__stars';
-    row.setAttribute('role', 'slider');
-    row.setAttribute('aria-valuemin', '0');
-    row.tabIndex = 0;
-    return row;
+  protected createControl(): ComponentBase {
+    const control = loose<HTMLDivElement>('div', 'mx-rating__stars');
+    control.attr.add({ role: 'slider', 'aria-valuemin': '0' });
+    put(control, 'tabindex', '0');
+    return control;
   }
 
   protected emptyValue(): number | null {
@@ -137,7 +137,7 @@ export class Rating extends Field<number | null, RatingProps> {
     if (!this.stars) return;
     const shown = this.pointed ?? value ?? 0;
     this.stars.forEach((star, i) => css(star.fill, '--_fill', `${Math.round(Math.min(Math.max(shown - i, 0), 1) * 100)}%`));
-    const row = this.focusElement;
+    const row = this.controlPart;
     const max = this.countOf(this.peekProperty('max'));
     put(row, 'aria-valuemax', String(max));
     put(row, 'aria-valuenow', String(value ?? 0));
@@ -155,33 +155,25 @@ export class Rating extends Field<number | null, RatingProps> {
   }
 
   private renderStars(): void {
-    const row = this.focusElement;
+    const row = this.controlPart;
     const max = this.countOf(this.peekProperty('max'));
-    while (this.stars.length > max) this.stars.pop()!.item.remove();
+    while (this.stars.length > max) removePart(this.stars.pop()!.part);
     while (this.stars.length < max) {
-      const item = document.createElement('span');
-      item.className = 'mx-rating__item';
-      item.setAttribute('aria-hidden', 'true');
-      const star = document.createElement('span');
-      star.className = 'mx-rating__star';
-      const fill = document.createElement('span');
-      fill.className = 'mx-rating__fill';
-      item.append(star, fill);
-      row.append(item);
-      this.stars.push({ item, fill });
+      const item = part<HTMLSpanElement>(row, 'span', 'mx-rating__item');
+      item.attr.add({ 'aria-hidden': 'true' });
+      part(item, 'span', 'mx-rating__star');
+      const fill = part<HTMLSpanElement>(item, 'span', 'mx-rating__fill');
+      this.stars.push({ part: item, fill });
     }
     this.renderValue(this.peekValue());
   }
 
   /** The value a pointer at `e` would give: the star under it, or half of it. */
   private valueAt(e: MouseEvent): number | null {
-    const at = this.stars.findIndex((star) => star.item.contains(e.target as Node));
+    const at = this.stars.findIndex((star) => star.part.motif.isEventFrom(e));
     if (at < 0) return null;
     if (this.peekProperty('step') !== 0.5) return at + 1;
-    const box = this.stars[at].item.getBoundingClientRect();
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
-    const along = rtl ? box.right - e.clientX : e.clientX - box.left;
-    return along < box.width / 2 ? at + 0.5 : at + 1;
+    return shareAlong(this.stars[at].part, { x: e.clientX, y: e.clientY }) < 0.5 ? at + 0.5 : at + 1;
   }
 
   private point(e: PointerEvent | null): void {
@@ -206,7 +198,7 @@ export class Rating extends Field<number | null, RatingProps> {
     const step = this.peekProperty('step') === 0.5 ? 0.5 : 1;
     const max = this.countOf(this.peekProperty('max'));
     const now = this.peekValue() ?? 0;
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
+    const rtl = isRtl(this);
     const floor = this.peekProperty('allowClear') !== false ? 0 : step;
     let next: number | null;
     if (e.key === 'ArrowUp' || e.key === (rtl ? 'ArrowLeft' : 'ArrowRight')) next = Math.min(now + step, max);
@@ -222,6 +214,6 @@ export class Rating extends Field<number | null, RatingProps> {
   }
 
   private renderTone(): void {
-    put(this.element, 'data-tone', this.peekProperty<RatingTone>('tone') ?? (this.look.get('tone') as RatingTone | null) ?? 'accent');
+    put(this, 'data-tone', this.peekProperty<RatingTone>('tone') ?? (this.look.get('tone') as RatingTone | null) ?? 'accent');
   }
 }

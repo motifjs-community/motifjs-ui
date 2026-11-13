@@ -75,10 +75,13 @@ describe('Spinner', () => {
 
   it('covers a container while it loads and keeps focus', async () => {
     const panel = new Component<HTMLDivElement>('div');
-    const input = document.createElement('input');
-    const after = document.createElement('button');
+    // What a cover makes inert are the container's components.
+    const inputPart = new Component<HTMLInputElement>('input');
+    const afterPart = new Component<HTMLButtonElement>('button');
     page(panel);
-    panel.element.append(input, after);
+    panel.controls.add(inputPart, afterPart);
+    const input = inputPart.element;
+    const after = afterPart.element;
     input.focus();
 
     const done = Spinner.cover(panel, { label: 'Loading orders' });
@@ -101,18 +104,20 @@ describe('Spinner', () => {
     expect(document.activeElement).toBe(input);
   });
 
-  it('covers a plain element too, leaving focus alone when it was elsewhere', async () => {
-    const outside = document.createElement('button');
-    const box = document.createElement('section');
-    box.setAttribute('aria-busy', 'false');
-    box.append(document.createElement('button'));
-    document.body.append(outside, box);
+  it('leaves focus alone when it was elsewhere, and gives the container its own aria-busy back', async () => {
+    const outsidePart = new Component<HTMLButtonElement>('button');
+    const box = new Component<HTMLElement>('section');
+    box.attr.add({ 'aria-busy': 'false' });
+    box.controls.add(new Component<HTMLButtonElement>('button'));
+    page(outsidePart, box);
+    await settle();
+    const outside = outsidePart.element;
     outside.focus();
     const done = Spinner.cover(box);
     expect(document.activeElement).toBe(outside);
-    expect(box.querySelector('.mx-spinner')!.getAttribute('aria-label')).toBe('Loading…');
+    expect(box.element.querySelector('.mx-spinner')!.getAttribute('aria-label')).toBe('Loading…');
     done();
-    expect(box.getAttribute('aria-busy')).toBe('false');
-    expect(box.querySelector('.mx-spinner')).toBeNull();
+    expect(box.element.getAttribute('aria-busy')).toBe('false');
+    expect(box.element.querySelector('.mx-spinner')).toBeNull();
   });
 });

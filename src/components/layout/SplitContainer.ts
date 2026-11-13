@@ -1,8 +1,9 @@
 import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
-import { registerControl } from '../../core/control-map';
-import { deepActiveElement } from '../../core/focus';
+import { focusOn, holdsFocus } from '../../core/focus';
+import { isInPage, isRtl, measure, rectOf } from '../../core/measure';
 import { nextId } from '../../core/next-id';
+import { css, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { LayoutOrientation } from './layout-orientation';
 import { Panel } from './Panel';
@@ -18,10 +19,17 @@ const LAYOUT = ['orientation', 'position', 'fixedPanel', 'firstMinSize', 'second
 
 const SPLITTER = 'var(--_layout-splitter-size)';
 
-interface Drag {
+/** The first pane's size and the room both panes share, in pixels; 0 when not laid out. */
+interface Sizes {
+  first: number;
+  room: number;
+}
+
+/** A drag reads the panes once, when it starts. */
+interface Drag extends Sizes {
   pointer: number;
   from: number;
-  first: number;
+  rtl: boolean;
 }
 
 interface Parts {
@@ -69,16 +77,17 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     super('div', props);
     const own = (this.props ?? {}) as SplitContainerProps;
     const parts = this.parts;
-    this.element.classList.add('mx-split-container');
+    this.class.add('mx-split-container');
     const [first, second] = [new Panel(), new Panel()];
-    first.element.classList.add('mx-split-container__pane');
-    second.element.classList.add('mx-split-container__pane');
-    first.element.dataset.pane = 'first';
-    second.element.dataset.pane = 'second';
-    first.element.id = nextId('split-pane');
+    first.class.add('mx-split-container__pane');
+    second.class.add('mx-split-container__pane');
+    first.attr.add({ 'data-pane': 'first' });
+    second.attr.add({ 'data-pane': 'second' });
+    const firstId = nextId('split-pane');
+    first.attr.add({ id: firstId });
     this.controls.add(first, parts.splitter, second);
     [parts.first, parts.second] = [first, second];
-    parts.splitter.element.setAttribute('aria-controls', first.element.id);
+    parts.splitter.attr.add({ 'aria-controls': firstId });
 
     for (const name of LAYOUT) this.observeProperty(name, () => this.renderLayout());
     this.observeProperty('resizable', () => this.renderSplitter());
@@ -92,7 +101,7 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     // Added to the container itself programmatically: into the first empty pane.
     void this.motif.on('controladded', (_sender, e: { control: ComponentBase }) => this.route(e.control), false);
 
-    const drawLabel = () => parts.splitter.element.setAttribute('aria-label', this.peekProperty<string | undefined>('splitterLabel') || uiLocale.strings.resize);
+    const drawLabel = () => put(parts.splitter, 'aria-label', this.peekProperty<string | undefined>('splitterLabel') || uiLocale.strings.resize);
     const stopLabel = onLanguage(this, drawLabel);
     this.observeProperty('splitterLabel', drawLabel);
     this.listen();
@@ -110,9 +119,9 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
   get second(): Panel {
     return this.parts.second!;
   }
-  /** The splitter element (`role="separator"`). */
-  get splitterElement(): HTMLDivElement {
-    return this.parts.splitter.element;
+  /** The splitter part (`role="separator"`). */
+  get splitterPart(): Component<HTMLDivElement> {
+    return this.parts.splitter;
   }
 
   get orientation(): LayoutOrientation {
@@ -202,8 +211,8 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     this.collapsed = 'none';
   }
 
-  protected override get focusElement(): HTMLElement {
-    return this.parts.splitter.element;
+  override get focusPart(): ComponentBase {
+    return this.parts.splitter;
   }
 
   protected override applyProperty(name: string, value: unknown): void {
@@ -225,12 +234,8 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
 
   private createParts(): Parts {
     const splitter = new Component<HTMLDivElement>('div');
-    const el = splitter.element;
-    el.className = 'mx-split-container__splitter';
-    el.setAttribute('role', 'separator');
-    el.setAttribute('aria-valuemin', '0');
-    el.setAttribute('aria-valuemax', '100');
-    registerControl(el, this);
+    splitter.class.add('mx-split-container__splitter');
+    splitter.attr.add({ role: 'separator', 'aria-valuemin': '0', 'aria-valuemax': '100' });
     return { splitter, first: null, second: null, drag: null, moved: new Emitter() };
   }
 
@@ -249,19 +254,16 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
   private renderLayout(): void {
     const parts = this.parts;
     if (!parts.first) return;
-    const el = this.element;
     const horizontal = this.horizontal;
     const collapsed = this.peekProperty<SplitPanel>('collapsed') ?? 'none';
-    el.dataset.orientation = horizontal ? 'horizontal' : 'vertical';
-    el.dataset.collapsed = collapsed;
-    el.style.setProperty(horizontal ? 'grid-template-columns' : 'grid-template-rows', this.tracks(collapsed));
-    el.style.removeProperty(horizontal ? 'grid-template-rows' : 'grid-template-columns');
-    const splitter = parts.splitter.element;
-    splitter.setAttribute('aria-orientation', horizontal ? 'vertical' : 'horizontal');
+    put(this, 'data-orientation', horizontal ? 'horizontal' : 'vertical');
+    put(this, 'data-collapsed', collapsed);
+    css(this, horizontal ? 'grid-template-columns' : 'grid-template-rows', this.tracks(collapsed));
+    css(this, horizontal ? 'grid-template-rows' : 'grid-template-columns', '');
+    put(parts.splitter, 'aria-orientation', horizontal ? 'vertical' : 'horizontal');
     const hidden = collapsed === 'first' ? parts.first : collapsed === 'second' ? parts.second : null;
-    for (const pane of [parts.first, parts.second]) pane!.element.inert = pane === hidden;
-    const active = deepActiveElement();
-    if (hidden && active && hidden.element.contains(active)) splitter.focus();
+    for (const pane of [parts.first, parts.second]) mark(pane!, 'inert', pane === hidden);
+    if (hidden && holdsFocus(hidden)) focusOn(parts.splitter);
     this.renderValue();
   }
 
@@ -277,45 +279,45 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     return `clamp(${min1}, ${size}, calc(100% - ${min2} - ${SPLITTER})) ${SPLITTER} minmax(0, 1fr)`;
   }
 
-  /** `aria-valuenow`: the first pane's share of the room, 0 to 100. */
+  /** `aria-valuenow`: the first pane's share of the room, 0 to 100; with both panes shown, from their sizes at the next frame. */
   private renderValue(): void {
     const collapsed = this.peekProperty<SplitPanel>('collapsed') ?? 'none';
-    let now = 50;
-    if (collapsed === 'first') now = 0;
-    else if (collapsed === 'second') now = 100;
-    else {
-      const { first, room } = this.measure();
-      const position = this.peekProperty<SplitPosition>('position') ?? '50%';
-      if (room > 0) now = (first / room) * 100;
-      else if (isShare(position)) now = this.peekProperty('fixedPanel') === 'second' ? 100 - parseFloat(position) : parseFloat(position);
-    }
-    this.parts.splitter.element.setAttribute('aria-valuenow', String(Math.round(Math.min(100, Math.max(0, now)))));
+    if (collapsed === 'none') measure(this, this.readSizes, this.drawValue);
+    else put(this.parts.splitter, 'aria-valuenow', collapsed === 'first' ? '0' : '100');
   }
 
+  private readonly drawValue = ({ first, room }: Sizes): void => {
+    // A pane hidden since the read keeps the value written for it.
+    if ((this.peekProperty<SplitPanel>('collapsed') ?? 'none') !== 'none') return;
+    const position = this.peekProperty<SplitPosition>('position') ?? '50%';
+    let now = 50;
+    if (room > 0) now = (first / room) * 100;
+    else if (isShare(position)) now = this.peekProperty('fixedPanel') === 'second' ? 100 - parseFloat(position) : parseFloat(position);
+    put(this.parts.splitter, 'aria-valuenow', String(Math.round(Math.min(100, Math.max(0, now)))));
+  };
+
   private renderSplitter(): void {
-    const splitter = this.parts.splitter.element;
+    const splitter = this.parts.splitter;
     const resizable = this.peekProperty('resizable') !== false;
     const usable = resizable || this.peekProperty('collapsible') !== false;
-    this.element.toggleAttribute('data-resizable', resizable);
-    if (usable) splitter.tabIndex = this.peekProperty('tabStop') === false ? -1 : 0;
-    else splitter.removeAttribute('tabindex');
+    mark(this, 'data-resizable', resizable);
+    if (usable) put(splitter, 'tabindex', String(this.peekProperty('tabStop') === false ? -1 : 0));
+    else put(splitter, 'tabindex', null);
   }
 
   // Moving.
 
-  /** The first pane's size and the room both panes share, in pixels; 0 when not laid out. */
-  private measure(): { first: number; room: number } {
+  private readonly readSizes = (): Sizes => {
     const parts = this.parts;
-    if (!parts.first || !this.element.isConnected) return { first: 0, room: 0 };
-    const a = parts.first.element.getBoundingClientRect();
-    const b = parts.second!.element.getBoundingClientRect();
+    if (!parts.first || !isInPage(this)) return { first: 0, room: 0 };
+    const a = rectOf(parts.first);
+    const b = rectOf(parts.second!);
     const first = this.horizontal ? a.width : a.height;
     return { first, room: first + (this.horizontal ? b.width : b.height) };
-  }
+  };
 
-  /** Puts the splitter so the first pane is `size` pixels, within the minimum sizes. */
-  private moveTo(size: number, fire: boolean): void {
-    const { room } = this.measure();
+  /** Puts the splitter so the first pane is `size` pixels of `room`, within the minimum sizes. */
+  private moveTo(size: number, room: number, fire: boolean): void {
     if (!room) return;
     const min1 = this.peekProperty<number>('firstMinSize') ?? 0;
     const min2 = this.peekProperty<number>('secondMinSize') ?? 0;
@@ -330,7 +332,7 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     const parts = this.parts;
     const drag = parts.drag;
     // A drag in progress keeps the event for its end; this marks the change as the user's.
-    parts.drag ??= { pointer: -1, from: 0, first: 0 };
+    parts.drag ??= { pointer: -1, from: 0, first: 0, room: 0, rtl: false };
     try {
       this.changeProperty('collapsed', collapsed);
       this.changeProperty('position', position);
@@ -350,14 +352,14 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
   // Input.
 
   private listen(): void {
-    const splitter = this.parts.splitter.element;
-    splitter.addEventListener('keydown', (e) => this.onKey(e));
-    splitter.addEventListener('focus', () => this.renderValue());
-    splitter.addEventListener('dblclick', () => this.isEnabled && this.toggleCollapsed());
-    splitter.addEventListener('pointerdown', (e) => this.dragStart(e));
-    splitter.addEventListener('pointermove', (e) => this.dragMove(e));
-    splitter.addEventListener('pointerup', (e) => this.dragEnd(e));
-    splitter.addEventListener('pointercancel', (e) => this.dragEnd(e));
+    const splitter = this.parts.splitter;
+    splitter.motif.on('keydown', (_, e) => this.onKey(e));
+    splitter.motif.on('focus', () => this.renderValue());
+    splitter.motif.on('dblclick', () => this.isEnabled && this.toggleCollapsed());
+    splitter.motif.on('pointerdown', (_, e) => this.dragStart(e));
+    splitter.motif.on('pointermove', (_, e) => this.dragMove(e));
+    splitter.motif.on('pointerup', (_, e) => this.dragEnd(e));
+    splitter.motif.on('pointercancel', (_, e) => this.dragEnd(e));
   }
 
   private onKey(e: KeyboardEvent): void {
@@ -365,43 +367,39 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     const resizable = this.peekProperty('resizable') !== false;
     const horizontal = this.horizontal;
     const step = this.peekProperty<number>('step') ?? 10;
-    let size: number | null = null;
     if (e.key === 'Enter') {
       if (this.peekProperty('collapsible') === false) return;
+      e.preventDefault();
       this.toggleCollapsed();
-    } else if (!resizable) {
-      return;
-    } else if (e.key === (horizontal ? 'ArrowLeft' : 'ArrowUp') || e.key === (horizontal ? 'ArrowRight' : 'ArrowDown')) {
-      const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
-      const rtl = horizontal && getComputedStyle(this.element).direction === 'rtl';
-      size = this.measure().first + (forward !== rtl ? step : -step);
-    } else if (e.key === 'Home') {
-      size = 0;
-    } else if (e.key === 'End') {
-      size = Number.POSITIVE_INFINITY;
-    } else {
       return;
     }
+    const back = e.key === (horizontal ? 'ArrowLeft' : 'ArrowUp');
+    const forward = e.key === (horizontal ? 'ArrowRight' : 'ArrowDown');
+    if (!resizable || !(back || forward || e.key === 'Home' || e.key === 'End')) return;
     e.preventDefault();
-    if (size !== null) this.moveTo(size, true);
+    // The panes are read before anything is written.
+    const { first, room } = this.readSizes();
+    let size = e.key === 'Home' ? 0 : Number.POSITIVE_INFINITY;
+    if (back || forward) size = first + (forward !== (horizontal && isRtl(this)) ? step : -step);
+    this.moveTo(size, room, true);
   }
 
   private dragStart(e: PointerEvent): void {
     if (e.button !== 0 || !this.isEnabled || this.peekProperty('resizable') === false) return;
-    const splitter = this.parts.splitter.element;
+    const { first, room } = this.readSizes();
+    const rtl = this.horizontal && isRtl(this);
     e.preventDefault();
-    splitter.focus({ preventScroll: true });
-    splitter.setPointerCapture?.(e.pointerId);
-    this.parts.drag = { pointer: e.pointerId, from: this.horizontal ? e.clientX : e.clientY, first: this.measure().first };
-    this.element.toggleAttribute('data-dragging', true);
+    focusOn(this.parts.splitter, { preventScroll: true });
+    this.parts.splitter.attr.add({ setPointerCapture: e.pointerId });
+    this.parts.drag = { pointer: e.pointerId, from: this.horizontal ? e.clientX : e.clientY, first, room, rtl };
+    mark(this, 'data-dragging', true);
   }
 
   private dragMove(e: PointerEvent): void {
     const drag = this.parts.drag;
     if (!drag || drag.pointer !== e.pointerId) return;
-    const rtl = this.horizontal && getComputedStyle(this.element).direction === 'rtl';
     const moved = (this.horizontal ? e.clientX : e.clientY) - drag.from;
-    this.moveTo(drag.first + (rtl ? -moved : moved), false);
+    this.moveTo(drag.first + (drag.rtl ? -moved : moved), drag.room, false);
   }
 
   private dragEnd(e: PointerEvent): void {
@@ -409,8 +407,8 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     const drag = parts.drag;
     if (!drag || drag.pointer !== e.pointerId) return;
     parts.drag = null;
-    parts.splitter.element.releasePointerCapture?.(e.pointerId);
-    this.element.removeAttribute('data-dragging');
+    parts.splitter.attr.add({ releasePointerCapture: e.pointerId });
+    mark(this, 'data-dragging', false);
     if (e.type === 'pointerup') parts.moved.fire({ position: this.position, collapsed: this.collapsed, byUser: true, source: this });
   }
 }

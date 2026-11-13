@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { TextArea } from './TextArea';
@@ -23,7 +24,7 @@ async function settle() {
   for (let i = 0; i < 6; i++) await tick();
 }
 
-const area = (t: TextArea) => t.textAreaElement;
+const area = (t: TextArea) => t.textAreaPart.element;
 const message = (t: TextArea) => t.element.querySelector('.mx-field__message')!.textContent;
 
 function type(t: TextArea, text: string) {
@@ -186,6 +187,7 @@ describe('TextArea', () => {
     expect(t.element.dataset.resize).toBe('none');
     expect(t.element.hasAttribute('data-auto-grow')).toBe(true);
     type(t, 'one\ntwo\nthree');
+    await whenMeasured(t);
     expect(area(t).style.blockSize).toMatch(/px$/);
     s.grow = false;
     await settle();
@@ -214,9 +216,12 @@ describe('TextArea', () => {
     page(<TextArea ref={(x: TextArea) => (t = x)} selectOnFocus value="hello" />);
     await settle();
     t.focus();
+    await settle();
     expect(area(t).selectionStart).toBe(0);
     expect(area(t).selectionEnd).toBe(5);
+    area(t).setSelectionRange(5, 5);
     t.select();
-    expect(area(t).selectionEnd).toBe(5);
+    await settle();
+    expect([area(t).selectionStart, area(t).selectionEnd]).toEqual([0, 5]);
   });
 });
