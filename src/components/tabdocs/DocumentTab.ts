@@ -61,9 +61,9 @@ export class DocumentTab {
     this.letter.attr.add({ 'aria-hidden': 'true' });
     this.label = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__title');
     this.unsaved = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__hidden');
-    mark(this.unsaved, 'hidden', true);
+    kept(this.unsaved, false);
     this.status = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__hidden');
-    mark(this.status, 'hidden', true);
+    kept(this.status, false);
     // The pin mark unpins under the pointer; the keyboard has the menu and a key for it.
     const pin = part<HTMLSpanElement>(headerPart, 'span', 'mx-tabdocs__pin');
     this.pin = pin;
@@ -234,7 +234,7 @@ export class DocumentTab {
         mark(this.headerPart, 'data-pinned', pinned);
         mark(this.headerPart, 'data-preview', preview);
         writeText(this.status, text ? `, ${text}` : '');
-        mark(this.status, 'hidden', !text);
+        kept(this.status, !!text);
         put(this.pin, 'title', unpin);
         if (was !== pinned) this.manager.pinChanged(this);
         this.manager.tabChanged(this);
@@ -265,7 +265,7 @@ export class DocumentTab {
       ({ dirty, closable, mode, text, closeHint }) => {
         mark(this.headerPart, 'data-dirty', dirty);
         writeText(this.unsaved, `, ${text}`);
-        mark(this.unsaved, 'hidden', !dirty);
+        kept(this.unsaved, dirty);
         if (closable && mode !== 'never') put(this.headerPart, 'data-close', mode);
         else put(this.headerPart, 'data-close', null);
         put(this.close, 'title', closeHint);

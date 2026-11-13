@@ -3,7 +3,7 @@ import { clearParts, loose, part } from '../../core/draw-parts';
 import { focusOn } from '../../core/focus';
 import { dismissMark } from '../../core/glyphs';
 import { isRtl } from '../../core/measure';
-import { css, mark, put, text } from '../../core/part-writes';
+import { css, kept, mark, put, text } from '../../core/part-writes';
 import { showIcon } from '../../core/show-icon';
 import { SwipeTracker } from '../../parts/overlay/swipe-tracker';
 import { Button } from '../button/Button';
@@ -79,11 +79,11 @@ export class PhoneBar {
       this.renderIcon(doc);
     }
     text(this.label, doc ? doc.title : m.textOf('tabDocsEmpty'));
-    mark(this.unsaved, 'hidden', !doc?.dirty);
+    kept(this.unsaved, !!doc?.dirty);
     put(this.title, 'aria-label', doc ? m.textOf('tabDocsPhoneTitle', { title: doc.title }) : m.textOf('tabDocsEmpty'));
     mark(this.title, 'disabled', !doc);
     // Not `visible`: the button is built here, outside the component tree, and stays in place.
-    mark(this.close, 'hidden', !doc);
+    kept(this.close, !!doc);
     if (doc) {
       put(this.close, 'aria-label', m.textOf(doc.closable ? 'tabDocsCloseActive' : 'tabDocsHideActive', { title: doc.title }));
       this.close.enabled = m.mayCloseOrHide(doc);
@@ -135,7 +135,7 @@ export class PhoneBar {
     this.releaseIcon();
     this.releaseIcon = () => {};
     const icon = doc?.icon;
-    mark(this.icon, 'hidden', !icon);
+    kept(this.icon, !!icon);
     clearParts(this.icon);
     if (icon) this.releaseIcon = showIcon(icon, this.icon);
   }

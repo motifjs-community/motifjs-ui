@@ -17,6 +17,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - `Scheduler` and `RecurrenceEditor` hide their parts the same way: appointments that do not fit a month cell,
   resize handles, recurrence marks, "more" buttons, the current time line, the all-day panel, the loading and error
   states, the agenda's empty text and the tooltip's rows.
+- `TabDocumentManager` hides its parts the same way: the groups and splitters a maximized group hides (what scrolled
+  in them comes back on restore), the strip rows, the empty text, the dock guides, the drop marks, auto-hidden
+  strips, the stash of hidden documents, the document list's parts and the phone bar's buttons.
 
 ## [0.1.0-beta.9] - 2026-11-13
 

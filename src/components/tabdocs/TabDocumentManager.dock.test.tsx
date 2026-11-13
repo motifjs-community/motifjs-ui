@@ -536,9 +536,9 @@ describe('TabDocumentManager: auto hide', () => {
     await settle();
     expect(area.autoHidden).toBe(true);
     expect(area.part.element.hasAttribute('data-auto-hide')).toBe(true);
-    expect(area.sash.part.element.hidden).toBe(true);
+    expect(area.sash.part.element.isConnected).toBe(false);
     const s = strip(m, 'left');
-    expect(s.hidden).toBe(false);
+    expect(s.isConnected).toBe(true);
     expect(s.getAttribute('role')).toBe('toolbar');
     expect(s.getAttribute('aria-label')).toBe('Hidden on the left');
     const tab = s.querySelector<HTMLButtonElement>('.mx-tabdocs__autohide-tab')!;
@@ -549,8 +549,8 @@ describe('TabDocumentManager: auto hide', () => {
     expect(live(m)).toBe('Left dock area folded to its edge');
     expect(m.autoHide(area, false)).toBe(true);
     await settle();
-    expect(s.hidden).toBe(true);
-    expect(area.sash.part.element.hidden).toBe(false);
+    expect(s.isConnected).toBe(false);
+    expect(area.sash.part.element.isConnected).toBe(true);
   });
 
   it('keeps the strip titles in place: a title or an icon changed writes only its own', async () => {

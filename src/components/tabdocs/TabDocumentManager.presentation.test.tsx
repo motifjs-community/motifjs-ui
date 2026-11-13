@@ -286,7 +286,7 @@ describe('TabDocumentManager presentations', () => {
     expect(left.part.element.closest('.mx-drawer')).not.toBe(null);
     expect(bottom.part.element.closest('.mx-bottom-sheet')).not.toBe(null);
     expect(left.strip!.part.element.hidden).toBe(false);
-    expect(left.sash.part.element.hidden).toBe(true);
+    expect(left.sash.part.element.isConnected).toBe(false);
     // A title opens its drawer with that tool; again, it closes it.
     left.strip!.part.element.querySelector<HTMLElement>('.mx-tabdocs__autohide-tab')!.click();
     await settle();
@@ -299,7 +299,7 @@ describe('TabDocumentManager presentations', () => {
     left.tabletDockMode = 'hidden';
     await settle();
     expect(left.part.element.closest('.mx-drawer')).toBe(null);
-    expect(left.strip!.part.element.hidden).toBe(true);
+    expect(left.strip!.part.element.isConnected).toBe(false);
     left.tabletDockMode = 'sheet';
     await settle();
     expect(left.part.element.closest('.mx-bottom-sheet')).not.toBe(null);
@@ -307,7 +307,7 @@ describe('TabDocumentManager presentations', () => {
     await settle();
     expect(left.part.element.parentElement).toBe(m.element);
     expect(bottom.part.element.parentElement).toBe(m.element);
-    expect(left.sash.part.element.hidden).toBe(false);
+    expect(left.sash.part.element.isConnected).toBe(true);
     expect(m.element.querySelector('.mx-drawer, .mx-bottom-sheet')).toBe(null);
   });
 

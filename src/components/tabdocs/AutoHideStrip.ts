@@ -3,7 +3,7 @@ import type { IconSource } from '../../core/icon-source';
 import { loose, part } from '../../core/draw-parts';
 import { focusOn } from '../../core/focus';
 import { follow } from '../../core/follow';
-import { mark, put, text } from '../../core/part-writes';
+import { kept, mark, put, text } from '../../core/part-writes';
 import { showIcon } from '../../core/show-icon';
 import { isChord } from '../../core/keyboard';
 import { nextId } from '../../core/next-id';
@@ -40,7 +40,8 @@ export class AutoHideStrip {
     this.part = new Component<HTMLDivElement>('div');
     layoutPart(this.part);
     this.part.class.add('mx-tabdocs__autohide');
-    this.part.attr.add({ 'data-side': area.side, role: 'toolbar', 'aria-orientation': area.orientation === 'horizontal' ? 'vertical' : 'horizontal', hidden: true });
+    this.part.attr.add({ 'data-side': area.side, role: 'toolbar', 'aria-orientation': area.orientation === 'horizontal' ? 'vertical' : 'horizontal' });
+    kept(this.part, false);
     const strip = this.part;
     strip.bindings.list(() => this.docs.value, (doc: TabDocument) => this.buttonOf(doc));
     strip.motif.on('click', (_, e) => {
@@ -98,7 +99,7 @@ export class AutoHideStrip {
 
   private render(folded: boolean, groups: { docs: readonly TabDocument[]; active: TabDocument | null }[], open: boolean, label: string): void {
     this.folded = folded;
-    mark(this.part, 'hidden', !folded);
+    kept(this.part, folded);
     put(this.part, 'aria-label', label);
     if (!folded) return;
     const shown = open ? (groups.find((g) => g.active?.group?.isActive)?.active ?? groups[0]?.active ?? null) : null;

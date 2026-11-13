@@ -2,7 +2,7 @@ import type { Component, ComponentBase } from '@motifx/core';
 import { loose, removePart } from '../../core/draw-parts';
 import { dockGuideMark } from '../../core/glyphs';
 import { isRtl, rectOf, styleOf, type Rect } from '../../core/measure';
-import { css, mark } from '../../core/part-writes';
+import { css, kept, mark } from '../../core/part-writes';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabDropSide } from './tab-drop-side';
@@ -57,7 +57,7 @@ export class DockGuides {
       const dock = rtl && (place === 'left' || place === 'right') ? (place === 'left' ? 'right' : 'left') : place;
       const guide = this.guide(this.edges, place, place === 'top' ? 'up' : place === 'bottom' ? 'down' : place, 'edge');
       if (docks.includes(dock)) edges.push({ guide, place, dock });
-      else mark(guide, 'hidden', true);
+      else kept(guide, false);
     }
     if (group && box) {
       let cx = box.left + box.width / 2 - size / 2;
@@ -85,13 +85,13 @@ export class DockGuides {
         const side = rtl && (place === 'left' || place === 'right') ? (place === 'left' ? 'right' : 'left') : place;
         const guide = this.guide(this.cross, place, place, 'cross');
         if (!sides.includes(side)) {
-          mark(guide, 'hidden', true);
+          kept(guide, false);
           continue;
         }
         this.put(guide, at[place][0], at[place][1], size, { group, side });
       }
     } else {
-      for (const guide of this.cross.values()) if (!guide.isDisposed) mark(guide, 'hidden', true);
+      for (const guide of this.cross.values()) if (!guide.isDisposed) kept(guide, false);
     }
     for (const { guide, place, dock } of edges) this.put(guide, edgeAt[place][0], edgeAt[place][1], size, { dock });
   }
@@ -112,7 +112,7 @@ export class DockGuides {
     for (const guide of [...this.cross.values(), ...this.edges.values()]) {
       // A guide goes with the part it is in (the manager, a closed window's part).
       if (guide.isDisposed) continue;
-      mark(guide, 'hidden', true);
+      kept(guide, false);
       mark(guide, 'data-pointed', false);
     }
   }
@@ -125,7 +125,7 @@ export class DockGuides {
   }
 
   private put(guide: Component<HTMLDivElement>, x: number, y: number, size: number, hit: DockGuideHit): void {
-    mark(guide, 'hidden', false);
+    kept(guide, true);
     css(guide, 'left', `${Math.round(x)}px`);
     css(guide, 'top', `${Math.round(y)}px`);
     const left = Math.round(x);
@@ -138,7 +138,8 @@ export class DockGuides {
     let guide = map.get(key);
     if (!guide || guide.isDisposed) {
       guide = loose<HTMLDivElement>('div', 'mx-tabdocs__guide');
-      guide.attr.add({ 'data-kind': kind, 'data-side': key, hidden: true, 'aria-hidden': 'true' });
+      guide.attr.add({ 'data-kind': kind, 'data-side': key, 'aria-hidden': 'true' });
+      kept(guide, false);
       guide.controls.add(dockGuideMark(mark));
       map.set(key, guide);
     }

@@ -59,10 +59,6 @@
     contain: size;
   }
 
-  :is(.mx-tabdocs__group, .mx-tabdocs__split, .mx-tabdocs__sash)[hidden] {
-    display: none;
-  }
-
   /* The strip. */
 
   .mx-tabdocs__bar {
@@ -102,10 +98,6 @@
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-  }
-
-  :is(.mx-tabdocs__tabs, .mx-tabdocs__pinned)[hidden] {
-    display: none;
   }
 
   .mx-tabdocs[data-pinned-row] .mx-tabdocs__tabs {
@@ -200,7 +192,7 @@
     padding-inline: var(--_tabdocs-actions-padding);
   }
 
-  .mx-tabdocs__bar > .mx-tabdocs__actions:is([hidden], :empty) {
+  .mx-tabdocs__bar > .mx-tabdocs__actions:empty {
     display: none;
   }
 
@@ -466,10 +458,6 @@
     overflow: auto;
   }
 
-  .mx-tabdocs__panel[hidden] {
-    display: none;
-  }
-
   .mx-tabdocs__empty {
     position: absolute;
     inset: 0;
@@ -477,10 +465,6 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-  }
-
-  .mx-tabdocs__empty[hidden] {
-    display: none;
   }
 
   /* The splitters: a line, thicker in the accent under the pointer, while dragged or focused. */
@@ -583,10 +567,6 @@
 
   .mx-tabdocs__drop[data-instant] {
     transition: none;
-  }
-
-  :is(.mx-tabdocs__drop, .mx-tabdocs__insert)[hidden] {
-    display: none;
   }
 
   /* Floating windows: fixed in the viewport, stacked in the order of the page's window stack; the
@@ -810,10 +790,6 @@
     overflow: hidden;
   }
 
-  .mx-tabdocs__autohide[hidden] {
-    display: none;
-  }
-
   .mx-tabdocs__autohide[data-side='left'] {
     flex-direction: column;
     grid-area: 1 / 1 / 8 / 2;
@@ -884,10 +860,6 @@
       color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-tabdocs__guide[hidden] {
-    display: none;
-  }
-
   /* Read by screen readers only. */
   .mx-tabdocs__live,
   .mx-tabdocs__hidden {
@@ -898,10 +870,6 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-
-  .mx-tabdocs__hidden[hidden] {
-    display: none;
   }
 
   .mx-tabdocs__tips {
@@ -922,10 +890,6 @@
   .mx-tabdocs__list {
     display: flex;
     flex-direction: column;
-  }
-
-  .mx-tabdocs__list[hidden] {
-    display: none;
   }
 
   /* The search is a row of the menu: its height, text and frame come from the menu-search place. */
@@ -1085,17 +1049,9 @@
     flex: none;
   }
 
-  .mx-tabdocs__phone-dirty[hidden] {
-    display: none;
-  }
-
   .mx-tabdocs__phone-close,
   .mx-tabdocs__phone-count {
     flex: none;
-  }
-
-  .mx-tabdocs__phone-close[hidden] {
-    display: none;
   }
 
   /* The phone's tools: a button for each tool of the dock areas. */
@@ -1107,10 +1063,6 @@
     padding-block-end: max(var(--_tabdocs-tools-padding), env(safe-area-inset-bottom));
     overflow-x: auto;
     scrollbar-width: none;
-  }
-
-  .mx-tabdocs__phone-tools[hidden] {
-    display: none;
   }
 
   /* The open tool and the shown document look as the design language marks a selection: its fill,
@@ -1148,13 +1100,6 @@
   .mx-tabdocs__list-sections {
     display: flex;
     flex-direction: column;
-  }
-
-  .mx-tabdocs__list-section[hidden],
-  .mx-tabdocs__list-head[hidden],
-  .mx-tabdocs__list-row[hidden],
-  .mx-tabdocs__list-empty[hidden] {
-    display: none;
   }
 
   .mx-tabdocs__list-rows {

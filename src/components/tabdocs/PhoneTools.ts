@@ -3,7 +3,7 @@ import { loose, part, removePart } from '../../core/draw-parts';
 import { focusOn } from '../../core/focus';
 import { isRtl } from '../../core/measure';
 import { orderControls } from '../../core/order-controls';
-import { mark as markPart, put, text as writeText } from '../../core/part-writes';
+import { kept, mark as markPart, put, text as writeText } from '../../core/part-writes';
 import { showIcon } from '../../core/show-icon';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
@@ -50,7 +50,7 @@ export class PhoneTools {
     const m = this.manager;
     const tools = m.dockAreas.filter((a) => this.presenter.dockMode(a) !== 'hidden').flatMap((a) => a.documents);
     this.hasTools = tools.length > 0;
-    markPart(this.part, 'hidden', !this.hasTools);
+    kept(this.part, this.hasTools);
     put(this.part, 'aria-label', m.textOf('tabDocsPhoneTools'));
     for (const [doc, entry] of this.buttons) {
       if (tools.includes(doc)) continue;

@@ -158,13 +158,13 @@ describe('TabDocumentManager: dragging a tab', () => {
     expect(area(m)?.hidden ?? true).toBe(true);
     expect(m.dragging?.document?.title).toBe('A');
     pointer('pointermove', document.body, 600, 215);
-    expect(mark(m)!.hidden).toBe(true);
+    expect(mark(m)).toBeNull();
     expect([area(m)!.hidden, area(m)!.style.left, area(m)!.style.top, area(m)!.style.width, area(m)!.style.height]).toEqual([false, '400px', '30px', '400px', '370px']);
     pointer('pointermove', document.body, 410, 215);
     expect([area(m)!.style.left, area(m)!.style.width]).toEqual(['400px', '200px']);
     pointer('pointerup', document.body, 410, 215);
     expect(m.element.querySelector('.mx-tabdocs__ghost')).toBeNull();
-    expect(area(m)!.hidden).toBe(true);
+    expect(area(m)).toBeNull();
   });
 
   it("moves to another group's strip at the place under the pointer, or at its end from the empty strip", async () => {
@@ -636,7 +636,7 @@ describe('TabDocumentManager: moving with keys', () => {
     key('Enter');
     expect(log.filter((l) => l.startsWith('starting') || l.startsWith('dropped') || l.startsWith('ended'))).toEqual(['starting A', 'dropped group A', 'ended true']);
     expect(m.groups.map((g) => g.documents.map((d) => d.title))).toEqual([['A'], ['B'], ['C']]);
-    expect(area(m)!.hidden).toBe(true);
+    expect(area(m)).toBeNull();
   });
 
   it('"Move to…" from the menus, for a tab and for a group; Escape leaves everything', async () => {

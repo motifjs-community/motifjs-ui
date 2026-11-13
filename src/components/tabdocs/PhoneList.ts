@@ -149,7 +149,7 @@ export class PhoneList {
     const sections = (this.sectionsPart = loose<HTMLDivElement>('div', 'mx-tabdocs__list-sections'));
     const empty = loose<HTMLDivElement>('div', 'mx-tabdocs__list-empty');
     this.empty = empty;
-    mark(this.empty, 'hidden', true);
+    kept(this.empty, false);
     // The sheet's children, in this order, go to its content area.
     this.sheet.controls.add(search, sections, empty);
     manager.controls.add(this.sheet);
@@ -199,7 +199,7 @@ export class PhoneList {
     const sections = groups.map((group, i) => {
       const part = this.listOf(group);
       writeText(part.head, group.window ? m.textOf('tabDocsWindow', { n: group.window.index + 1 }) : m.textOf('tabDocsGroup', { n: i + 1 }));
-      mark(part.head, 'hidden', single);
+      kept(part.head, !single);
       const rows = group.documents.map((doc) => {
         seen.add(doc);
         const row = this.rowOf(doc);
@@ -340,14 +340,14 @@ export class PhoneList {
         if (!row) continue;
         const hit = !q || foldText(doc.title).includes(q) || foldText(doc.description ?? '').includes(q);
         row.shown = hit;
-        mark(row.part, 'hidden', !hit);
+        kept(row.part, !!hit);
         if (hit) shown++;
       }
       part.shown = shown > 0;
-      mark(part.section, 'hidden', !part.shown);
+      kept(part.section, !!part.shown);
       any ||= part.shown;
     }
-    mark(this.empty, 'hidden', any);
+    kept(this.empty, !any);
   }
 
   /** One row is a Tab stop: the active document's, else the first shown. */

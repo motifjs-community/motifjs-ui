@@ -54,7 +54,7 @@ describe('TabDocumentManager: documents', () => {
     expect(m.activeGroup).toBe(group);
     expect(group.element.getAttribute('role')).toBe('group');
     expect(group.element.getAttribute('aria-label')).toBe('Group 1');
-    expect(group.element.querySelector<HTMLElement>('[role="tablist"]')!.hidden).toBe(true);
+    expect(group.element.querySelector('[role="tablist"]')).toBeNull();
     expect(group.element.querySelector('.mx-tabdocs__empty')!.textContent).toBe('No open documents');
     expect(m.element.hasAttribute('role')).toBe(false);
   });
@@ -409,12 +409,13 @@ describe('TabDocumentManager: groups', () => {
     expect(m.maximizeGroup(g3)).toBe(true);
     expect(m.maximizedGroup).toBe(g3);
     expect(g3.isMaximized).toBe(true);
-    expect(g1.element.hidden && g2.element.hidden).toBe(true);
-    expect(g3.element.hidden).toBe(false);
-    expect([...m.element.querySelectorAll<HTMLElement>('[role="separator"]')].every((s) => s.hidden)).toBe(true);
+    // The others are out of the page, their splitters too.
+    expect(g1.element.isConnected || g2.element.isConnected).toBe(false);
+    expect(g3.element.isConnected).toBe(true);
+    expect(m.element.querySelectorAll('[role="separator"]')).toHaveLength(0);
     expect(m.activeGroup).toBe(g3);
     expect(m.restoreGroups()).toBe(true);
-    expect(g1.element.hidden || g2.element.hidden).toBe(false);
+    expect(g1.element.isConnected && g2.element.isConnected).toBe(true);
     expect(m.maximizedGroup).toBeNull();
     m.maximizeGroup(g1);
     m.focusGroup(g2);

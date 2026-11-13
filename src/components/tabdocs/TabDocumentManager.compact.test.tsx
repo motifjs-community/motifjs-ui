@@ -342,8 +342,9 @@ describe('TabDocumentManager: the single "…" menu', () => {
     m.showOpenList(side);
     await settle();
     const p = popup(m);
-    expect((p.querySelector('.mx-tabdocs__list') as HTMLElement).hidden).toBe(true);
-    expect((p.querySelector(':scope > .mx-menu__separator') as HTMLElement).hidden).toBe(true);
+    // Hidden parts are out of the page.
+    expect(p.querySelector('.mx-tabdocs__list')).toBeNull();
+    expect(p.querySelector(':scope > .mx-menu__separator')).toBeNull();
     expect(p.querySelector('.mx-tabdocs__commands')!.contains(document.activeElement)).toBe(true);
   });
 });

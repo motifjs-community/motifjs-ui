@@ -2,7 +2,7 @@ import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { part } from '../../core/draw-parts';
 import { focusOn, holdsFocus, rememberFocus } from '../../core/focus';
 import { orderControls } from '../../core/order-controls';
-import { mark, put, text } from '../../core/part-writes';
+import { kept, put, text } from '../../core/part-writes';
 import { reveal } from '../../core/measure';
 import { onDocument } from '../../core/window-events';
 import { MenuList } from '../../parts/menu/MenuList';
@@ -123,7 +123,7 @@ export class DocumentList {
     put(this.documentMenu, 'aria-label', manager.textOf(this.kind === 'open' ? 'tabDocsOpenList' : 'tabDocsRecent'));
     const showList = options.list !== false;
     this.listShown = showList;
-    mark(this.partBox, 'hidden', !showList);
+    kept(this.partBox, showList);
     const search = this.search;
     if (search) search.value = '';
     this.showDocuments('');
@@ -133,10 +133,10 @@ export class DocumentList {
       menu.markColumn = menu.markBesideIcon = showList;
       this.commandItems = commands;
       menu.setItems(commands);
-      mark(menu, 'hidden', !commands.length);
+      kept(menu, commands.length > 0);
       this.commandsFirst = !!options.commandsFirst;
       orderControls(popup, this.commandsFirst ? [menu, this.lineBox, this.partBox] : [this.partBox, this.lineBox, menu]);
-      mark(this.lineBox, 'hidden', !commands.length || !showList);
+      kept(this.lineBox, commands.length > 0 && showList);
     }
     popup.open(anchor, { returnFocus: returnTo ?? undefined });
     if (!showList && menu) menu.focusItem('first');

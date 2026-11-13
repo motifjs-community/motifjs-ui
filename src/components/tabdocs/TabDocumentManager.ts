@@ -8,7 +8,7 @@ import { functionValue } from '../../core/function-value';
 import { givenValue } from '../../core/given-field';
 import { addShortcut, isKeys } from '../../core/keyboard';
 import { nextId } from '../../core/next-id';
-import { css, mark, put, text } from '../../core/part-writes';
+import { css, kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import type { UiStrings } from '../../core/ui-strings';
@@ -287,8 +287,8 @@ interface Parts {
   /** The groups, the one used last first. */
   recentGroups: TabGroup[];
   maximized: TabGroup | null;
-  /** What maximizing hid. */
-  hidden: ComponentBase[];
+  /** What maximizing hid, with what scrolled in it. */
+  hidden: { part: ComponentBase; restore: () => void }[];
   live: Component<HTMLDivElement>;
   keyStops: (() => void)[];
   /** The documents activated, in order; `at` is the current one. */
@@ -3172,7 +3172,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (!parts.stash) {
       const stash = (parts.stash = new Component<HTMLDivElement>('div'));
       stash.class.add('mx-tabdocs__stash');
-      mark(stash, 'hidden', true);
+      kept(stash, false);
       this.controls.add(stash);
     }
     const stash = parts.stash;
@@ -4318,7 +4318,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         if (presented) {
           // In a drawer or a sheet: no size and no place of its own here, and no splitter.
           for (const name of ['inline-size', 'block-size', 'grid-area']) css(area.part, name, '');
-          mark(sashPart, 'hidden', true);
+          kept(sashPart, false);
           put(area.part, 'aria-label', this.textOf(AREA_TEXTS[area.side]));
           continue;
         }
@@ -4343,7 +4343,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
           if (!folded) (sash = [5, r.c0, 6, r.c1]), (r.r1 = 5);
         }
         css(area.part, 'grid-area', box.join(' / '));
-        mark(sashPart, 'hidden', !sash);
+        kept(sashPart, !!sash);
         if (sash) css(sashPart, 'grid-area', sash.join(' / '));
         const room = area.room();
         put(sashPart, 'aria-orientation', across ? 'vertical' : 'horizontal');
@@ -5003,8 +5003,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       css(piece, 'flex', '1 1 0px');
       for (const c of node.parentSplit.part.controls.items) {
         if (c === piece) continue;
-        mark(c, 'hidden', true);
-        parts.hidden.push(c);
+        // Out of the page, a branch loses what scrolled in it: noted now, given back on restore.
+        parts.hidden.push({ part: c, restore: keepScroll(c) });
+        kept(c, false);
       }
     }
     parts.maximized = group;
@@ -5038,7 +5039,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   private unmaximize(): void {
     const parts = this.parts;
-    for (const c of parts.hidden.splice(0)) if (!c.isDisposed) mark(c, 'hidden', false);
+    for (const { part, restore } of parts.hidden.splice(0)) {
+      if (part.isDisposed) continue;
+      kept(part, true);
+      restore();
+    }
     parts.maximized?.markMaximized(false);
     parts.maximized = null;
     mark(this, 'data-maximized', false);

@@ -8,7 +8,7 @@ import { glyphPart, loose, part } from '../../core/draw-parts';
 import { dismissMark, gripMark, lockMark, maximizeMark, moreMark, pinMark, restoreMark, splitMark } from '../../core/glyphs';
 import { boxOf, isRendered, isRtl, keepScroll, measure, mediaOf, onLayout, rectOf, reveal as revealIn, scrollBy, scrollTo } from '../../core/measure';
 import { orderControls } from '../../core/order-controls';
-import { css, mark, put, text } from '../../core/part-writes';
+import { css, kept, mark, put, text } from '../../core/part-writes';
 import { nextId } from '../../core/next-id';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { followPointer } from '../../parts/window/follow-pointer';
@@ -450,7 +450,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
         put(tab.headerPart, 'data-guest', null);
         put(tab.headerPart, 'aria-selected', String(tab === parts.active));
       }
-      mark(parts.pinnedRow, 'hidden', !pinned.length);
+      kept(parts.pinnedRow, pinned.length > 0);
       if (had && !isFocused(had)) focusOn(had, { preventScroll: true });
     });
     this.renderRoving();
@@ -703,8 +703,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     });
     const empty = !parts.tabs.length;
     mark(this, 'data-empty', empty);
-    mark(parts.list, 'hidden', empty);
-    mark(parts.empty, 'hidden', !empty);
+    kept(parts.list, !empty);
+    kept(parts.empty, empty);
     this.renderRoving();
   }
 
@@ -722,9 +722,9 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const strip = part<HTMLDivElement>(bar, 'div', 'mx-tabdocs__strip');
     const list = part<HTMLDivElement>(strip, 'div', 'mx-tabdocs__tabs');
     list.attr.add({ role: 'tablist' });
-    mark(list, 'hidden', true);
+    kept(list, false);
     const pinnedRow = part<HTMLDivElement>(list, 'div', 'mx-tabdocs__pinned');
-    mark(pinnedRow, 'hidden', true);
+    kept(pinnedRow, false);
     const row = part<HTMLDivElement>(list, 'div', 'mx-tabdocs__row');
     for (const c of [pinnedRow, row]) c.attr.add({ role: 'presentation' });
     // Both scroll buttons after the tabs: the pinned ones, which never scroll, stay at the start.
