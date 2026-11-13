@@ -10,9 +10,10 @@ import { Watcher } from './watcher';
 
 /**
  * Calls `changed` when `change` happens to `target`, and once when it is first in a page:
- * - `size`: its size changed; the size comes with the call. The first one is read by the layer in the first run after
- *   this call (and after it is shown again or moved); later ones come from the size observer, a frame after the browser
- *   laid them out. A size within half a pixel of the last one told is not told again.
+ * - `size`: its size changed; the size comes with the call. Every one comes from the size observer, a frame after the
+ *   browser laid it out (the first one too, and the one after it is shown again or moved), so nothing is laid out to
+ *   read it; where the window has no size observer (a test document), the layer reads those in the next run. A size
+ *   within half a pixel of the last one told is not told again.
  * - `look`: the design language, theme or density changed, fonts finished loading, a length it reads came out another size, or it moved into
  *   another window.
  * - `page`: its window changed size. `scroll`: something scrolled in the page of its window, but inside `except`.

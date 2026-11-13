@@ -5,7 +5,7 @@ import { chevronDown } from '../../../core/glyphs';
 import { orderControls } from '../../../core/order-controls';
 import { fillTemplate } from '../../../core/fill-template';
 import { LanguageLook } from '../../../core/language-look';
-import { boxOf, holderOf, measure, onLayout, styleOf } from '../../../core/measure';
+import { holderOf, measure, onLayout } from '../../../core/measure';
 import { Button } from '../../button/Button';
 import type { ButtonTone } from '../../button/button-tone';
 import type { ButtonVariant } from '../../button/button-variant';
@@ -56,7 +56,6 @@ export class GridPager<T> extends Component<HTMLElement> {
   pageBox: NumberBox | null = null;
   /** The full pager does not fit (adaptive). */
   private narrow = false;
-  /** The last draw hid the pager: the grid shows none. */
   /** The width the full pager needed when it was last drawn. */
   private fullWidth = 0;
   /** What decides whether the full pager fits, as it was last seen. */
@@ -69,6 +68,10 @@ export class GridPager<T> extends Component<HTMLElement> {
   /** What holds the pager: the room it has decides the adaptive look. */
   private bar: ComponentBase | null = null;
   private stopRoom: (() => void) | null = null;
+  private stopWidth: (() => void) | null = null;
+  /** The room the bar has and the pager's own width, as the size observers told them: nothing is laid out to know them. */
+  private room = 0;
+  private width = 0;
   /** The buttons' look, the design language's: their size, the steps' variant, a page's and the current page's. */
   private readonly buttons: ButtonLook = { ...BUTTONS };
   private readonly language = new LanguageLook(this, BUTTON_TOKENS, () => {
@@ -101,7 +104,20 @@ export class GridPager<T> extends Component<HTMLElement> {
     if (bar === this.bar) return;
     this.stopRoom?.();
     this.bar = bar;
-    this.stopRoom = onLayout(bar, 'size', () => this.fit(), { owner: this });
+    this.stopRoom = onLayout(
+      bar,
+      'size',
+      (size) => {
+        this.room = size.width;
+        this.fit();
+      },
+      { owner: this, box: 'content' },
+    );
+    // Adaptive, the pager takes the width it needs (see the stylesheet): its size is the full pager's.
+    this.stopWidth ??= onLayout(this, 'size', (size) => {
+      this.width = size.width;
+      this.fit();
+    });
   }
 
   /** The adaptive look: compact while the full pager is wider than the room the bar has. Seen in the next frame. */
@@ -112,9 +128,7 @@ export class GridPager<T> extends Component<HTMLElement> {
   private readonly readFit = (): FitRead | null => {
     const bar = this.bar;
     if (!bar || this.isDisposed || !this.isVisible || this.grid.settings.get('pagerDisplayMode') !== 'adaptive') return null;
-    const pad = styleOf(bar, ['padding-inline-start', 'padding-inline-end']);
-    const room = boxOf(bar).clientWidth - (parseFloat(pad['padding-inline-start']) || 0) - (parseFloat(pad['padding-inline-end']) || 0);
-    return { room, width: boxOf(this).scrollWidth };
+    return { room: this.room, width: this.width };
   };
 
   private readonly drawFit = (seen: FitRead | null) => {
@@ -195,6 +209,7 @@ export class GridPager<T> extends Component<HTMLElement> {
       // Named after the grid too: two paged grids on a page are two landmarks.
       put(this, 'aria-label', s.get('pagerLabel') || `${t('gridPager')}: ${host.gridLabel()}`);
       put(this, 'data-look', compact ? 'compact' : 'full');
+      mark(this, 'data-adaptive', s.get('pagerDisplayMode') === 'adaptive');
       kept(this, shows);
 
       const sizesShown = s.get('pageSizeSelector') && grid.pageSizes().length > 0;

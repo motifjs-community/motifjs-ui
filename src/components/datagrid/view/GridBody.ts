@@ -54,6 +54,11 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private expectedScrollTop = -1;
   /** The viewport as last read (how far it is scrolled down and sideways, its inner width), with the scrolls the body wrote since. */
   private lastView = { top: 0, left: 0, width: 0 };
+  /**
+   * Where the viewport is scrolled as its scroll events told and the body's own scrolls wrote, so the rounds read no
+   * layout for it; `null` while unknown (a viewport out of the page and back lost its scroll without an event).
+   */
+  private seenScroll: { top: number; left: number } | null = { top: 0, left: 0 };
   /** Set when the next round lays the rows out again even if the viewport stayed where it was (a size watched changed). */
   private stale = false;
   /** Set when the layout of the next round loads what it shows at once. */
@@ -367,9 +372,18 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     measure(this, this.readView, this.writeView);
   }
 
-  /** Something scrolled the viewport (scroll bar, touch, focus, a drag): the rows are laid out with the next round, where it is then. */
-  onScroll() {
+  /**
+   * Something scrolled the viewport (scroll bar, touch, focus, a drag) to `at`, read by the grid in the scroll event: the
+   * rows are laid out with the next round.
+   */
+  onScroll(at: { top: number; left: number }) {
+    this.seenScroll = at;
     measure(this, this.readView, this.writeView);
+  }
+
+  /** The viewport left the page (hidden, moved): what it is scrolled to is read again, once, when the rows are next laid out. */
+  forgetScroll() {
+    this.seenScroll = null;
   }
 
   /** Lays the rows out again with the next round, wherever the viewport is then. */
@@ -388,15 +402,19 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private readonly readView = (): GridBody<T>['lastView'] | null => {
     const vp = this.scroller();
     if (!vp) return null;
+    // The scroll as its events told and the width as the size observer told: nothing is laid out for them here.
+    const width = this.grid.state.width;
+    if (this.seenScroll) return { ...this.seenScroll, width };
     const box = boxOf(vp);
     // Sideways as the element counts it: right to left, the scroll from the start is to the left.
-    return { top: box.scrollTop, left: box.rtl ? -box.scrollStart : box.scrollStart, width: box.clientWidth };
+    return { top: box.scrollTop, left: box.rtl ? -box.scrollStart : box.scrollStart, width };
   };
 
   private readonly writeView = (view: GridBody<T>['lastView'] | null) => {
     if (!view || !this.isBuilt) return;
     const was = this.lastView;
     this.lastView = view;
+    this.seenScroll = { top: view.top, left: view.left };
     const due = this.stale || view.top !== was.top || view.left !== was.left || view.width !== was.width;
     const immediate = this.loadNow;
     this.stale = false;
@@ -406,7 +424,8 @@ export class GridBody<T> extends Component<HTMLDivElement> {
 
   private readonly readTop = (): number | null => {
     const vp = this.scroller();
-    return vp ? boxOf(vp).scrollTop : null;
+    if (!vp) return null;
+    return this.seenScroll ? this.seenScroll.top : boxOf(vp).scrollTop;
   };
 
   /** A paged grid's row asked for by `reveal`: scrolled into view, the viewport read. */
@@ -421,6 +440,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     if (top === scrollTop) return;
     scrollTo(vp, { top });
     this.lastView = { ...this.lastView, top };
+    if (this.seenScroll) this.seenScroll = { ...this.seenScroll, top };
     this.relayout(true);
   };
 
@@ -484,6 +504,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.expectedScrollTop = 0;
     if (away) scrollTo(vp, { top: 0 });
     this.lastView = { ...this.lastView, top: 0 };
+    if (this.seenScroll) this.seenScroll = { ...this.seenScroll, top: 0 };
     this.layoutSoon();
   }
 
@@ -722,6 +743,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.expectedScrollTop = top;
     scrollTo(vp, { top });
     this.lastView = { ...this.lastView, top };
+    if (this.seenScroll) this.seenScroll = { ...this.seenScroll, top };
     this.relayout(immediate);
   }
 

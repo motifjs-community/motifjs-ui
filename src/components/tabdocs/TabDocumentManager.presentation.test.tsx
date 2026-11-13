@@ -170,9 +170,9 @@ describe('TabDocumentManager presentations', () => {
       },
       onPresentationChanged: (e) => void log.push(`now ${e.to}`),
     });
-    // The measuring layer reads the manager's first size itself (its border box), the observer tells the next ones.
-    Object.defineProperty(m.element, 'offsetWidth', { configurable: true, get: () => width });
-    Object.defineProperty(m.element, 'offsetHeight', { configurable: true, get: () => 600 });
+    // The observer tells the manager's size, the first one too, once the browser laid it out.
+    await settle();
+    resize(m.element, width, 600);
     await settle();
     await whenMeasured(m);
     // A mouse: 900 pixels under tabletWidth stays a desktop.
@@ -319,8 +319,9 @@ describe('TabDocumentManager presentations', () => {
     const resize = sizeObserver();
     const m = layout([['A']]);
     m.dock(doc('Explorer', { closable: false }), 'left');
-    Object.defineProperty(m.element, 'offsetWidth', { configurable: true, get: () => width });
-    Object.defineProperty(m.element, 'offsetHeight', { configurable: true, get: () => 600 });
+    // The observer tells the manager's size, the first one too, once the browser laid it out.
+    await settle();
+    resize(m.element, width, 600);
     await settle();
     await whenMeasured(m);
     const left = m.dockArea('left')!;

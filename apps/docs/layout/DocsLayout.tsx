@@ -65,6 +65,8 @@ const DESIGN_LANGUAGES: { id: DesignLanguageName | 'default'; label: string }[] 
 
 /** How far below the top bar a section heading may be and still count as the one being read. */
 const READING_LINE = 140;
+/** How far above the window the headings' watched area reaches: more than any page is long. */
+const ABOVE = 1_000_000;
 
 /**
  * The frame of the site: the top bar, the side menu (a drawer on narrow screens), the page the
@@ -76,6 +78,9 @@ export class DocsLayout extends Component<HTMLDivElement> {
   private menuButton: Button | null = null;
   private main: Component<HTMLElement> | null = null;
   private sidebar: HTMLElement | null = null;
+  /** Which headings of the page have passed the reading line, as the browser's sight observer tells it. */
+  private readonly passed = new Map<Element, boolean>();
+  private headings: IntersectionObserver | null = null;
 
   override onConfigured(): void {
     this.class.add('docs-shell');
@@ -111,17 +116,25 @@ export class DocsLayout extends Component<HTMLDivElement> {
         { passive: true },
       );
     }
-    const onScroll = () => this.followScroll();
+    // The headings passing the reading line are told by a sight observer, made again for a new window height: read on
+    // every scroll, they would lay the page out there and then.
+    const onResize = () => this.watchHeadings();
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || !this.state.navOpen) return;
       this.state.navOpen = false;
       this.menuButton?.focus();
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
     document.addEventListener('keydown', onKey);
     this.motif.setDisposable(() => {
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
       document.removeEventListener('keydown', onKey);
+      this.headings?.disconnect();
+    });
+    // Sections come as the page draws them: their headings are watched once they are in the page.
+    this.bindings.watch(() => {
+      void this.outline.sections.length;
+      untracked(() => requestAnimationFrame(() => this.observeHeadings()));
     });
   }
 
@@ -152,7 +165,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
     }
     // A new page is read from its top: focus goes there, as after a full page load.
     if (!first) this.main?.element.focus({ preventScroll: true });
-    requestAnimationFrame(() => this.followScroll());
+    requestAnimationFrame(() => this.watchHeadings());
   }
 
   /** The button goes with the notice, so focus moves on to the page. */
@@ -161,12 +174,40 @@ export class DocsLayout extends Component<HTMLDivElement> {
     this.main?.element.focus({ preventScroll: true });
   }
 
+  /** Watches the headings of the page from the start: a new page, or a window of another height. */
+  private watchHeadings(): void {
+    this.headings?.disconnect();
+    this.passed.clear();
+    // The watched area ends at the reading line and reaches far above the window: a heading in it has passed the line.
+    // Reaching that far, a heading that jumps from above the window to below it (a jump to the top) is told too.
+    this.headings = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) this.passed.set(entry.target, entry.isIntersecting);
+        this.followScroll();
+      },
+      { rootMargin: `${ABOVE}px 0px ${READING_LINE - window.innerHeight}px 0px` },
+    );
+    this.observeHeadings();
+  }
+
+  /** The headings of sections added since are watched too. */
+  private observeHeadings(): void {
+    const observer = this.headings;
+    if (!observer) return;
+    for (const { anchor } of this.outline.sections) {
+      const heading = document.getElementById(anchor);
+      if (!heading || this.passed.has(heading)) continue;
+      this.passed.set(heading, false);
+      observer.observe(heading);
+    }
+  }
+
   /** The section being read: the last one whose heading has passed the reading line. */
   private followScroll(): void {
     let current = this.outline.sections[0]?.anchor ?? '';
     for (const { anchor } of this.outline.sections) {
       const heading = document.getElementById(anchor);
-      if (heading && heading.getBoundingClientRect().top < READING_LINE) current = anchor;
+      if (heading && this.passed.get(heading)) current = anchor;
     }
     this.outline.current = current;
   }

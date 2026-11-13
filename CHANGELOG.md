@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- `DataGrid` no longer makes the browser lay the page out in the middle of its work (Chrome's "Forced reflow"
+  violations on the first open, on scrolling and on grouping): the sizes of its viewport, head, totals and rows come from
+  the size observers, after the browser laid them out, and how far the rows are scrolled from the viewport's scroll
+  events. The adaptive pager learns whether the full pager fits the same way; adaptive, it does not shrink.
+- `onLayout(target, 'size', ...)` tells every size from the size observer, the first one too and the one after the
+  target is shown again or moved, so the measuring layer lays nothing out to read them; a window with no size observer
+  (a test document) reads them as before.
+- `Chart` settles in one round where its drawings went on asking for texts to measure: a label cut to its room asks for
+  every cut at once, and a time axis settles the number of its ticks and their format in one drawing (a horizontal bar
+  chart at a narrow width, a zoomed time axis).
+
 ### Changed
 
 - `DataGrid` hides its parts the MotifJS way (`motif.hide`/`motif.show`) instead of the `hidden` attribute: rows waiting

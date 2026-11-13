@@ -54,8 +54,40 @@ const key = (el: Element, k: string, init: KeyboardEventInit = {}) => el.dispatc
 
 afterEach(async () => {
   document.body.innerHTML = '';
+  delete (window as { ResizeObserver?: unknown }).ResizeObserver;
   await uiLocale.use('en');
 });
+
+/** The size observers made in this file: the measuring layer keeps the one it made for the window from test to test. */
+const watches: { report: ResizeObserverCallback; targets: Set<Element> }[] = [];
+
+/** jsdom has no size observer: the test gives the window one (taken away after), and the result tells it a size. */
+function sizeObserver() {
+  Object.defineProperty(window, 'ResizeObserver', {
+    configurable: true,
+    value: class {
+      private readonly watch: { report: ResizeObserverCallback; targets: Set<Element> };
+      constructor(report: ResizeObserverCallback) {
+        this.watch = { report, targets: new Set() };
+        watches.push(this.watch);
+      }
+      observe(el: Element) {
+        this.watch.targets.add(el);
+      }
+      unobserve(el: Element) {
+        this.watch.targets.delete(el);
+      }
+      disconnect() {
+        this.watch.targets.clear();
+      }
+    },
+  });
+  return (el: Element, width: number, height: number) => {
+    const size = [{ inlineSize: width, blockSize: height }];
+    const entry = { target: el, borderBoxSize: size, contentBoxSize: size, contentRect: new DOMRect(0, 0, width, height) } as unknown as ResizeObserverEntry;
+    for (const watch of watches) if (watch.targets.has(el)) watch.report([entry], watch as unknown as ResizeObserver);
+  };
+}
 
 describe('DataGrid pager', () => {
   it('offers the page sizes as buttons and shows as many rows, back on the first page, with the info text', async () => {
@@ -195,25 +227,27 @@ describe('DataGrid pager', () => {
   });
 
   it('is compact while the full pager does not fit in the bar (adaptive), and full again when it does', async () => {
+    const resize = sizeObserver();
     const grid = await make();
     const nav = pager(grid);
     const bar = nav.parentElement!;
-    let room = 800;
-    Object.defineProperty(bar, 'clientWidth', { configurable: true, get: () => room });
-    Object.defineProperty(nav, 'scrollWidth', { configurable: true, get: () => (nav.dataset.look === 'full' ? 500 : 200) });
-    pagerOf(grid).fit();
+    // The size observers tell the room the bar has and the pager's own width: the full pager's, or the compact one's.
+    const tell = async (room: number) => {
+      resize(bar, room, 40);
+      resize(nav, nav.dataset.look === 'full' ? 500 : 200, 40);
+      await settle();
+      // The compact look takes another width: the observer tells it too.
+      resize(nav, nav.dataset.look === 'full' ? 500 : 200, 40);
+      await settle();
+    };
+    await tell(800);
     expect(nav.dataset.look).toBe('full');
-    room = 400;
-    pagerOf(grid).fit();
-    await settle();
+    expect(nav.hasAttribute('data-adaptive')).toBe(true);
+    await tell(400);
     expect(nav.dataset.look).toBe('compact');
-    room = 450;
-    pagerOf(grid).fit();
-    await settle();
+    await tell(450);
     expect(nav.dataset.look).toBe('compact');
-    room = 600;
-    pagerOf(grid).fit();
-    await settle();
+    await tell(600);
     expect(nav.dataset.look).toBe('full');
     await grid.dispose();
   });

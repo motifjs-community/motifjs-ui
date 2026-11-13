@@ -1045,6 +1045,11 @@
     margin-inline-start: auto;
   }
 
+  /* Adaptive, it does not shrink: its width is what the full pager needs, and it turns compact once that is more than the room. */
+  .mx-data-grid__pager[data-adaptive] {
+    flex: none;
+  }
+
   .mx-data-grid__pages,
   .mx-data-grid__page-sizes,
   .mx-data-grid__page-jump {

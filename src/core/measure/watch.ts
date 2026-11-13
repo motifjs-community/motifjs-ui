@@ -22,7 +22,11 @@ export class Watch implements WindowBound {
   /** For `sight`: whether it was in sight when last told. */
   private seen: boolean | null = null;
   private readonly stopHearing: (() => void) | null;
-  /** The size the layer reads itself: the first one, and the one after each arrival. */
+  /**
+   * The size the layer reads itself where the window has no size observer (a test document): the first one, and the one
+   * after each arrival. Where it has one, the observer tells them, after the browser laid the target out: read in a
+   * round, they would lay the page out there and then, before what the round writes is laid out once more.
+   */
   private readonly readSize = (): Size => sizeOf(this.target, this.box);
   private readonly takeSize = (size: Size): void => this.resized(size, true);
 
@@ -43,7 +47,7 @@ export class Watch implements WindowBound {
     const target = this.target;
     if (this.change === 'size') {
       this.undo = observe(target, this.box, (size) => this.resized(size, false));
-      measure(target, this.readSize, this.takeSize);
+      if (!canMeasure(target)) measure(target, this.readSize, this.takeSize);
     } else if (this.change === 'sight') {
       this.undo = observeSight(target, (seen) => this.sighted(seen));
     } else if (this.change === 'page') {
@@ -63,7 +67,8 @@ export class Watch implements WindowBound {
   arrived(moved: boolean): void {
     if (this.stopped || this.change === 'sight') return;
     if (this.change === 'size') {
-      measure(this.target, this.readSize, this.takeSize);
+      // Shown again or moved: the observer tells its size once the browser laid it out there.
+      if (!canMeasure(this.target)) measure(this.target, this.readSize, this.takeSize);
       return;
     }
     // A look is told the first time, after a move into another window, and when it changed while away.

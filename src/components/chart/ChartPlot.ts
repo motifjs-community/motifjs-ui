@@ -441,13 +441,22 @@ export class ChartPlot implements PlotView {
         if (model.kind === 'category') return model.categories.map((key, i) => ({ value: i, text: this.xText(key, true) })).filter(t => this.visible(t.value));
         const low = window?.from ?? asNumber(xAxis.min) ?? (Number.isFinite(model.xMin) ? model.xMin : 0);
         const high = window?.to ?? asNumber(xAxis.max) ?? (Number.isFinite(model.xMax) ? model.xMax : 1);
-        const sample = measure(this.xText(high, true));
-        const count = xAxis.tickCount ?? Math.max(2, Math.floor(length / (sample + look.tickGap)));
+        const countFor = (format: Intl.DateTimeFormatOptions | undefined) =>
+            xAxis.tickCount ?? Math.max(2, Math.floor(length / (measure(positionText(this.input!, high, format)) + look.tickGap)));
         if (model.kind === 'time') {
-            const { ticks, format } = timeTicks(low, high, count);
-            this.xFormat = format;
-            return ticks.map(value => ({ value, text: this.xText(value, true) }));
+            // How many ticks fit depends on the format of their text, and the format on how many there are: settled here,
+            // in one drawing, so the texts it needs are asked for in one round. Left to the next drawing, the format could
+            // swing back and forth, each time with texts not measured yet, and the drawings would not settle.
+            let format = this.xFormat;
+            let next = timeTicks(low, high, countFor(format));
+            for (let i = 0; i < 4 && JSON.stringify(next.format) !== JSON.stringify(format); i++) {
+                format = next.format;
+                next = timeTicks(low, high, countFor(format));
+            }
+            this.xFormat = next.format;
+            return next.ticks.map(value => ({ value, text: this.xText(value, true) }));
         }
+        const count = countFor(this.xFormat);
         if (model.kind === 'log') return logTicks(Math.max(low, 1e-12), high).map(value => ({ value, text: this.xText(value, true) }));
         // Zoomed, the axis ends where the view does: a round value past it would sit outside the plot.
         return niceTicks(low, high, count, !!window).map(value => ({ value, text: this.xText(value, true) }));
@@ -1055,10 +1064,15 @@ function overlaps(a: Rect, b: Rect): boolean {
     return a.left < b.left + b.width && b.left < a.left + a.width && a.top < b.top + b.height && b.top < a.top + a.height;
 }
 
-// A label cut with an ellipsis to the room it has: the whole text stays in the tooltip and the table.
+// A label cut with an ellipsis to the room it has: the whole text stays in the tooltip and the table. Every cut is asked
+// for at once, so the texts not measured yet are measured in one round and the next drawing finds the one that fits;
+// tried one by one, each drawing would ask for the next few and the drawings would not settle.
 function fit(text: string, room: number, measure: (text: string) => number): string {
     if (measure(text) <= room) return text;
-    let end = text.length;
-    while (end > 1 && measure(`${text.slice(0, end)}…`) > room) end--;
+    let end = 1;
+    for (let at = text.length; at > 1; at--) {
+        const fits = measure(`${text.slice(0, at)}…`) <= room;
+        if (fits && end === 1) end = at;
+    }
     return `${text.slice(0, end).trimEnd()}…`;
 }

@@ -10,7 +10,7 @@ import { onReState } from '../../core/on-re-state';
 import { focusAndSelect, focusFirstIn, focusGoesInto, focusOn, focusPast, focusStopIn, holdsFocus, isFocused, releaseFocus, rememberFocus, windowHasFocus } from '../../core/focus';
 import { windowOf } from '../../core/page-documents';
 import { placeOnPage } from '../../core/page-layer';
-import { boxOf, isRendered, isRtl, measure, measureNow, onLayout, rectOf, reveal, styleOf, textWidths } from '../../core/measure';
+import { boxOf, isRendered, isRtl, measure, measureNow, onLayout, rectOf, reveal, scrollOf, styleOf, textWidths } from '../../core/measure';
 import { checkMark, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
 import { fillTemplate } from '../../core/fill-template';
 import { nextId } from '../../core/next-id';
@@ -322,6 +322,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private measurePart: ComponentBase | null = null;
   /** How far the rows are scrolled sideways (from the inline start), as last measured: virtual columns are found from it. */
   private columnsStart = 0;
+  /** How far the rows are scrolled sideways, as their last scroll event told. */
+  private scrolledStart = 0;
+  /**
+   * The sizes the size observers told last, after the browser laid them out: the viewport's inner box and its whole
+   * height, the head, the totals and a row. `null` until the viewport was told once.
+   */
+  private seen: { width: number; height: number; outer: number; head: number; foot: number; row: number } | null = null;
   /** Columns waiting to be fitted to their content, each with whether it goes alone (see `fitColumns`). */
   private fitting: { fields: Map<string, boolean>; all: boolean; told: boolean } | null = null;
   /** Which button of the active actions cell has focus. */
@@ -3143,8 +3150,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     mark(this, 'data-settling', true);
     this.motif.setDisposable(this.dragSelect.holdTouch(viewport));
     viewport.motif.on('scroll', () => {
+      // Read in the scroll event, after the browser laid the page out: the rounds lay nothing out for the scroll.
+      const at = scrollOf(viewport);
+      this.scrolledStart = at.start;
       this.measureScroll();
-      this.body.onScroll();
+      // Sideways as the element counts it: right to left, the scroll from the start is to the left.
+      this.body.onScroll({ top: at.top, left: at.start && isRtl(viewport) ? -at.start : at.start });
       this.tip.hide();
       this.syncTabStop();
     });
@@ -3220,8 +3231,23 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const measuring = div('mx-data-grid__measure', main);
     measuring.attr.add({ 'aria-hidden': 'true' });
     this.measurePart = measuring;
-    // The rows' box, the head, the totals or the row height took another size: the sizes are read again.
-    for (const sized of [viewport, head, foot, probe]) onLayout(sized, 'size', () => this.measureSizes());
+    // The sizes come from the size observers, after the browser laid them out; read in a round, they would lay the
+    // page out again there. The viewport's inner box is its client box (it has no padding); its whole height tells
+    // the frame around it (a scroll bar). A viewport out of the page has lost its scroll: it is read again.
+    const saw = (change: (seen: NonNullable<DataGrid<T>['seen']>) => void) => {
+      const seen = (this.seen ??= { width: 0, height: 0, outer: 0, head: 0, foot: 0, row: 0 });
+      change(seen);
+      this.measureSizes();
+    };
+    onLayout(viewport, 'size', (size) => saw((seen) => {
+      if (!size.width && !size.height) this.body.forgetScroll();
+      seen.width = Math.round(size.width);
+      seen.height = Math.round(size.height);
+    }), { box: 'content' });
+    onLayout(viewport, 'size', (size) => saw((seen) => (seen.outer = Math.round(size.height))));
+    onLayout(head, 'size', (size) => saw((seen) => (seen.head = Math.round(size.height))));
+    onLayout(foot, 'size', (size) => saw((seen) => (seen.foot = Math.round(size.height))));
+    onLayout(probe, 'size', (size) => saw((seen) => (seen.row = Math.round(size.height))));
 
     const bar = div('mx-data-grid__bar');
     bar.controls.add(this.bottomBar);
@@ -3388,14 +3414,20 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * answer at once: a test, a print, an export.
    */
   measure(): void {
-    this.measureSizes();
+    if (this.viewportPart) measure(this, this.readSizes, this.drawSizes);
     measureNow(this);
   }
 
-  /** Reads the viewport, header and row heights with the window's next reads. */
+  /** Draws the viewport, header and row heights as the size observers told them, with the window's next round. */
   private measureSizes() {
-    if (this.viewportPart) measure(this, this.readSizes, this.drawSizes);
+    if (this.viewportPart && this.seen) measure(this, this.readSeen, this.drawSizes);
   }
+
+  /** The sizes told, as the drawing takes them: nothing is laid out for them. */
+  private readonly readSeen = () => {
+    const seen = this.seen!;
+    return { head: seen.head, foot: seen.foot, frame: seen.outer - seen.height, height: seen.height, width: seen.width, row: seen.row };
+  };
 
   private readonly readSizes = () => {
     const vp = boxOf(this.viewportPart!);
@@ -3613,7 +3645,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.viewportPart) measure(this, this.readScroll, this.columnsScrolled);
   }
 
-  private readonly readScroll = () => boxOf(this.viewportPart!).scrollStart;
+  /** As the last scroll event told: nothing is laid out for it. */
+  private readonly readScroll = () => this.scrolledStart;
 
   /** The rows scrolled sideways to `start`: virtual columns follow at once, or once the scrolling stops (`renderAsync`). */
   private readonly columnsScrolled = (start: number) => {
