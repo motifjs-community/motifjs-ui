@@ -3,6 +3,7 @@ import { data } from '@motifx-community/data';
 import { parseNumber } from '../../numberbox/number-text';
 import type { GridColumn } from '../grid-column';
 import type { EditorValue } from '../view/editor-value';
+import { joinItems, listValues, splitItems } from './cell-list';
 import { dateLike } from './date-like';
 import { optionOf } from './option-of';
 import { parseDateText } from './parse-date-text';
@@ -37,11 +38,17 @@ export class CellFormatter {
     return this.number.format(n);
   }
 
-  /** Display text of a cell; `v` is the value to show (the unsaved edit, when there is one). */
+  /** Display text of a cell; `v` is the value to show (the unsaved edit, when there is one). A list's values are joined. */
   text<T>(col: GridColumn<T>, row: T | undefined, v: unknown): string {
     if (row === undefined || row === null) return '';
     const format = col.format;
     if (typeof format === 'function') return untracked(() => format(v, row));
+    if (col.multiple && Array.isArray(v)) return joinItems(listValues(v).map((x) => this.one(col, x)), this.locale);
+    return this.one(col, v);
+  }
+
+  /** The text of one value by the column type. */
+  private one<T>(col: GridColumn<T>, v: unknown): string {
     if (data.isEmpty(v)) return '';
     switch (col.type) {
       case 'number':
@@ -73,6 +80,7 @@ export class CellFormatter {
 
   /** A value as plain text in no locale's format: numbers as written in code, dates as `yyyy-mm-dd` (with the time when it has one), `true` / `false`. */
   raw<T>(col: GridColumn<T>, v: unknown): string {
+    if (col.multiple && Array.isArray(v)) return joinItems(listValues(v).map((x) => this.raw({ ...col, multiple: false }, x)), this.locale);
     if (data.isEmpty(v)) return '';
     if (v instanceof Date || (col.type === 'date' && typeof v === 'number')) {
       const d = data.toDate(v)!;
@@ -85,9 +93,21 @@ export class CellFormatter {
   /**
    * Text typed or pasted into a cell, read as the column's value: a number in the locale (or as
    * written in code), a date in the locale's order or ISO (kept in the kind of value `like` is), yes
-   * or no, a list option by its text or value. Empty text is no value.
+   * or no, a list option by its text or value. Empty text is no value. A list (`multiple`) is split at the locale's
+   * separator and each part read so; empty text is an empty list.
    */
   parse<T>(col: GridColumn<T>, text: string, like: unknown): EditorValue {
+    if (col.multiple) {
+      const one = { ...col, multiple: false };
+      const sample = Array.isArray(like) ? like[0] : like;
+      const values: unknown[] = [];
+      for (const part of splitItems(text, this.locale)) {
+        const read = this.parse(one, part, sample);
+        if (!read.ok) return read;
+        values.push(read.value);
+      }
+      return { ok: true, value: values };
+    }
     const plain = text.trim();
     if (plain === '' && col.type !== 'boolean') return { ok: true, value: null };
     switch (col.type) {

@@ -5168,15 +5168,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       return;
     }
     const ed = this.editor;
-    // Escape on a lookup's closed list ends the edit (the list would empty a field that has a clear button).
-    if (ed?.kind === 'lookup' && e.key === 'Escape' && this.toEditorInput(ed, e) && !ed.listOpen) {
+    // Escape on a lookup's or a list's closed list ends the edit (the list would empty a field that has a clear button);
+    // text typed in a list goes first.
+    if ((ed?.kind === 'lookup' || ed?.kind === 'tags') && e.key === 'Escape' && this.toEditorInput(ed, e) && !ed.listOpen && !ed.typing) {
       e.preventDefault();
       e.stopPropagation();
       this.cancelEdit();
       return;
     }
     if (!ed || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    if (ed.kind === 'list' || ed.kind === 'lookup' || ed.kind === 'custom' || !this.toEditorInput(ed, e)) return;
+    if (ed.kind === 'list' || ed.kind === 'lookup' || ed.kind === 'tags' || ed.kind === 'custom' || !this.toEditorInput(ed, e)) return;
     e.preventDefault();
     e.stopPropagation();
     if (this.model.state.busy) return;

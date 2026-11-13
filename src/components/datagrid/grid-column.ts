@@ -42,6 +42,14 @@ export interface GridColumn<T = any> {
   headerCell?: (ctx: HeaderCellContext<T>) => unknown;
   /** The value type, which determines the alignment, format, sorting and editor. The default is `'text'`. */
   type?: ColumnType;
+  /**
+   * The cell holds a list of values (an array) of `type`: `list` choices, `lookup` keys or texts. It is edited with a
+   * `TagBox` (a text column takes typed texts), and shows the texts of its values joined in the locale's way (`a, b`), which
+   * copying, exporting, sorting and grouping use too; pasted text is split there. A filter condition holds when one of
+   * the values passes it (none of them with `<>`, `notin` and `notcontains`), and the header filter lists the values one
+   * by one. An empty list is no value: `required` asks for at least one.
+   */
+  multiple?: boolean;
   /** The width in pixels. The default is the grid's `columnWidth` setting (140). */
   width?: number;
   /** The minimum width the user can resize to. The default is the grid's `columnMinWidth` setting (48). */

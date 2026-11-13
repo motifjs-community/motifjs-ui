@@ -4,6 +4,7 @@ import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { TextSearch } from '../../../parts/data/text-search';
 import type { GridColumn } from '../grid-column';
 import type { EditorValue } from '../view/editor-value';
+import { joinItems, listValues, splitItems } from './cell-list';
 import { cellValue } from './cell-value';
 import type { LookupCell } from './lookup-cell';
 import { givenField } from '../../../core/given-field';
@@ -68,10 +69,11 @@ export class LookupTexts<T> {
   /**
    * What a lookup cell shows for `value`: a text the user chose, the row's own text (`textFrom`) while
    * the value is the row's, the item's text, nothing while it loads (the key is requested), or the key
-   * itself when the source does not have it.
+   * itself when the source does not have it. The keys of a list (`multiple`) show their texts joined.
    */
   cell(col: GridColumn<T>, row: T | undefined, value: unknown, edited: boolean, ask = true): LookupCell {
     if (row === undefined || row === null || data.isEmpty(value)) return { text: '', state: 'none' };
+    if (Array.isArray(value) && !(col.textFrom && !edited)) return this.listText(col, value, ask);
     const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
     if (chosen !== undefined) return { text: chosen, state: 'found' };
     if (col.textFrom && !edited) {
@@ -85,6 +87,7 @@ export class LookupTexts<T> {
   /** What a key shows without a row (a group's key): a text the user chose, the item's text, nothing while it loads, or the key itself when the source does not have it. */
   keyText(col: GridColumn<T>, value: unknown, ask = true): LookupCell {
     if (data.isEmpty(value)) return { text: '', state: 'none' };
+    if (Array.isArray(value)) return this.listText(col, value, ask);
     const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
     if (chosen !== undefined) return { text: chosen, state: 'found' };
     const items = this.items(col);
@@ -99,17 +102,37 @@ export class LookupTexts<T> {
     return { text: '', state: 'loading' };
   }
 
-  /** The text of a key as known now: the one the user chose, the item's, else the key itself. */
+  /**
+   * The texts of a list of keys joined: loading while one of them is, else missing while one of them is not in the
+   * source (that one shows itself).
+   */
+  private listText(col: GridColumn<T>, value: readonly unknown[], ask: boolean): LookupCell {
+    const looks = listValues(value).map((v) => this.keyText(col, v, ask));
+    if (!looks.length) return { text: '', state: 'none' };
+    const text = joinItems(looks.map((l) => l.text), this.locale());
+    if (looks.some((l) => l.state === 'loading')) return { text, state: 'loading' };
+    if (looks.some((l) => l.state === 'missing')) return { text, state: 'missing', hint: this.texts.missing() };
+    return { text, state: looks.some((l) => l.state === 'found') ? 'found' : 'none' };
+  }
+
+  /** The text of a key as known now: the one the user chose, the item's, else the key itself. A list's texts are joined. */
   textOfKey(col: GridColumn<T>, value: unknown): string {
     if (data.isEmpty(value)) return '';
+    if (Array.isArray(value)) return joinItems(listValues(value).map((v) => this.textOfKey(col, v)), this.locale());
     const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
     if (chosen !== undefined) return chosen;
     const known = this.items(col)?.get(value);
     return known?.state === 'found' ? (known.text ?? this.textOf(col, known.item)) : String(value);
   }
 
-  /** Remembers what the user chose for a key: its item (or its text), for this column and every list of the source. */
+  /** Remembers what the user chose for a key: its item (or its text), for this column and every list of the source; for a list of keys, the items chosen. */
   remember(col: GridColumn<T>, value: unknown, itemOrText: unknown) {
+    if (Array.isArray(value)) {
+      const items = this.items(col);
+      if (!items || !Array.isArray(itemOrText)) return;
+      for (const item of itemOrText) this.remember(col, items.valueOf(item), item);
+      return;
+    }
     if (data.isEmpty(value) || itemOrText === undefined || itemOrText === null) return;
     const text = typeof itemOrText === 'string' ? itemOrText : this.textOf(col, itemOrText);
     let byKey = this.chosen.get(col.field);
@@ -120,6 +143,7 @@ export class LookupTexts<T> {
 
   /** Whether the source said it does not have the key (a failed request does not count). */
   isMissing(col: GridColumn<T>, value: unknown): boolean {
+    if (Array.isArray(value)) return listValues(value).some((v) => this.isMissing(col, v));
     if (data.isEmpty(value) || this.chosen.get(col.field)?.has(KeyedItems.keyString(value))) return false;
     const known = this.items(col)?.get(value);
     return known?.state === 'missing' && !known.failed;
@@ -133,8 +157,7 @@ export class LookupTexts<T> {
       if (!items) continue;
       const keys = new Set<unknown>();
       for (const row of rows) {
-        const value = valueOf(row, col);
-        if (!data.isEmpty(value)) keys.add(value);
+        for (const value of listValues(valueOf(row, col))) keys.add(value);
       }
       waits.push(items.request(keys));
     }
@@ -143,9 +166,16 @@ export class LookupTexts<T> {
 
   /**
    * A pasted or typed text read as a key: the one item whose text it is (case aside), among the items
-   * known, else asked from the source. None, or several, is a message.
+   * known, else asked from the source. None, or several, is a message. A list (`multiple`) is split at the locale's
+   * separator and each part read so.
    */
   parse(col: GridColumn<T>, text: string, row: T | null, entered: data.RowCheckContext<T>, messages: { none: string; several: string }): EditorValue | Promise<EditorValue> {
+    if (col.multiple) {
+      const one = { ...col, multiple: false };
+      const reads = splitItems(text, this.locale()).map((part) => this.parse(one, part, row, entered, messages));
+      const join = (all: EditorValue[]): EditorValue => all.find((r) => !r.ok) ?? { ok: true, value: all.map((r) => (r as { value: unknown }).value) };
+      return reads.some((r) => r instanceof Promise) ? Promise.all(reads).then(join) : join(reads as EditorValue[]);
+    }
     const plain = text.trim();
     if (!plain) return { ok: true, value: null };
     const items = this.items(col);
@@ -164,7 +194,8 @@ export class LookupTexts<T> {
 
   /**
    * How rows in memory read this column for sorting: `sortField`, `textFrom`, the text shown
-   * (`lookup.sortBy: 'text'`), else `undefined` (the value).
+   * (`lookup.sortBy: 'text'`), else `undefined` (the value). A list (`multiple`) is read as its values, `null` when it
+   * has none: the grid compares lists by their texts.
    */
   sortValue(col: GridColumn<T>): ((row: T) => unknown) | undefined {
     if (col.sortField) {
@@ -174,6 +205,12 @@ export class LookupTexts<T> {
     const from = col.textFrom;
     if (typeof from === 'function') return from;
     if (from) return (row) => data.getField(row, from);
+    if (col.multiple) {
+      return (row) => {
+        const values = listValues(cellValue(col, row));
+        return values.length ? values : null;
+      };
+    }
     if (!this.sortsByText(col)) return col.value;
     return (row) => {
       const value = cellValue(col, row);
@@ -185,9 +222,9 @@ export class LookupTexts<T> {
     };
   }
 
-  /** Rows in memory sort this lookup column by the text shown: every key of the rows must be known first. */
+  /** Rows in memory sort this lookup column by the text shown (always for a list of keys): every key of the rows must be known first. */
   sortsByText(col: GridColumn<T>): boolean {
-    return !!col.lookup && !col.sortField && !col.textFrom && readField(col.lookup, 'sortBy') === 'text';
+    return !!col.lookup && !col.sortField && !col.textFrom && (!!col.multiple || readField(col.lookup, 'sortBy') === 'text');
   }
 
   /** The field a server sorts by for this column: `sortField`, the field of `textFrom`, else the column's own. */

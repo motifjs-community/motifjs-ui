@@ -29,7 +29,7 @@ export class GridRowsAdapter<T extends object> extends data.ArrayAdapter<T, unkn
       },
       sortValue: (field) => (sorting ? sorting.sortValue(field) : column(field).value),
       filterValue: (field) => column(field).value,
-      compare: (field) => column(field).compare,
+      compare: (field) => column(field).compare ?? sorting?.compare?.(field),
       ...options,
     });
   }

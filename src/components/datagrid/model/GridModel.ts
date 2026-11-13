@@ -21,6 +21,7 @@ import type { AddedRow } from './added-row';
 import { ActionSets } from './ActionSets';
 import { CellFormatter } from './CellFormatter';
 import { CellRules } from './CellRules';
+import { emptyCell, listValues } from './cell-list';
 import { cellValue } from './cell-value';
 import { GridNotices } from './GridNotices';
 import { ColumnModel } from './ColumnModel';
@@ -219,7 +220,7 @@ export class GridModel<T> {
     this.columns = new ColumnModel(props.columns, layout, this.settings);
     this.columnWindow = new ColumnWindow(this.columns, this.settings);
     for (const field of this.columns.features.keys()) this.tellFeatures(field);
-    this.groups = new GridGroups<T>(this.columns, this.settings);
+    this.groups = new GridGroups<T>(this.columns, this.settings, (col) => this.listCompare(col));
     this.groups.set(layout?.group ?? this.columnGroups());
     this.columns.hiddenByGroup = (field) => this.groups.isGrouped(field) && !this.columns.can(field, 'showWhenGrouped');
     const sort = (layout?.sort ?? props.sort ?? []).filter((s) => this.columns.defs.has(s.field) && !this.groups.isGrouped(s.field));
@@ -1007,7 +1008,15 @@ export class GridModel<T> {
   shownText(rowId: string | undefined, row: T, col: GridColumn<T>, value: unknown = this.value(rowId, row, col)): string {
     if (!col.lookup) return this.formatter.text(col, row, value);
     const look = this.lookups.cell(col, row, value, this.isChanged(rowId, col.field));
-    return look.state === 'loading' ? String(value) : look.text;
+    if (look.state !== 'loading') return look.text;
+    return col.multiple ? this.formatter.raw(col, value) : String(value);
+  }
+
+  /** How rows in memory compare a list column (`multiple`): by the texts of its values, in the locale's order; `undefined` for other columns. */
+  listCompare(col: GridColumn<T>): ((a: unknown, b: unknown) => number) | undefined {
+    if (!col.multiple) return undefined;
+    const text = (v: unknown) => (col.lookup ? this.lookups.textOfKey(col, v) : this.formatter.text(col, {} as T, v));
+    return (a, b) => this.formatter.collator.compare(text(a), text(b));
   }
 
   /** Forgets the texts of the lookup columns and asks for them again. */
@@ -1753,6 +1762,7 @@ export class GridModel<T> {
       column as (field: string) => GridColumn<T & object>,
       {
         sortValue: (field) => this.lookups.sortValue(column(field)) as ((row: T & object) => unknown) | undefined,
+        compare: (field) => this.listCompare(column(field)),
         // Sorting by a lookup's text needs the text of every key of the rows first.
         beforeSort: (sort, rows) => this.lookups.load(sort.map((s) => column(s.field)).filter((c) => this.lookups.sortsByText(c)), rows as unknown as T[]),
       },
@@ -1829,18 +1839,22 @@ export class GridModel<T> {
   }
 
   private fieldMessage(col: GridColumn<T>, value: unknown, row: T, entered: data.RowCheckContext<T>): string {
-    if (col.required && data.isEmpty(value)) return this.text('required');
+    if (col.required && emptyCell(value)) return this.text('required');
     if (col.lookup && this.lookups.isMissing(col, value)) return this.text('gridLookupMissing');
     const validate = col.validate;
     return (validate && untracked(() => validate(value, row, entered))) || '';
   }
 
-  /** A lookup key not known yet is requested; one the source does not have stops the row from being saved. */
+  /** A lookup key not known yet (those of a list) is requested; one the source does not have stops the row from being saved. */
   private checkKey(rowId: string, row: T, col: GridColumn<T>, value: unknown) {
     const items = this.lookups.items(col);
-    const known = items?.get(value);
-    if (!items || (known && known.state !== 'loading')) return;
-    const check = items.request([value]).then(() => {
+    if (!items) return;
+    const keys = listValues(value).filter((v) => {
+      const known = items.get(v);
+      return !known || known.state === 'loading';
+    });
+    if (!keys.length) return;
+    const check = items.request(keys).then(() => {
       if (!this.isChanged(rowId, col.field) || !sameValue(this.value(rowId, row, col), value) || !this.lookups.isMissing(col, value)) return;
       this.data.tracker.setError(row, col.field, this.text('gridLookupMissing'));
     });

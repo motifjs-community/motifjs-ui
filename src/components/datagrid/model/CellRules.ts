@@ -5,6 +5,7 @@ import { checkRules } from '../../../parts/validation/check-rules';
 import type { ValidationRule } from '../../../parts/validation/validation-rule';
 import type { GridColumn } from '../grid-column';
 import type { GridValidationRule } from '../grid-validation-rule';
+import { emptyCell } from './cell-list';
 import { sameValue } from './same-value';
 import { readField } from './read-field';
 
@@ -128,7 +129,7 @@ export class CellRules<T> {
   private async one(rule: GridValidationRule<T>, value: unknown, row: T, context: data.RowCheckContext<T>, col: GridColumn<T>): Promise<string> {
     const trims = (rule.type === 'required' || rule.type === 'stringLength') && rule.trim !== false;
     const shown = trims && typeof value === 'string' ? value.trim() : value;
-    const empty = data.isEmpty(shown);
+    const empty = emptyCell(shown);
     if (rule.type === 'required') return this.run(shown, { type: 'required', message: this.message(rule, 'required') }, empty);
     if (empty && (rule.ignoreEmptyValue ?? PASS_EMPTY.has(rule.type))) return '';
     switch (rule.type) {

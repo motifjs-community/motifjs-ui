@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- `DataGrid` columns with several values: `multiple: true` makes a cell hold a list of values (an array) of the column's
+  `type` (`list` choices, `lookup` keys, numbers or texts). The cell shows their texts joined the way the locale writes
+  lists and is edited with a `TagBox` that stays open while values are picked; a text or number column takes typed
+  texts. A filter condition holds when one of the values passes it (none of them with `<>`), the header filter lists
+  the values one by one, the search finds any of them, rows sort and group by the joined texts, copying and exporting
+  write them, and pasted text is split at the locale's separator. An empty list is no value, so `required` asks for at
+  least one.
+- `TagBox.typeText(text)`: puts text in the input as if it were typed, and the list searches it.
+
 ### Fixed
 
 - `DataGrid` no longer makes the browser lay the page out in the middle of its work (Chrome's "Forced reflow"

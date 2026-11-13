@@ -369,7 +369,7 @@ function nameOf(i: PlacedItem): string {
 
 /** What a data cell writes: numbers, dates and yes/no as values; lookups, lists and `format` functions as their text. */
 function typed<T>(col: GridColumn<T>, value: unknown, text: string): string | number | boolean | Date | null {
-  if (col.lookup || typeof col.format === 'function') return text || null;
+  if (col.lookup || col.multiple || typeof col.format === 'function') return text || null;
   if (data.isEmpty(value)) return null;
   switch (col.type) {
     case 'number':

@@ -1,5 +1,6 @@
 import { data } from '@motifx-community/data';
 import type { GridFilterValue } from '../grid-filter-value';
+import { listValues } from './cell-list';
 import { cellValue } from './cell-value';
 import type { GridModel } from './GridModel';
 import type { ValueLoader } from './value-loader';
@@ -73,11 +74,18 @@ export class LookupValues<T> {
       const { rows } = await source.adapter.load({ filter, signal });
       const counts = new Map<string, { value: unknown; count: number }>();
       for (const row of rows) {
-        const value = cellValue(col, row);
-        const id = data.isEmpty(value) ? '' : `${typeof value}:${String(value)}`;
-        const bucket = counts.get(id);
-        if (bucket) bucket.count++;
-        else counts.set(id, { value: data.isEmpty(value) ? null : value, count: 1 });
+        const cell = cellValue(col, row);
+        const values = col.multiple ? listValues(cell) : [cell];
+        // A row counts once for each key it holds.
+        const ids = new Set<string>();
+        for (const value of values.length ? values : [null]) {
+          const id = data.isEmpty(value) ? '' : `${typeof value}:${String(value)}`;
+          if (ids.has(id)) continue;
+          ids.add(id);
+          const bucket = counts.get(id);
+          if (bucket) bucket.count++;
+          else counts.set(id, { value: data.isEmpty(value) ? null : value, count: 1 });
+        }
       }
       await items?.request([...counts.values()].map((b) => b.value));
       const lower = search.trim().toLocaleLowerCase(model.formatter.locale);

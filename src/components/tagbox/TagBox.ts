@@ -387,6 +387,13 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.tagParts.popup?.close('code');
   }
 
+  /** Puts text in the input as if it were typed: the list searches it. */
+  typeText(text: string): void {
+    if (!this.canChange()) return;
+    this.controlPart.attr.add({ value: text, setSelectionRange: [text.length, text.length] });
+    this.typed(text);
+  }
+
   /**
    * Re-reads the items after they have been changed in place, and updates the tags, the open list and the selected
    * items. Your items can be plain or reactive, and the box reads them as they are.

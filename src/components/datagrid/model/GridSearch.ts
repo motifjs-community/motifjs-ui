@@ -134,7 +134,7 @@ export class GridSearch<T> {
     if (!applied || !shown || !this.model.settings.get('highlightSearchText')) return [];
     const mark = this.marks.get(field);
     if (!mark) return [];
-    if (mark !== 'part') return mark(value) ? [[0, shown.length]] : [];
+    if (mark !== 'part') return (Array.isArray(value) ? value.some(mark) : mark(value)) ? [[0, shown.length]] : [];
     return textRanges(shown, applied.trim(), this.model.formatter.locale, this.model.settings.get('highlightCaseSensitive'));
   }
 

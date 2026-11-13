@@ -2,6 +2,7 @@ import { data } from '@motifx-community/data';
 import type { GridColumn } from '../grid-column';
 import type { GridFilterValue } from '../grid-filter-value';
 import type { GridValuesResult } from '../grid-values-result';
+import { listValues } from './cell-list';
 import { cellValue } from './cell-value';
 import type { FilterTreeNode } from './filter-tree-node';
 import type { GridModel } from './GridModel';
@@ -233,7 +234,7 @@ export class FilterValues<T> {
     };
   }
 
-  /** Every distinct value of the rows the other filters leave, with counts, empty first, then in order. */
+  /** Every distinct value of the rows the other filters leave, with counts, empty first, then in order; each value of a list (`multiple`) on its own. */
   private async countValues(field: string, filter: data.FilterExpression | null, signal: AbortSignal): Promise<GridFilterValue[]> {
     const model = this.model;
     const col = model.columns.get(field);
@@ -241,11 +242,18 @@ export class FilterValues<T> {
     const buckets = new Map<string, { value: unknown; row: T; count: number }>();
     for (const row of rows) {
       const raw = cellValue(col, row);
-      const value = isBlank(raw) ? null : raw;
-      const key = value === null ? '' : bucketOf(value);
-      const bucket = buckets.get(key);
-      if (bucket) bucket.count++;
-      else buckets.set(key, { value, row, count: 1 });
+      const values = col.multiple ? listValues(raw) : [raw];
+      // A row counts once for each value it holds.
+      const keys = new Set<string>();
+      for (const one of values.length ? values : [null]) {
+        const value = isBlank(one) ? null : one;
+        const key = value === null ? '' : bucketOf(value);
+        if (keys.has(key)) continue;
+        keys.add(key);
+        const bucket = buckets.get(key);
+        if (bucket) bucket.count++;
+        else buckets.set(key, { value, row, count: 1 });
+      }
     }
     const formatter = model.formatter;
     const list = [...buckets.values()].map((b) => ({

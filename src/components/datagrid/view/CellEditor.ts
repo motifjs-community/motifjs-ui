@@ -10,11 +10,13 @@ import type { DropDownItem } from '../../dropdown/drop-down-item';
 import { Lookup } from '../../lookup/Lookup';
 import { NumberBox } from '../../numberbox/NumberBox';
 import { parseNumber } from '../../numberbox/number-text';
+import { TagBox } from '../../tagbox/TagBox';
 import { TextBox } from '../../textbox/TextBox';
 import { Field } from '../../../parts/field/Field';
 import type { EditorContext } from '../editor-context';
 import type { GridColumn } from '../grid-column';
 import type { ListOption } from '../list-option';
+import { emptyCell, listValues } from '../model/cell-list';
 import { dateLike } from '../model/date-like';
 import type { GridModel } from '../model/GridModel';
 import { optionOf } from '../model/option-of';
@@ -32,8 +34,8 @@ const TEXT_END = 2 ** 32 - 1;
 /**
  * The editor of the cell in edit mode: a kit field drawn without its frame inside the cell (a
  * `TextBox`, a `NumberBox`, a `DateBox`, a `CheckBox` or a `DropDown`, by the column type; a
- * `DropDown`, `ComboBox` or `Lookup` over the items of a lookup column), or the column's own
- * `editor`. Only one exists at a time in the cells; it is created when editing starts and disposed when
+ * `DropDown`, `ComboBox` or `Lookup` over the items of a lookup column; a `TagBox` for a list of values,
+ * `multiple`), or the column's own `editor`. Only one exists at a time in the cells; it is created when editing starts and disposed when
  * it ends. The edit form makes one per field, with its frame and label (`form`: the field props the
  * form gives). `prepare` sees the kit field's props first and may change them, or say no (`false`).
  */
@@ -72,7 +74,7 @@ export class CellEditor<T> {
   ) {
     this.custom = value;
     const type = column.type;
-    this.kind = column.editor ? 'custom' : column.lookup ? 'lookup' : type === 'number' || type === 'date' || type === 'boolean' || type === 'list' ? type : 'text';
+    this.kind = column.editor ? 'custom' : column.multiple ? 'tags' : column.lookup ? 'lookup' : type === 'number' || type === 'date' || type === 'boolean' || type === 'list' ? type : 'text';
     const box = new Component<HTMLDivElement>('div');
     this.box = box;
     owner.controls.add(box);
@@ -111,13 +113,13 @@ export class CellEditor<T> {
         box.controls.add(content);
       }
     } else {
-      const options = this.kind === 'lookup' ? this.lookupOptions() : this.options();
+      const options = this.kind === 'lookup' ? this.lookupOptions() : this.kind === 'tags' ? this.tagsOptions() : this.options();
       if (!prepare(options)) {
         this.cancelled = true;
         this.ownSource?.dispose();
         return;
       }
-      this.field = this.kind === 'lookup' ? this.createLookup(options) : this.createField(options);
+      this.field = this.kind === 'lookup' ? this.createLookup(options) : this.kind === 'tags' ? this.createTags(options) : this.createField(options);
       box.controls.add(this.field);
     }
     if (!form) this.field?.attr.add({ 'data-in-cell': '' });
@@ -138,6 +140,11 @@ export class CellEditor<T> {
     return !!(this.field as unknown as { opened?: boolean } | null)?.opened;
   }
 
+  /** Text is typed in a list's `TagBox` (Escape takes it away first). */
+  get typing(): boolean {
+    return this.kind === 'tags' && !!(this.inputPart?.element as HTMLInputElement | undefined)?.value;
+  }
+
   /** Focuses the editor; the text is selected, or the caret goes after what was typed to start editing (a lookup's list opens and searches it). */
   focus() {
     const field = this.field;
@@ -147,6 +154,11 @@ export class CellEditor<T> {
     }
     field.focus();
     const typed = this.initialText !== undefined && !this.typedIn;
+    if (this.kind === 'tags') {
+      this.typedIn = true;
+      if (typed && this.initialText) (field as TagBox<unknown, unknown>).typeText(this.initialText);
+      return;
+    }
     if (this.kind === 'lookup') {
       this.typedIn = true;
       if (!typed || !this.initialText) return;
@@ -173,6 +185,12 @@ export class CellEditor<T> {
         return { ok: true, value: this.loadingOptions ? this.value : (field!.value ?? null) };
       case 'lookup':
         return { ok: true, value: field!.value ?? null };
+      case 'tags': {
+        if (this.loadingOptions) return { ok: true, value: this.value };
+        const list = (field!.value as readonly unknown[] | null) ?? [];
+        // No values left where there were none keeps the cell as it was (`null` stays `null`).
+        return { ok: true, value: emptyCell(list) && emptyCell(this.value) ? this.value : [...list] };
+      }
       case 'date': {
         const box = field as DateBox;
         if (box.unfinished) return { ok: false, message: this.model.text('invalidDate') };
@@ -190,9 +208,10 @@ export class CellEditor<T> {
     }
   }
 
-  /** What the editor chose for its value, to show for that key: the lookup item, or the text a custom editor gave. */
+  /** What the editor chose for its value, to show for that key: the lookup item (the items of a list of keys), or the text a custom editor gave. */
   chosen(): unknown {
     if (this.kind === 'custom') return this.customText;
+    if (this.kind === 'tags') return this.column.lookup ? (this.field as TagBox<unknown, unknown>).selectedItems : undefined;
     const field = this.field as unknown as { selectedItem?: unknown } | null;
     return this.kind === 'lookup' ? field?.selectedItem : undefined;
   }
@@ -210,7 +229,7 @@ export class CellEditor<T> {
         return this.kind !== 'boolean';
       case 'ArrowUp':
       case 'ArrowDown':
-        return this.kind === 'list' || this.kind === 'lookup' || this.kind === 'custom';
+        return this.kind === 'list' || this.kind === 'lookup' || this.kind === 'tags' || this.kind === 'custom';
       case 'Enter':
         return false;
       case ' ':
@@ -271,33 +290,82 @@ export class CellEditor<T> {
   }
 
   private createList(options: Options): Field<any> {
-    const col = this.column;
     const list = new DropDown<DropDownItem, unknown>(options);
-    const fill = (choices: readonly ListOption[]) => {
+    this.withChoices(list, (choices) => {
       const items: DropDownItem[] = choices.map(optionOf).map((o) => ({ value: o.value, text: o.label }));
-      if (!this.model.isRequired(col)) items.unshift({ value: null, text: this.model.text('gridEmptyOption') });
+      if (!this.model.isRequired(this.column)) items.unshift({ value: null, text: this.model.text('gridEmptyOption') });
       list.items = items;
       const typed = this.initialText;
       if (!typed) return;
       const collator = this.model.formatter.collator;
       const match = items.find((item) => item.value !== null && collator.compare(String(item.text).slice(0, typed.length), typed) === 0);
       if (match && !sameValue(match.value, list.value)) list.value = match.value;
-    };
-    const source = col.options;
-    if (typeof source === 'function') {
-      this.loadingOptions = true;
-      list.readOnly = true;
-      void Promise.resolve()
-        .then(() => untracked(() => source(this.row, this.entered)))
-        .catch(() => [] as readonly ListOption[])
-        .then((choices) => {
-          if (list.isDisposed) return;
-          this.loadingOptions = false;
-          list.readOnly = false;
-          fill(choices);
-        });
-    } else fill(source ?? []);
+    });
     return list;
+  }
+
+  /** Gives a `list` column's choices to its field: those of a function once they come, the field read-only meanwhile. */
+  private withChoices(field: Field<any>, fill: (choices: readonly ListOption[]) => void) {
+    const source = this.column.options;
+    if (typeof source !== 'function') {
+      fill(source ?? []);
+      return;
+    }
+    this.loadingOptions = true;
+    field.readOnly = true;
+    void Promise.resolve()
+      .then(() => untracked(() => source(this.row, this.entered)))
+      .catch(() => [] as readonly ListOption[])
+      .then((choices) => {
+        if (field.isDisposed) return;
+        this.loadingOptions = false;
+        field.readOnly = false;
+        fill(choices);
+      });
+  }
+
+  /**
+   * The props of a list's `TagBox` (`multiple`): a lookup's items, as its own editor has them; a `list` column's
+   * choices; or, for the other types, no items: a typed text is read as the column type and becomes a value.
+   */
+  private tagsOptions(): Options {
+    const col = this.column;
+    let options: Options;
+    if (col.lookup) {
+      options = this.lookupOptions();
+      delete options.searchEnabled;
+    } else {
+      options = { label: readField(col, 'title') ?? '', labelMode: 'hidden', textField: 'text', valueField: 'value' };
+      if (col.type === 'list') {
+        if (Array.isArray(col.options)) options.items = choiceItems(col.options);
+      } else {
+        const one = { ...col, multiple: false };
+        const formatter = this.model.formatter;
+        Object.assign(options, {
+          items: [],
+          acceptCustomValue: true,
+          showDropDownButton: false,
+          openOnFieldClick: false,
+          // No list to open while typing.
+          minSearchLength: Number.MAX_SAFE_INTEGER,
+          customValue: (text: string) => {
+            const read = formatter.parse(one, text, undefined);
+            return read.ok && !data.isEmpty(read.value) ? read.value : null;
+          },
+        });
+      }
+      Object.assign(options, this.form);
+    }
+    options.value = listValues(this.value);
+    return options;
+  }
+
+  /** A list's `TagBox`: a pick adds or takes away a value and the list stays open; Enter on an empty input, Tab or leaving keeps the values. */
+  private createTags(options: Options): Field<any> {
+    const col = this.column;
+    const box = new TagBox<any, unknown>(options);
+    if (!col.lookup && col.type === 'list' && typeof col.options === 'function') this.withChoices(box, (choices) => (box.items = choiceItems(choices)));
+    return box;
   }
 
   /**
@@ -359,4 +427,9 @@ export class CellEditor<T> {
     });
     return field;
   }
+}
+
+/** A list's choices as `TagBox` items. */
+function choiceItems(choices: readonly ListOption[]): { value: unknown; text: string }[] {
+  return choices.map(optionOf).map((o) => ({ value: o.value, text: o.label }));
 }

@@ -1,8 +1,9 @@
 import { ApiTable, Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
-import { withOrders } from './code';
+import { code, withOrders } from './code';
 import BarActions from './examples/BarActions';
 import BatchSave from './examples/BatchSave';
+import MultipleValues from './examples/MultipleValues';
 import NewRows from './examples/NewRows';
 import RowActions from './examples/RowActions';
 import SaveModes from './examples/SaveModes';
@@ -35,6 +36,18 @@ export default function DataGridEditingPage() {
         <Example files={withOrders('NewRows.tsx')} stack>
           <NewRows />
         </Example>
+      </Section>
+
+      <Section anchor="multiple" title="Columns with several values">
+        <p>
+          <Rich text="With `multiple: true`, a cell holds a list of values (an array) of the column's `type`: `list` choices, `lookup` keys, numbers or texts. It shows their texts joined the way the locale writes lists (“Red, Navy”) and is edited with a `TagBox`. A pick adds or removes a value and leaves the list open, and a text or number column takes typed texts as values. Enter on the empty input, Tab or leaving the cell keeps the values; Escape closes the list, then clears the typed text, then cancels the edit. An empty list is no value, so `required` asks for at least one." />
+        </p>
+        <Example files={code('MultipleValues.tsx', 'customers.ts')} stack>
+          <MultipleValues />
+        </Example>
+        <p>
+          <Rich text="A filter condition holds when one of the values passes it, and with `<>` when none of them does. The header filter lists the values one by one, a row counted once for each, and the search finds the text of any value. Rows sort and group by the joined texts, copying and exporting write them, and pasted text is split at the locale's separator. With an `ODataAdapter`, name the fields in its `collections` option so that their conditions are written with `any()`." />
+        </p>
       </Section>
 
       <Section anchor="actions" title="Row actions">

@@ -2,6 +2,8 @@ import { reactive, read, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import type { GridColumn } from '../grid-column';
 import type { GridSettings } from '../grid-settings';
+import { listValues } from './cell-list';
+import { cellValue } from './cell-value';
 import type { ColumnModel } from './ColumnModel';
 import type { GroupLevel } from './group-level';
 import type { GroupNode } from './group-node';
@@ -29,6 +31,8 @@ export class GridGroups<T> {
   constructor(
     private readonly columns: ColumnModel<T>,
     private readonly settings: Switches<GridSettings>,
+    /** How a list column (`multiple`) orders its groups: by the texts of their values. */
+    private readonly listCompare: (col: GridColumn<T>) => ((a: unknown, b: unknown) => number) | undefined = () => undefined,
   ) {}
 
   get items(): data.GroupItem[] {
@@ -111,7 +115,7 @@ export class GridGroups<T> {
   levels(): GroupLevel[] {
     return this.state.items.map((g) => {
       const col = this.columns.get(g.field);
-      return { field: g.field, dir: g.dir ?? 'asc', serverField: serverFieldOf(col), read: readerOf(col), compare: col.groupCompare };
+      return { field: g.field, dir: g.dir ?? 'asc', serverField: serverFieldOf(col), read: readerOf(col), compare: col.groupCompare ?? this.listCompare(col) };
     });
   }
 
@@ -179,6 +183,13 @@ function readerOf(col: GridColumn): ((row: unknown) => unknown) | undefined {
   if (typeof col.textFrom === 'string') {
     const field = col.textFrom;
     return (row) => data.getField(row, field);
+  }
+  // A list is grouped by its values together; an empty one is no value.
+  if (col.multiple) {
+    return (row) => {
+      const values = listValues(cellValue(col, row));
+      return values.length ? values : null;
+    };
   }
   return col.value as ((row: unknown) => unknown) | undefined;
 }
