@@ -14,6 +14,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `x:deactivated`), so a toolbar or a merge reads it from the component tree. Three parts keep the attribute on purpose:
   a details row out of view stays laid out so its content keeps its scroll and frames, and the pager's info and the
   toolbar's target text stay in the page for the screen reader.
+- `Scheduler` and `RecurrenceEditor` hide their parts the same way: appointments that do not fit a month cell,
+  resize handles, recurrence marks, "more" buttons, the current time line, the all-day panel, the loading and error
+  states, the agenda's empty text and the tooltip's rows.
 
 ## [0.1.0-beta.9] - 2026-11-13
 

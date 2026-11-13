@@ -13,7 +13,7 @@ import { CellWriter } from './CellWriter';
 import { cellWords } from './cell-words';
 import { part } from '../../../core/draw-parts';
 import { isFocused } from '../../../core/focus';
-import { css, flag, put, shown, text } from '../../../core/part-writes';
+import { css, flag, kept, put, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -274,7 +274,7 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
   private drawNow(): void {
     const { host } = this;
     const at = host.model.nowTick();
-    shown(this.now, host.showCurrentTime() && at !== null);
+    kept(this.now, host.showCurrentTime() && at !== null);
     css(this.now, '--_at', String(at ?? 0));
   }
 
@@ -407,7 +407,7 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
       );
     } else {
       const swatch = part<HTMLSpanElement>(content, 'span', 'mx-scheduler__group-swatch');
-      shown(swatch, !!resource.color);
+      kept(swatch, !!resource.color);
       css(swatch, '--_color', resource.color ?? '');
       text(part<HTMLSpanElement>(content, 'span', 'mx-scheduler__group-text'), resource.text);
     }
@@ -417,7 +417,7 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
     if (this.filled.get(c)?.template !== this.host.headerTemplate()) this.fillHead(c, level, resource);
     const starts = !!this.row.starts[level];
     flag(c, 'data-continued', !starts);
-    shown(this.filled.get(c)?.content ?? null, starts);
+    kept(this.filled.get(c)?.content ?? null, starts);
   }
 
   private makeMore(more: More): Component<HTMLButtonElement> {

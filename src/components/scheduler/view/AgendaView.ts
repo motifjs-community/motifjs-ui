@@ -3,7 +3,7 @@ import { onReState } from '../../../core/on-re-state';
 import type { AgendaDay } from '../model/agenda-day';
 import type { AgendaPiece } from '../model/agenda-piece';
 import { part } from '../../../core/draw-parts';
-import { css, flag, put, shown, text } from '../../../core/part-writes';
+import { css, flag, kept, put, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 import type { ShownView } from './shown-view';
@@ -115,8 +115,8 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> implement
     const host = this.host;
     const agenda = host.model.state.agenda;
     put(this.list, 'aria-label', host.text('schedulerAgenda'));
-    shown(this.list, agenda.length > 0);
-    shown(this.empty, agenda.length === 0);
+    kept(this.list, agenda.length > 0);
+    kept(this.empty, agenda.length === 0);
     text(this.empty, host.text('schedulerNoAppointments'));
     this.days.show(agenda);
   }
@@ -171,7 +171,7 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> implement
     const format = this.host.format;
     put(c, 'aria-label', `${day.label ? `${day.label}, ` : ''}${format.fullDate(day.day.date)}`);
     flag(c, 'data-today', day.day.today);
-    shown(drawn.resource, day.first && !!day.group);
+    kept(drawn.resource, day.first && !!day.group);
     text(drawn.resource, day.label);
     flag(drawn.head, 'data-today', day.day.today);
     text(drawn.number, format.dayNumber(day.day.date));
@@ -245,7 +245,7 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> implement
     if (drawn.details) text(drawn.details, this.details(piece));
     if (drawn.mark) {
       put(drawn.mark, 'data-mark', piece.exception ? 'exception' : 'series');
-      shown(drawn.mark, !!(host.recurrenceMarks() && (piece.series || piece.exception)));
+      kept(drawn.mark, !!(host.recurrenceMarks() && (piece.series || piece.exception)));
     }
   }
 

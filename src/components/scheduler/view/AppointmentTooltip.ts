@@ -3,7 +3,7 @@ import { givenField } from '../../../core/given-field';
 import { pencilMark, trashMark } from '../../../core/glyphs';
 import { Button } from '../../button/Button';
 import { part } from '../../../core/draw-parts';
-import { css, flag, shown, text } from '../../../core/part-writes';
+import { css, flag, kept, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -91,15 +91,15 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
     text(parts.title, title === undefined || title === null || title === '' ? host.text('schedulerNoTitle') : String(title));
     text(parts.time, this.when(item));
     const own = this.ownTime(item);
-    shown(parts.zone, own !== '');
+    kept(parts.zone, own !== '');
     text(parts.zone, own);
     const repeats = this.repeats(item);
     flag(parts.repeat, 'data-exception', !!item && host.model.isException(item));
-    shown(parts.repeat, repeats !== '');
+    kept(parts.repeat, repeats !== '');
     text(parts.repeat, repeats);
     parts.resources.show(item ? host.resources.itemsOf(item) : []);
     const description = String(field('description') ?? '');
-    shown(parts.description, description !== '');
+    kept(parts.description, description !== '');
     text(parts.description, description);
     this.editButton.text = host.text('schedulerEdit');
     this.editButton.visible = !!item && this.props.canEdit(item);
@@ -148,7 +148,7 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
         span.class.add('mx-scheduler__tooltip-resource-item');
         const swatch = part(span, 'span', 'mx-scheduler__resource-swatch');
         swatch.attr.add({ 'aria-hidden': 'true' });
-        shown(swatch, !!item.color);
+        kept(swatch, !!item.color);
         css(swatch, '--_color', item.color ?? '');
         text(part(span, 'span', ''), item.text);
         return span;

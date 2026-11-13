@@ -4,7 +4,7 @@ import type { HeaderCell } from '../model/header-cell';
 import type { HeaderRow } from '../model/header-row';
 import type { ResourceHeaderContext } from '../resource-header-context';
 import { part } from '../../../core/draw-parts';
-import { css, put, shown, text } from '../../../core/part-writes';
+import { css, kept, put, text } from '../../../core/part-writes';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -119,7 +119,7 @@ export class GroupHeads<T> extends Component<HTMLDivElement, Props<T>> {
     put(c, 'data-edge', cell.edge || null);
     css(c, 'grid-column', `${cell.first + (this.props.ruler ? 2 : 1)} / span ${cell.span}`);
     if (drawn.swatch) {
-      shown(drawn.swatch, !!cell.resource?.color);
+      kept(drawn.swatch, !!cell.resource?.color);
       css(drawn.swatch, '--_color', cell.resource?.color ?? '');
     }
     if (drawn.text) text(drawn.text, cell.resource?.text ?? '');

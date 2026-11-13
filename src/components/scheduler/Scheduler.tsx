@@ -22,7 +22,7 @@ import { Button } from '../button/Button';
 import { Calendar } from '../calendar/Calendar';
 import { Spinner } from '../progress/Spinner';
 import { Toolbar } from '../toolbar/Toolbar';
-import { css, flag, mark, put, shown, text } from '../../core/part-writes';
+import { css, flag, kept, mark, put, text } from '../../core/part-writes';
 import { windowOf } from '../../core/page-documents';
 import { appRootOf } from '../../core/page-layer';
 import { KeyedParts } from './view/KeyedParts';
@@ -1591,9 +1591,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       const t = (key: keyof UiStrings) => this.textOf(key);
       const loading = this.loading;
       if (parts.content) flag(parts.content, 'aria-busy', loading);
-      shown(root.loading, loading);
+      kept(root.loading, loading);
       root.spinner.label = t('loading');
-      shown(root.failed, parts.version.status === 'error');
+      kept(root.failed, parts.version.status === 'error');
       text(root.failedText, t('loadFailed'));
       root.retry.text = t('retry');
     });
@@ -1606,7 +1606,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const swipe = this.parts.version.swipe;
     put(edge, 'data-side', swipe.next ? 'next' : 'previous');
     flag(edge, 'data-ready', swipe.ready);
-    shown(edge, swipe.active);
+    kept(edge, swipe.active);
   }
 
   /** The text read out last. */

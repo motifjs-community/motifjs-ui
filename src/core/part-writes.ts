@@ -81,8 +81,8 @@ export function shown(part: ComponentBase | null, on: boolean): void {
  * In the page or not, in its place: hidden the MotifJS way (a mark holds its place), so the part stays a child
  * and goes with its parent. Taken out at once, with no leave animation.
  */
-export function kept(part: ComponentBase, on: boolean): void {
-  if (part.isVisible === on) return;
+export function kept(part: ComponentBase | null, on: boolean): void {
+  if (!part || part.isVisible === on) return;
   if (on) {
     void part.motif.show();
     return;

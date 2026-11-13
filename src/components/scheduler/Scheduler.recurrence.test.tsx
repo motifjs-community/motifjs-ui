@@ -84,7 +84,7 @@ describe('Scheduler: series', () => {
     expect(s.occurrencesOf(s.seriesOf(occurrence)!, at(1, 0), at(31, 0)).length).toBe(12);
     s.recurrenceMarks = false;
     await tick();
-    expect(shown[0].querySelector<HTMLElement>('.mx-scheduler__mark')!.hidden).toBe(true);
+    expect(shown[0].querySelector('.mx-scheduler__mark')).toBeNull();
   });
 
   it('this occurrence, by the keys: it is asked, the occurrence goes apart and its time is left out of the series', async () => {
@@ -365,17 +365,16 @@ describe('RecurrenceEditor', () => {
       new RecurrenceEditor({ value: 'FREQ=MONTHLY;BYMONTHDAY=15', start: new Date(2026, 9, 26, 9), locale: 'en-GB', onValueChanged: (e) => changes.push(e.value) }),
     );
     await tick();
-    const field = editor.element.querySelector<HTMLElement>('.mx-recurrence-editor__days-field')!;
     // A control that is not shown is out of the page.
+    const field = () => editor.element.querySelector<HTMLElement>('.mx-recurrence-editor__days-field');
     const weekdayShown = () => !!editor.element.querySelector('.mx-recurrence-editor__weekday');
-    expect(field.hidden).toBe(true);
+    expect(field()).toBeNull();
     editor.value = 'FREQ=WEEKLY;BYDAY=MO';
     await tick();
-    expect(field.hidden).toBe(false);
-    expect([...field.querySelectorAll('.mx-recurrence-editor__day')].filter((d) => d.hasAttribute('data-pressed'))).toHaveLength(1);
+    expect([...field()!.querySelectorAll('.mx-recurrence-editor__day')].filter((d) => d.hasAttribute('data-pressed'))).toHaveLength(1);
     editor.value = 'FREQ=MONTHLY;BYMONTHDAY=15';
     await tick();
-    expect(field.hidden).toBe(true);
+    expect(field()).toBeNull();
     expect(weekdayShown()).toBe(false);
     const byWeekday = editor.element.querySelectorAll<HTMLInputElement>('.mx-recurrence-editor__by input')[1];
     byWeekday.checked = true;

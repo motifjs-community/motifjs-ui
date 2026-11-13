@@ -15,7 +15,7 @@ import { CellWriter } from './CellWriter';
 import type { CellSpot } from './cell-spot';
 import { cellWords } from './cell-words';
 import { part } from '../../../core/draw-parts';
-import { css, flag, mark, put, shown, text } from '../../../core/part-writes';
+import { css, flag, kept, mark, put, text } from '../../../core/part-writes';
 import { GroupHeads } from './GroupHeads';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
@@ -188,7 +188,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> implements 
     css(parts.head, '--_columns', columns);
     css(parts.body, '--_columns', columns);
     css(parts.body, '--_rows', String(st.slots.length));
-    shown(parts.allDay, model.view.allDayPanel);
+    kept(parts.allDay, model.view.allDayPanel);
     css(parts.allDay, '--_lines', String(Math.max(1, Math.min(st.allDay.lanes, host.allDayLines() + 1))));
     text(parts.allDayLabel, t('schedulerAllDay'));
     put(parts.allDayGrid, 'aria-label', t('schedulerAllDay'));
@@ -563,7 +563,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> implements 
           return now;
         },
         (now, column) => {
-          shown(now, host.showCurrentTime() && model.nowAt() !== null);
+          kept(now, host.showCurrentTime() && model.nowAt() !== null);
           css(now, '--_column', String(column.index));
           css(now, 'inset-block-start', `${(model.nowAt() ?? 0) * 100}%`);
         },
@@ -656,7 +656,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> implements 
     const st = host.model.state;
     this.moreOf.set(button, column);
     const count = st.allDay.more[column.index] ?? 0;
-    shown(button, count > 0);
+    kept(button, count > 0);
     css(button, 'grid-column', String(column.index + 1));
     css(button, 'grid-row', String((st.allDay.moreAt[column.index] ?? 0) + 1));
     put(button, 'aria-label', host.text('schedulerMoreLabel', { count, date: `${cellWords(host, column, -1).group}${host.format.fullDate(column.day.date)}` }));

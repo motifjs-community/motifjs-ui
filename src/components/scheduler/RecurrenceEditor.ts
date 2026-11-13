@@ -20,7 +20,7 @@ import { RadioGroup } from '../radiogroup/RadioGroup';
 import { RecurrenceDraft, type DraftContext, type DraftState } from './model/RecurrenceDraft';
 import type { RecurrenceEditorProps } from './recurrence-editor-props';
 import { part } from '../../core/draw-parts';
-import { put, shown, text } from '../../core/part-writes';
+import { kept, put, text } from '../../core/part-writes';
 
 const OWN = ['value', 'start', 'allDay', 'timeZone', 'frequencies', 'firstDayOfWeek', 'summary', 'readOnly', 'locale', 'texts'] as const;
 
@@ -337,7 +337,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     const units = repeats ? UNITS[s.frequency as RecurrenceFrequency] : null;
     e.interval.suffix = units ? t(new Intl.PluralRules(this.locale).select(s.interval) === 'one' ? units[0] : units[1]) : '';
 
-    shown(e.daysField, s.frequency === 'weekly');
+    kept(e.daysField, s.frequency === 'weekly');
     text(e.daysLabel, t('recurrenceOn'));
     e.days.forEach((button, i) => {
       const day = s.days[i];
@@ -378,7 +378,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     const sameDay = e.until.value?.getTime() === s.until?.getTime();
     field(e.until, t('recurrenceUntil'), sameDay ? e.until.value : s.until, repeats && s.end === 'until');
 
-    shown(e.summary, this.summary && repeats);
+    kept(e.summary, this.summary && repeats);
     text(e.summary, this.summaryText);
   }
 

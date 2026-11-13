@@ -10,7 +10,7 @@ import type { StripRow } from '../model/strip-row';
 import { AppointmentBox } from './AppointmentBox';
 import { cellWords } from './cell-words';
 import { part } from '../../../core/draw-parts';
-import { css, flag, put, shown, text } from '../../../core/part-writes';
+import { css, flag, kept, put, text } from '../../../core/part-writes';
 import { GroupHeads } from './GroupHeads';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
@@ -367,7 +367,7 @@ export class MonthView<T> extends Component<HTMLDivElement, Props<T>> implements
     this.columnOf.set(button, column);
     const inWeek = column.index % host.model.perRow;
     const count = week.more[inWeek] ?? 0;
-    shown(button, count > 0);
+    kept(button, count > 0);
     css(button, 'grid-column', String(inWeek + 1));
     css(button, 'grid-row', String((week.moreAt[inWeek] ?? 0) + 1));
     put(button, 'aria-label', host.text('schedulerMoreLabel', { count, date: `${cellWords(host, column, -1).group}${host.format.fullDate(column.day.date)}` }));

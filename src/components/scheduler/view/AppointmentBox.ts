@@ -6,7 +6,7 @@ import type { StripPiece } from '../model/strip-piece';
 import type { TimedPiece } from '../model/timed-piece';
 import type { DragMode } from './AppointmentDrag';
 import { part } from '../../../core/draw-parts';
-import { css, flag, put, shown, text } from '../../../core/part-writes';
+import { css, flag, kept, put, text } from '../../../core/part-writes';
 import type { SchedulerHost } from './scheduler-host';
 
 type Piece<T> = TimedPiece<T> | StripPiece<T> | LinePiece<T>;
@@ -163,19 +163,19 @@ export class AppointmentBox<T> extends Component<HTMLDivElement, Props<T>> {
     for (const name of this.placed) if (!(name in place)) css(this, name, '');
     for (const [name, value] of Object.entries(place)) css(this, name, value);
     this.placed = Object.keys(place);
-    shown(this, isTimed(piece) || !piece.hidden);
+    kept(this, isTimed(piece) || !piece.hidden);
     const canResize = this.resizable();
     const lifted = host.touchSelected(target);
-    shown(parts.start, canResize && !piece.before);
-    shown(parts.end, canResize && !piece.after);
-    shown(parts.startGrip, lifted);
-    shown(parts.endGrip, lifted);
-    shown(parts.drop, !!piece.invalid);
-    shown(parts.mark, !!(host.recurrenceMarks() && (piece.series || piece.exception)));
+    kept(parts.start, canResize && !piece.before);
+    kept(parts.end, canResize && !piece.after);
+    kept(parts.startGrip, lifted);
+    kept(parts.endGrip, lifted);
+    kept(parts.drop, !!piece.invalid);
+    kept(parts.mark, !!(host.recurrenceMarks() && (piece.series || piece.exception)));
     if (parts.mark) put(parts.mark, 'data-mark', piece.exception ? 'exception' : 'series');
     const when = this.time();
     if (parts.time) {
-      shown(parts.time, when !== '');
+      kept(parts.time, when !== '');
       text(parts.time, when);
     }
     if (parts.text) text(parts.text, piece.text || host.text('schedulerNoTitle'));
