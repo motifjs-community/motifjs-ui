@@ -6,6 +6,263 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.9] - 2026-11-13
+
+### Fixed
+
+- `DataGrid` group chip dragged back onto the headers no longer forces a reflow on the drop (Chrome's "Forced reflow"
+  violation): focus moves to the next chip (or the rows) before the chip goes, as with Delete, and the drop place is the
+  one the drag marked. `onGroupDropping` is asked once per drop.
+- `DataGrid` with `rows` and no `rowKey` shows its rows: a row is known by itself. It used to throw MJD303 from its
+  change tracker and stay empty.
+- `DataGrid`: grouping, sorting or changing the data with the rows already at the top no longer writes a scroll to the top, which made the browser lay the page out right after the rows were written (the forced reflow of 40-60 ms Chrome reported on a drop to the group panel or a chip click); the header drag also copies the cell's size before marking the drag.
+- `DataGrid`: dragging a column header to the group panel no longer lays the page out again in each move; the panel's
+  drop mark is measured with the rest of the aim.
+- `RibbonMenu` gallery: built once; a change updates only the tile, the label or the columns it touches, and a
+  component icon given as is stays in its grid tile instead of being disposed. `ContextMenu`, the message box, the
+  tab browser window title and the grid's edit window name follow their props with a core `bindings.watch`.
+- `DropDown` and `Lookup` with a `dataSource`: an empty text as `value` (`''`) is no value, as the data layer counts
+  it. The field shows empty and asks the data source for nothing; it used to ask again and again and freeze the page.
+- Components the kit places stay where they belong when their own root is shown or hidden (`x-display`, `x-wait`).
+  The kit no longer moves a component's element by hand: every part that holds one is a component, and the component
+  is added to it. `DataGrid` content from `cell`, `groupCell`, `headerCell`, a band's `headerCell` and the detail
+  `template` used to land under the grid body, more of them on every page change, and a root hidden from the start
+  showed anyway. The same holds now for the cell editor and the edit form row, `FormLayout` items and tabs, the
+  content and footer of `MxForm`, `Drawer`, `BottomSheet` and `ActionSheet`, a `Button`'s JSX children with a menu,
+  icons given as components, the search boxes of `ListBox` and `TreeView`, `Sortable` items and the groups of
+  `TabDocumentManager`. A place is given as a component (`container`, `minimizeTarget`, `Spinner.cover`); popups,
+  toasts and message boxes outside a component tree go to the app's page layer.
+- `TabDocumentManager`: the tab strip's keys and the splitters' keys (arrows, Home, End) no longer count as shortcuts
+  in each other's way: each works only on its own part. Its keys are registered once.
+- `Accordion` and `Tabs`: a section's `content` function is not followed by what builds the section, so reactive
+  values it reads or writes do not run it again.
+- `AvatarGroup` no longer throws when it is disposed: the avatars going with it redrew a group already taken apart,
+  an error nobody caught.
+- `DropDown`, `ComboBox`, `TagBox`, `ListBox` and `Lookup`: an empty list from a data source keeps its "No items" text
+  when the design language changes.
+- `Gauge` and `BarGauge` on a page of another browser window stop their value motion in that window.
+- `MenuBar` merging when shown (`mergeWhen: 'shown'`): a bar that merges is no longer drawn in its own place for a
+  frame before its items move to the main bar. It waits hidden until its place is read, and is shown there only when
+  no main bar takes it.
+- `Toolbar`: a bar that does not show (a hidden panel, a closed drawer) moves nothing into its "more" menu; its size
+  notice fits it once it shows. It used to fit into less than no room, and a page of such bars laid itself out more
+  than 16 times in one run. The "more" button is measured once, and again only after a change of look.
+- `TabDocumentManager`: a new width that changes the presentation moves the dock areas and windows back home in a
+  measure, their scrolls read in its read; a floating window kept in view takes the room its measure read. Neither
+  lays the page out from a size notice or a write any more.
+- `Toaster`: toasters on one page with the same `hotkey` share one shortcut, which goes to the newest toast of any of
+  them and back. A toaster of the app beside `Toaster.default` used to clash with it on F8 (only the first one ran).
+
+### Changed
+
+- `Tabs` and `TabDocumentManager` hide the panels of the tabs and documents not shown the MotifJS way
+  (`motif.hide`): out of the page, in their place, kept whole with their content, scroll and focus. Core knows a hidden
+  panel (`isVisible`, `x:deactivated`); only the shown tab writes `aria-controls`, since only its panel is in the page.
+- Update in place instead of drawing their parts again: `MenuList` (every menu), the buttons of every field
+  (`TextBox`, `DropDown`, ...), the `Lookup` column header. A changed field changes only what shows it; the list keeps
+  the parts of the items it keeps. `DropDown` draws its value and its open list again only when they change.
+  `OptionList` (the list of `DropDown`, `ComboBox`, `TagBox`, `ListBox`, `DateBox`...) keeps one option per item, in a
+  long list over the rows in view too: items given again keep the options of the items they keep, and an option's
+  text, selection, highlight and enabled state change in place. Options now appear in the next microtask after
+  `setItems`, as other bound lists do. An `itemTemplate` draws each option once, and again only when the template
+  itself changes: what it shows changes through its own bindings, not through `refresh()`. `TreeView` keeps the row
+  of every key whose look stays when the items are read again or filtered, the rows in open groups too; only a row
+  whose template item, icon or parent changed is drawn anew. A `TreeView` row's group is built when it first opens;
+  closing it hides the group with its rows (`hidden`), opening it shows the same rows again, kept by key if the
+  children changed meanwhile. A search that leaves a long `OptionList` scrolled past its end keeps the options of the
+  items that stay instead of making them again. `Breadcrumb` keeps a step per item: a changed text, link or icon
+  changes only what shows it, and only a step that turns between link, button and current page gets a new face.
+  `BottomNavigation` keeps an item per given item when items are added or removed; only an item that turns between
+  button and link is made anew. `MenuBar` keeps a top item's part per key: a changed text, hint, icon, enabled state
+  or submenu changes only what shows it, and a merge or an unmerge keeps the parts of the main bar's items it keeps.
+  The main bar also keeps, hidden, the parts of a merged bar's items after it leaves and of its own items a merged
+  bar takes away (`merge: 'remove'`), and shows the same parts when that bar merges again or leaves; those of a bar
+  that is disposed or given other items go with it. `AppMenu` keeps an item's part per key when items are added,
+  removed or moved; only an item that moves between the top and the bottom list or turns between button and link
+  gets a new part, and a change of one item's text, hint, icon, badge or link changes only that item's part.
+  `SpeedDial` keeps an action's button per key (else per action) when the actions change. `Stepper` (and so
+  `Wizard`) keeps a step per index when steps are added or removed: a new item at an index changes what that step
+  says, a changed value only the steps' states, and `clickable` gives the steps new faces in the same steps. `Gallery`
+  keeps a slide per item (its `content` is made once) and a dot per index when items are added, removed or moved, and
+  a changed item or value changes only what shows it. Their parts that hide (a step's number, mark, description and
+  line; a slide's caption) are kept aside in their place, out of the page, instead of `hidden`, and their steps,
+  slides and states now change in the next microtask after the items or the value, as other bound lists do.
+  `FormLayout` is no longer made again when its `data` or `items` change: a new data object reaches the editors and
+  the templates through their bindings (a template's `context.data` is the form's data now), and new items keep the
+  cell, editor and typed text of every item that stays (by field, else by kind and place, in groups and tabs too), so
+  only the items added, removed or made another way (another editor, template or editor function) are made or taken
+  out. An item that is not shown is kept aside in its place, out of the page, instead of `hidden`.
+  `FilterBuilder` keeps a row per condition and group: a changed field, operation, value or group operation changes
+  only that item's buttons, an item added or removed leaves the other rows alone, and a new `value` keeps the rows of
+  the items in the same places (the tree is updated in place, so `root` stays the same object). Its rows now change in
+  the next microtask after a change; `openEditor` on a condition added just now opens the editor once its row is
+  there. The `DataGrid` toolbar keeps an item's part when the items are given again as new objects under the same
+  names. The titles of a folded dock area (`TabDocumentManager`) keep their buttons, and a changed title or icon
+  changes only that title. `Timeline` keeps an event's row while the event stays when events are added, removed or
+  changed; only turning the timeline or making it collapsible makes the rows again. `RibbonMenu` keeps a tab's part
+  per key when tabs are added, removed or moved, and a command's part when it is changed by path (given anew under
+  its key): a changed text, icon, state or menu changes only what shows it, and only a command of another kind is made
+  anew. Groups and commands the user hides are kept out of sight and shown again as they were. A text with an access
+  key (tabs, labels, menus) keeps its parts when it changes, the key's part kept aside while there is none.
+  `TagBox` keeps a tag per value: adding or removing one leaves the other tags (and the "+N" tag) alone, and a tag's
+  label is drawn again only when its item or the `tagTemplate` changes; the tags now change in the next microtask
+  after the value, as other bound lists do. `DropDown` writes its value into the same text part (now
+  `.mx-drop-down__value`); the wait's text and what a template draws (in `.mx-drop-down__drawn`) are kept aside while
+  not shown. `Slider` ticks, `OtpInput` boxes and separators, and `ColorPicker` swatches stay in their places when
+  their settings or the palette change. The `DataGrid` summary items and row action buttons write a new text into the
+  parts they have (an action's text is now in `.mx-button__text`); the phone list and tools of `TabDocumentManager`
+  write a changed title, description, icon or state into a row's parts. The chart tooltip writes each point into the
+  same title and rows, a pie or funnel keeps a slice per row key, and a radar keeps each series' shape, hidden
+  series kept aside.
+  `Calendar` builds its grid once per view: another month, year, value or focus changes the cells' texts and marks.
+  `Scheduler` keeps the cells of its day, week, month and timeline grids when `dataCellTemplate` (or a view's own)
+  changes: the same cells are filled again by the new template, where the grid was made again before.
+- Every component draws its parts as MotifJS components and listens through them: no part is made, moved or taken
+  out by hand, and no listener is added to an element directly. Listeners go with their component when it is
+  disposed, so none stays behind; the window and the document are listened to in one place. A part hidden by a
+  component stays its child and is disposed with it.
+- Warnings about a setting that cannot work (no exporter for a format, a data source that does not load everything, a
+  shortcut that takes keys already taken, an unknown time zone) go through core's `errorHandler`: shown in development,
+  seen by the devtools. An error thrown by an action that nobody listens to goes to `errorHandler.report`.
+- `TabDocumentManager` moves groups between splits, windows and dock areas through the component tree; what scrolled
+  inside a moved group keeps its place, and a frame inside it loads again.
+- `TabDocumentManager.focusPart(by)` is now `focusNextPart(by)`.
+- Access keys are the kit's own: Alt and a letter reach only a component that declares the key. An element of the app
+  with an `aria-keyshortcuts` of its own no longer takes part, and while Alt is held the kit marks the components that
+  show the keys (`data-mx-alt`) instead of `<html>`.
+- Focus, Tab and the keys stop at the kit's windows: `MxForm` and the panels over the page (`Drawer`, `BottomSheet`,
+  `ActionSheet`, `AppMenu`). An app's own `<dialog>` is no window to the kit.
+- What depends on the size of a part (room, overflow, scroll position, which rows are seen) is measured once per
+  frame for all that ask and drawn on the next frame, instead of at once. Code that reads the result right after a
+  change waits a frame; `DataGrid.measure()` still measures at once. Element calls the kit makes through a
+  component's `attr` run a microtask later, with the component's other writes.
+- `ContextMenu`: a component as `target` covers what is inside it.
+- `DataGrid` row drag: the `container` and `boundary` selectors match only components in the page's component tree.
+- The kit no longer writes `data-mx-tabindex`; `tabIndex` is read from the controls.
+- `CellTip` of `DataGrid`: the tip for cut-off text opens a frame after the pointer comes, and only on cells whose
+  text the row draws itself, not on content from `cell`. Its error text is the cell's message as the grid holds it.
+- `Gallery` and `MultiView`: motion comes back one frame after a slide without it; a slide asked for meanwhile waits
+  its turn instead of jumping.
+- `Scheduler`: selecting by dragging over an appointment selects the cell under it.
+- `TabDocumentManager`: an element of the app in the tab strip's actions area that belongs to no control counts as
+  strip space when the tabs measure their room. The tools of the presentation mode and
+  `OverlayPanel`'s `data-open` are set on the next frame; `TreeView` scrolls a microtask after the change that asked.
+- Breaking for subclasses of `Control` and `Field`: `focusElement` is now `focusPart`, a component (public, `null` for
+  a control that takes no focus). `Field.createControl()` returns a component, and `area(name)` gives one. A `Field`
+  whose control is a native field says so with `controlTag` (`'input'`, `'textarea'`, `'button'`); without it the
+  label gets no `for` and the control no `readonly`.
+- The kit's language (`uiLocale`) starts with the browser's language (`navigator.language`), English without one; the
+  page's `<html lang>` is no longer read. The app gives its own with `connectI18n(i18n)` or `uiLocale.use(locale)`.
+- `Scheduler.print()` and `LoadPanel` over the page mark the app's root in their window (the `run()` host, an app
+  window's host, or the body when no app runs) instead of `<html>` and `<body>`: `data-mx-print-one` while printing
+  one scheduler, `aria-busy` while the panel shows. The print styles read the mark there; the rest of the page is
+  left off the paper where the browser has `:has()`.
+- `DataGrid` drag selection: the rows cancel their own `selectstart` and are not selectable (`data-drag-select`,
+  `user-select: none`) from the press until it ends; a text selection made before elsewhere in the page is kept.
+- `DataGrid` copy goes through the clipboard API where the window has it (a secure page): text and HTML table where
+  the browser takes a `ClipboardItem`, else the text. Elsewhere, or when the API refuses, through the copy command,
+  from a hidden text area placed for a moment in the app's layer; focus comes back where it was.
+- Media queries (pointer, reduced motion, installed app) and the visual viewport (`BottomSheet` over the on-screen
+  keyboard) are asked of the window the component is in; a window without `matchMedia` or `visualViewport` counts
+  as no match and as the whole window.
+- `DataGrid` column fit (`autoSize`, `autoSizeColumns`, a double click on the resize handle), `Gauge`, `BarGauge`
+  and `Chart` measure their texts in hidden probes in their own font, with the window's next reads. A column fit
+  settles one round later in the same frame; gauge and chart labels are drawn first at an estimate and settle a frame
+  later at the measured widths. Header or cell content of your own is fitted to the parts it holds.
+- Fonts that finish loading in any window of the page count as a change of the look: everything that measured with
+  the look (sizes, rows, text widths) measures again, not only `Gauge`, `BarGauge` and `Chart`.
+- `DataGrid` filter row: a character typed on a filter cell starts the box's text the way typing does
+  (`typeText`); a number filter takes only what a number is written with.
+- `TabDocumentManager`: a new window takes the token values the manager has where its own differ, set on the
+  manager or on a part around it, instead of only the custom properties written on the manager's element.
+
+### Added
+
+- `TextBox.typeText(text)`, `NumberBox.typeText(text)` and `ComboBox.typeText(text)`: put a text in the field as if
+  the user typed it. `DataGrid`'s cell editor starts a typed edit with it.
+- `addShortcut(keys, handler, { within })`: limits a shortcut to parts of its `scope`, such as the tabs of a strip or
+  the splitters: a component, a list of components, or a function that returns them. Shortcuts of different parts may
+  share keys and are not reported as conflicts.
+- `Control.isWindow`: whether a control is a window of its own (`MxForm`, the panels over the page); focus, Tab and
+  the keys stop at it.
+- `Control.focusPart`: the part that takes focus, as a component (the main part of a `Button` with a menu).
+- Parts as components: `AccordionItem.headerPart` and `regionPart`, `TextBox.inputPart`, `DateBox.inputPart`,
+  `AvatarGroup.members`; `ContextMenu.open()` and `ScrollView.scrollToElement()` take components.
+- `contentPart` on `Drawer`, `BottomSheet`, `ActionSheet` and `AppMenu`: the content area as a component, for code
+  that places components itself.
+- More parts as components: `inputPart` on `CheckBox`, `Switch`, `ColorBox`, `ComboBox`, `NumberBox`, `TagBox`,
+  `DateRangeBox` (with `endInputPart`) and `OtpInput`; `TextArea.textAreaPart`, `ContextMenu.targetPart`,
+  `DataGrid.getRowPart()` and `getCellPart()`, `treePart` on `FilterBuilder` and `TreeView`, `MxForm.contentPart`,
+  `panelPart` on the panels over the page, `GroupBox.legendPart`, `SplitContainer.splitterPart`,
+  `RadioGroup.listPart` and `Signature.padPart`; `Tab.headerPart` is public.
+- `RadioGroup.inputParts` and `Slider.thumbParts`: the radios and the thumbs as components. `Sortable.itemParts()`
+  is documented: the components of the items, in order. `ValidationTarget.part`: the component that stands for a
+  target (a field is its own).
+
+### Removed
+
+Breaking: the members that took or gave elements are gone; each has a component form.
+
+- `Popup.open(element)` and an element as `PopupOpenOptions.toggle` or `returnFocus`. Give components:
+  `open(anchorPart, { toggle, returnFocus })`.
+- `ContextMenu.open(element, element)`. Give components: `open(atPart, targetPart)`, or a point.
+- `placePopup(popup, element, …)`. `placePopup` now takes the popup and the anchor as components.
+- `DragGhost.copyOf(element)` and the element forms of `DragGhost`: an element as the place (`root`, and the
+  constructor's fourth argument), as `show` source, as `showAt` content or root, and as `copyPart` source. Give
+  components: `copyPart(part)`, `show(part, …)`, `showAt(part, …)`.
+- `ResizeWatch`, with no replacement: no component used it. An app that needs it uses a `ResizeObserver` of the
+  element's own window.
+- `AccordionItem.headerElement` and `regionElement`: use `headerPart` and `regionPart`.
+- `TextBox.inputElement` and `DateBox.inputElement`: use `inputPart`.
+- `AvatarGroup.avatars`: use `members`, the avatars themselves.
+- `ScrollView.scrollToElement(element)`: give the component.
+- `inputElement` on `CheckBox`, `Switch`, `ColorBox`, `ComboBox`, `NumberBox`, `TagBox` and `DateRangeBox`, and
+  `DateRangeBox.endInputElement`: use `inputPart` and `endInputPart`. `OtpInput.input`: use `inputPart`.
+- `TextArea.textAreaElement`: use `textAreaPart`.
+- `Tab.headerElement`: use `headerPart`.
+- `ContextMenu.targetElement`: use `targetPart`, the component the menu opened on. `ContextMenu.target` (the prop and
+  the property) and `attachContextMenu` take a component only, and `target` reads back the component; wrap an
+  element of your own once in `new Component(element)`.
+- `target` (the element) in `ContextMenu`'s `onOpening` and in the items function of `attachContextMenu`: use `part`,
+  the component the menu opens for, the same as `targetPart`.
+- `DataGrid.getRowElement()` and `getCellElement()`: use `getRowPart()` and `getCellPart()`.
+- `element` in the `DataGrid` events `onCellClick`, `onCellDblClick`, `onRowClick`, `onRowDblClick`, `onCellPrepared`,
+  `onRowPrepared` and `onEditorPrepared`, and in `getVisibleRows()`: use `part`. `itemElement` in the row drag
+  events and in `dragTemplate`: use `itemPart`.
+- `target` in `RibbonMenu`'s `onAppButtonClick` and `onGroupMore`: use `part`.
+- `Draggable.handleElement`: use `handlePart` (`null` when the draggable itself is the handle).
+- `FilterBuilder.treeElement` and `TreeView.treeElement`: use `treePart`.
+- `MxForm.contentElement`, and `panelElement` and `contentElement` on `Drawer`, `BottomSheet`, `ActionSheet` and
+  `AppMenu`: use `contentPart` and `panelPart`.
+- `GroupBox.legendElement`: use `legendPart`. `SplitContainer.splitterElement`: use `splitterPart`.
+- `RadioGroup.listElement`: use `listPart`. `Signature.padElement`: use `padPart`.
+- `Resizable.gripElement`: use `grip`. `SpeedDial.mainElement`: use `main`.
+- `element` on `TabWindow`, `TabDockArea` and `TabBrowserWindow`: use `part`.
+- The element passed to the `changed` and `left` handlers of `ChildSettings`: they get the child only.
+- `OverlayPanel.overElement` (protected): use `overPart()`, the container or the root of the app in its window.
+- An element as a place or a target: `scrollTarget` of `AppBar` and `BottomNavigation`, `Draggable.boundary`,
+  `Resizable.area`, `Drawer.pushTarget`, `MxForm.minimizeTarget`, `MenuBar.mergeScope`, `container` of the panels
+  over the page (`OverlayContainer`), `LoadPanel.target` (`LoadPanelTarget`), `target` of `Tooltip` and `Popover`
+  and `addTooltip` (`TooltipTarget`), `DataGrid`'s `rowDragging.boundary` and `container`, `Spinner.cover(target)`,
+  `Scheduler.showTooltip(appointment, anchor)` and `new InputMask(input)`. Give the component; the property reads it
+  back. The `rowDragging` selectors stay, matched in the component tree.
+- The element given to item templates: `itemTemplate` of `ListBox`, `TagBox`, `TreeView`, `ComboBox` and `DropDown`,
+  `DropDown.fieldTemplate` and `TagBox.tagTemplate` get `(item, host)`, `host` the component the item goes in; put
+  content in it with `controls.add`, or its text with `setText`. The third argument of `ItemTemplate` and
+  `TreeViewItemTemplate` is gone: it was the same place.
+- An element returned as content: from `cell`, `groupCell`, `headerCell`, a band's `headerCell`, the detail `template`
+  and a toolbar item's `content` of `DataGrid`, from `rowDragging.dragTemplate`, and from a chart's `tooltip.format`.
+  Return a component or a text.
+- An element as an icon: `IconSource` is an image address or a component (`icon`, `logo`, `media`, `activeIcon` and
+  the icons of menu, toolbar, ribbon, gallery and grid items). Where an icon is shown a second time (the "more" menu
+  of `Toolbar` and `RibbonMenu`, a ribbon gallery's row and grid), give a component as a function
+  (`icon={() => <svg …/>}`): each copy calls it again. The menus no longer copy an icon's element; a component given
+  as is stays where it is, and the copy has none.
+- `ValidationTarget.element`: give `part`, a component. `ValidationSummary` names a target with no `label` by its
+  part's `aria-label`.
+- `RadioGroup.inputs`: use `inputParts`. `Slider.thumbElements`: use `thumbParts`. `Sortable.elements`: use
+  `itemParts()`.
+
 ## [0.1.0-beta.8] - 2026-11-08
 
 ### New components
