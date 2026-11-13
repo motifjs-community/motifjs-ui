@@ -3,6 +3,7 @@ import type { Box } from './box';
 import { elementOf, isFragment, isText, viewOf } from './element-of';
 import type { Page } from './page';
 import { pendingScroll } from './pending-scrolls';
+import { noteScroll } from './scroll-memory';
 import type { Rect } from './rect';
 import { roundReads } from './round-reads';
 import { isReading, noteRead, runNumber } from './rounds';
@@ -187,6 +188,7 @@ export function scrollOf(component: ComponentBase): { start: number; top: number
   noteRead();
   const start = Math.abs(el.scrollLeft);
   const top = el.scrollTop;
+  noteScroll(el, { start, top });
   const pending = pendingScroll(component);
   if (!pending) return { start, top };
   return { start: Math.max(0, (pending.start ?? start) + pending.byStart), top: Math.max(0, (pending.top ?? top) + pending.byTop) };

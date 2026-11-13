@@ -3,6 +3,7 @@ import { viewOf, whenWindowGoes } from './element-of';
 import type { Job } from './job';
 import type { Loop } from './loop';
 import { forgetReads } from './round-reads';
+import { rememberScrolls } from './scroll-memory';
 import type { View } from './view';
 import type { WindowFrame } from './window-frame';
 
@@ -150,6 +151,7 @@ function frameOf(view: View): WindowFrame {
     frame = { view, jobs: [], notices: new Map(), waiting: null, running: false, run: 0, rounds: 0, tries: 0, warned: new Set(), done: [] };
     frames.set(view, frame);
     watchClosing();
+    rememberScrolls(view);
   }
   return frame;
 }

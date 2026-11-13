@@ -1,12 +1,13 @@
 import { ComponentBase } from '@motifx/core';
 import type { Box } from './box';
-import { elementOf, isText } from './element-of';
+import { elementOf, isText, viewOf } from './element-of';
 import { hasMotion } from './motion';
 import { notePending } from './pending-scrolls';
-import { boxOf, isRtl, rectOf, scrollOf, styleOf } from './read';
+import { boxOf, canMeasure, isRtl, rectOf, scrollOf, styleOf } from './read';
 import type { RevealOptions } from './reveal-options';
 import type { RevealRange } from './reveal-range';
 import { measure } from './rounds';
+import { knownScrollOf, noteScroll, rememberScrolls } from './scroll-memory';
 import type { ScrollMotion } from './scroll-motion';
 import type { ScrollPlace } from './scroll-place';
 
@@ -23,7 +24,9 @@ export function scrollTo(component: ComponentBase, place: ScrollPlace, motion: S
   const to: ScrollToOptions = { behavior };
   if (place.start !== undefined) to.left = isRtl(component) ? -place.start : place.start;
   if (place.top !== undefined) to.top = place.top;
-  component.attr.add({ scrollTo: to });  if (behavior === 'instant') notePending(component, place);
+  component.attr.add({ scrollTo: to });
+  if (behavior === 'instant') notePending(component, place);
+  noteScroll(el, place);
   return true;
 }
 
@@ -38,6 +41,7 @@ export function scrollBy(component: ComponentBase, by: ScrollPlace, motion: Scro
   if (by.top) step.top = by.top;
   component.attr.add({ scrollBy: step });
   if (behavior === 'instant') notePending(component, by, true);
+  noteScroll(el, by, true);
   return true;
 }
 
@@ -72,14 +76,18 @@ export function reveal(scroller: ComponentBase, target: ComponentBase | RevealRa
  * Notes how far `root` and every component under it are scrolled, before a change that loses it (a move to another
  * parent or window, a part hidden, a drag that may be canceled). The function returned scrolls them back in the next
  * round of the windows they are in then. Only components are kept: content that is no component scrolls back on its own
- * or not at all.
+ * or not at all. The places come from what the page told of its scrolls, so nothing is laid out to note them; a window
+ * that tells no scrolls (a test document) is read.
  */
 export function keepScroll(root: ComponentBase): () => void {
   const kept: [ComponentBase, ScrollPlace][] = [];
+  const told = canMeasure(root);
+  const view = viewOf(root);
+  if (told && view) rememberScrolls(view);
   const walk = (component: ComponentBase): void => {
     if (component.isDisposed || isText(component)) return;
     if (elementOf(component)) {
-      const at = scrollOf(component);
+      const at = told ? knownScrollOf(component) : scrollOf(component);
       if (at.start || at.top) kept.push([component, at]);
     }
     for (const child of component.controls.items) walk(child);

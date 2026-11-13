@@ -24,6 +24,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   back). New items, another look or orientation, and `updateOverflow()` still put every item back and measure them.
 - `Toolbar`: adding the "more" button no longer counts it as an item of the bar for a moment, so a separator before the
   items that moved into the menu goes with them.
+- `keepScroll` (the measuring layer) notes the places from what the page told of its scrolls instead of reading every
+  component under the part moved: a document moved to another group, a window or back reads nothing to keep its scroll.
+  A window that tells no scrolls (a test document) is still read.
 - `TabDocumentManager` lays nothing out when a document moves: a panel tells from its markup whether it holds anything
   to focus, and a drop mark shown again starts where it is without reading the page's styles (`Tabs` too, for its
   panels).
