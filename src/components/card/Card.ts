@@ -7,7 +7,7 @@ import type { IconSource } from '../../core/icon-source';
 import { LanguageLook } from '../../core/language-look';
 import { nextId } from '../../core/next-id';
 import { onLanguage } from '../../core/on-language';
-import { mark, put, shown, text } from '../../core/part-writes';
+import { kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Avatar } from '../avatar/Avatar';
 import type { AvatarProps } from '../avatar/avatar-props';
@@ -261,7 +261,7 @@ export class Card extends Control<HTMLDivElement, CardProps> {
       if (control) area.controls.add(control);
     }
     if (slot === 'content') return;
-    shown(area, !!control);
+    kept(area, !!control);
     if (slot === 'action') this.renderHeader();
   }
 
@@ -289,7 +289,7 @@ export class Card extends Control<HTMLDivElement, CardProps> {
     const selectable = !!this.peekProperty('selectable');
     const selected = !!this.peekProperty('selected');
     mark(this, 'data-selected', selectable && selected);
-    shown(this.selectPart, selectable);
+    kept(this.selectPart, selectable);
     if (selectable && !this.checkBox) {
       this.checkBox = new CheckBox({ labelMode: 'hidden', onValueChanged: (e) => e.byUser && this.toggle(!!e.value) });
       this.selectPart.controls.add(this.checkBox);
@@ -310,16 +310,16 @@ export class Card extends Control<HTMLDivElement, CardProps> {
     text(href ? this.titleText : link, '');
     put(link, 'href', href);
     put(link, 'rel', href ? this.peekProperty<string>('rel') || null : null);
-    shown(link, !!href);
-    shown(this.titleText, !href);
+    kept(link, !!href);
+    kept(this.titleText, !href);
     mark(this, 'data-link', !!href);
     mark(this, 'data-pressable', !!href || !!this.peekProperty('clickable'));
     text(this.subtitlePart, subtitle);
     // The check box is named after the title.
     this.renderSelect();
-    shown(this.titlePart, !!title);
-    shown(this.subtitlePart, !!subtitle);
-    shown(this.headerPart, !!(title || subtitle || this.avatarPart || this.placed.action));
+    kept(this.titlePart, !!title);
+    kept(this.subtitlePart, !!subtitle);
+    kept(this.headerPart, !!(title || subtitle || this.avatarPart || this.placed.action));
     put(this, 'aria-labelledby', title ? this.titleId : null);
   }
 
@@ -340,7 +340,7 @@ export class Card extends Control<HTMLDivElement, CardProps> {
     void this.mediaShown?.dispose();
     const media = this.peekProperty<IconSource | null>('media') ?? null;
     this.mediaShown = media ? iconPart(this.mediaPart, media, this.peekProperty<string>('mediaAlt') ?? '') : null;
-    shown(this.mediaPart, !!media);
+    kept(this.mediaPart, !!media);
   }
 
   /** The text of a picture drawn from an address; a component given has its own. */

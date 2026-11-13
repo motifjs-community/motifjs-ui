@@ -6,7 +6,7 @@ import { givenList } from "../../core/given-field";
 import { boxOf, lengthOf, measure, onLayout, probeLengths, rectOf, styleOf, textWidths } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { Place } from "../../parts/chart/chart-paths";
 import { DrawnTexts, formatNumber, type ChartFormat } from "../../parts/chart/chart-text";
@@ -154,7 +154,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         this.valueText = hidden<HTMLDivElement>('div', 'mx-gauge__value');
         this.labelText = hidden<HTMLDivElement>('div', 'mx-gauge__label');
         this.tip = hidden<HTMLSpanElement>('span', 'mx-gauge__tip');
-        shown(this.tip, false);
+        kept(this.tip, false);
         this.motion = new ValueMotion(this, values => this.drawValue(values[0] ?? null));
         probeLengths(this, LENGTHS);
 
@@ -169,7 +169,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         onLayout(this, 'size', () => this.again());
         onLayout(this, 'look', () => this.again());
         this.motif.on('pointermove', (_, e) => this.pointAt(e));
-        this.motif.on('pointerleave', () => shown(this.tip, false));
+        this.motif.on('pointerleave', () => kept(this.tip, false));
         this.motion.set([null]);
         this.motif.setDisposable(() => {
             this.motion.stop();
@@ -429,8 +429,8 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         this.drawName(value);
         text(this.valueText, value === null ? '' : this.number(value));
         text(this.labelText, this.label);
-        shown(this.valueText, this.showValue && value !== null && marker !== 'text');
-        shown(this.labelText, !!this.label);
+        kept(this.valueText, this.showValue && value !== null && marker !== 'text');
+        kept(this.labelText, !!this.label);
     }
 
     draw(measured: Measured): void {
@@ -774,12 +774,12 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             }
         }
         if (!best) {
-            shown(this.tip, false);
+            kept(this.tip, false);
             return;
         }
         const [px, py] = this.shape.spot(best.at).c;
         text(this.tip, best.text);
-        shown(this.tip, true);
+        kept(this.tip, true);
         css(this.tip, 'left', `${(rect.left - host.left + (px - drawn.box.x) / scale).toFixed(1)}px`);
         css(this.tip, 'top', `${(rect.top - host.top + (py - drawn.box.y) / scale).toFixed(1)}px`);
     }

@@ -67,13 +67,13 @@ describe('Popover', () => {
         expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
         expect(trigger.getAttribute('aria-expanded')).toBe('false');
         expect(trigger.getAttribute('aria-controls')).toBe(pop.element.id);
-        expect(pop.element.hidden).toBe(true);
+        expect(pop.element.isConnected).toBe(false);
         trigger.focus();
         trigger.click();
         await settle();
         expect(pop.isOpen).toBe(true);
         expect(s.open).toBe(true);
-        expect(pop.element.hidden).toBe(false);
+        expect(pop.element.isConnected).toBe(true);
         expect(pop.element.getAttribute('role')).toBe('dialog');
         expect(pop.element.getAttribute('aria-labelledby')).toBe(pop.titlePart.element.id);
         expect(pop.titlePart.element.textContent).toBe('Order 42');

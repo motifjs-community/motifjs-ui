@@ -9,7 +9,7 @@ import { boxOf, isInPage, measure, onLayout, type Box } from "../../core/measure
 import { nextId } from "../../core/next-id";
 import { isElement } from "../../core/node-kind";
 import { onLanguage } from "../../core/on-language";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { placeNear } from "../../parts/popup/place-near";
 import type { Placed } from "../../parts/popup/placed";
@@ -78,7 +78,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         if (hasPopover) {
             this.attr.add({ popover: 'manual' });
         } else {
-            mark(this, 'hidden', true);
+            kept(this, false);
         }
         this.arrowPart = part<HTMLSpanElement>(this, 'span', 'mx-popover__arrow');
         this.arrowPart.attr.add({ 'aria-hidden': 'true' });
@@ -258,7 +258,8 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
             return false;
         }
         this.clearTimers();
-        if (!isInPage(this)) {
+        // Placed where its place is in the page; a popover closed without the popover API is out of the page itself.
+        if (!this.parent || !isInPage(this.parent)) {
             if (!this.isBuilt) {
                 this.build();
             }
@@ -270,7 +271,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         if (hasPopover) {
             this.attr.add({ showPopover: true });
         } else {
-            mark(this, 'hidden', false);
+            kept(this, true);
         }
         this.opened = true;
         this.listen(anchor);
@@ -299,7 +300,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         if (hasPopover) {
             this.attr.add({ showPopover: false });
         } else {
-            mark(this, 'hidden', true);
+            kept(this, false);
         }
         // A target already disposed has nothing left to write to or to focus.
         if (this.anchor && !this.anchor.isDisposed) {
@@ -384,9 +385,9 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         const close = !!this.peekProperty<boolean>('showClose');
         const label = this.peekProperty<string>('label') ?? '';
         text(this.titlePart, title);
-        shown(this.titlePart, title !== '');
-        shown(this.closeButton, close);
-        shown(this.header, title !== '' || close);
+        kept(this.titlePart, title !== '');
+        kept(this.closeButton, close);
+        kept(this.header, title !== '' || close);
         put(this, 'aria-labelledby', title ? this.titleId : null);
         put(this, 'aria-label', title ? null : label || null);
     }

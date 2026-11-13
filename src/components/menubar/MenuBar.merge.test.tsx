@@ -73,7 +73,7 @@ describe('MenuBar merging', () => {
     await settle();
     // File joins File, Format stands before Help, View is taken away, Note stays out.
     expect(names(tops(host()))).toEqual(['File', 'Edit', 'Format', 'Help']);
-    expect(child().element.hidden).toBe(true);
+    expect(child().element.isConnected).toBe(false);
     expect(host().mergedBars).toEqual([child()]);
     expect(child().mergedInto).toBe(host());
     host().open('file');
@@ -83,7 +83,7 @@ describe('MenuBar merging', () => {
     child().unmerge();
     await settle();
     expect(names(tops(host()))).toEqual(['File', 'Edit', 'View', 'Help']);
-    expect(child().element.hidden).toBe(false);
+    expect(child().element.isConnected).toBe(true);
     expect(seen).toEqual(['in:Document', 'out:Document']);
   });
 
@@ -136,7 +136,7 @@ describe('MenuBar merging', () => {
     host.mergeHost = false;
     await settle();
     expect(host.mergedBars).toEqual([]);
-    expect(child.element.hidden).toBe(false);
+    expect(child.element.isConnected).toBe(true);
     host.mergeHost = true;
     await settle();
     expect(host.mergedBars).toEqual([child]);
@@ -284,7 +284,7 @@ describe('MenuBar merging', () => {
     // any frame, and never shown in its place.
     child().onMounted();
     expect(child().mergedInto).toBe(host());
-    expect(child().element.hidden).toBe(true);
+    expect(child().element.isConnected).toBe(false);
     // The place is read in the window's next frame.
     const read = async () => {
       await settle();
@@ -293,20 +293,20 @@ describe('MenuBar merging', () => {
     };
     await read();
     expect(child().mergedInto).toBe(host());
-    expect(child().element.hidden).toBe(true);
+    expect(child().element.isConnected).toBe(false);
     child().mergeInto = null;
     await read();
     expect(child().mergedInto).toBe(null);
-    expect(child().element.hidden).toBe(false);
+    expect(child().element.isConnected).toBe(true);
     child().mergeInto = 'none';
     await settle();
-    expect(child().element.hidden).toBe(true);
+    expect(child().element.isConnected).toBe(false);
     await read();
     expect(child().mergedInto).toBe(null);
-    expect(child().element.hidden).toBe(false);
+    expect(child().element.isConnected).toBe(true);
     child().mergeInto = 'main';
     await read();
     expect(child().mergedInto).toBe(host());
-    expect(child().element.hidden).toBe(true);
+    expect(child().element.isConnected).toBe(false);
   });
 });

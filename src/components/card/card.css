@@ -37,7 +37,7 @@
   /* A link card: the title is the link, and its layer covers the card, so a press anywhere follows it; the card's own
      buttons, its action and its check box sit above that layer. The card shows the focus, not the title. */
   .mx-card[data-link],
-  .mx-card:has(> .mx-card__select:not([hidden])) {
+  .mx-card:has(> .mx-card__select) {
     position: relative;
 
     --_z-link: 1;

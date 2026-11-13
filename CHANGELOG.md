@@ -32,6 +32,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   for the page before `onOpening`: the event comes when the open is asked for.
 - A part out of the page (hidden, not placed yet) reads its reading direction from the nearest part in the page, so a
   closed `Drawer` names its side for a right-to-left page.
+- `Card`, `AppBar`, `MenuBar`, `Popover` and `Gauge` hide their parts the same way, and a merged `MenuBar` hides itself
+  so: out of the page while its items are in the main bar. A `Popover` without the browser's popover support is out of
+  the page while closed; it is placed by its target only when it has no place of its own in the page.
 
 ## [0.1.0-beta.9] - 2026-11-13
 

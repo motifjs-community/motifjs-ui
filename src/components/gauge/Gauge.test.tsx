@@ -86,7 +86,7 @@ describe('Gauge', () => {
 
     it('can hide its value and its scale', () => {
         const gauge = make({ value: 10, showValue: false, scale: 'none' });
-        expect($(gauge, '.mx-gauge__value').hidden).toBe(true);
+        expect($(gauge, '.mx-gauge__value')).toBeNull();
         expect(gauge.element.querySelectorAll('.mx-gauge__scale text')).toHaveLength(0);
     });
 
@@ -128,7 +128,7 @@ describe('Gauge', () => {
         expect($(split, '.mx-gauge__needle-tip').getAttribute('d')).toBeTruthy();
         const callout = make({ value: 40, marker: 'text' });
         expect($(callout, '.mx-gauge__callout text').textContent).toBe('40');
-        expect($(callout, '.mx-gauge__value').hidden).toBe(true);
+        expect($(callout, '.mx-gauge__value')).toBeNull();
     });
 
     it('turns a needle into a triangle on a straight gauge', () => {

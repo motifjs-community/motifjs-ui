@@ -53,7 +53,7 @@
         text-align: center;
     }
 
-    .mx-app-bar__row:has(> .mx-app-bar__content:not([hidden])) {
+    .mx-app-bar__row:has(> .mx-app-bar__content) {
         grid-template-columns: auto auto minmax(0, 1fr) minmax(0, auto);
         grid-template-areas: 'start titles content actions';
     }

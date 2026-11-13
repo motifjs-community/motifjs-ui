@@ -1,7 +1,7 @@
 import { Component, Emitter, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute, type ParsedAccessKey } from '../../core/access-key';
 import { loose, part, partBefore, removePart } from '../../core/draw-parts';
-import { kept, put, shown } from '../../core/part-writes';
+import { kept, put } from '../../core/part-writes';
 import { onDocument, onWindow } from '../../core/window-events';
 import { windowOf } from '../../core/page-documents';
 import { holderOf, isInPage, isRendered, isRtl, measure, onLayout } from '../../core/measure';
@@ -458,7 +458,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     }
     parts.mergedHost = host;
     host.parts.merged.push(this);
-    if (this.peekProperty('hideWhenMerged') !== false) shown(this, false);
+    if (this.peekProperty('hideWhenMerged') !== false) kept(this, false);
     host.followItems();
     host.parts.mergedEvent.fire({ bar: this, source: host });
     return true;
@@ -482,7 +482,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     if (!host) return false;
     parts.mergedHost = null;
     host.parts.merged = host.parts.merged.filter((bar) => bar !== this);
-    if (!this.isDisposed && show) shown(this, true);
+    if (!this.isDisposed && show) kept(this, true);
     if (!host.isDisposed) {
       host.followItems();
       host.parts.unmergedEvent.fire({ bar: this, source: host });
@@ -527,7 +527,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     // A bar that merges when shown waits hidden from the start, before it is in the page and before its place is
     // known, so it is never drawn in its place first; any other bar is shown there unless merged.
     const hides = !!into && when === 'shown' && this.peekProperty('hideWhenMerged') !== false;
-    if (!parts.mergedHost) shown(this, !hides);
+    if (!parts.mergedHost) kept(this, !hides);
     if (!into) {
       this.unmerge();
       return;
@@ -562,12 +562,12 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         untracked(() => {
           followWindow();
           if (open) {
-            if (!this.merge()) shown(this, true);
+            if (!this.merge()) kept(this, true);
             return;
           }
           mergeHosts.stopWaiting(this);
           this.leave(!hides);
-          if (hides) shown(this, false);
+          if (hides) kept(this, false);
         });
       // The tree tells at once whether the place is shown: merged when built, before the bar is in the page; the frame's
       // read only confirms it (a place hidden by CSS alone, as in a folded dock area, is found out there).

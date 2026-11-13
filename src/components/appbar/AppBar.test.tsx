@@ -30,9 +30,9 @@ describe('AppBar', () => {
         expect(bar.element.localName).toBe('header');
         expect(bar.element.hasAttribute('title')).toBe(false);
         expect(bar.titlePart.element.textContent).toBe('Orders');
-        expect(bar.subtitlePart.element.hidden).toBe(true);
-        expect(bar.start.element.hidden).toBe(true);
-        expect(bar.actionsHost.element.hidden).toBe(true);
+        expect(bar.subtitlePart.element.isConnected).toBe(false);
+        expect(bar.start.element.isConnected).toBe(false);
+        expect(bar.actionsHost.element.isConnected).toBe(false);
         expect(bar.element.dataset.position).toBe('sticky');
         expect(bar.element.dataset.tone).toBe('surface');
     });
@@ -72,7 +72,7 @@ describe('AppBar', () => {
         page(bar);
         await tick();
         expect(bar.logoHost.element.querySelector('img')!.getAttribute('src')).toBe('a.png');
-        expect(bar.start.element.hidden).toBe(false);
+        expect(bar.start.element.isConnected).toBe(true);
         bar.logo = 'b.png';
         await tick();
         expect(bar.logoHost.element.querySelectorAll('img')).toHaveLength(1);
@@ -80,7 +80,7 @@ describe('AppBar', () => {
         bar.logo = null;
         await tick();
         expect(bar.logoHost.element.querySelector('img')).toBeNull();
-        expect(bar.start.element.hidden).toBe(true);
+        expect(bar.start.element.isConnected).toBe(false);
     });
 
     it('takes navigationGlyph and navigationLabel over the defaults', async () => {
@@ -96,14 +96,14 @@ describe('AppBar', () => {
         const bar = new AppBar({ actions: [{ text: 'Save', click }] });
         page(bar);
         await tick();
-        expect(bar.actionsHost.element.hidden).toBe(false);
+        expect(bar.actionsHost.element.isConnected).toBe(true);
         expect(bar.toolbar.element.getAttribute('role')).toBe('toolbar');
         expect(bar.toolbar.element.getAttribute('aria-label')).toBe(enStrings.appBarActions);
         bar.toolbar.element.querySelector('button')!.click();
         expect(click).toHaveBeenCalledTimes(1);
         bar.actions = [];
         await tick();
-        expect(bar.actionsHost.element.hidden).toBe(true);
+        expect(bar.actionsHost.element.isConnected).toBe(false);
     });
 
     it('holds a control given as content, and takes it out again', async () => {
@@ -111,11 +111,11 @@ describe('AppBar', () => {
         const bar = new AppBar({ title: 'Orders' });
         page(bar);
         await tick();
-        expect(bar.contentHost.element.hidden).toBe(true);
+        expect(bar.contentHost.element.isConnected).toBe(false);
         bar.content = box;
         await tick();
         expect(bar.contentHost.element.contains(box.element)).toBe(true);
-        expect(bar.contentHost.element.hidden).toBe(false);
+        expect(bar.contentHost.element.isConnected).toBe(true);
         bar.content = null;
         await tick();
         expect(bar.contentHost.element.contains(box.element)).toBe(false);

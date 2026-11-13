@@ -4,7 +4,7 @@ import { iconPart, part } from "../../core/draw-parts";
 import { glyph } from "../../core/glyphs";
 import type { IconSource } from "../../core/icon-source";
 import { onLanguage } from "../../core/on-language";
-import { mark, put, shown, text } from "../../core/part-writes";
+import { kept, mark, put, text } from "../../core/part-writes";
 import { boxOf, measure, onLayout, pageOf, scrollerOf } from "../../core/measure";
 import { uiLocale } from "../../core/ui-locale";
 import { Button } from "../button/Button";
@@ -212,9 +212,9 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
         const level = this.headingLevel;
         text(title, this.title);
         text(this.subtitlePart, this.subtitle);
-        shown(title, this.title !== '');
-        shown(this.subtitlePart, this.subtitle !== '');
-        shown(this.titles, this.title !== '' || this.subtitle !== '');
+        kept(title, this.title !== '');
+        kept(this.subtitlePart, this.subtitle !== '');
+        kept(this.titles, this.title !== '' || this.subtitle !== '');
         put(title, 'role', level ? 'heading' : null);
         put(title, 'aria-level', level ? String(level) : null);
     }
@@ -232,7 +232,7 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
             this.start.controls.insert(0, this.navigationButton);
         }
         if (this.navigationButton) {
-            shown(this.navigationButton, on);
+            kept(this.navigationButton, on);
             mark(this.navigationButton, 'data-back', this.navigation === 'back');
         }
         this.drawStart();
@@ -245,12 +245,12 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
     }
 
     drawStart(): void {
-        shown(this.logoHost, !!this.logoPart);
-        shown(this.start, !!this.logoPart || this.navigation !== 'none');
+        kept(this.logoHost, !!this.logoPart);
+        kept(this.start, !!this.logoPart || this.navigation !== 'none');
     }
 
     drawActions(): void {
-        shown(this.actionsHost, this.actions.length > 0);
+        kept(this.actionsHost, this.actions.length > 0);
     }
 
     placeContent(): void {
@@ -261,7 +261,7 @@ export class AppBar extends Control<HTMLElement, AppBarProps> {
             this.placed = control;
             if (control) this.contentHost.controls.add(control);
         }
-        shown(this.contentHost, !!control || !!this.childs?.length);
+        kept(this.contentHost, !!control || !!this.childs?.length);
     }
 
     drawLook(): void {

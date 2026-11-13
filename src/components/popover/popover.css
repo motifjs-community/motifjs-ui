@@ -15,7 +15,7 @@
         --_enter: 0 0;
     }
 
-    .mx-popover:is([popover]:not(:popover-open), [hidden]) {
+    .mx-popover[popover]:not(:popover-open) {
         display: none;
     }
 

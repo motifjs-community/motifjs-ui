@@ -44,9 +44,9 @@ describe('Card', () => {
     expect(coded.element.dataset.variant).toBe('outline');
     expect(coded.element.dataset.size).toBe('sm');
     // Parts with nothing in them are left out.
-    expect(part(coded, 'header').hidden).toBe(true);
-    expect(part(coded, 'footer').hidden).toBe(true);
-    expect(part(coded, 'media').hidden).toBe(true);
+    expect(part(coded, 'header')).toBeNull();
+    expect(part(coded, 'footer')).toBeNull();
+    expect(part(coded, 'media')).toBeNull();
     expect(coded.element.hasAttribute('aria-labelledby')).toBe(false);
   });
 
@@ -66,7 +66,7 @@ describe('Card', () => {
     page(card);
     await settle();
     expect(part(card, 'footer').contains(first.element)).toBe(true);
-    expect(part(card, 'footer').hidden).toBe(false);
+    expect(part(card, 'footer')).not.toBeNull();
     expect(part(card, 'action').textContent).toBe('More');
     const second = new Button({ text: 'Message' });
     card.footer = second;
@@ -74,7 +74,7 @@ describe('Card', () => {
     expect(part(card, 'footer').contains(first.element)).toBe(false);
     expect(first.isDisposed).toBe(false);
     card.footer = null;
-    expect(part(card, 'footer').hidden).toBe(true);
+    expect(part(card, 'footer')).toBeNull();
   });
 
   it('shows a picture with its text for screen readers, and an avatar before the titles', async () => {
@@ -93,14 +93,14 @@ describe('Card', () => {
     page(card);
     await settle();
     const link = card.element.querySelector<HTMLAnchorElement>('.mx-card__link')!;
-    expect(link.hidden).toBe(false);
+    expect(link.isConnected).toBe(true);
     expect(link.textContent).toBe('Lisbon');
     expect(link.getAttribute('href')).toBe('/places/lisbon');
     expect(link.getAttribute('rel')).toBe('router');
     expect(card.element.hasAttribute('data-link')).toBe(true);
     expect(card.element.hasAttribute('tabindex')).toBe(false);
     card.href = null;
-    expect(link.hidden).toBe(true);
+    expect(link.isConnected).toBe(false);
     expect(part(card, 'title').textContent).toBe('Lisbon');
   });
 
