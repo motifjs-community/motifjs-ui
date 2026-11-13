@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumnItem } from './grid-column-item';
@@ -12,7 +12,7 @@ const makeColumns = (): GridColumnItem<Row>[] => [{ field: 'id', title: 'Id', ty
 const makeRows = (n: number): Row[] => Array.from({ length: n }, (_, r) => Object.fromEntries([['id', r + 1], ...fields.map((f, i) => [f, `${r + 1}.${i}`])]));
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 function make(props: Partial<DataGridProps<Row>> = {}) {

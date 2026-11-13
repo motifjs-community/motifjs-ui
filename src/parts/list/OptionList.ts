@@ -501,6 +501,8 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   /** Writes what `read` gives into the part each time it changes, and only then. */
   private bind<V>(owner: ComponentBase, read: () => V, write: (value: V) => void): void {
     owner.bindings.watch(() => {
+      // A part outliving the list (its fields let go) draws nothing more.
+      if (this.isDisposed) return;
       const value = read();
       untracked(() => write(value));
     });

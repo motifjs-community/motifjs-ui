@@ -1,6 +1,6 @@
 import { Component } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -19,7 +19,7 @@ const columns = (): GridColumn<Row>[] => [
 ];
 
 async function settle() {
-  for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(4);
 }
 
 function make(props: Partial<DataGridProps<Row>> = {}, width = 500) {

@@ -75,6 +75,13 @@ export function whenMeasured(owner: ComponentBase): Promise<void> {
   });
 }
 
+/** Whether work waits in `owner`'s window: asked for and not run yet, or a run going on. A test waits for it to be over. */
+export function isMeasurePending(owner: ComponentBase): boolean {
+  const view = viewOf(owner);
+  const frame = view ? frames.get(view) : undefined;
+  return !!frame && (frame.running || frame.jobs.length > 0 || frame.notices.size > 0);
+}
+
 /**
  * Reads in the middle of a write, after what it wrote: the one layout on purpose, for a fit that tries a layout and
  * measures it. Development hears of it outside a write, and of a run that does it more than MOST_TRIES times.

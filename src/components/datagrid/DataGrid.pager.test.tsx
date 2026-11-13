@@ -1,6 +1,6 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -27,7 +27,7 @@ class PageAdapter extends data.ArrayAdapter<Row, number> {
 }
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 function layout(grid: DataGrid<any>, viewport = 2000) {

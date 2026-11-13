@@ -1,7 +1,7 @@
 import { ComponentBase, disposableCore, reactive, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mount, mountHost, tick } from '../../../tests/helpers';
+import { mount, mountHost, settled, tick } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { GridColumn } from './grid-column';
@@ -41,7 +41,7 @@ class RangeAdapter extends data.DataAdapter<Row, number> {
 
 /** Lets every pending load and reactive update finish. */
 async function settle() {
-  for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(4);
 }
 
 /** jsdom has no layout: give the viewport a scroll position and a height. */

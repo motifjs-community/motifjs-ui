@@ -25,7 +25,7 @@ export { mediaOf, onMedia } from './media';
 export { afterStyle, hasMotion, transitionTime } from './motion';
 export { onLayout } from './on-layout';
 export { boxOf, canMeasure, holderOf, isInPage, isRendered, isRtl, pageBackgroundOf, pageOf, rectOf, sameWindow, styleOf } from './read';
-export { measure, measureNow, readAgain, whenMeasured } from './rounds';
+export { isMeasurePending, measure, measureNow, readAgain, whenMeasured } from './rounds';
 export { keepScroll, reveal, scrollBy, scrollerOf, scrollerUnder, scrollIntoView, scrollTo } from './scroll';
 export { textSizes, textWidths } from './text-widths';
 export { viewportOf } from './viewport';

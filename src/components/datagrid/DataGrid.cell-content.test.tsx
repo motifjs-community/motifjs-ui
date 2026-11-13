@@ -1,6 +1,6 @@
 import { reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { treeProblems } from '../../../tests/tree-check';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
@@ -14,7 +14,7 @@ type Row = { id: number; name: string; group: string };
 const makeRows = (n: number): Row[] => Array.from({ length: n }, (_, i) => ({ id: i + 1, name: `Name ${i + 1}`, group: i % 2 ? 'odd' : 'even' }));
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 function layout(grid: DataGrid<any>, viewport = 2000) {

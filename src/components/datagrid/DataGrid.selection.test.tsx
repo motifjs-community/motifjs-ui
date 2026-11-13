@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount, mountHost } from '../../../tests/helpers';
+import { mount, mountHost, settled } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -37,7 +37,7 @@ class ServerAdapter extends data.DataAdapter<Row, number> {
 }
 
 async function settle() {
-  for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(4);
 }
 
 function layout(grid: DataGrid<any>, viewport = 360) {

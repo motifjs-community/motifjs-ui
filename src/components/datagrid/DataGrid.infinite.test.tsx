@@ -1,6 +1,6 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
@@ -43,7 +43,7 @@ class PartAdapter extends data.ArrayAdapter<Row, number> {
 }
 
 async function settle() {
-  for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(8);
 }
 
 function make(props: Partial<DataGridProps<Row>> = {}, viewport = 360) {

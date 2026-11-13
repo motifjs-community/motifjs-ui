@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { DataGrid } from './DataGrid';
@@ -69,7 +69,7 @@ afterEach(async () => {
 });
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 async function make(props: Partial<DataGridProps<Row>> = {}, settings: Record<string, unknown> = {}) {

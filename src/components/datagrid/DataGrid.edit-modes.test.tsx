@@ -1,6 +1,6 @@
 import { data } from '@motifx-community/data';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { windowStack } from '../../core/window-stack';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -41,7 +41,7 @@ beforeAll(() => {
 });
 
 async function settle() {
-  for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(8);
 }
 
 function make(props: Partial<DataGridProps<Row>>, saveMode: data.SaveMode = 'wait') {

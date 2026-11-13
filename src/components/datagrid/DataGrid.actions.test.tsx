@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
@@ -18,7 +18,7 @@ const columns: GridColumn<Row>[] = [
 const makeRows = (n: number): Row[] => Array.from({ length: n }, (_, i) => ({ id: i + 1, name: `Name ${i + 1}`, done: i % 2 === 1 }));
 
 async function settle() {
-  for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(4);
 }
 
 function layout(grid: DataGrid<any>, viewport = 360) {

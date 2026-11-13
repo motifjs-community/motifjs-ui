@@ -1,7 +1,7 @@
 import { Component } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount, tick } from '../../../tests/helpers';
+import { mount, settled, tick } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
 import { ComboBox } from '../combobox/ComboBox';
 import { DropDown } from '../dropdown/DropDown';
@@ -35,7 +35,7 @@ class Customers extends data.ArrayAdapter<Customer, number> {
 }
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 function layout(grid: DataGrid<any>, viewport = 360) {

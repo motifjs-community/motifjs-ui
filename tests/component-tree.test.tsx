@@ -1,7 +1,7 @@
 import { Component, type ComponentBase } from '@motifx/core';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { uiLocale } from '../src/core/ui-locale';
-import { mount } from './helpers';
+import { mount, settled } from './helpers';
 import { recordBuilt, treeProblems } from './tree-check';
 
 /**
@@ -19,7 +19,7 @@ function made(example: unknown): ComponentBase | null {
 }
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 // The kit is compiled once before the first example: that alone takes longer than a test may.

@@ -1,7 +1,7 @@
 import { data } from '@motifx-community/data';
 import ExcelJS from 'exceljs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '../../tests/helpers';
+import { mount, settled } from '../../tests/helpers';
 import { DataGrid } from '../components/datagrid/DataGrid';
 import type { DataGridProps } from '../components/datagrid/data-grid-props';
 import type { GridColumn } from '../components/datagrid/grid-column';
@@ -51,7 +51,7 @@ class Server extends data.ArrayAdapter<Row, number> {
 }
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 async function make(props: Partial<DataGridProps<Row>> = {}) {

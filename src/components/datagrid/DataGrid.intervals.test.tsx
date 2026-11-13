@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
 import type { ListBox } from '../listbox/ListBox';
 import { DataGrid } from './DataGrid';
@@ -33,7 +33,7 @@ class ServerAdapter extends data.ArrayAdapter<Row, number> {
 }
 
 async function settle() {
-  for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(8);
 }
 
 async function make(props: Partial<DataGridProps<Row>> = {}) {

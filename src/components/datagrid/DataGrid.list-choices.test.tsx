@@ -1,6 +1,6 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -17,7 +17,7 @@ const CITIES: ListOption[] = [
 ];
 
 async function settle() {
-  for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(8);
 }
 
 /** A list column whose choices come from a pretend server, counting how often it is asked and with which row. */

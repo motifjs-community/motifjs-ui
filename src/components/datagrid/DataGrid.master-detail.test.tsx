@@ -1,6 +1,6 @@
 import { Component } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { DetailContext } from './detail-context';
@@ -39,7 +39,7 @@ class Detail extends Component<HTMLDivElement> {
 }
 
 async function settle() {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(6);
 }
 
 function make(props: Partial<DataGridProps<Row>> = {}, rows: Row[] = makeRows(), viewport = 360) {

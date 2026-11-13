@@ -142,7 +142,10 @@ export class AdaptiveForm<T> extends Component<HTMLDivElement> {
           put(item, 'data-label-mode', this.shape.labelMode);
         };
         this.texts.add(draw);
-        item.motif.setDisposable(() => this.texts.delete(draw));
+        // The form disposed first has let its fields go.
+        item.motif.setDisposable(() => {
+          if (!this.isDisposed) this.texts.delete(draw);
+        });
         untracked(draw);
         return item;
       },

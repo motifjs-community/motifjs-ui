@@ -1,6 +1,6 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '../../../tests/helpers';
+import { mount, settled } from '../../../tests/helpers';
 import { measureNow } from '../../core/measure';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -44,7 +44,7 @@ function layout(this: HTMLElement): DOMRect {
 }
 
 async function settle() {
-  for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 0));
+  await settled(4);
 }
 
 async function make(props: Partial<DataGridProps<Row>>, place = { left: 0, top: 100, width: 600, height: 400 }) {
