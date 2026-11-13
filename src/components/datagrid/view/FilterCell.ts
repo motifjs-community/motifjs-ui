@@ -1,7 +1,7 @@
 import { Component, ComponentBase, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { handOver, part } from '../../../core/draw-parts';
-import { mark as markPart, put, text as writeText } from '../../../core/part-writes';
+import { kept, mark as markPart, put, text as writeText } from '../../../core/part-writes';
 import { DateBox } from '../../datebox/DateBox';
 import { DropDown } from '../../dropdown/DropDown';
 import type { DropDownItem } from '../../dropdown/drop-down-item';
@@ -158,7 +158,7 @@ export class FilterCell<T> {
     }
     this.drawers.push(() => {
       this.hidden = !model.columns.can(field, 'filterRow');
-      markPart(holder, 'hidden', this.hidden);
+      kept(holder, !this.hidden);
     });
     this.draw();
   }

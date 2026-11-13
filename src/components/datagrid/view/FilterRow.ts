@@ -1,5 +1,5 @@
 import { Component, untracked } from '@motifx/core';
-import { mark, put } from '../../../core/part-writes';
+import { kept, mark, put } from '../../../core/part-writes';
 import { FILTER_ROW, type GridModel } from '../model/GridModel';
 import { FilterCell } from './FilterCell';
 import { orderControls } from '../../../core/order-controls';
@@ -36,7 +36,7 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
     untracked(() => {
       const { grid } = this;
       put(this, 'aria-rowindex', String(grid.columns.bandDepth() + 2));
-      mark(this, 'hidden', !grid.showsFilterRow());
+      kept(this, grid.showsFilterRow());
       mark(this, 'data-active', grid.state.activeRow === FILTER_ROW);
     });
     for (const cell of this.filterCells.values()) cell.draw();

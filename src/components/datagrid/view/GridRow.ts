@@ -5,7 +5,7 @@ import type { CellTipTarget } from './cell-tip-target';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
 import { part, removePart, textPart } from '../../../core/draw-parts';
-import { css, mark, put, text as writeText } from '../../../core/part-writes';
+import { css, kept, mark, put, text as writeText } from '../../../core/part-writes';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
 import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
@@ -75,7 +75,7 @@ export class GridRow<T> {
     const el = this.part.element;
     this.part.class.add('mx-data-grid__row');
     this.part.attr.add({ role: 'row' });
-    mark(this.part, 'hidden', true);
+    kept(this.part, false);
     this.element = el;
     this.check = createCheck(model.text('gridSelectRow'));
     this.expand = createExpandButton(model.text('gridDetails'));
@@ -136,7 +136,7 @@ export class GridRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    mark(this.part, 'hidden', false);
+    kept(this.part, true);
     css(this.part, 'transform', `translateY(${top}px)`);
   }
 
@@ -172,7 +172,7 @@ export class GridRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    mark(this.part, 'hidden', true);
+    kept(this.part, false);
   }
 
   /** Puts the cells in display order and numbers the visible ones; while columns are virtual, only the columns drawn have their cells in the row. */

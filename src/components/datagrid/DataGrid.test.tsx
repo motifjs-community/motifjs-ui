@@ -188,7 +188,8 @@ describe('DataGrid', () => {
       await tick();
     }
     expect(poolSize()).toBe(settled);
-    expect(grid.element.querySelectorAll(`.mx-data-grid__body .mx-data-grid__cell${DATA}`)).toHaveLength(settled * columns.length);
+    // Rows waiting in the pool are out of the page.
+    expect(grid.element.querySelectorAll(`.mx-data-grid__body .mx-data-grid__cell${DATA}`)).toHaveLength(rowEls(grid).length * columns.length);
     await grid.dispose();
   });
 

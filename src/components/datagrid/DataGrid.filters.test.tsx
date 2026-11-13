@@ -91,12 +91,11 @@ afterEach(async () => {
 describe('DataGrid filters', () => {
   it('shows the filter row while a column has a cell in it, as the second header row', async () => {
     const grid = await make({ settings: {} });
-    const row = grid.element.querySelector('.mx-data-grid__row--filter') as HTMLElement;
-    expect(row.hasAttribute('hidden')).toBe(true);
+    const row = () => grid.element.querySelector<HTMLElement>('.mx-data-grid__row--filter');
+    expect(row()).toBeNull();
     grid.columnSettings('name').filterRow = true;
     await settle();
-    expect(row.hasAttribute('hidden')).toBe(false);
-    expect(row.getAttribute('aria-rowindex')).toBe('2');
+    expect(row()!.getAttribute('aria-rowindex')).toBe('2');
     expect(readingRows(grid)[0].getAttribute('aria-rowindex')).toBe('3');
     expect(grid.element.querySelector('[role="grid"]')!.getAttribute('aria-rowcount')).toBe('14');
     expect(filterCell(grid, 'name').querySelector('.mx-field')).not.toBeNull();

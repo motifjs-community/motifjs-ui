@@ -1,7 +1,7 @@
 import { untracked, type Component } from '@motifx/core';
 import { loose, part, removePart } from '../../../core/draw-parts';
 import { orderControls } from '../../../core/order-controls';
-import { css, mark, put } from '../../../core/part-writes';
+import { css, kept, mark, put } from '../../../core/part-writes';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
 import { fillSummaryCell } from './summary-cell';
@@ -28,7 +28,7 @@ export class GroupFooterRow<T> {
     const el = this.part.element;
     this.part.attr.add({ role: 'row' });
     put(this.part, 'tabindex', '-1');
-    mark(this.part, 'hidden', true);
+    kept(this.part, false);
     this.element = el;
     for (const field of model.columns.state.order) this.addColumn(field);
     this.draw();
@@ -60,7 +60,7 @@ export class GroupFooterRow<T> {
       this.node = node;
       this.draw();
     }
-    mark(this.part, 'hidden', false);
+    kept(this.part, true);
     css(this.part, 'transform', `translateY(${top}px)`);
   }
 
@@ -75,7 +75,7 @@ export class GroupFooterRow<T> {
       this.node = null;
       this.draw();
     }
-    mark(this.part, 'hidden', true);
+    kept(this.part, false);
   }
 
   /** Puts the cells in display order and numbers the visible ones; while columns are virtual, only the columns drawn have their cell in the row. */

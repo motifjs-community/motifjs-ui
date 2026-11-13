@@ -214,7 +214,7 @@ describe('master-detail rows', () => {
       onRowExpanded: (e) => told.push(`expanded ${String(e.key)}`),
     });
     await settle();
-    expect(cellOf(grid, 3, 'mx:expand').querySelector<HTMLElement>('.mx-data-grid__expand-button')!.hidden).toBe(true);
+    expect(cellOf(grid, 3, 'mx:expand').querySelector('.mx-data-grid__expand-button')).toBeNull();
     expect(rowEl(grid, 3)!.hasAttribute('aria-expanded')).toBe(false);
     expect(grid.expandRow(3)).toBe(false);
     expect(grid.expandRow(1)).toBe(true);

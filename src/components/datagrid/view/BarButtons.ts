@@ -1,6 +1,6 @@
 import { untracked, type ComponentBase } from '@motifx/core';
 import { moreMark } from '../../../core/glyphs';
-import { mark, put } from '../../../core/part-writes';
+import { kept, put } from '../../../core/part-writes';
 import type { MenuItem } from '../../../parts/menu/menu-item';
 import { Button } from '../../button/Button';
 import type { GridActionLocation } from '../grid-action-location';
@@ -121,11 +121,11 @@ export class BarButtons<T> {
 
   /**
    * Shows or hides a button, and writes its spoken name, what it acts on and its action's id. Hidden
-   * with the attribute: the button keeps its place among the bar's children.
+   * the MotifJS way: the button keeps its place among the bar's children.
    */
   private look(button: Button, shown: boolean, label: string | null, id: string | null) {
     const describedBy = this.options.describedBy;
-    mark(button, 'hidden', !shown);
+    kept(button, shown);
     const face = faceOf(button);
     put(face, 'aria-label', label);
     if (describedBy) put(face, 'aria-describedby', describedBy);

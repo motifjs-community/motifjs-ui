@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- `DataGrid` hides its parts the MotifJS way (`motif.hide`/`motif.show`) instead of the `hidden` attribute: rows waiting
+  in the pool, group and footer rows, the filter row and panel, the pager, the total row, drop marks, check boxes,
+  row actions, expand arrows and toolbar items. A hidden part is out of the page and core knows it (`isVisible`,
+  `x:deactivated`), so a toolbar or a merge reads it from the component tree. Three parts keep the attribute on purpose:
+  a details row out of view stays laid out so its content keeps its scroll and frames, and the pager's info and the
+  toolbar's target text stay in the page for the screen reader.
+
 ## [0.1.0-beta.9] - 2026-11-13
 
 ### Fixed

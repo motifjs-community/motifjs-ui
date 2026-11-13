@@ -66,10 +66,6 @@
     background-image: linear-gradient(var(--_tint), var(--_tint));
   }
 
-  .mx-data-grid__row[hidden] {
-    display: none;
-  }
-
   .mx-data-grid__head {
     position: sticky;
     inset-block-start: 0;
@@ -301,18 +297,9 @@
     text-overflow: ellipsis;
   }
 
-  .mx-data-grid__group-text[hidden],
-  .mx-data-grid__group-own[hidden] {
-    display: none;
-  }
-
   /* Group summary items under their columns: cells on the group row's line, after its text. */
   .mx-data-grid__group-row > .mx-data-grid__summary-cell {
     grid-row: 1;
-  }
-
-  .mx-data-grid__group-row > .mx-data-grid__summary-cell[hidden] {
-    display: none;
   }
 
   .mx-data-grid__group-cell {
@@ -376,18 +363,10 @@
     min-inline-size: 0;
   }
 
-  .mx-data-grid__group-panel[hidden] {
-    display: none;
-  }
-
   .mx-data-grid__group-empty {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .mx-data-grid__group-empty[hidden] {
-    display: none;
   }
 
   .mx-data-grid__chip {
@@ -421,10 +400,6 @@
 
   .mx-data-grid__chip-drop:dir(rtl) {
     translate: 50% 0;
-  }
-
-  .mx-data-grid__chip-drop[hidden] {
-    display: none;
   }
 
   /* A copy of the dragged header (with the header row's look) or chip, next to the pointer. */
@@ -493,10 +468,6 @@
     box-sizing: border-box;
   }
 
-  .mx-data-grid__check[hidden] {
-    display: none;
-  }
-
   .mx-data-grid__check > .mx-glyph {
     grid-area: 1 / 1;
     opacity: 0;
@@ -520,10 +491,6 @@
 
   .mx-data-grid__action {
     flex: none;
-  }
-
-  .mx-data-grid__action[hidden] {
-    display: none;
   }
 
   /* Hidden cell where the action buttons are measured once. */
@@ -581,10 +548,6 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .mx-data-grid__expand-button[hidden] {
-    display: none;
   }
 
   .mx-data-grid__expand-button:dir(rtl) > .mx-glyph {
@@ -646,10 +609,6 @@
     translate: 0 -50%;
   }
 
-  .mx-data-grid__row-drop[hidden] {
-    display: none;
-  }
-
   .mx-data-grid__ghost-rows {
     overflow: hidden;
   }
@@ -692,10 +651,6 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .mx-data-grid__adaptive-button[hidden] {
-    display: none;
   }
 
   /* A text beside its title, in line with the editors' labels. */
@@ -745,10 +700,6 @@
     box-sizing: border-box;
   }
 
-  .mx-data-grid__form-row[hidden] {
-    display: none;
-  }
-
   .mx-data-grid__form-cell {
     outline: none;
   }
@@ -759,10 +710,6 @@
     box-sizing: border-box;
     line-height: normal;
     white-space: normal;
-  }
-
-  .mx-data-grid__form-message[hidden] {
-    display: none;
   }
 
   .mx-data-grid__form-buttons {
@@ -837,10 +784,6 @@
     flex: 1 1 auto;
     align-items: center;
     min-inline-size: 0;
-  }
-
-  .mx-data-grid__filter[hidden] {
-    display: none;
   }
 
   .mx-data-grid__filter > .mx-field[data-in-filter] {
@@ -957,10 +900,6 @@
     pointer-events: none;
   }
 
-  .mx-data-grid__drop[hidden] {
-    display: none;
-  }
-
   /* No rows to show: the body keeps room for the message, also in a grid without a height. */
   .mx-data-grid:is([data-state='empty'], [data-state='loading'], [data-state='error']) .mx-data-grid__body {
     min-block-size: calc(var(--_row-height) * var(--_empty-rows, 3));
@@ -1051,10 +990,6 @@
     min-block-size: var(--_row-height);
   }
 
-  .mx-data-grid__filter-panel[hidden] {
-    display: none;
-  }
-
   .mx-data-grid__filter-icon {
     display: inline-flex;
     flex: none;
@@ -1110,10 +1045,6 @@
     margin-inline-start: auto;
   }
 
-  .mx-data-grid__pager[hidden] {
-    display: none;
-  }
-
   .mx-data-grid__pages,
   .mx-data-grid__page-sizes,
   .mx-data-grid__page-jump {
@@ -1161,12 +1092,6 @@
      taking the room the other items leave so what does not fit goes into its "more" menu. */
   .mx-data-grid__bar-actions {
     flex: 1 1 auto;
-  }
-
-  .mx-data-grid__bar-actions[hidden],
-  .mx-data-grid__bar-action[hidden],
-  .mx-data-grid__bar-menu[hidden] {
-    display: none;
   }
 
   /* Read by screen readers only. */

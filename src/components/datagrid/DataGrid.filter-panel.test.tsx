@@ -99,9 +99,9 @@ const type = (el: HTMLInputElement, text: string) => {
 describe('DataGrid filter panel', () => {
   it('shows only with settings.filterPanel, with "Create Filter" while there is no filter', async () => {
     const off = await make({}, { filterPanel: false });
-    expect(panel(off).hidden).toBe(true);
+    expect(panel(off)).toBeNull();
     const g = await make();
-    expect(panel(g).hidden).toBe(false);
+    expect(panel(g)).not.toBeNull();
     expect(panel(g).getAttribute('role')).toBe('group');
     expect(panelText(g).textContent).toBe('Create Filter');
     // Hidden parts leave the page.

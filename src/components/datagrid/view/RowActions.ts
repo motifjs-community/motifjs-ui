@@ -1,6 +1,6 @@
 import type { Component, ComponentBase } from '@motifx/core';
 import { glyphPart, part } from '../../../core/draw-parts';
-import { mark, put } from '../../../core/part-writes';
+import { kept, put } from '../../../core/part-writes';
 import { orderControls } from '../../../core/order-controls';
 import { createActionButton, fillActionButton } from './action-button';
 import type { ActionWidths } from './ActionWidths';
@@ -38,13 +38,13 @@ export class RowActions<T> {
     }
     this.buttons.forEach((button, i) => {
       const a = this.shown[i];
-      mark(button, 'hidden', !a);
+      kept(button, !!a);
       if (a) fillActionButton(button, a);
     });
     if (this.overflow.length && !this.more) this.more = this.createMore();
     this.moreHint = more.hint;
     if (this.more) {
-      mark(this.more, 'hidden', !this.overflow.length);
+      kept(this.more, this.overflow.length > 0);
       put(this.more, 'aria-label', more.label);
       put(this.more, 'data-hint', more.hint);
     }

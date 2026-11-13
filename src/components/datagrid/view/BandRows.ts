@@ -1,7 +1,7 @@
 import { Component, ComponentBase, untracked } from '@motifx/core';
 import { orderControls } from '../../../core/order-controls';
 import { glyphPart, loose, part, removePart, textPart } from '../../../core/draw-parts';
-import { css, mark, put, text as writeText } from '../../../core/part-writes';
+import { css, kept, mark, put, text as writeText } from '../../../core/part-writes';
 import { measure, rectOf } from '../../../core/measure';
 import type { BandCellContext } from '../band-cell-context';
 import type { GridModel } from '../model/GridModel';
@@ -38,7 +38,7 @@ export class BandRows<T> {
   ) {
     const indicator = loose<HTMLDivElement>('div', 'mx-data-grid__drop');
     indicator.attr.add({ 'aria-hidden': 'true' });
-    mark(indicator, 'hidden', true);
+    kept(indicator, false);
     this.indicator = indicator;
     this.stops.push(grid.notices.on(() => this.draw()));
   }
@@ -163,7 +163,7 @@ export class BandRows<T> {
       else writeText(titlePart, text);
       css(titlePart, 'text-align', cols.bandAlign(id));
       const menu = host.hasMenu(id);
-      mark(buttonPart, 'hidden', !menu);
+      kept(buttonPart, !!menu);
       put(buttonPart, 'aria-label', grid.text('gridColumnMenu', { title: text }));
     };
     this.drawers.set(id, draw);
@@ -205,10 +205,10 @@ export class BandRows<T> {
     const paintAim = (aim: ReturnType<typeof readAim>) => {
       stopAim = null;
       target = aim.drop.target;
-      if (aim.drop.x === null || aim.start === null) mark(indicator, 'hidden', true);
+      if (aim.drop.x === null || aim.start === null) kept(indicator, false);
       else {
         css(indicator, 'left', `${aim.drop.x - aim.start}px`);
-        mark(indicator, 'hidden', false);
+        kept(indicator, true);
       }
       ghost.move(x, y, aim.drop.x === null ? 'none' : 'move');
     };
@@ -232,7 +232,7 @@ export class BandRows<T> {
       void sourcePart.motif.off('pointermove', move);
       void sourcePart.motif.off('pointerup', up);
       void sourcePart.motif.off('pointercancel', up);
-      mark(indicator, 'hidden', true);
+      kept(indicator, false);
       ghost.hide();
       mark(sourcePart, 'data-dragging', false);
       if (!dragging || ev.type === 'pointercancel' || !cols.move(id, target)) return;

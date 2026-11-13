@@ -16,7 +16,7 @@ import { holdsFocus } from '../../../core/focus';
 import { nextId } from '../../../core/next-id';
 import { part } from '../../../core/draw-parts';
 import { boxOf, measure, onLayout, rectOf, scrollBy, scrollTo, type Size } from '../../../core/measure';
-import { css, mark, put } from '../../../core/part-writes';
+import { css, kept, mark, put } from '../../../core/part-writes';
 
 /** Every grid alive now: an event from a grid inside another is that grid's. */
 const grids = new Set<ComponentBase>();
@@ -618,7 +618,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   /** The line where a dragged row would land, `y` pixels from the top of the rows; `null` hides it. */
   showDropLine(y: number | null) {
     if (y === null) {
-      if (this.dropLine) mark(this.dropLine, 'hidden', true);
+      if (this.dropLine) kept(this.dropLine, false);
       return;
     }
     if (!this.dropLine) {
@@ -627,7 +627,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       this.dropLine = line;
     }
     css(this.dropLine, 'transform', `translateY(${Math.round(y)}px)`);
-    mark(this.dropLine, 'hidden', false);
+    kept(this.dropLine, true);
   }
 
   /** Marks the row a dragged row would be dropped onto, or none. */
@@ -1003,7 +1003,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private placeForm(index: number, top: number, view: GridBody<T>['lastView']) {
     const form = this.form;
     if (!form) return;
-    mark(form.part, 'hidden', top < 0);
+    kept(form.part, top >= 0);
     if (top < 0) return;
     put(form.part, 'aria-rowindex', String(this.ariaRowIndex(index)));
     put(form.cell, 'aria-colspan', String(Math.max(1, this.visible.length)));

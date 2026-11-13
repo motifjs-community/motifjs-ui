@@ -3304,7 +3304,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       put(vp, 'aria-colcount', String(model.columns.visible().length));
       put(vp, 'aria-busy', st.status === 'loading' || st.busy ? 'true' : null);
       put(parts.foot, 'aria-label', t('gridTotalSummary'));
-      mark(parts.foot, 'hidden', !model.summaries.showsTotal());
+      kept(parts.foot, model.summaries.showsTotal());
 
       const overlay = st.status === 'loading' ? 'loading' : st.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null;
       kept(parts.overlay, overlay !== null);

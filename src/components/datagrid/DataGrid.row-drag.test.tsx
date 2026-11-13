@@ -157,7 +157,7 @@ describe('DataGrid row drag and drop', () => {
     // Over the lower half of row 4: it would land after it, at index 4.
     moveTo(10, yOf(grid, 4, 0.75));
     expect(seen.at(-1)).toBe('change 4');
-    expect(line(grid)?.hidden).toBe(false);
+    expect(line(grid)).not.toBeNull();
     expect(line(grid)?.style.transform).toBe(`translateY(${5 * ROW}px)`);
     expect(ghost(grid)?.dataset.target).toBe('move');
     drop(10, yOf(grid, 4, 0.75));
@@ -166,7 +166,7 @@ describe('DataGrid row drag and drop', () => {
     // By identity: matching the grids field by field walks their whole object graph.
     expect([reorder!.fromComponent, reorder!.toComponent, reorder!.component].every((c) => c === grid)).toBe(true);
     expect(reorder!.toItemData?.id).toBe(5);
-    expect([ghost(grid), line(grid)?.hidden, rowEl(grid, 1).dataset.dragSource]).toEqual([null, true, undefined]);
+    expect([ghost(grid), line(grid), rowEl(grid, 1).dataset.dragSource]).toEqual([null, null, undefined]);
     await settle();
     expect(state.rows.slice(0, 5).map((r) => r.id)).toEqual([1, 3, 4, 5, 2]);
     expect(grid.element.querySelector('.mx-data-grid__live')?.textContent).toBe('Row moved to position 5 of 10');
@@ -182,7 +182,7 @@ describe('DataGrid row drag and drop', () => {
     const shift = (i: number) => rowEl(grid, i).style.translate;
     // Rows 2 and 3 move up a row; row 1 stands where it would land; the line is not shown.
     expect([shift(1), shift(2), shift(3), shift(4)]).toEqual([`0 ${2 * ROW}px`, `0 ${-ROW}px`, `0 ${-ROW}px`, '']);
-    expect(line(grid)?.hidden ?? true).toBe(true);
+    expect(line(grid)).toBeNull();
     // Back up above row 0: the rows before it move down.
     moveTo(10, yOf(grid, 0, 0.1));
     expect([shift(0), shift(1), shift(2)]).toEqual([`0 ${ROW}px`, `0 ${-ROW}px`, '']);
@@ -208,7 +208,7 @@ describe('DataGrid row drag and drop', () => {
     drop(10, yOf(grid, 4));
     take(grid, 2);
     moveTo(10, yOf(grid, 5, 0.75));
-    expect([ghost(grid)?.dataset.target, line(grid)?.hidden ?? true]).toEqual(['none', true]);
+    expect([ghost(grid)?.dataset.target, line(grid)]).toEqual(['none', null]);
     drop(10, yOf(grid, 5, 0.75));
     take(grid, 2);
     moveTo(10, yOf(grid, 6, 0.75));
@@ -230,7 +230,7 @@ describe('DataGrid row drag and drop', () => {
     take(grid, 1);
     moveTo(10, yOf(grid, 5, 0.5));
     expect(rowEl(grid, 5).hasAttribute('data-drop-target')).toBe(true);
-    expect(line(grid)?.hidden ?? true).toBe(true);
+    expect(line(grid)).toBeNull();
     // Between rows takes no drop without allowReordering.
     moveTo(10, yOf(grid, 5, 0.9));
     expect([rowEl(grid, 5).hasAttribute('data-drop-target'), ghost(grid)?.dataset.target]).toEqual([false, 'none']);

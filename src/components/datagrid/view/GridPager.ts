@@ -57,7 +57,6 @@ export class GridPager<T> extends Component<HTMLElement> {
   /** The full pager does not fit (adaptive). */
   private narrow = false;
   /** The last draw hid the pager: the grid shows none. */
-  private hidden = false;
   /** The width the full pager needed when it was last drawn. */
   private fullWidth = 0;
   /** What decides whether the full pager fits, as it was last seen. */
@@ -112,7 +111,7 @@ export class GridPager<T> extends Component<HTMLElement> {
 
   private readonly readFit = (): FitRead | null => {
     const bar = this.bar;
-    if (!bar || this.isDisposed || this.hidden || this.grid.settings.get('pagerDisplayMode') !== 'adaptive') return null;
+    if (!bar || this.isDisposed || !this.isVisible || this.grid.settings.get('pagerDisplayMode') !== 'adaptive') return null;
     const pad = styleOf(bar, ['padding-inline-start', 'padding-inline-end']);
     const room = boxOf(bar).clientWidth - (parseFloat(pad['padding-inline-start']) || 0) - (parseFloat(pad['padding-inline-end']) || 0);
     return { room, width: boxOf(this).scrollWidth };
@@ -196,8 +195,7 @@ export class GridPager<T> extends Component<HTMLElement> {
       // Named after the grid too: two paged grids on a page are two landmarks.
       put(this, 'aria-label', s.get('pagerLabel') || `${t('gridPager')}: ${host.gridLabel()}`);
       put(this, 'data-look', compact ? 'compact' : 'full');
-      mark(this, 'hidden', !shows);
-      this.hidden = !shows;
+      kept(this, shows);
 
       const sizesShown = s.get('pageSizeSelector') && grid.pageSizes().length > 0;
       kept(parts.sizeGroup, sizesShown && !compact);

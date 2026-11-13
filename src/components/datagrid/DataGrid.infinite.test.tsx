@@ -87,7 +87,7 @@ describe('DataGrid infinite mode', () => {
     const { grid, toEnd } = make({ onMoreRowsLoading: (e) => loading.push({ ...e }), onMoreRowsLoaded: (e) => loaded.push({ ...e }) });
     await settle();
     expect([grid.dataSource.loadMode, grid.total, grid.endReached, grid.pageCount, grid.totalCount()]).toEqual(['all', 20, false, 5, 95]);
-    expect(grid.element.querySelector('.mx-data-grid__pager')?.closest('[hidden], [style*="display: none"]') ?? null).not.toBeNull();
+    expect(grid.element.querySelector('.mx-data-grid__pager')).toBeNull();
     await toEnd();
     expect([grid.total, loading.map((e) => [e.skip, e.take])]).toEqual([40, [[20, 20]]]);
     expect(loaded).toEqual([{ skip: 20, count: 20, ended: false }]);

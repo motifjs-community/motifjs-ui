@@ -4,7 +4,7 @@ import { focusOn, isFocused, rememberFocus } from '../../../core/focus';
 import { isInPage, isRendered, rectOf, type Rect } from '../../../core/measure';
 import { nextId } from '../../../core/next-id';
 import { orderControls } from '../../../core/order-controls';
-import { css, mark, put, text } from '../../../core/part-writes';
+import { css, kept, mark, put, text } from '../../../core/part-writes';
 import type { GridModel } from '../model/GridModel';
 import type { GroupDrop } from './group-drop';
 import type { GroupPanelHost } from './group-panel-host';
@@ -41,7 +41,7 @@ export class GroupPanel<T> {
     this.hint.attr.add({ id: this.hintId });
     this.drop = part<HTMLSpanElement>(this.part, 'span', 'mx-data-grid__chip-drop');
     this.drop.attr.add({ 'aria-hidden': 'true' });
-    mark(this.drop, 'hidden', true);
+    kept(this.drop, false);
     this.stops.push(model.notices.on(() => this.draw()));
     this.draw();
   }
@@ -83,11 +83,11 @@ export class GroupPanel<T> {
   showDropAt(drop: GroupDrop) {
     mark(this.dropArea, 'data-drop', drop.index >= 0);
     if (drop.index < 0) {
-      mark(this.drop, 'hidden', true);
+      kept(this.drop, false);
       return;
     }
     css(this.drop, 'inset-inline-start', `${drop.offset}px`);
-    mark(this.drop, 'hidden', false);
+    kept(this.drop, true);
   }
 
   /** The chip of a grouped column, while it shows. */
@@ -139,7 +139,7 @@ export class GroupPanel<T> {
       put(this.part, 'aria-label', label);
       mark(this.part, 'data-locked', !dragging);
       text(this.empty, empty);
-      mark(this.empty, 'hidden', texts.length > 0);
+      kept(this.empty, texts.length === 0);
       text(this.hint, hint);
       const wanted = new Set(texts.map((t) => t.field));
       for (const [field, chip] of this.chips) {

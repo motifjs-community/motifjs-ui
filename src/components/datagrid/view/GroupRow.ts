@@ -1,6 +1,6 @@
 import { Component, ComponentBase, createSignal, untracked } from '@motifx/core';
 import { glyphPart, loose, part, removePart, textPart } from '../../../core/draw-parts';
-import { css, flag, mark, put, text } from '../../../core/part-writes';
+import { css, flag, kept, mark, put, text } from '../../../core/part-writes';
 import type { GroupCellContext } from '../group-cell-context';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
@@ -49,7 +49,7 @@ export class GroupRow<T> {
     const el = this.part.element;
     this.part.class.add('mx-data-grid__row mx-data-grid__group-row');
     this.part.attr.add({ role: 'row' });
-    mark(this.part, 'hidden', true);
+    kept(this.part, false);
     const cellPart = part<HTMLDivElement>(this.part, 'div', 'mx-data-grid__group-cell');
     const cell = cellPart.element;
     cellPart.attr.add({ role: 'gridcell', 'aria-colindex': '1' });
@@ -92,7 +92,7 @@ export class GroupRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    mark(this.part, 'hidden', false);
+    kept(this.part, true);
     css(this.part, 'transform', `translateY(${top}px)`);
   }
 
@@ -110,7 +110,7 @@ export class GroupRow<T> {
       this.shown.value = this.shown.peek() + 1;
       this.draw();
     }
-    mark(this.part, 'hidden', true);
+    kept(this.part, false);
   }
 
   /** The cell spans the visible columns, up to the first one holding an aligned item. */
@@ -194,12 +194,12 @@ export class GroupRow<T> {
       }
       const at = visible.indexOf(field);
       // While columns are virtual, an item under a column without cells waits for it.
-      mark(cell, 'hidden', !model.columnWindow.has(field));
+      kept(cell, model.columnWindow.has(field));
       css(cell, 'grid-column', String(at + 1));
       put(cell, 'aria-colindex', String(at + 1));
       fillSummaryCell(cell, parts, separator);
     }
-    for (const [field, cell] of this.aligned) if (!aligned.has(field)) mark(cell, 'hidden', true);
+    for (const [field, cell] of this.aligned) if (!aligned.has(field)) kept(cell, false);
   }
 
   drawText() {
@@ -208,8 +208,8 @@ export class GroupRow<T> {
     const col = model.columns.defs.get(node.field);
     if (!col) return;
     const custom = col.groupCell || model.groupCell ? this.ownContent(node.field) : null;
-    for (const [field, own] of this.own) mark(own, 'hidden', field !== node.field);
-    mark(this.textPart, 'hidden', !!custom);
+    for (const [field, own] of this.own) kept(own, field === node.field);
+    kept(this.textPart, !custom);
     if (custom) return;
     // Lookup keys are requested once the body is measured, as cells do.
     const value = model.groupValue(node, model.state.measured);

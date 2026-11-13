@@ -1,6 +1,6 @@
 import { ComponentBase, untracked } from '@motifx/core';
 import { handOver, loose, part, textPart } from '../../../core/draw-parts';
-import { css, mark, put, text } from '../../../core/part-writes';
+import { css, kept, put, text } from '../../../core/part-writes';
 import { orderControls } from '../../../core/order-controls';
 import { follow } from '../../../core/follow';
 import { columnsMark, downloadMark, plusMark, saveMark, searchMark, undoMark } from '../../../core/glyphs';
@@ -382,7 +382,7 @@ export class GridToolbar<T> {
     const panel = this.host.groupPanel();
     const box = { item };
     const draw = () => {
-      mark(panel.part, 'hidden', this.field(box.item, 'visible') === false);
+      kept(panel.part, this.field(box.item, 'visible') !== false);
       this.overflow(panel.part, box.item, 'never');
     };
     return { box, takes: true, control: panel.part, own: null, draw, kept: true };
@@ -427,7 +427,7 @@ export class GridToolbar<T> {
       if (content !== undefined && content !== null) textPart(control, String(content));
     }
     const draw = () => {
-      mark(control, 'hidden', this.field(item, 'visible') === false);
+      kept(control, this.field(item, 'visible') !== false);
       this.overflow(control, item, 'never');
     };
     return { box: { item }, takes: false, control, own, draw };

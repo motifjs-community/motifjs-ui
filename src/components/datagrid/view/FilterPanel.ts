@@ -1,6 +1,6 @@
 import { Component, untracked } from '@motifx/core';
 import { glyphPart, handOver } from '../../../core/draw-parts';
-import { mark, put, text } from '../../../core/part-writes';
+import { kept, mark, put, text } from '../../../core/part-writes';
 import { Button } from '../../button/Button';
 import { CheckBox } from '../../checkbox/CheckBox';
 import type { GridModel } from '../model/GridModel';
@@ -61,7 +61,7 @@ export class FilterPanel<T> extends Component<HTMLDivElement> {
       const { grid, host } = this;
       const has = !!grid.filters.filterValue();
       put(this, 'aria-label', grid.text('gridFilterPanel'));
-      mark(this, 'hidden', !grid.settings.get('filterPanel'));
+      kept(this, !!grid.settings.get('filterPanel'));
       mark(this, 'data-off', !grid.filters.enabled);
       enabled.label = grid.text('gridFilterPanelEnable');
       enabled.hint = grid.text('gridFilterPanelEnable');

@@ -1,6 +1,6 @@
 import { ComponentBase, untracked } from '@motifx/core';
 import { loose, textPart } from '../../../core/draw-parts';
-import { css, mark, put } from '../../../core/part-writes';
+import { css, kept, mark, put } from '../../../core/part-writes';
 import { parseChord } from '../../../core/keyboard';
 import { onWindow } from '../../../core/window-events';
 import type { GridRowDragEventArgs } from '../grid-row-drag-event-args';
@@ -613,7 +613,6 @@ export class RowDrag<T> {
       css(rowsPart, '--_row-height', look.rowHeight);
       const copy = this.host.ghost.copyPart(s.part, false);
       copy.style({ transform: '', translate: '' });
-      mark(copy, 'hidden', false);
       put(copy, 'data-drag-source', null);
       if (look.scrolled) css(copy, 'margin-inline-start', `${-look.scrolled}px`);
       rowsPart.controls.add(copy);

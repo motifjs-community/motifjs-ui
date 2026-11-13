@@ -50,6 +50,8 @@ export class DetailRow<T> {
     const el = this.part.element;
     this.part.class.add(kind === 'adaptive' ? 'mx-data-grid__detail-row mx-data-grid__adaptive-row' : 'mx-data-grid__detail-row');
     this.part.attr.add({ role: 'row', id: elementId });
+    // Hidden with the attribute, not core's hide: out of view, the row stays laid out but is not drawn (see the
+    // stylesheet), so its content keeps its scroll and frames; taken out of the page, it would lose them.
     mark(this.part, 'hidden', true);
     const cellPart = new Component<HTMLDivElement>('div');
     cellPart.class.add('mx-data-grid__detail-cell');

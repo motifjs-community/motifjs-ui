@@ -153,7 +153,7 @@ describe('DataGrid selection', () => {
     grid.clearSelection();
     key(cell(grid, 0, 'name'), 'a', { ctrlKey: true });
     expect(grid.selectedCount).toBe(0);
-    expect(headerCheck(grid).hidden).toBe(true);
+    expect(headerCheck(grid)).toBeNull();
     await grid.dispose();
   });
 

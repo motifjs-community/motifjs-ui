@@ -210,7 +210,7 @@ describe('total summary', () => {
     expect(totalRow(grid).hasAttribute('tabindex')).toBe(false);
     grid.summary = {};
     await settle();
-    expect(totalRow(grid).parentElement!.hidden).toBe(true);
+    expect(grid.element.querySelector('.mx-data-grid__total-row')).toBeNull();
     await grid.dispose();
   });
 

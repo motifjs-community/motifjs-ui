@@ -1,6 +1,6 @@
 import { Component, ComponentBase, untracked } from '@motifx/core';
 import { glyphPart, loose, part, textPart } from '../../../core/draw-parts';
-import { css, mark, put, text } from '../../../core/part-writes';
+import { css, kept, mark, put, text } from '../../../core/part-writes';
 import { isInPage, measure, rectOf } from '../../../core/measure';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
@@ -90,7 +90,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const indicator = new Component<HTMLDivElement>('div');
     indicator.class.add('mx-data-grid__drop');
     indicator.attr.add({ 'aria-hidden': 'true' });
-    mark(indicator, 'hidden', true);
+    kept(indicator, false);
     this.indicator = indicator;
     this.controls.add(...cells, this.indicator);
     this.draw();
@@ -304,7 +304,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     if (!select) return;
     const grid = this.grid;
     const on = grid.settings.get('selectAll');
-    mark(select.check, 'hidden', !on);
+    kept(select.check, on);
     if (on) drawCheck(select.check, this.host.allState(), grid.text('gridSelectAll'));
     put(select.cell, 'aria-label', grid.text('gridSelectAll'));
   }
@@ -375,7 +375,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       panel?.showDropAt(aim.panelDrop);
       // The mark sits on the boundary the column would land on.
       if (aim.x !== null) css(indicator, 'left', `${aim.x}px`);
-      mark(indicator, 'hidden', aim.x === null);
+      kept(indicator, aim.x !== null);
       const says: GhostTarget = place >= 0 ? 'group' : aim.x === null ? 'none' : 'move';
       ghost.move(point.x, point.y, says);
     };
@@ -402,7 +402,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       void sourcePart.motif.off('pointermove', move);
       void sourcePart.motif.off('pointerup', up);
       void sourcePart.motif.off('pointercancel', up);
-      mark(indicator, 'hidden', true);
+      kept(indicator, false);
       panel?.showDropAt(NO_DROP);
       panel?.showReady(false);
       ghost.hide();
@@ -490,7 +490,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const indicator = this.indicator;
     mark(this, 'data-drop', drop.index >= 0);
     if (drop.index >= 0) css(indicator, 'left', `${drop.offset}px`);
-    mark(indicator, 'hidden', drop.index < 0);
+    kept(indicator, drop.index >= 0);
   }
 
   /** Width the column takes on screen; more than its setting while it flexes. */

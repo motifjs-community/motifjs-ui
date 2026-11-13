@@ -92,13 +92,13 @@ describe('DataGrid pager', () => {
     expect(sizeButtons(grid)[1].getAttribute('aria-pressed')).toBe('true');
     grid.settings.pager = 'auto';
     await settle();
-    expect(pager(grid).hidden).toBe(false);
+    expect(pager(grid)).not.toBeNull();
     grid.pageSize(100);
     await settle();
-    expect(pager(grid).hidden).toBe(true);
+    expect(pager(grid)).toBeNull();
     grid.settings.pager = true;
     await settle();
-    expect(pager(grid).hidden).toBe(false);
+    expect(pager(grid)).not.toBeNull();
     grid.settings.pageSizeSelector = false;
     await settle();
     expect(shown(grid.element.querySelector('.mx-data-grid__page-sizes'))).toBe(false);

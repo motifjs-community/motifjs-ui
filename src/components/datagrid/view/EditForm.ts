@@ -1,7 +1,7 @@
 import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { part } from '../../../core/draw-parts';
 import { focusGoesInto, focusInLineField, holdsFocus, isRendered } from '../../../core/focus';
-import { mark, put, text as writeText } from '../../../core/part-writes';
+import { kept, put, text as writeText } from '../../../core/part-writes';
 import { Button } from '../../button/Button';
 import { ToggleField } from '../../checkbox/ToggleField';
 import type { FormItem } from '../../formlayout/form-item';
@@ -119,7 +119,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
       const { model, rowId, settings, layout } = this;
       const text = model.edit(rowId)?.errors[''] ?? '';
       writeText(this.message, text);
-      mark(this.message, 'hidden', !text);
+      kept(this.message, !!text);
       const given = settings.get('items');
       const from = JSON.stringify(given ?? null);
       if (from !== this.itemsFrom) {
