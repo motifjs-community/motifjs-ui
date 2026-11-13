@@ -72,7 +72,7 @@ describe('AppMenu', () => {
         expect(menu.panelPart.element.getAttribute('role')).toBe('dialog');
         expect(menu.panelPart.element.getAttribute('aria-label')).toBe('Menu');
         expect(menu.element.querySelector('.mx-app-menu__close')!.getAttribute('aria-label')).toBe('Close the menu');
-        expect(menu.element.querySelector('.mx-app-menu__list--bottom')!.hasAttribute('hidden')).toBe(true);
+        expect(menu.element.querySelector('.mx-app-menu__list--bottom')).toBeNull();
     });
 
     it('keeps the parts of the items that stay when the items change, and puts them in the new order', async () => {

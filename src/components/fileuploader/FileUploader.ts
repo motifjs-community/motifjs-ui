@@ -3,7 +3,7 @@ import { glyphPart, loose, part } from "../../core/draw-parts";
 import { glyph } from "../../core/glyphs";
 import { nextId } from "../../core/next-id";
 import { onLanguage } from "../../core/on-language";
-import { mark, put, shown, text } from "../../core/part-writes";
+import { kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Field } from "../../parts/field/Field";
 import type { ValidationRule } from "../../parts/validation/validation-rule";
@@ -406,10 +406,12 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
             selectText.attr.add({ id: selectTextId });
             const inputPart = loose<HTMLInputElement>('input', 'mx-file-uploader__input');
             const input = inputPart.element;
+            // Hidden with the attribute, not core's hide: the browser's file input stays in the page, where its click opens the picker.
             inputPart.attr.add({ type: 'file', tabindex: '-1', 'aria-hidden': 'true', hidden: true });
             const dropPart = loose<HTMLSpanElement>('span', 'mx-file-uploader__drop');
             const uploadPart = loose<HTMLButtonElement>('button', 'mx-file-uploader__upload');
-            uploadPart.attr.add({ type: 'button', hidden: true });
+            uploadPart.attr.add({ type: 'button' });
+            kept(uploadPart, false);
             self[PARTS] = {
                 selectPart,
                 selectText,
@@ -473,9 +475,9 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         put(parts.selectPart, 'aria-labelledby', labelId ? `${labelId} ${parts.selectTextId}` : parts.selectTextId);
         const canDrop = this.peekProperty<boolean | undefined>('allowDrop') !== false && !this.peekProperty('readOnly');
         text(parts.dropPart, this.peekProperty<string>('dropText') || (single ? strings.fileDropOne : strings.fileDrop));
-        shown(parts.dropPart, canDrop);
+        kept(parts.dropPart, canDrop);
         text(parts.uploadPart, this.peekProperty<string>('uploadText') || strings.fileUpload);
-        shown(parts.uploadPart, this.uploadMode === 'button');
+        kept(parts.uploadPart, this.uploadMode === 'button');
         mark(parts.selectPart, 'disabled', !!this.peekProperty('readOnly'));
     }
 
@@ -484,13 +486,13 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         const parts = this.uploadParts;
         const show = this.peekProperty<boolean | undefined>('showFileList') !== false && parts.items.length > 0;
         if (!show) {
-            if (parts.list) shown(parts.list, false);
+            if (parts.list) kept(parts.list, false);
             return;
         }
         if (!parts.list) {
             parts.list = part<HTMLUListElement>(this, 'ul', 'mx-file-uploader__list');
         }
-        shown(parts.list, true);
+        kept(parts.list, true);
         const seen = new Set<UploadItem>();
         parts.items.forEach((item, index) => {
             let row = parts.rows.get(item);
@@ -539,16 +541,16 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         text(row.size, sizeText(item.file.size, locale));
         const stateText = item.status === 'uploading' ? uiLocale.text('fileUploading', { percent: Math.round(item.progress * 100) }) : item.status === 'done' ? strings.fileUploaded : item.status === 'aborted' ? strings.fileAborted : item.status === 'error' ? item.message || strings.fileFailed : item.status === 'invalid' ? item.message : '';
         text(row.state, stateText);
-        shown(row.state, stateText !== '');
-        shown(row.bar, item.status === 'uploading');
+        kept(row.state, stateText !== '');
+        kept(row.bar, item.status === 'uploading');
         if (item.status === 'uploading') {
             row.bar.value = Math.round(item.progress * 100);
             row.bar.label = item.file.name;
         }
         const canUpload = item.status !== 'invalid' && (this.peekProperty('uploadUrl') || this.uploadWith);
-        shown(row.abort, item.status === 'uploading');
-        shown(row.retry, !!canUpload && (item.status === 'error' || item.status === 'aborted'));
-        shown(row.remove, item.status !== 'uploading' && !this.peekProperty('readOnly'));
+        kept(row.abort, item.status === 'uploading');
+        kept(row.retry, !!canUpload && (item.status === 'error' || item.status === 'aborted'));
+        kept(row.remove, item.status !== 'uploading' && !this.peekProperty('readOnly'));
         const abortName = uiLocale.text('fileAbort', { name: item.file.name });
         if (row.abort.hint !== abortName) row.abort.hint = abortName;
         if (row.retry.hint !== strings.retry) row.retry.hint = strings.retry;

@@ -10,7 +10,7 @@ import { glyph, searchMark } from "../../core/glyphs";
 import type { IconSource } from "../../core/icon-source";
 import { onLanguage } from "../../core/on-language";
 import { boxOf, lengthOf, measure, onLayout, probeLengths, styleOf } from "../../core/measure";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { OverlayPanel } from "../../parts/overlay/OverlayPanel";
 import { Badge } from "../badge/Badge";
@@ -168,7 +168,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         this.noMatch.attr.add({ role: 'status' });
         this.bottomList = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__list mx-app-menu__list--bottom');
         this.footerHost = part<HTMLDivElement>(this.nav, 'div', 'mx-app-menu__footer-slot');
-        for (const el of [this.headerHost, this.footerHost, this.searchHost, this.noMatch]) shown(el, false);
+        for (const el of [this.headerHost, this.footerHost, this.searchHost, this.noMatch]) kept(el, false);
         // Built once: each list holds the parts of its items, made when an item comes and taken out when it goes.
         for (const [list, bottom] of [[this.topList, false], [this.bottomList, true]] as const) {
             list.bindings.list(
@@ -474,17 +474,17 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         this.looks.forEach((look, i) => {
             const p = this.entries[i];
             const seen = this.shows(look);
-            shown(p.host, seen);
+            kept(p.host, seen);
             // A line before the first visible item of another group in the same list.
             const before = lastGroup.get(look.bottom);
-            shown(p.separator, seen && before !== undefined && before !== null && before !== look.group);
+            kept(p.separator, seen && before !== undefined && before !== null && before !== look.group);
             if (seen) lastGroup.set(look.bottom, look.group);
-            shown(p.iconHost, look.pictured || icons);
+            kept(p.iconHost, look.pictured || icons);
             css(p.iconHost, 'visibility', look.pictured ? '' : 'hidden');
         });
-        shown(this.bottomList, this.looks.some(look => look.bottom && this.shows(look)));
+        kept(this.bottomList, this.looks.some(look => look.bottom && this.shows(look)));
         const query = this.query();
-        shown(this.noMatch, query !== '' && !this.looks.some(look => this.shows(look)));
+        kept(this.noMatch, query !== '' && !this.looks.some(look => this.shows(look)));
         text(this.noMatch, query ? fillTemplate(uiLocale.strings.appMenuNoMatch, { text: query }) : '');
         this.dropViews();
         this.drawSelection();
@@ -552,7 +552,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
             p.iconSource = icon;
         }
         put(p.glyph, 'data-icon', name || null);
-        shown(p.glyph, !icon && name !== '');
+        kept(p.glyph, !icon && name !== '');
     }
 
     drawBadge(p: ItemPart, dot: boolean, badge: number | null): void {
@@ -565,7 +565,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         if (!p.badge) return;
         p.badge.dot = dot;
         p.badge.count = badge;
-        shown(p.badge, on);
+        kept(p.badge, on);
     }
 
     // Pages of items that are gone go with them.
@@ -613,7 +613,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
             this.views.set(key, view);
         }
         put(view.host, 'aria-label', parseAccessKey(this.textOf(look)).text);
-        for (const [k, v] of this.views) shown(v.host, k === key);
+        for (const [k, v] of this.views) kept(v.host, k === key);
     }
 
     /** The items Tab and the arrows reach, in the order they stand: the list at the top, then the one at the bottom. */
@@ -637,7 +637,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
 
     drawSearch(): void {
         const on = this.peekProperty('searchEnabled') === true;
-        shown(this.searchHost, on);
+        kept(this.searchHost, on);
         if (on && !this.search) {
             const search = new TextBox({ labelMode: 'hidden', size: 'md', type: 'search', icon: searchMark(), clearButton: true, autocomplete: 'off', spellcheck: false, label: () => uiLocale.strings.search, placeholder: () => uiLocale.strings.search });
             search.onValueChanged(e => e.byUser && this.searchBy(String(e.value ?? '')));
@@ -682,7 +682,7 @@ export class AppMenu extends OverlayPanel<AppMenuProps> {
         if (control) host.controls.add(control);
         if (side === 'header') this.headerControl = control;
         else this.footerControl = control;
-        shown(host, !!control);
+        kept(host, !!control);
     }
 
     drawNames(): void {

@@ -36,15 +36,6 @@
         display: none;
     }
 
-    .mx-timeline__nav[hidden],
-    .mx-timeline__detail[hidden],
-    .mx-timeline__date[hidden],
-    .mx-timeline__description[hidden],
-    .mx-timeline__content[hidden],
-    .mx-timeline__dot-glyph[hidden] {
-        display: none;
-    }
-
     .mx-timeline__dot {
         position: relative;
         display: inline-flex;

@@ -18,6 +18,7 @@
     font-family: var(--_ribbon-menu-font-family);
   }
 
+  .mx-ribbon-menu[hidden],
   .mx-ribbon-menu__group[data-out],
   .mx-ribbon-menu__group[data-folded] > .mx-ribbon-menu__group-inner,
   .mx-ribbon-menu__group:not([data-folded]) > .mx-ribbon-menu__fold,

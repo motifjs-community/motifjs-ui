@@ -22,6 +22,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   strips, the stash of hidden documents, the document list's parts and the phone bar's buttons.
 - `RibbonMenu` hides its parts the same way: the panels of the tabs not selected, tabs, groups and commands that are
   not shown, dividers, the layout switch, the scroll buttons, the quick bars, the side controls and the key hints.
+- `Chart`, `AppMenu`, `Timeline` and `FileUploader` hide their parts the same way: titles, tools, the plot or the table,
+  the legend, the message and the tooltip; the app menu's lists, items, icons, views, search and slots; the timeline's
+  dates, glyphs, descriptions, contents and arrows; the uploader's drop area, Upload button, list and row buttons.
+  The uploader's file input keeps the attribute: the browser opens the picker from it in the page.
 
 ## [0.1.0-beta.9] - 2026-11-13
 

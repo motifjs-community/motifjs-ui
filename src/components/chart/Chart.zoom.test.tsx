@@ -44,7 +44,7 @@ describe('Chart, zoom', () => {
         await settle();
         expect(changed.mock.calls[1][0]).toMatchObject({ from: null, to: null });
         expect(labels(chart)).toContain('Jan');
-        expect(chart.resetButton.element.hidden).toBe(true);
+        expect(chart.resetButton.element.isConnected).toBe(false);
     });
 
     it('takes no zoom over the whole of the data', async () => {

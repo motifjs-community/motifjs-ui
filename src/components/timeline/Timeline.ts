@@ -8,7 +8,7 @@ import type { IconSource } from "../../core/icon-source";
 import { nextId } from "../../core/next-id";
 import { boxOf, isRtl, measure, onLayout, scrollBy, scrollIntoView, type Box } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
-import { mark, put, shown, text } from "../../core/part-writes";
+import { kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { TimelineItem, TimelineTone } from "./timeline-item";
 import type { TimelineItemClickEventArgs } from "./timeline-item-click-event-args";
@@ -397,10 +397,10 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
             const when = this.formatDate(look.date);
             text(entry.date, when);
             put(entry.date, 'datetime', look.date && !Number.isNaN(look.date.getTime()) ? look.date.toISOString() : null);
-            shown(entry.date, when !== '');
+            kept(entry.date, when !== '');
             text(entry.title, look.title);
             put(entry.dotGlyph, 'data-icon', look.glyph || 'clock');
-            shown(entry.dotGlyph, !look.icon && look.glyph !== '');
+            kept(entry.dotGlyph, !look.icon && look.glyph !== '');
             put(entry.li, 'data-tone', look.tone);
             put(entry.dot, 'data-tone', look.tone);
             if (entry.description) {
@@ -424,18 +424,18 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
                 put(entry.face, 'aria-selected', on ? 'true' : 'false');
                 put(entry.face, 'tabindex', on || (index < 0 && i === 0) ? '0' : '-1');
                 mark(entry.li, 'data-selected', on);
-                if (entry.content) shown(entry.content, on);
+                if (entry.content) kept(entry.content, on);
             } else {
                 put(entry.li, 'data-side', alternate ? (i % 2 === 0 ? 'end' : 'start') : 'end');
                 const open = !collapsible || this.expanded.has(look.item);
-                if (entry.description) shown(entry.description, open && look.description !== '');
+                if (entry.description) kept(entry.description, open && look.description !== '');
                 if (entry.pressable) put(entry.face, 'aria-expanded', open ? 'true' : 'false');
                 mark(entry.li, 'data-expanded', collapsible && open);
             }
         });
-        shown(this.detail, horizontal && index >= 0);
-        shown(this.previousButton, horizontal && this.looks.length > 0);
-        shown(this.nextButton, horizontal && this.looks.length > 0);
+        kept(this.detail, horizontal && index >= 0);
+        kept(this.previousButton, horizontal && this.looks.length > 0);
+        kept(this.nextButton, horizontal && this.looks.length > 0);
         if (horizontal) this.drawDetail(index);
         this.drawNav();
     }
@@ -449,11 +449,11 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         const when = this.formatDate(look.date);
         text(this.detailDate, when);
         put(this.detailDate, 'datetime', look.date && !Number.isNaN(look.date.getTime()) ? look.date.toISOString() : null);
-        shown(this.detailDate, when !== '');
+        kept(this.detailDate, when !== '');
         text(this.detailTitle, look.title);
         text(this.detailDescription, look.description);
-        shown(this.detailDescription, look.description !== '');
-        shown(this.detailContent, !!look.content);
+        kept(this.detailDescription, look.description !== '');
+        kept(this.detailContent, !!look.content);
     }
 
     // The earlier and later buttons: disabled at the ends of the track, as read in the next frame.

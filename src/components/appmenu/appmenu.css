@@ -123,27 +123,13 @@
     flex: none;
   }
 
-  .mx-app-menu__header-slot[hidden],
-  .mx-app-menu__footer-slot[hidden],
-  .mx-app-menu__search[hidden],
-  .mx-app-menu__no-match[hidden] {
-    display: none;
-  }
-
-  .mx-app-menu__list--bottom[hidden] + .mx-app-menu__footer-slot {
+  /* With no bottom list in the page, the footer goes to the bottom itself. */
+  :not(.mx-app-menu__list--bottom) + .mx-app-menu__footer-slot {
     margin-block-start: auto;
   }
 
   .mx-app-menu__list--bottom {
     margin-block-start: auto;
-  }
-
-  .mx-app-menu__list[hidden],
-  .mx-app-menu__separator[hidden],
-  .mx-app-menu__item[hidden],
-  .mx-app-menu__icon[hidden],
-  .mx-app-menu__view[hidden] {
-    display: none;
   }
 
   .mx-app-menu__separator {

@@ -87,7 +87,7 @@ describe('Chart', () => {
         expect(make({ legend: false }).element.hasAttribute('data-legend')).toBe(false);
         expect(make({ legend: { position: 'end' } }).element.getAttribute('data-legend')).toBe('end');
         expect(make({ legend: { visible: true }, series: [{ yField: 'a' }] }).element.getAttribute('data-legend')).toBe('bottom');
-        expect($$(make({ series: [{ yField: 'a', legend: false }, { yField: 'b', name: 'B' }] }), '.mx-chart__legend-item')).toHaveLength(1);
+        expect($$(make({ legend: { visible: true }, series: [{ yField: 'a', legend: false }, { yField: 'b', name: 'B' }] }), '.mx-chart__legend-item')).toHaveLength(1);
     });
 
     it('hides a series from the legend, keeps the other color, and tells', async () => {
@@ -200,7 +200,7 @@ describe('Chart', () => {
     it('follows the options of the tooltip', () => {
         const none = make({ tooltip: false });
         key($(none, '.mx-chart__plot'), 'ArrowRight');
-        expect($(none, '.mx-chart__tooltip').hidden).toBe(true);
+        expect(none.element.querySelector('.mx-chart__tooltip')).toBeNull();
 
         const single = make({ tooltip: { shared: false } });
         key($(single, '.mx-chart__plot'), 'ArrowRight');
@@ -226,17 +226,17 @@ describe('Chart', () => {
         expect(chart.tablePart.texts()[1]).toEqual(['Feb', '20', '10']);
         expect(chart.tablePart.shape?.columns.map(c => c.title)).toEqual([uiLocale.strings.chartPosition, 'A', 'B']);
         expect(chart.tablePart.grid).not.toBeNull();
-        expect($(chart, '.mx-chart__area-box').hidden).toBe(true);
+        expect(chart.element.querySelector('.mx-chart__area-box')).toBeNull();
         button.click();
         await settle();
         expect(chart.mode).toBe('chart');
-        expect($(chart, '.mx-chart__table').hidden).toBe(true);
+        expect(chart.element.querySelector('.mx-chart__table')).toBeNull();
     });
 
     it('can open as a table, and leave the button out', () => {
         const chart = make({ mode: 'table', tableButton: false });
         expect(chart.tablePart.texts().length).toBeGreaterThan(0);
-        expect($(chart, '.mx-chart__tools').hidden).toBe(true);
+        expect(chart.element.querySelector('.mx-chart__tools')).toBeNull();
     });
 
     it('writes the mode back to its model', async () => {
@@ -258,7 +258,7 @@ describe('Chart', () => {
         const chart = make({ data: [], loading: true });
         expect(chart.element.hasAttribute('data-loading')).toBe(true);
         expect(chart.element.getAttribute('aria-busy')).toBe('true');
-        expect($(chart, '.mx-chart__message').hidden).toBe(true);
+        expect(chart.element.querySelector('.mx-chart__message')).toBeNull();
         chart.loading = false;
         await settle();
         expect(chart.element.hasAttribute('data-loading')).toBe(false);

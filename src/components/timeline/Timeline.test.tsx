@@ -47,8 +47,8 @@ describe('Timeline', () => {
         expect(rows[0].querySelector('.mx-timeline__date')!.textContent).toBe(new Intl.DateTimeFormat(uiLocale.locale, { dateStyle: 'medium' }).format(new Date(2026, 2, 1)));
         expect(rows[0].querySelector('.mx-timeline__date')!.getAttribute('datetime')).toBe(new Date(2026, 2, 1).toISOString());
         expect(rows[0].querySelector('.mx-timeline__dot-glyph')!.getAttribute('data-icon')).toBe('calendar');
-        expect(rows[1].querySelector<HTMLElement>('.mx-timeline__dot-glyph')!.hidden).toBe(true);
-        expect(rows[2].querySelector<HTMLElement>('.mx-timeline__description')!.hidden).toBe(true);
+        expect(rows[1].querySelector('.mx-timeline__dot-glyph')).toBeNull();
+        expect(rows[2].querySelector('.mx-timeline__description')).toBeNull();
         expect(rows.map(r => r.querySelector('.mx-timeline__card')!.tagName)).toEqual(['DIV', 'DIV', 'DIV']);
         expect(rows.map(r => r.dataset.side)).toEqual(['end', 'end', 'end']);
         t.alternate = true;
@@ -59,7 +59,7 @@ describe('Timeline', () => {
         const cards = items(t).map(r => r.querySelector<HTMLButtonElement>('.mx-timeline__card')!);
         expect(cards.map(c => c.tagName)).toEqual(['BUTTON', 'BUTTON', 'BUTTON']);
         expect(cards[0].getAttribute('aria-expanded')).toBe('false');
-        expect(cards[0].querySelector<HTMLElement>('.mx-timeline__description')!.hidden).toBe(true);
+        expect(cards[0].querySelector('.mx-timeline__description')).toBeNull();
         cards[0].click();
         await settle();
         expect(cards[0].getAttribute('aria-expanded')).toBe('true');
@@ -93,7 +93,7 @@ describe('Timeline', () => {
         await settle();
         expect(s.shown).toBe('ship');
         expect(detail.querySelector('.mx-timeline__title')!.textContent).toBe('Shipped');
-        expect(detail.querySelector<HTMLElement>('.mx-timeline__description')!.hidden).toBe(true);
+        expect(detail.querySelector('.mx-timeline__description')).toBeNull();
         expect(s.told).toBe('1>2 user click 2');
         key(flags[2], 'Home');
         await settle();

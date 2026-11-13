@@ -1,7 +1,7 @@
 import { Component, type ComponentBase } from '@motifx/core';
 import { part, partBefore, removePart } from '../../core/draw-parts';
 import { boxOf, measure } from '../../core/measure';
-import { css, kept, mark, shown, text } from '../../core/part-writes';
+import { css, kept, mark, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { shareText } from './plot-text';
 import type { ChartPoint } from './chart-point';
@@ -33,11 +33,11 @@ export class ChartTooltip {
     constructor(parent: ComponentBase) {
         this.part = part<HTMLDivElement>(parent, 'div', 'mx-chart__tooltip');
         this.part.attr.add({ 'aria-hidden': 'true' });
-        shown(this.part, false);
+        kept(this.part, false);
     }
 
     hide(): void {
-        shown(this.part, false);
+        kept(this.part, false);
     }
 
     show(context: ChartTooltipContext, rows: readonly TooltipRow[], format: ((context: ChartTooltipContext) => string | ComponentBase) | undefined): void {
@@ -58,7 +58,7 @@ export class ChartTooltip {
         } else {
             this.write(context.title, rows);
         }
-        shown(this.part, true);
+        kept(this.part, true);
     }
 
     /** The title and one row per point, written into the parts the tooltip has; rows are added or taken away at the end. */

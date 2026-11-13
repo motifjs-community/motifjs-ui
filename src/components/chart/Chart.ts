@@ -8,7 +8,7 @@ import { focusIsVisible } from "../../core/focus";
 import { boxOf, canMeasure, isRtl, measure, onLayout, probeLengths, rectOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { DrawnTexts, surfaceBehind } from "../../parts/chart/chart-text";
 import { Button } from "../button/Button";
@@ -504,14 +504,14 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         put(this, 'aria-label', name);
         text(this.titleText, this.title);
         text(this.subtitleText, this.subtitle);
-        shown(this.titleText, !!this.title);
-        shown(this.subtitleText, !!this.subtitle);
-        shown(this.titles, !!(this.title || this.subtitle));
+        kept(this.titleText, !!this.title);
+        kept(this.subtitleText, !!this.subtitle);
+        kept(this.titles, !!(this.title || this.subtitle));
         const zoomed = !!this.zoomWindow && model.family === 'cartesian';
-        shown(this.resetButton, zoomed);
-        shown(this.modeButton, this.tableButton);
-        shown(this.tools, this.tableButton || zoomed);
-        shown(this.head, !!(this.title || this.subtitle || this.tableButton || zoomed));
+        kept(this.resetButton, zoomed);
+        kept(this.modeButton, this.tableButton);
+        kept(this.tools, this.tableButton || zoomed);
+        kept(this.head, !!(this.title || this.subtitle || this.tableButton || zoomed));
         mark(this.surface, 'data-zoom', this.zoom && model.family === 'cartesian');
 
         const legend = this.legendOptions;
@@ -525,9 +525,9 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
 
         const table = this.mode === 'table';
         put(this, 'data-mode', this.mode);
-        shown(this.area, !table);
-        shown(this.legendPart.part, legendOn && !table);
-        shown(this.tablePart.host, table);
+        kept(this.area, !table);
+        kept(this.legendPart.part, legendOn && !table);
+        kept(this.tablePart.host, table);
 
         const source = this.source;
         const busy = this.loading || source?.status === 'loading';
@@ -537,7 +537,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const words = failed ? uiLocale.strings.chartFailed : model.any || busy ? '' : this.emptyText || uiLocale.strings.chartEmpty;
         text(this.message, words);
         mark(this, 'data-empty', !model.any && !busy);
-        shown(this.message, !!words);
+        kept(this.message, !!words);
 
         const surface = this.surface;
         put(surface, 'aria-label', uiLocale.text('chartPlot', { name }));

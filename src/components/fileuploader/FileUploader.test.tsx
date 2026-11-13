@@ -114,7 +114,7 @@ describe('FileUploader', () => {
         await uiLocale.use('tr');
         expect(up.uploadParts.uploadPart.element.textContent).not.toBe(enStrings.fileUpload);
         up.uploadMode = 'manual';
-        expect(up.uploadParts.uploadPart.element.hidden).toBe(true);
+        expect(up.uploadParts.uploadPart.element.isConnected).toBe(false);
     });
 
     it('is required like any field, and takes files given as a value', async () => {
