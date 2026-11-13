@@ -35,7 +35,11 @@ function press(key: string, init: KeyboardEventInit = {}) {
 
 const menus = (root: Element) => Array.from(root.querySelectorAll<HTMLElement>('.mx-menu'));
 const itemsOf = (menu: Element) => Array.from(menu.querySelectorAll<HTMLButtonElement>(':scope > .mx-menu__item'));
-const open = (menu: Element) => !menu.closest<HTMLElement>('.mx-popup')!.hidden;
+// A closed popup is out of the page.
+const open = (menu: Element | undefined) => {
+  const popup = menu?.closest<HTMLElement>('.mx-popup');
+  return !!popup && popup.isConnected && !popup.hidden;
+};
 const label = (el: Element) => el.querySelector('.mx-menu__label')!.textContent;
 
 describe('MenuList submenus', () => {
@@ -134,10 +138,11 @@ describe('MenuList submenus', () => {
     b.open();
     press('ArrowDown');
     press('ArrowRight');
-    const sub = menus(b.element)[1];
+    const [first, sub] = menus(b.element);
     b.close();
     expect(open(sub)).toBe(false);
-    expect(itemsOf(menus(b.element)[0])[1].getAttribute('aria-expanded')).toBe('false');
+    // Closed, the menu is out of the page: read through the part held before.
+    expect(itemsOf(first)[1].getAttribute('aria-expanded')).toBe('false');
   });
 
   it('opens a submenu when the pointer rests on its item, and closes it when it rests elsewhere', async () => {

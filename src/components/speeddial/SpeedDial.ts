@@ -9,7 +9,7 @@ import { givenField, givenList, givenValue } from "../../core/given-field";
 import type { IconSource } from "../../core/icon-source";
 import { nextId } from "../../core/next-id";
 import { onLanguage } from "../../core/on-language";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Tooltip } from "../tooltip/Tooltip";
 import type { SpeedDialAction } from "./speed-dial-action";
@@ -345,7 +345,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
             text(p.label, look.text);
             put(p.button, 'aria-label', look.text);
             put(p.button, 'aria-disabled', look.enabled ? null : 'true');
-            shown(p.button, look.visible);
+            kept(p.button, look.visible);
             if (look.icon !== p.iconSource) {
                 void p.icon?.dispose();
                 p.icon = look.icon ? iconPart(p.iconHost, look.icon) : null;
@@ -353,7 +353,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
                 p.iconSource = look.icon;
             }
             put(p.glyph, 'data-icon', look.glyph || null);
-            shown(p.glyph, !look.icon && look.glyph !== '');
+            kept(p.glyph, !look.icon && look.glyph !== '');
         });
         this.drawLayout();
         this.drawMain();
@@ -463,7 +463,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         put(main, 'aria-disabled', single && !single.enabled ? 'true' : null);
         put(this.mainGlyph, 'data-icon', open ? this.openGlyph : single?.glyph || this.glyph);
         text(this.mainText, name);
-        shown(this.mainText, this.extended);
+        kept(this.mainText, this.extended);
         mark(this, 'data-extended', this.extended);
         mark(this, 'data-single', !!single);
     }

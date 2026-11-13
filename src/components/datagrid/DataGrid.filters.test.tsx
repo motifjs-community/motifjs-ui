@@ -258,7 +258,8 @@ describe('DataGrid filters', () => {
     // Alt+Down opens the conditions; choosing one keeps it.
     key(filterCell(grid, 'name'), 'ArrowDown', { altKey: true });
     await settle();
-    const menu = grid.element.querySelectorAll('.mx-data-grid__menu')[2] as HTMLElement;
+    // The open menu: closed ones are out of the page.
+    const menu = [...grid.element.querySelectorAll<HTMLElement>('.mx-data-grid__menu')].find((m) => m.querySelector('[role="menuitemradio"]'))!;
     const items = [...menu.querySelectorAll('[role="menuitemradio"]')] as HTMLElement[];
     expect(items.map((i) => i.textContent)).toEqual(['Contains', 'Starts with', 'Ends with', 'Equals', 'Does not equal', 'Is empty', 'Is not empty']);
     items[1].click();

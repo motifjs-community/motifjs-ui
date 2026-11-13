@@ -1,7 +1,7 @@
 import { untracked, type Bind, type Component, type ComponentBase, type IBaseProp } from '@motifx/core';
 import { loose, part, partBefore } from '../../core/draw-parts';
 import { givenField, givenList, givenValue } from '../../core/given-field';
-import { css, mark, put, text } from '../../core/part-writes';
+import { css, kept, mark, put, text } from '../../core/part-writes';
 import type { ItemField } from '../../parts/list/item-field';
 import type { OptionList } from '../../parts/list/OptionList';
 import type { OptionParts } from '../../parts/list/option-parts';
@@ -78,7 +78,7 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
     };
     header.bindings.watch(() => {
       const shown = columns().length > 0 && this.getProperty<boolean | undefined>('showColumnHeaders') !== false;
-      untracked(() => mark(header, 'hidden', !shown));
+      untracked(() => kept(header, !!shown));
     });
     header.bindings.list(columns, (column: LookupColumn<T>) => {
       const cell = loose<HTMLSpanElement>('span', 'mx-lookup__cell');

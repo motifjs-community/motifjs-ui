@@ -78,7 +78,7 @@ describe('BarGauge', () => {
     it('can leave out the values and the legend', () => {
         const gauge = make({ data: [10, 20], showLabels: false });
         expect(all(gauge, '.mx-bar-gauge__labels text')).toHaveLength(0);
-        expect((gauge.element.querySelector('.mx-bar-gauge__legend') as HTMLElement).hidden).toBe(true);
+        expect(gauge.element.querySelector('.mx-bar-gauge__legend')).toBeNull();
     });
 
     it('draws nothing without values, and says only its name', () => {

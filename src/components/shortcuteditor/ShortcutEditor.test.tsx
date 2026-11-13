@@ -98,7 +98,7 @@ describe('ShortcutEditor', () => {
     await settle();
     expect(told.at(-1)).toEqual({ name: 'save', keys: ['Ctrl+Shift+E'], keymap: { save: ['Ctrl+Shift+E'] } });
     expect(rows(editor)[0]).toBe('SavechangedCtrl+Shift+E');
-    expect(status(editor).hidden).toBe(true);
+    expect(status(editor)?.isConnected ?? false).toBe(false);
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'E', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }));
     expect(ran).toEqual(['save']);
     tool(editor, 'Remove keys').click();

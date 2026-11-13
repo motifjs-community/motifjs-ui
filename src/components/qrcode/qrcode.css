@@ -26,9 +26,4 @@
         aspect-ratio: 1;
         object-fit: contain;
     }
-
-    .mx-qr-code__logo[hidden],
-    .mx-qr-code__svg[hidden] {
-        display: none;
-    }
 }

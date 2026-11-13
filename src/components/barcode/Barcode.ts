@@ -4,7 +4,7 @@ import { part } from "../../core/draw-parts";
 import { isInPage, measure, onLookChange, styleOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { windowOf } from "../../core/page-documents";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { encodeBarcode, type BarcodeFormat, type BarcodeModel } from "../../parts/code/barcode-encode";
 import { codeCanvas, codeSvgDocument, createCodeSvgParts, rectsPath, type CodeImage } from "../../parts/code/code-image";
@@ -195,7 +195,7 @@ export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
         this.model = model;
         this.invalid = failed;
         mark(this, 'data-invalid', failed);
-        mark(this.svgPart, 'hidden', !model);
+        kept(this.svgPart, !!model);
         this.drawBars();
         this.drawText();
         this.drawName();
@@ -229,7 +229,7 @@ export class Barcode extends Control<HTMLDivElement, BarcodeProps> {
     drawText(): void {
         const on = this.showText && !!this.model;
         text(this.textPart, this.codeText);
-        shown(this.textPart, on);
+        kept(this.textPart, on);
     }
 
     drawName(): void {

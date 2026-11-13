@@ -51,7 +51,7 @@ describe('QRCode', () => {
         const code = new QRCode({ onEncodeFailed: failed });
         page(code);
         await tick();
-        expect(code.svg.hasAttribute('hidden')).toBe(true);
+        expect(code.svg?.isConnected ?? false).toBe(false);
         expect(failed).not.toHaveBeenCalled();
         expect(code.isInvalid).toBe(false);
         expect(code.toSVG()).toBe('');
@@ -83,8 +83,8 @@ describe('QRCode', () => {
         const count = (c: QRCode) => c.path.getAttribute('d')!.split('M').length;
         expect(count(marked)).toBeLessThan(count(plain));
         expect(marked.logoImage.getAttribute('src')).toBe('a.svg');
-        expect(marked.logoImage.hidden).toBe(false);
-        expect(plain.logoImage.hidden).toBe(true);
+        expect(marked.logoImage?.isConnected).toBe(true);
+        expect(plain.logoImage?.isConnected ?? false).toBe(false);
     });
 
     it('keeps the logo small enough for a code to be read', async () => {
@@ -151,8 +151,8 @@ describe('Barcode', () => {
         page(code);
         await tick();
         expect(code.isInvalid).toBe(true);
-        expect(code.textPart.element.hidden).toBe(true);
-        expect(code.svg.hasAttribute('hidden')).toBe(true);
+        expect(code.textPart.element?.isConnected ?? false).toBe(false);
+        expect(code.svg?.isConnected ?? false).toBe(false);
         code.format = 'code128';
         await tick();
         expect(code.isInvalid).toBe(false);
@@ -166,7 +166,7 @@ describe('Barcode', () => {
         const code = new Barcode({ value: '12', showText: false });
         page(code);
         await tick();
-        expect(code.textPart.element.hidden).toBe(true);
+        expect(code.textPart.element?.isConnected ?? false).toBe(false);
         expect(code.toSVG()).not.toContain('<text');
     });
 

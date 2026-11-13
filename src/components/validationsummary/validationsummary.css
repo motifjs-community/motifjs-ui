@@ -21,10 +21,6 @@
         margin: 0;
     }
 
-    .mx-validation-summary__header[hidden] {
-        display: none;
-    }
-
     .mx-validation-summary__list {
         display: flex;
         flex-direction: column;

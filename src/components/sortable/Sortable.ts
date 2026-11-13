@@ -11,7 +11,7 @@ import { windowOf } from "../../core/page-documents";
 import { onWindow } from "../../core/window-events";
 import { givenList } from "../../core/given-field";
 import { onLanguage } from "../../core/on-language";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { autoScroll } from "../../parts/drag/auto-scroll";
 import { DragBoxes } from "../../parts/drag/drag-boxes";
@@ -123,7 +123,7 @@ export class Sortable<T = unknown> extends Control<HTMLDivElement, SortableProps
         this.attr.add({ role: 'group' });
         this.line = part<HTMLSpanElement>(this, 'span', 'mx-sortable__line');
         this.line.attr.add({ 'aria-hidden': 'true' });
-        shown(this.line, false);
+        kept(this.line, false);
         this.live = part<HTMLSpanElement>(this, 'span', 'mx-sr-only');
         this.live.attr.add({ 'aria-live': 'polite' });
         this.ghost = new DragGhost(() => windowOf(this)?.document ?? document, () => true, 'mx-sortable__ghost');
@@ -590,13 +590,13 @@ export class Sortable<T = unknown> extends Control<HTMLDivElement, SortableProps
         const line = this.line;
         mark(this, 'data-drop-target', at !== null);
         if (at === null) {
-            shown(line, false);
+            kept(line, false);
             return;
         }
         const vertical = (this.peekProperty<SortableOrientation>('orientation') ?? 'vertical') === 'vertical';
         css(line, vertical ? 'top' : 'left', `${at}px`);
         css(line, vertical ? 'left' : 'top', '');
-        shown(line, true);
+        kept(line, true);
     }
 
     // The drag ends: a drop moves the item, within this sortable or into another of the group.

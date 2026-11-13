@@ -6,7 +6,7 @@ import { isInPage, sameWindow } from '../../core/measure';
 import { windowOf } from '../../core/page-documents';
 import { placeOnPage } from '../../core/page-layer';
 import { onDocument, onWindow } from '../../core/window-events';
-import { callNow, mark, put } from '../../core/part-writes';
+import { callNow, kept, put } from '../../core/part-writes';
 import { placeBeside } from './place-popup';
 import type { PopupCloseReason } from './popup-close-reason';
 import type { PopupOpenOptions } from './popup-open-options';
@@ -65,7 +65,7 @@ export class Popup extends Component<HTMLDivElement> {
     this.class.add('mx-popup');
     put(this, 'tabindex', '-1');
     if (hasPopover) this.attr.add({ popover: 'manual' });
-    else mark(this, 'hidden', true);
+    else kept(this, false);
     this.motif.on('keydown', (_, e) => this.onKeyDown(e));
     this.motif.on('focusout', (_, e) => this.onFocusOut(e));
     this.motif.on('click', (_, e) => e.stopPropagation());
@@ -147,7 +147,7 @@ export class Popup extends Component<HTMLDivElement> {
    */
   private showSurface(): void {
     if (!hasPopover) {
-      mark(this, 'hidden', false);
+      kept(this, true);
       return;
     }
     callNow(this, 'showPopover');
@@ -155,7 +155,7 @@ export class Popup extends Component<HTMLDivElement> {
   }
 
   private hideSurface(): void {
-    if (!hasPopover) mark(this, 'hidden', true);
+    if (!hasPopover) kept(this, false);
     else if (this.inTopLayer) {
       this.inTopLayer = false;
       callNow(this, 'hidePopover');

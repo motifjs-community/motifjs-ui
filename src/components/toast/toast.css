@@ -113,10 +113,6 @@
     block-size: 1lh;
   }
 
-  :where(.mx-toast) > .mx-toast__icon[hidden] {
-    display: none;
-  }
-
   /* The plate is centred on the glyph and takes no room of its own: the glyph is drawn over it. */
   :where(.mx-toast) > .mx-toast__icon::before {
     content: '';

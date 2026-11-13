@@ -6,7 +6,7 @@ import { givenList } from "../../core/given-field";
 import { isInPage, lengthOf, measure, onLayout, probeLengths, rectOf, styleOf, textWidths } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { css, put, shown, text } from "../../core/part-writes";
+import { css, kept, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { arcPath, polar, type Place } from "../../parts/chart/chart-paths";
 import { DrawnTexts, formatNumber, type ChartFormat } from "../../parts/chart/chart-text";
@@ -137,7 +137,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         this.legendList.attr.add({ 'aria-hidden': 'true' });
         this.tip = part<HTMLSpanElement>(this, 'span', 'mx-bar-gauge__tip');
         this.tip.attr.add({ 'aria-hidden': 'true' });
-        shown(this.tip, false);
+        kept(this.tip, false);
         this.motion = new ValueMotion(this, values => this.drawValues(values));
         probeLengths(this, LENGTHS);
 
@@ -153,7 +153,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         onLayout(this, 'size', () => this.again());
         onLayout(this, 'look', () => this.again());
         this.motif.on('pointermove', (_, e) => this.pointAt(e));
-        this.motif.on('pointerleave', () => shown(this.tip, false));
+        this.motif.on('pointerleave', () => kept(this.tip, false));
         this.motif.setDisposable(() => this.motion.stop());
     }
 
@@ -418,7 +418,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
 
     drawLegend(): void {
         const bars = this.legend ? this.bars : [];
-        shown(this.legendList, bars.length > 0);
+        kept(this.legendList, bars.length > 0);
         while (this.legendEntries.length < bars.length) this.legendEntries.push(this.makeEntry());
         for (const extra of this.legendEntries.splice(bars.length)) removePart(extra.item);
         bars.forEach((bar, i) => {
@@ -468,11 +468,11 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         while (a < this.start) a += Math.PI * 2;
         const bar = this.bars[index];
         if (!bar || bar.value === null || a > this.start + this.sweep) {
-            shown(this.tip, false);
+            kept(this.tip, false);
             return;
         }
         text(this.tip, this.barText(bar));
-        shown(this.tip, true);
+        kept(this.tip, true);
         css(this.tip, 'left', `${(e.clientX - host.left).toFixed(1)}px`);
         css(this.tip, 'top', `${(e.clientY - host.top).toFixed(1)}px`);
     }

@@ -6,7 +6,7 @@ import type { Control } from '../../core/control';
 import { focusFirstIn, focusInLineField, focusOn, focusedWindow, holdsFocus, isFocused, rememberFocus } from '../../core/focus';
 import type { FocusMark } from '../../core/focus-mark';
 import { clearParts, loose, part } from '../../core/draw-parts';
-import { css, flag, mark, put, text } from '../../core/part-writes';
+import { css, flag, kept, mark, put, text } from '../../core/part-writes';
 import { isInPage, isRtl, measure, onLayout, pageOf, rectOf, styleOf, whenMeasured, type Page } from '../../core/measure';
 import { dismissMark, maximizeMark, minimizeMark, restoreMark } from '../../core/glyphs';
 import { showIcon } from '../../core/show-icon';
@@ -529,7 +529,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const barPart = loose<HTMLDivElement>('div', 'mx-form__bar');
     const iconPart = part<HTMLSpanElement>(barPart, 'span', 'mx-form__icon');
     iconPart.attr.add({ 'aria-hidden': 'true' });
-    mark(iconPart, 'hidden', true);
+    kept(iconPart, false);
     // A heading by role, not an <h2>: the page's own heading styles stay out of the title bar.
     const titlePart = part<HTMLDivElement>(barPart, 'div', 'mx-form__title');
     const titleId = nextId('form-title');
@@ -538,7 +538,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
 
     const contentPart = loose<HTMLDivElement>('div', 'mx-form__content');
     const footerPart = loose<HTMLDivElement>('div', 'mx-form__footer');
-    mark(footerPart, 'hidden', true);
+    kept(footerPart, false);
     const { frame: framePart, handles } = resizeFrame('mx-form__frame', 'mx-form__resize');
     // A press on a handle resizes the form from that side or corner.
     for (const [edge, handle] of handles) handle.motif.on('pointerdown', (_, e) => this.resizePointerDown(handle, edge, e));
@@ -677,7 +677,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     if (control === parts.footerControl) return;
     this.unplace(parts.footerControl);
     parts.footerControl = control;
-    mark(parts.footerPart, 'hidden', !control);
+    kept(parts.footerPart, !!control);
     if (control) this.placeIn(control, parts.footerPart);
   }
 
@@ -686,7 +686,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const plain = parseAccessKey(title ?? '').text;
     text(parts.titlePart, plain);
     put(this, 'aria-labelledby', plain ? parts.titleId : null);
-    mark(parts.titlePart, 'hidden', !plain);
+    kept(parts.titlePart, !!plain);
   }
 
   private renderIcon(): void {
@@ -694,7 +694,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const icon = this.peekProperty<IconSource | null>('icon');
     parts.releaseIcon();
     parts.releaseIcon = () => {};
-    mark(parts.iconPart, 'hidden', !icon);
+    kept(parts.iconPart, !!icon);
     clearParts(parts.iconPart);
     if (icon) parts.releaseIcon = showIcon(icon, parts.iconPart);
   }

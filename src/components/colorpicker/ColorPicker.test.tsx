@@ -68,7 +68,7 @@ describe('ColorPicker', () => {
     swatches[1].click();
     expect(picker.value).toBe('#e03131');
     expect(swatches[1].getAttribute('aria-pressed')).toBe('true');
-    expect(picker.element.querySelector<HTMLElement>('.mx-color-picker__alpha')!.hidden).toBe(true);
+    expect(picker.element.querySelector('.mx-color-picker__alpha')).toBeNull();
     picker.alpha = true;
     const alpha = thumbs(picker)[2];
     key(alpha, 'Home');

@@ -186,11 +186,6 @@
     gap: var(--_progress-gap);
   }
 
-  :where(.mx-progress) > .mx-progress__head[hidden],
-  :where(.mx-progress) > .mx-progress__head > [hidden] {
-    display: none;
-  }
-
   :where(.mx-progress > .mx-progress__head) > .mx-progress__label {
     flex: 1 1 auto;
     min-inline-size: 0;
@@ -519,10 +514,6 @@
     100% {
       clip-path: var(--_spinner-shape-7);
     }
-  }
-
-  :where(.mx-spinner) > .mx-spinner__label[hidden] {
-    display: none;
   }
 
   @keyframes mx-spinner-turn {

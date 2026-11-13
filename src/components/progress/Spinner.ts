@@ -5,7 +5,7 @@ import type { ControlSize } from '../../core/control-size';
 import { focusFirstIn, focusOn, rememberFocus } from '../../core/focus';
 import { nextId } from '../../core/next-id';
 import { isElement } from '../../core/node-kind';
-import { mark, put, text as writeText } from '../../core/part-writes';
+import { kept, mark, put, text as writeText } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { ProgressTone } from './progress-tone';
 import type { SpinnerLabelPosition } from './spinner-label-position';
@@ -175,7 +175,7 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
   private renderLabel(text: string): void {
     const parts = this.parts;
     writeText(parts.label, text ?? '');
-    mark(parts.label, 'hidden', !text);
+    kept(parts.label, !!text);
     if (text) {
       parts.stopName?.();
       parts.stopName = null;

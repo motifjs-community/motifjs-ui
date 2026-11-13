@@ -347,7 +347,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> implements 
     const model = host.model;
     const format = host.format;
     const t = host.text.bind(host);
-    cell.flag('hidden', !column);
+    cell.kept(!!column);
     if (!column) return;
     const where = (index: number) => cellWords(host, column, index);
     cell

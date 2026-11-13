@@ -49,7 +49,8 @@ describe('Wizard', () => {
         await settle();
         expect(faces(w).map(f => f.querySelector('.mx-stepper__label')!.textContent)).toEqual(['Account', 'Address', 'Review']);
         expect(faces(w)[0].querySelector('.mx-stepper__description')!.textContent).toBe('Who you are');
-        expect(pages(w).map(p => p.hidden)).toEqual([false, true, true]);
+        // Only the page of the current step is in the page.
+        expect(pages(w).map(p => p.getAttribute('aria-label'))).toEqual(['Account']);
         expect(pages(w)[0].getAttribute('aria-label')).toBe('Account');
         expect(w.nextButton.text).toBe(enStrings.wizardNext);
         expect(w.previousButton.text).toBe(enStrings.wizardPrevious);
@@ -57,7 +58,7 @@ describe('Wizard', () => {
         next(w).click();
         await settle();
         expect(w.selectedIndex).toBe(1);
-        expect(pages(w).map(p => p.hidden)).toEqual([true, false, true]);
+        expect(pages(w).map(p => p.getAttribute('aria-label'))).toEqual(['Address']);
         expect(w.previousButton.isEnabled).toBe(true);
         next(w).click();
         await settle();
@@ -153,11 +154,11 @@ describe('Wizard', () => {
         await settle();
         expect(s.at).toBe('c');
         expect(w.currentStep).toBe(c);
-        expect(pages(w)[0].querySelector('p')).toBe(null);
+        expect(w.steps[0].element.querySelector('p')).toBe(null);
         s.at = 'a';
         await settle();
         expect(w.selectedIndex).toBe(0);
-        expect(pages(w)[0].querySelector('p')).not.toBe(null);
+        expect(w.steps[0].element.querySelector('p')).not.toBe(null);
         w.remove(c);
         expect(w.steps.length).toBe(2);
         await settle();

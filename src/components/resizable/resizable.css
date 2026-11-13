@@ -28,10 +28,6 @@
         touch-action: none;
     }
 
-    .mx-resizable__handle[hidden] {
-        display: none;
-    }
-
     .mx-resizable__handle:is([data-edge='top'], [data-edge='bottom']) {
         inset-inline: var(--_resizable-edge);
         block-size: var(--_resizable-edge);
@@ -97,9 +93,5 @@
 
     .mx-resizable__grip:dir(rtl) {
         cursor: nesw-resize;
-    }
-
-    .mx-resizable__grip[hidden] {
-        display: none;
     }
 }

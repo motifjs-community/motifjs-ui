@@ -6,7 +6,7 @@ import { givenField, givenList, givenValue } from "../../core/given-field";
 import type { IconSource } from "../../core/icon-source";
 import { boxOf, isRtl, measure, onLayout, pageOf, scrollerOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
-import { mark, put, shown, text } from "../../core/part-writes";
+import { kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Badge } from "../badge/Badge";
 import type { BottomNavigationItem } from "./bottom-navigation-item";
@@ -247,7 +247,7 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
             const look = this.lookOfSlot(slot);
             untracked(() => {
                 text(label, look.text);
-                shown(host, look.visible);
+                kept(host, look.visible);
                 put(host, 'aria-disabled', look.enabled ? null : 'true');
                 put(host, 'data-value', String(look.value));
                 if (slot.link) {
@@ -283,7 +283,7 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
         if (!p.badge) return;
         p.badge.dot = look.dot;
         p.badge.count = look.badge;
-        shown(p.badge, on);
+        kept(p.badge, on);
     }
 
     drawIcon(p: ItemPart, look: Look, selected: boolean): void {
@@ -296,7 +296,7 @@ export class BottomNavigation extends Control<HTMLElement, BottomNavigationProps
         }
         const name = selected ? look.activeGlyph || look.glyph : look.glyph;
         put(p.glyph, 'data-icon', name || null);
-        shown(p.glyph, !source && name !== '');
+        kept(p.glyph, !source && name !== '');
     }
 
     drawName(): void {

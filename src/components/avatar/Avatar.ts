@@ -3,7 +3,7 @@ import { Control } from '../../core/control';
 import { glyphPart, part } from '../../core/draw-parts';
 import { LanguageLook } from '../../core/language-look';
 import { onLanguage } from '../../core/on-language';
-import { mark, put, shown, text } from '../../core/part-writes';
+import { kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import type { AvatarProps } from './avatar-props';
@@ -154,16 +154,16 @@ export class Avatar extends Control<HTMLSpanElement, AvatarProps> {
     put(img, 'src', this.imageSrc);
     const picture = !!src && src === this.loaded;
     mark(img, 'data-pending', trying && !picture);
-    shown(img, trying);
+    kept(img, trying);
 
     const initials = this.shownInitials;
     text(this.initialsPart, initials);
-    shown(this.initialsPart, !picture && !!initials);
-    shown(this.iconPart, !picture && !initials);
+    kept(this.initialsPart, !picture && !!initials);
+    kept(this.iconPart, !picture && !initials);
 
     const status = this.peekProperty<AvatarStatus | null>('status') ?? null;
     put(this.statusPart, 'data-status', status);
-    shown(this.statusPart, !!status);
+    kept(this.statusPart, !!status);
     this.renderName(status);
   }
 

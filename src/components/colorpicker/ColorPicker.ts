@@ -5,7 +5,7 @@ import { focusOn, isFocused } from '../../core/focus';
 import { glyph } from '../../core/glyphs';
 import { rectOf } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
-import { css, mark, put, shown } from '../../core/part-writes';
+import { css, kept, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { ColorHsva } from '../../parts/color/color-hsva';
 import { formatColor, hsvaToRgba, parseColor, rgbaToHsva } from '../../parts/color/colors';
@@ -338,9 +338,9 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
   private renderParts(): void {
     const alpha = !!this.peekProperty('alpha');
     mark(this, 'data-alpha', alpha);
-    shown(this.alphaTrack.box, alpha);
+    kept(this.alphaTrack.box, alpha);
     if (this.opacity.visible !== alpha) this.opacity.visible = alpha;
-    shown(this.inputs, this.peekProperty('showInputs') !== false);
+    kept(this.inputs, this.peekProperty('showInputs') !== false);
     const canPick = typeof (globalThis as { EyeDropper?: unknown }).EyeDropper === 'function';
     if (this.picker.visible !== (canPick && this.peekProperty('eyeDropper') !== false)) this.picker.visible = canPick && this.peekProperty('eyeDropper') !== false;
     this.renderColor();
@@ -366,7 +366,7 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
       put(preset.swatch, 'aria-label', color);
       css(preset.swatch, '--_color', color);
     });
-    shown(this.swatches, palette.length > 0);
+    kept(this.swatches, palette.length > 0);
     this.renderSwatchState();
   }
 

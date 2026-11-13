@@ -1,7 +1,7 @@
 import { read, type Bind, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
 import type { IconSource } from "../../core/icon-source";
-import { put, shown } from "../../core/part-writes";
+import { kept, put } from "../../core/part-writes";
 import { PanelContent } from "../tabs/PanelContent";
 import type { Wizard } from "./Wizard";
 import type { WizardStepProps } from "./wizard-step-props";
@@ -29,7 +29,7 @@ export class WizardStep extends Control<HTMLDivElement, WizardStepProps> {
         const own = (this.props ?? {}) as WizardStepProps;
         this.class.add('mx-wizard__page');
         this.attr.add({ role: 'group' });
-        shown(this, false);
+        kept(this, false);
         this.content = new PanelContent(this, this.childs ?? [], own.content);
         this.validate = own.validate ?? null;
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);

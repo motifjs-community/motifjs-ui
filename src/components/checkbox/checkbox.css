@@ -32,7 +32,7 @@
     inline-size: 100%;
   }
 
-  .mx-toggle-field.mx-field:is([data-label-mode='hidden'], :has(> .mx-field__label[hidden])) {
+  .mx-toggle-field.mx-field:is([data-label-mode='hidden'], :not(:has(> .mx-field__label))) {
     column-gap: 0;
   }
 

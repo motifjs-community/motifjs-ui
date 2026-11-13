@@ -35,6 +35,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - `Card`, `AppBar`, `MenuBar`, `Popover` and `Gauge` hide their parts the same way, and a merged `MenuBar` hides itself
   so: out of the page while its items are in the main bar. A `Popover` without the browser's popover support is out of
   the page while closed; it is placed by its target only when it has no place of its own in the page.
+- Every other component hides its parts the same way (`Avatar`, `BarGauge`, `Barcode`, `BottomNavigation`, `Breadcrumb`,
+  `Button`, `Chip`, `ColorPicker`, `Form`, `Gallery`, `GroupBox`, `LoadPanel`, `Lookup`, `OtpInput`, `Pagination`,
+  `ProgressBar`, `QRCode`, `RadioGroup`, `Resizable`, `ScrollView`, `ShortcutEditor`, `Signature`, `Slider`, `Sortable`,
+  `Sparkline`, `SpeedDial`, `Spinner`, `Splitter`, `Tabs`, `TagBox`, `TileView`, `Toast`, `Tooltip`, `TreeView`,
+  `ValidationSummary`, `Wizard`, the fields and popups). `LoadPanel` and `Tooltip` are out of the page while closed
+  and go on the page or by their target only when they have no place of their own there. The stylesheets lose the
+  `[hidden]` rules of parts; a component's own root keeps its rule, for a page that hides it with the attribute.
 
 ## [0.1.0-beta.9] - 2026-11-13
 

@@ -27,7 +27,8 @@ async function settle() {
 }
 
 const part = (avatar: Avatar, name: string) => avatar.element.querySelector<HTMLElement>(`.mx-avatar__${name}`)!;
-const isShown = (el: HTMLElement) => !el.hidden;
+// A part not shown is out of the page.
+const isShown = (el: HTMLElement | null) => !!el && el.isConnected && !el.hidden;
 
 describe('initialsOf', () => {
   it('takes the first letters of the first and last words, in the capitals of the language', () => {

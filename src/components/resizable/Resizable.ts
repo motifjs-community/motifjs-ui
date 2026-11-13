@@ -3,7 +3,7 @@ import { Control } from "../../core/control";
 import { glyphPart, part } from "../../core/draw-parts";
 import { boxOf, holderOf, measure, styleOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { followPointer } from "../../parts/window/follow-pointer";
 import { resizeBox } from "../../parts/window/resize-box";
@@ -197,8 +197,8 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
 
     drawHandles(): void {
         const allowed = this.allowed();
-        for (const [edge, handle] of this.handleParts) shown(handle, allowed.has(edge));
-        shown(this.grip, allowed.size > 0);
+        for (const [edge, handle] of this.handleParts) kept(handle, allowed.has(edge));
+        kept(this.grip, allowed.size > 0);
     }
 
     // The component the box stays inside: its parent, or the area given; none for no limit.

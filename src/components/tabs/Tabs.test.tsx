@@ -302,11 +302,14 @@ describe('Tabs', () => {
     expect(b.querySelector('.mx-tabs__badge')!.textContent).toBe('3');
     expect(b.title).toBe('More');
 
+    const third = headers(t)[2];
     s.enabled = false;
+    await settle();
+    expect(third.getAttribute('aria-disabled')).toBe('true');
     s.visible = false;
     await settle();
-    expect(headers(t)[2].getAttribute('aria-disabled')).toBe('true');
-    expect(headers(t)[2].hidden).toBe(true);
+    // A tab not shown has its header out of the page.
+    expect(third.isConnected).toBe(false);
     s.badge = null;
     await settle();
     expect(b.querySelector('.mx-tabs__badge')).toBeNull();
@@ -324,7 +327,8 @@ describe('Tabs', () => {
       </Tabs>,
     );
     await settle();
-    const [a, , c, , e] = headers(t);
+    // D is not shown: its header is out of the page.
+    const [a, , c, e] = headers(t);
     a.focus();
     expect(press('ArrowRight')).toBe(true);
     expect(document.activeElement).toBe(c);
@@ -511,9 +515,10 @@ describe('Tabs', () => {
     t.tabs[0].visible = false;
     expect(t.selectedIndex).toBe(1);
     t.enabled = false;
-    expect(headers(t)[1].disabled).toBe(true);
+    // The first tab is not shown: the second is the only header in the page.
+    expect(headers(t)[0].disabled).toBe(true);
     t.enabled = true;
-    expect(headers(t)[1].disabled).toBe(false);
+    expect(headers(t)[0].disabled).toBe(false);
   });
 
   it('moves a tab from another Tabs, and drops no selection when disposed', async () => {

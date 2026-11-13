@@ -57,10 +57,6 @@
     overflow-wrap: anywhere;
   }
 
-  :where(.mx-field) > .mx-field__label[hidden] {
-    display: none;
-  }
-
   .mx-field[data-label-mode='hidden'] > .mx-field__label {
     position: absolute;
     inline-size: 1px;

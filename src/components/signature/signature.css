@@ -36,10 +36,6 @@
         pointer-events: none;
     }
 
-    .mx-signature__guide[hidden] {
-        display: none;
-    }
-
     .mx-signature__placeholder {
         position: absolute;
         inset: 0;
@@ -49,18 +45,10 @@
         pointer-events: none;
     }
 
-    .mx-signature__placeholder[hidden] {
-        display: none;
-    }
-
     .mx-signature__actions {
         position: absolute;
         inset-block-start: var(--_signature-actions-inset);
         inset-inline-end: var(--_signature-actions-inset);
         display: flex;
-    }
-
-    .mx-signature__actions[hidden] {
-        display: none;
     }
 }

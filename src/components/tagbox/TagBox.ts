@@ -473,7 +473,8 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     if (!self[PARTS]) {
       const items = new DataItems<T>();
       const tags = loose<HTMLDivElement>('div', 'mx-tag-box__tags');
-      tags.attr.add({ role: 'list', hidden: true });
+      tags.attr.add({ role: 'list' });
+      kept(tags, false);
       self[PARTS] = {
         items,
         rows: new ListRows(items),
@@ -591,7 +592,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     parts.tagList = list;
     untracked(() => parts.drawn.value++);
     if (parts.moreTag) kept(parts.moreTag, !!parts.more);
-    mark(parts.tags, 'hidden', !values.length);
+    kept(parts.tags, !!values.length);
     const placeholder = this.peekProperty<string>('placeholder') ?? '';
     if (placeholder && !values.length) put(this.controlPart, 'placeholder', placeholder);
     else put(this.controlPart, 'placeholder', null);

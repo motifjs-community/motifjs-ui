@@ -180,7 +180,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
 
   protected override applyProperty(name: string, value: unknown): void {
     if (name === 'visible') {
-      mark(this.parts.headerPart, 'hidden', !value);
+      kept(this.parts.headerPart, !!value);
       this.parts.owner?.tabChanged(this);
       return;
     }

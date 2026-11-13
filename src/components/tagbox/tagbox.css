@@ -21,10 +21,6 @@
     max-inline-size: 100%;
   }
 
-  .mx-tag-box__tags[hidden] {
-    display: none;
-  }
-
   .mx-tag-box .mx-tag-box__input {
     flex: 1 1 var(--_tagbox-input-min-width);
     inline-size: auto;

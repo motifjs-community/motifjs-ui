@@ -115,7 +115,7 @@ describe('RadioGroup', () => {
     page(<RadioGroup ref={(x: RadioGroup<number>) => (g = x)} items={items} x-model={() => s.v} />);
     await settle();
     expect(inputs(g)[1].disabled).toBe(true);
-    expect(g.element.querySelectorAll('.mx-radio-group__item')[3].hasAttribute('hidden')).toBe(true);
+    expect(g.element.querySelectorAll('.mx-radio-group__item')[3]?.isConnected ?? false).toBe(false);
 
     g.focus();
     expect(document.activeElement).toBe(inputs(g)[0]);

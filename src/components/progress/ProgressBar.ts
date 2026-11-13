@@ -1,7 +1,7 @@
 import type { Bind, Component, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import { part } from '../../core/draw-parts';
-import { css, mark, put, text as writeText } from '../../core/part-writes';
+import { css, kept, mark, put, text as writeText } from '../../core/part-writes';
 import { svgComponent } from '../../parts/chart/svg-parts';
 import type { ControlSize } from '../../core/control-size';
 import { LanguageLook } from '../../core/language-look';
@@ -238,7 +238,7 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
     const parts = this.parts;
     writeText(parts.label, text ?? '');
     parts.hasLabel = !!text;
-    mark(parts.label, 'hidden', !text);
+    kept(parts.label, !!text);
     if (text) {
       parts.stopName?.();
       parts.stopName = null;
@@ -301,8 +301,8 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
 
   private renderHead(): void {
     const parts = this.parts;
-    mark(parts.value, 'hidden', !parts.hasValue);
-    mark(parts.head, 'hidden', !parts.hasLabel && !parts.hasValue);
+    kept(parts.value, !!parts.hasValue);
+    kept(parts.head, parts.hasLabel || parts.hasValue);
   }
 
   private renderLook(): void {

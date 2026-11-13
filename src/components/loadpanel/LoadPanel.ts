@@ -6,7 +6,7 @@ import { focusFirstIn, focusOn, holdsFocus, rememberFocus } from "../../core/foc
 import type { FocusMark } from "../../core/focus-mark";
 import { isInPage } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
-import { mark, put, shown, text } from "../../core/part-writes";
+import { kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { inertAround } from "../../parts/overlay/inert-around";
 import { Button } from "../button/Button";
@@ -52,7 +52,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         const own = (this.props ?? {}) as LoadPanelProps;
         this.class.add('mx-load-panel');
         put(this, 'tabindex', '-1');
-        shown(this, false);
+        kept(this, false);
         this.pane = part<HTMLDivElement>(this, 'div', 'mx-load-panel__pane');
         this.pane.attr.add({ role: 'status' });
         this.spinner = new Spinner({ size: 'lg' });
@@ -75,8 +75,8 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         this.observeProperty<string>('cancelText', () => this.drawTexts());
         this.observeProperty<boolean>('shade', on => mark(this, 'data-shade', on !== false));
         this.observeProperty<boolean>('showPane', on => mark(this, 'data-pane', on !== false));
-        this.observeProperty<boolean>('showIndicator', on => shown(this.spinner, on !== false));
-        this.observeProperty<boolean>('cancelable', on => shown(this.cancelButton, !!on));
+        this.observeProperty<boolean>('showIndicator', on => kept(this.spinner, on !== false));
+        this.observeProperty<boolean>('cancelable', on => kept(this.cancelButton, !!on));
         this.observeProperty<boolean>('value', value => {
             if (this.telling) {
                 return;
@@ -221,7 +221,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         this.shownNow = false;
         this.undo?.();
         this.undo = null;
-        shown(this, false);
+        kept(this, false);
         if (focusInside && !this.returnTo?.restore({ preventScroll: true }) && this.host) {
             focusFirstIn(this.host);
         }
@@ -249,7 +249,8 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         mark(this, 'data-page', !target);
         // Over the page: the page's layer holds it; over a target: a child of the target's component.
         if (!target) {
-            if (!isInPage(this)) placeOnPage(this, this);
+            // Its place in the page, not itself: closed, it is out of the page.
+            if (!this.parent || !isInPage(this.parent)) placeOnPage(this, this);
         } else if (this.parent !== target) {
             target.controls.add(this);
         }
@@ -274,7 +275,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         }
         this.host = target;
         this.shownNow = true;
-        shown(this, true);
+        kept(this, true);
         // Focus that was under it waits on the pane (the Cancel button when there is one), never dropped.
         if (this.returnTo) {
             if (this.peekProperty<boolean>('cancelable')) this.cancelButton.focus();

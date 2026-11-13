@@ -66,7 +66,7 @@ describe('Tooltip', () => {
     await settle();
     const button = save.element;
     expect(tip.element.getAttribute('role')).toBe('tooltip');
-    expect(tip.element.hidden).toBe(true);
+    expect(tip.element?.isConnected ?? false).toBe(false);
     expect(tip.element.textContent).toBe('Save the file (Ctrl+S)');
 
     over(button);
@@ -370,7 +370,7 @@ describe('Tooltip', () => {
     const tips = document.querySelectorAll<HTMLElement>('.mx-tooltip');
     expect(tips.length).toBe(1);
     expect(tips[0].textContent).toBe('Tip 7');
-    expect(tips[0].hidden).toBe(false);
+    expect(tips[0]?.isConnected).toBe(true);
     over(cells[3].element);
     expect(document.querySelector<HTMLElement>(`#${cells[3].element.getAttribute('aria-describedby')}`)!.textContent).toBe('Third');
 

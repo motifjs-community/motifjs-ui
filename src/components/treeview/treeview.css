@@ -62,10 +62,6 @@
     overscroll-behavior: contain;
   }
 
-  .mx-tree-view__body[hidden] {
-    display: none;
-  }
-
   .mx-tree-view__space {
     flex: none;
   }

@@ -4,7 +4,7 @@ import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
 import { canTakeFocus, focusFirstIn, focusOn } from '../../core/focus';
 import { clearParts, glyphPart, part, partBefore, removePart } from '../../core/draw-parts';
-import { flag, mark, put } from '../../core/part-writes';
+import { flag, kept, mark, put } from '../../core/part-writes';
 import { givenField, givenList } from '../../core/given-field';
 import { showIcon } from '../../core/show-icon';
 import { iconCopy, type IconSource } from '../../core/icon-source';
@@ -406,7 +406,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       const caption = parts.caption ?? this.placeCaption();
       renderAccessKey(caption, parsed);
       // An empty caption would still take a gap next to the icon.
-      mark(caption, 'hidden', !parsed.text);
+      kept(caption, !!parsed.text);
     }
     if (parts.popup && parts.content) put(parts.popup, 'aria-label', parsed.text);
     this.renderIconOnly();

@@ -274,7 +274,7 @@ describe('Toast', () => {
     t.icon = null;
     expect(t.element.dataset.tone).toBe('caution');
     expect(closeButton(t)).toBeNull();
-    expect(t.element.querySelector<HTMLElement>('.mx-toast__icon')!.hidden).toBe(true);
+    expect(t.element.querySelector('.mx-toast__icon')).toBeNull();
     t.action = { text: () => (s.percent > 50 ? 'Cancel' : 'Stop') };
     expect(t.element.querySelector('.mx-toast__action')!.textContent).toBe('Cancel');
     t.action = null;

@@ -240,7 +240,7 @@ describe('DropDown and Lookup over a data source', () => {
     expect(d.element.querySelector('.mx-lookup__header .mx-lookup__cell')).toBe(company);
     plain.headers = false;
     host.reState();
-    expect(d.element.querySelector<HTMLElement>('.mx-lookup__header')!.hidden).toBe(true);
+    expect(d.element.querySelector('.mx-lookup__header')).toBeNull();
     expect(city).toEqual({ field: 'city', caption: 'City' });
   });
 

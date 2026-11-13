@@ -6,7 +6,7 @@ import { chevronEnd, chevronStart } from '../../core/glyphs';
 import { LanguageLook } from '../../core/language-look';
 import { boxOf, holderOf, isRendered, measure, onLayout, readAgain } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
-import { kept, mark, put, text } from '../../core/part-writes';
+import { kept, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import type { ButtonSize } from '../button/button-size';
@@ -342,7 +342,7 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
 
     kept(this.info, this.peekProperty('showInfo') !== false);
     // Hidden, not taken away, in the compact look: its text stays readable.
-    mark(this.info, 'hidden', compact);
+    kept(this.info, !compact);
     const total = Number(this.peekProperty('total')) || 0;
     const own = this.peekProperty<string>('infoText');
     const values = { page: n(page), count: n(count), total: n(total) };

@@ -26,10 +26,6 @@
     grid-column: 1 / -1;
   }
 
-  .mx-form-layout__item[hidden] {
-    display: none;
-  }
-
   /* Buttons sit on the line of the fields' boxes. */
   .mx-form-layout__item[data-kind='button'] {
     align-self: end;

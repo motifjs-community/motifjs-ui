@@ -91,9 +91,9 @@ describe('Sparkline', () => {
         const spark = make({ data: [1, 50, 2] });
         spark.element.dispatchEvent(new PointerEvent('pointermove', { clientX: 48, bubbles: true }));
         const tip = spark.element.querySelector('.mx-sparkline__tip') as HTMLElement;
-        expect(tip.hidden).toBe(false);
+        expect(tip?.isConnected).toBe(true);
         expect(tip.textContent).toBe('50');
         spark.element.dispatchEvent(new PointerEvent('pointerleave'));
-        expect(tip.hidden).toBe(true);
+        expect(tip?.isConnected ?? false).toBe(false);
     });
 });

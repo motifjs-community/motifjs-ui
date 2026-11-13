@@ -396,12 +396,17 @@ describe('RibbonMenu', () => {
         const row = Array.from(gallery.querySelectorAll<HTMLElement>('.mx-ribbon-menu__gallery-row > .mx-ribbon-menu__tile'));
         expect(row.map(t => t.textContent)).toEqual(['A', 'B']);
         expect(row.map(t => t.getAttribute('aria-pressed'))).toEqual(['false', 'true']);
+        // The grid is in the gallery's popup, in the page once it opens.
+        gallery.querySelector<HTMLElement>('.mx-ribbon-menu__gallery-open')!.click();
+        await settle();
         const grid = Array.from(gallery.querySelectorAll<HTMLElement>('.mx-ribbon-menu__gallery-grid > .mx-ribbon-menu__tile'));
         expect(grid.map(t => t.textContent)).toEqual(['A', 'B', 'C']);
         grid[2].click();
         s.style = 'c';
         await settle();
         expect(told).toEqual(['c']);
+        gallery.querySelector<HTMLElement>('.mx-ribbon-menu__gallery-open')!.click();
+        await settle();
         expect(Array.from(gallery.querySelectorAll<HTMLElement>('.mx-ribbon-menu__gallery-grid > .mx-ribbon-menu__tile')).map(t => t.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true']);
     });
 
@@ -415,6 +420,8 @@ describe('RibbonMenu', () => {
         const gallery = menu.element.querySelector<HTMLElement>('.mx-ribbon-menu__gallery')!;
         const tiles = (place: string) => Array.from(gallery.querySelectorAll<HTMLElement>(`.mx-ribbon-menu__gallery-${place} > .mx-ribbon-menu__tile`));
         const [rowA, rowB] = tiles('row');
+        gallery.querySelector<HTMLElement>('.mx-ribbon-menu__gallery-open')!.click();
+        await settle();
         const [gridA, gridB] = tiles('grid');
         const drawn = [rowA.querySelector('svg.drawn'), gridA.querySelector('svg.drawn')];
         expect(drawn[0]).not.toBeNull();

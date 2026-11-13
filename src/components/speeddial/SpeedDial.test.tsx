@@ -70,10 +70,10 @@ describe('SpeedDial', () => {
         const fan = d.element.querySelector<HTMLElement>('.mx-speed-dial__fan')!;
         expect(fan.getAttribute('role')).toBe('menu');
         expect(fan.getAttribute('aria-hidden')).toBe('true');
-        expect(actions(d).map(a => a.getAttribute('aria-label'))).toEqual(['Note', 'Event', 'File', 'Photo']);
-        expect(actions(d).map(a => a.getAttribute('role'))).toEqual(['menuitem', 'menuitem', 'menuitem', 'menuitem']);
+        // File is not visible: out of the page.
+        expect(actions(d).map(a => a.getAttribute('aria-label'))).toEqual(['Note', 'Event', 'Photo']);
+        expect(actions(d).map(a => a.getAttribute('role'))).toEqual(['menuitem', 'menuitem', 'menuitem']);
         expect(actions(d)[1].getAttribute('aria-disabled')).toBe('true');
-        expect(actions(d)[2].hidden).toBe(true);
         expect(actions(d)[0].querySelector('.mx-glyph')!.getAttribute('data-icon')).toBe('pencil');
         expect(actions(d)[0].querySelector('.mx-speed-dial__label')!.textContent).toBe('Note');
         main.click();

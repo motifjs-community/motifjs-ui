@@ -21,10 +21,6 @@
     flex: none;
   }
 
-  .mx-lookup__header[hidden] {
-    display: none;
-  }
-
   .mx-lookup__cell {
     min-inline-size: 0;
     overflow: hidden;

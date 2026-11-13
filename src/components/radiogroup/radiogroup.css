@@ -87,10 +87,6 @@
     grid-auto-flow: column;
   }
 
-  .mx-radio-group__item[hidden] {
-    display: none;
-  }
-
   .mx-radio-group__label {
     position: relative;
     display: flex;

@@ -4,7 +4,7 @@ import { Control } from '../../core/control';
 import { glyphPart, part, partBefore, removePart } from '../../core/draw-parts';
 import { canTakeFocus, focusFirstIn, focusOn, hasFocusableIn, holdsFocus, isFocused, isRendered } from '../../core/focus';
 import { isElement } from '../../core/node-kind';
-import { mark, put } from '../../core/part-writes';
+import { kept, mark, put } from '../../core/part-writes';
 import type { GroupBoxProps } from './group-box-props';
 import type { GroupBoxToggledEventArgs } from './group-box-toggled-event-args';
 import type { GroupBoxVariant } from './group-box-variant';
@@ -184,7 +184,7 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
     const parsed = parseAccessKey(text ?? '');
     this.setAccessKey(parsed.key);
     renderAccessKey(this.parts.title, parsed);
-    mark(this.parts.legend, 'hidden', !parsed.text);
+    kept(this.parts.legend, !!parsed.text);
   }
 
   private renderToggle(): void {

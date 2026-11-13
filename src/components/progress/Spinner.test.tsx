@@ -42,7 +42,7 @@ describe('Spinner', () => {
     expect({ ...el.dataset }).toMatchObject({ size: 'lg', tone: 'neutral', labelPosition: 'side' });
 
     expect(coded.element.getAttribute('aria-label')).toBe('Loading…');
-    expect(coded.element.querySelector<HTMLElement>('.mx-spinner__label')!.hidden).toBe(true);
+    expect(coded.element.querySelector('.mx-spinner__label')).toBeNull();
     await uiLocale.use('tr');
     await settle();
     expect(coded.element.getAttribute('aria-label')).toBe('Yükleniyor…');

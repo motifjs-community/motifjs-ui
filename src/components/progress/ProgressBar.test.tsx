@@ -52,7 +52,7 @@ describe('ProgressBar', () => {
     expect(coded.element.getAttribute('aria-valuenow')).toBe('2');
     expect(done(coded)).toBe('0.25');
     expect(coded.element.dataset.tone).toBe('success');
-    expect(shown(coded).hidden).toBe(true);
+    expect(shown(coded)?.isConnected ?? false).toBe(false);
   });
 
   it('runs without a value and says nothing about one', async () => {
@@ -66,7 +66,7 @@ describe('ProgressBar', () => {
     expect(el.hasAttribute('aria-valuemin')).toBe(false);
     expect(el.hasAttribute('aria-valuetext')).toBe(false);
     expect(p.value).toBeNull();
-    expect(el.querySelector<HTMLElement>('.mx-progress__head')!.hidden).toBe(true);
+    expect(el.querySelector('.mx-progress__head')).toBeNull();
     s.value = 150;
     await settle();
     expect(el.dataset.state).toBe('determinate');
@@ -158,7 +158,7 @@ describe('ProgressBar', () => {
     expect(shown(p).textContent).toBe('3 of 12 files');
     expect(p.element.getAttribute('aria-valuetext')).toBe('3 of 12 files');
     p.showValue = false;
-    expect(shown(p).hidden).toBe(true);
+    expect(shown(p)?.isConnected ?? false).toBe(false);
   });
 
   it('follows getter props for its look', async () => {

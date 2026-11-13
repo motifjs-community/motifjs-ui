@@ -373,7 +373,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const made = [createThumb(trackPart, 'start', thumbIds[0]), createThumb(trackPart, 'end', thumbIds[1])];
     const ticksPart = part<HTMLDivElement>(controlPart, 'div', 'mx-slider__ticks');
     ticksPart.attr.add({ 'aria-hidden': 'true' });
-    mark(ticksPart, 'hidden', true);
+    kept(ticksPart, false);
     return {
       controlPart,
       trackPart,
@@ -539,7 +539,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const parts = this.sliderParts;
     const range = !!this.peekProperty('range');
     mark(this, 'data-range', range);
-    mark(parts.thumbParts[1], 'hidden', !range);
+    kept(parts.thumbParts[1], !!range);
     if (range && !parts.stopNames) {
       // The thumb names come from uiLocale.
       parts.stopNames = onLanguage(this, () => this.renderNames());
@@ -620,7 +620,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
       kept(label, labels);
     });
     parts.tickValues = values;
-    mark(parts.ticksPart, 'hidden', !values.length);
+    kept(parts.ticksPart, !!values.length);
     mark(this, 'data-ticks', marks);
     mark(this, 'data-tick-labels', labels && values.length > 0);
     this.markTicks(...this.activeSpan(parts.shown ?? this.peekValue()));

@@ -1253,7 +1253,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
 
 /**
  * Shown as far as the component tree says: neither it nor a component above it is hidden or waiting (core), or marked
- * hidden (a part some components still hide by its `hidden` attribute).
+ * hidden (a DataGrid details row out of view keeps the attribute: laid out, not drawn, so its content keeps its state).
  */
 function shownInTree(component: ComponentBase): boolean {
   for (let c: ComponentBase | null | undefined = component; c; c = c.parent as ComponentBase | null | undefined) {

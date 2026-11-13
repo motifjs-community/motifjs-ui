@@ -3,7 +3,7 @@ import { Control } from "../../core/control";
 import { part } from "../../core/draw-parts";
 import { onLanguage } from "../../core/on-language";
 import { windowOf } from "../../core/page-documents";
-import { css, mark, put, shown } from "../../core/part-writes";
+import { css, kept, mark, put } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { codeCanvas, codeSvgDocument, createCodeSvgParts, rectsPath, type CodeImage, type CodeRect } from "../../parts/code/code-image";
 import { encodeQr, type QrLevel, type QrMatrix } from "../../parts/code/qr-encode";
@@ -155,7 +155,7 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
         this.image = matrix ? this.imageOf(matrix) : null;
         this.invalid = failed;
         mark(this, 'data-invalid', failed);
-        mark(this.svgPart, 'hidden', !matrix);
+        kept(this.svgPart, !!matrix);
         if (this.image) {
             put(this.svgPart, 'viewBox', `0 0 ${this.image.width} ${this.image.height}`);
             put(this.pathPart, 'd', rectsPath(this.image.rects));
@@ -194,7 +194,7 @@ export class QRCode extends Control<HTMLDivElement, QRCodeProps> {
     drawLogo(): void {
         const image = this.logoPart;
         const logo = this.logo;
-        shown(image, !!logo && !!this.matrix);
+        kept(image, !!logo && !!this.matrix);
         put(image, 'src', logo);
         if (this.matrix) css(image, 'inline-size', `${(Math.ceil(this.matrix.size * this.logoSize) / (this.matrix.size + this.margin * 2)) * 100}%`);
     }

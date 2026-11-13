@@ -5,7 +5,7 @@ import { onWindow } from "../../core/window-events";
 import { fillTemplate } from "../../core/fill-template";
 import { functionValue } from "../../core/function-value";
 import { onLanguage } from "../../core/on-language";
-import { css, put, shown, text } from "../../core/part-writes";
+import { css, kept, put, text } from "../../core/part-writes";
 import { shortcuts } from "../../core/shortcut-registry";
 import type { ShortcutInfo } from "../../core/shortcut-info";
 import { shortcutText } from "../../core/shortcut-text";
@@ -272,7 +272,7 @@ export class ShortcutEditor extends Control<HTMLDivElement, ShortcutEditorProps>
         this.resetAllSeparator.visible = this.resetAllEnabled;
         this.resetAllItem.enabled = Object.keys(shortcuts.keymap).length > 0;
         this.bar.refresh();
-        shown(this.status, !!this.pressed);
+        kept(this.status, !!this.pressed);
         if (!this.pressed) {
             text(this.status, '');
             return;

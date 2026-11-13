@@ -54,13 +54,13 @@ describe('Resizable', () => {
         r.handles = 'edges';
         await settle();
         expect(handles(r).filter(h => !h.hidden).map(h => h.dataset.edge)).toEqual(['top', 'bottom', 'start', 'end']);
-        expect(grip.hidden).toBe(false);
+        expect(grip?.isConnected).toBe(true);
         r.handles = ['end'];
         await settle();
         expect(handles(r).filter(h => !h.hidden).map(h => h.dataset.edge)).toEqual(['end']);
         r.handles = [];
         await settle();
-        expect(grip.hidden).toBe(true);
+        expect(grip?.isConnected ?? false).toBe(false);
         await uiLocale.use('tr');
         expect(grip.getAttribute('aria-label')).not.toBe(enStrings.resize);
     });

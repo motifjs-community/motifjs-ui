@@ -101,6 +101,7 @@ describe('Breadcrumb', () => {
     expect(after[2].querySelector('button')?.textContent).toBe('Page');
     expect(after[2].querySelector('.mx-breadcrumb__divider')).not.toBe(null);
     expect(after[3].querySelector('[aria-current="page"]')?.textContent).toBe('Child');
-    expect(crumb.element.querySelector('.mx-breadcrumb__list')!.children[1].classList.contains('mx-breadcrumb__more')).toBe(true);
+    // Nothing overflows: the "more" step is out of the page.
+    expect(crumb.element.querySelector('.mx-breadcrumb__more')).toBeNull();
   });
 });

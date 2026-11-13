@@ -196,10 +196,6 @@
     transition: inset-inline-start var(--_move);
   }
 
-  .mx-slider__thumb[hidden] {
-    display: none;
-  }
-
   .mx-slider__thumb > :is(.mx-slider__halo, .mx-slider__knob) {
     position: absolute;
     inset: 50% auto auto 50%;
@@ -287,10 +283,6 @@
     z-index: var(--_over);
     block-size: var(--_slider-tick-length);
     margin-block-start: var(--_slider-tick-offset);
-  }
-
-  .mx-slider__ticks[hidden] {
-    display: none;
   }
 
   .mx-slider[data-tick-labels] .mx-slider__ticks {

@@ -8,7 +8,7 @@ import { clearParts, glyphPart, loose, part, removePart } from '../../core/draw-
 import { focusOn, holdsFocus, isFocused } from '../../core/focus';
 import { functionValue } from '../../core/function-value';
 import { orderControls } from '../../core/order-controls';
-import { css, mark, put, text as writeText } from '../../core/part-writes';
+import { css, kept, mark, put, text as writeText } from '../../core/part-writes';
 import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
@@ -649,7 +649,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       bodyPart.attr.add({ role: 'tree' });
       const emptyPart = new Component<HTMLDivElement>('div');
       emptyPart.class.add('mx-tree-view__empty');
-      mark(emptyPart, 'hidden', true);
+      kept(emptyPart, false);
       this.controls.add(bodyPart, emptyPart);
       self[PARTS] = {
         model: new TreeModel<T>(),
@@ -1090,7 +1090,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const parts = this.parts;
     const hadFocus = holdsFocus(parts.bodyPart);
     const empty = !parts.rows.length;
-    mark(parts.empty, 'hidden', !empty);
+    kept(parts.empty, !!empty);
     mark(this, 'data-empty', empty);
     const windowed = parts.rows.length > this.windowFrom;
     // A long tree places its rows apart from a short one's: switching between them draws them anew.
@@ -1231,7 +1231,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       parts.stashes.delete(drawn);
       for (const [key, entry] of stash) rows.set(key, entry);
     }
-    if (drawn.group) mark(drawn.group, 'hidden', false);
+    if (drawn.group) kept(drawn.group, true);
   }
 
   /** A row closes: its group hides with its rows in it, kept for when it opens again; a row left without children lets them go. */
@@ -1249,7 +1249,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       return;
     }
     parts.stashes.set(drawn, rows);
-    mark(group, 'hidden', true);
+    kept(group, false);
   }
 
   /** A row opened or closed: its group is built on the first open, then shown and hidden; its rows kept by key. */

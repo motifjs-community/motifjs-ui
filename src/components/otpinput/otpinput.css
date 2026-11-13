@@ -88,10 +88,6 @@
         animation: mx-otp-caret 1s step-end infinite;
     }
 
-    .mx-otp-input__caret[hidden] {
-        display: none;
-    }
-
     .mx-otp-input__separator {
         flex: none;
     }

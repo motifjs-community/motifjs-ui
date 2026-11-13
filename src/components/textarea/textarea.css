@@ -23,7 +23,7 @@
     align-items: start;
   }
 
-  .mx-text-area[data-label-mode='side'] > .mx-field__label:not([hidden]) {
+  .mx-text-area[data-label-mode='side'] > .mx-field__label {
     display: flex;
     align-items: center;
     min-block-size: var(--_height);

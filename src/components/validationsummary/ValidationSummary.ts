@@ -5,7 +5,7 @@ import { glyphPart, part } from "../../core/draw-parts";
 import { focusOn, isFocused } from "../../core/focus";
 import { follow } from "../../core/follow";
 import { onLanguage } from "../../core/on-language";
-import { mark, shown, text } from "../../core/part-writes";
+import { kept, mark, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { ValidationGroup } from "../../parts/validation/ValidationGroup";
 import type { ValidationTarget } from "../../parts/validation/validation-target";
@@ -199,7 +199,7 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
 
     drawHeader(): void {
         text(this.headText, this.peekProperty<string>('header') || uiLocale.strings.validationSummary);
-        shown(this.head, this.showHeader);
+        kept(this.head, this.showHeader);
     }
 
     click(e: MouseEvent): void {

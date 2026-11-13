@@ -5,7 +5,7 @@ import { glyph } from '../../core/glyphs';
 import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
-import { mark, put, text as writeText } from '../../core/part-writes';
+import { kept, put, text as writeText } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import type { ToastAction } from './toast-action';
@@ -267,7 +267,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       parts.title.attr.add({ id: parts.titleId });
     }
     writeText(parts.title, title ?? '');
-    mark(parts.title, 'hidden', !title);
+    kept(parts.title, !!title);
     put(this, 'aria-labelledby', title ? `${parts.titleId} ${parts.messageId}` : parts.messageId);
   }
 
@@ -278,7 +278,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     const icon = this.peekProperty<IconSource | null | undefined>('icon');
     parts.releaseIcon();
     parts.releaseIcon = () => {};
-    mark(parts.icon, 'hidden', icon === null);
+    kept(parts.icon, icon !== null);
     clearParts(parts.icon);
     if (icon === null) return;
     if (icon === undefined) {

@@ -7,7 +7,7 @@ import { loose, part } from '../../core/draw-parts';
 import type { IconSource } from '../../core/icon-source';
 import { boxOf, measure, onLayout, readAgain, type Box } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
-import { put, shown, text } from '../../core/part-writes';
+import { kept, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
@@ -200,7 +200,7 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
     li.bindings.list(() => [this.kindOf(entry)], (kind: Kind) => this.makeFace(entry, step, kind));
     li.bindings.list(() => (this.isLast(entry) ? [] : [DIVIDER]), () => this.divider());
     // What fits may have been worked out before the step was made.
-    shown(li, !this.hidden.has(this.entries.indexOf(entry)));
+    kept(li, !this.hidden.has(this.entries.indexOf(entry)));
     return li;
   }
 
@@ -286,8 +286,8 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
   };
 
   private showSteps(): void {
-    this.entries.forEach((entry, i) => shown(entry.step?.li ?? null, !this.hidden.has(i)));
-    shown(this.moreItem, this.hidden.size > 0);
+    this.entries.forEach((entry, i) => kept(entry.step?.li ?? null, !this.hidden.has(i)));
+    kept(this.moreItem, this.hidden.size > 0);
     const menu: MenuItem[] = this.collapsed.map((i) => {
       const entry = this.entries[i];
       const look = untracked(() => this.lookOf(entry.item));

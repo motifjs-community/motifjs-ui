@@ -24,7 +24,8 @@ async function settle() {
 }
 
 const tiles = (t: TileView) => Array.from(t.element.querySelectorAll<HTMLElement>('.mx-tile-view__tile'));
-const texts = (t: TileView) => tiles(t).map(el => el.querySelector('.mx-tile-view__text')!.textContent);
+// A tile with content of its own has no text part in the page.
+const texts = (t: TileView) => tiles(t).map(el => el.querySelector('.mx-tile-view__text')?.textContent ?? '');
 const selected = (t: TileView) => tiles(t).map(el => el.getAttribute('aria-selected'));
 const key = (el: HTMLElement, key: string, init: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
 
@@ -45,7 +46,7 @@ describe('TileView', () => {
         expect(tiles(t)[1].style.gridColumn).toBe('span 2');
         expect(tiles(t)[2].style.gridRow).toBe('span 2');
         expect(tiles(t)[2].querySelector('b')).not.toBe(null);
-        expect(tiles(t)[2].querySelector<HTMLElement>('.mx-tile-view__text')!.hidden).toBe(true);
+        expect(tiles(t)[2].querySelector('.mx-tile-view__text')).toBeNull();
         expect(tiles(t).map(x => x.tabIndex)).toEqual([0, -1, -1]);
         t.selectionMode = 'multiple';
         await settle();

@@ -14,7 +14,7 @@
   }
 
   /* A page's toolbar is the panel's first child, so that it stands against the strip (tabs.css). */
-  .mx-customizer__pages > .mx-tabs__panels > .mx-tabs__panel:not([hidden]) {
+  .mx-customizer__pages > .mx-tabs__panels > .mx-tabs__panel {
     display: flex;
     flex-direction: column;
     block-size: 100%;

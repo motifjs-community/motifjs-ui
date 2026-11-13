@@ -146,7 +146,7 @@ describe('ValidationSummary', () => {
         expect(lines(s).map(l => l!.split(':')[0])).toEqual(['A']);
         s.showHeader = false;
         await settle();
-        expect(s.element.querySelector<HTMLElement>('.mx-validation-summary__header')!.hidden).toBe(true);
+        expect(s.element.querySelector('.mx-validation-summary__header')).toBeNull();
         s.group = two;
         await settle();
         expect(s.count).toBe(0);

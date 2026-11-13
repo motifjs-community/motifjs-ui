@@ -169,11 +169,6 @@
         appearance: none;
     }
 
-    .mx-speed-dial__action[hidden],
-    .mx-speed-dial__main-text[hidden] {
-        display: none;
-    }
-
     .mx-speed-dial__main-text {
         white-space: nowrap;
     }

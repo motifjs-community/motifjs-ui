@@ -50,8 +50,4 @@
     .mx-tile-view__text {
         overflow-wrap: anywhere;
     }
-
-    .mx-tile-view__text[hidden] {
-        display: none;
-    }
 }

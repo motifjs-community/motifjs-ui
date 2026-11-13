@@ -41,8 +41,4 @@
         inline-size: 100%;
         min-inline-size: 0;
     }
-
-    .mx-multi-view__view[hidden] {
-        display: none;
-    }
 }

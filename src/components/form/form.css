@@ -120,10 +120,6 @@
     align-items: center;
   }
 
-  .mx-form__icon[hidden] {
-    display: none;
-  }
-
   .mx-form__title {
     flex: 1;
     min-inline-size: 0;
@@ -154,10 +150,6 @@
     flex: none;
     flex-wrap: wrap;
     justify-content: flex-end;
-  }
-
-  .mx-form__footer[hidden] {
-    display: none;
   }
 
   /* The footer holds one control; its own children are the buttons, as far apart as the footer's. */

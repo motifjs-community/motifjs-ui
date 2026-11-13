@@ -50,7 +50,7 @@ describe('ScrollView', () => {
         expect(view.element.dataset.bars).toBe('always');
         expect(view.element.dataset.direction).toBe('both');
         expect(view.content.element.querySelectorAll('p').length).toBe(2);
-        expect(view.pullPanel.element.hidden).toBe(true);
+        expect(view.pullPanel.element?.isConnected ?? false).toBe(false);
         const to = vi.fn();
         view.element.scrollTo = to;
         // A scroll written through the layer lands a moment later.
@@ -83,7 +83,7 @@ describe('ScrollView', () => {
         view.element.dispatchEvent(new Event('scroll'));
         expect(asked).toEqual([0]);
         expect(view.isLoading).toBe(true);
-        expect(view.bottomPanel.element.hidden).toBe(false);
+        expect(view.bottomPanel.element?.isConnected).toBe(true);
         expect(view.bottomText.element.textContent).toBe(enStrings.loading);
         view.element.dispatchEvent(new Event('scroll'));
         expect(asked).toEqual([0]);
@@ -110,7 +110,7 @@ describe('ScrollView', () => {
         page(view);
         await settle();
         sized(view, 400);
-        expect(view.pullPanel.element.hidden).toBe(false);
+        expect(view.pullPanel.element?.isConnected).toBe(true);
         expect(view.pullText.element.textContent).toBe(enStrings.scrollPullDown);
         pointer(view.element, 'pointerdown', 10);
         pointer(window, 'pointermove', 40);
@@ -122,7 +122,7 @@ describe('ScrollView', () => {
         pointer(window, 'pointerup', 130);
         expect(view.isRefreshing).toBe(true);
         expect(view.pullText.element.textContent).toBe(enStrings.scrollRefreshing);
-        expect(view.pullSpinner.element.hidden).toBe(false);
+        expect(view.pullSpinner.element?.isConnected).toBe(true);
         release!();
         expect(view.isRefreshing).toBe(false);
         expect(view.content.element.style.translate).toBe('');

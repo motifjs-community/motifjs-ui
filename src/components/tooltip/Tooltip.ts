@@ -6,7 +6,7 @@ import { canTakeFocus } from '../../core/focus';
 import { isInPage } from '../../core/measure';
 import { nextId } from '../../core/next-id';
 import { isElement } from '../../core/node-kind';
-import { mark, put, text as writeText } from '../../core/part-writes';
+import { kept, put, text as writeText } from '../../core/part-writes';
 import { placeNear } from '../../parts/popup/place-near';
 import type { PopupPlacement } from '../../parts/popup/popup-placement';
 import { hideTooltip, isTooltipShown, linkTooltip, showTooltip, tooltipTiming, unlinkTooltip } from './tooltip-hub';
@@ -103,7 +103,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
     this.class.add('mx-tooltip');
     this.attr.add({ id: this.parts.id, role: 'tooltip' });
     if (hasPopover) this.attr.add({ popover: 'manual' });
-    else mark(this, 'hidden', true);
+    else kept(this, false);
 
     const own = (this.props ?? {}) as TooltipProps;
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
@@ -213,7 +213,8 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
    */
   present(anchor: ComponentBase, described?: ComponentBase): void {
     const parts = this.parts;
-    if (!isInPage(this)) {
+    // Its place in the page, not itself: closed without the popover API, it is out of the page.
+    if (!this.parent || !isInPage(this.parent)) {
       if (!this.isBuilt) this.build();
       placeInTree(anchor, this);
       parts.placedItself = true;
@@ -224,7 +225,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
       if (!parts.inTopLayer) this.attr.add({ showPopover: true });
       parts.inTopLayer = true;
     } else {
-      mark(this, 'hidden', false);
+      kept(this, true);
     }
     this.place();
     parts.described = described && canTakeFocus(described) ? described : describedPart(anchor);
@@ -242,7 +243,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
       parts.inTopLayer = false;
       this.attr.add({ showPopover: false });
     } else {
-      mark(this, 'hidden', true);
+      kept(this, false);
     }
     // A described part disposed before it (the target's) has nothing left to take the token from.
     if (parts.described && !parts.described.isDisposed) removeToken(parts.described, 'aria-describedby', parts.id);
@@ -324,7 +325,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
       parts.label = partBefore<HTMLSpanElement>(this, this.controls.items[0] ?? null, 'span', 'mx-tooltip__text');
     }
     writeText(parts.label, text ?? '');
-    mark(parts.label, 'hidden', !text);
+    kept(parts.label, !!text);
     this.place();
   }
 

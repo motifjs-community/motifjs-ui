@@ -5,7 +5,7 @@ import { glyphPart, iconPart, part } from '../../core/draw-parts';
 import type { IconSource } from '../../core/icon-source';
 import { LanguageLook } from '../../core/language-look';
 import { onLanguage } from '../../core/on-language';
-import { mark, put, shown, text } from '../../core/part-writes';
+import { kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Avatar } from '../avatar/Avatar';
 import type { AvatarProps } from '../avatar/avatar-props';
@@ -288,15 +288,15 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     const check = this.checkShown;
     const icon = !check && !!this.peekProperty('icon');
     const avatar = !check && !icon && !!this.avatarPart;
-    shown(this.iconPart, icon);
-    if (this.avatarPart) shown(this.avatarPart, avatar);
+    kept(this.iconPart, icon);
+    if (this.avatarPart) kept(this.avatarPart, avatar);
     put(this, 'data-lead', check || icon ? 'icon' : avatar ? 'avatar' : null);
   }
 
   private renderState(): void {
     const removable = !!this.peekProperty('removable');
     mark(this, 'data-removable', removable);
-    shown(this.removePart, removable);
+    kept(this.removePart, removable);
     mark(this, 'data-pressable', this.pressable);
     if (!this.asOption) {
       const selectable = !!this.peekProperty('selectable');

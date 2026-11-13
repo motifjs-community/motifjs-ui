@@ -9,7 +9,7 @@ import { givenField, givenList, givenValue } from "../../core/given-field";
 import { isRtl, measure, rectOf, shareAlong } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { windowOf } from "../../core/page-documents";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { autoScroll } from "../../parts/drag/auto-scroll";
 import { DragBoxes } from "../../parts/drag/drag-boxes";
@@ -313,7 +313,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
             order.push(tile.el);
             const el = tile.el;
             text(tile.text, look.text);
-            shown(tile.text, look.text !== '' && !tile.content);
+            kept(tile.text, look.text !== '' && !tile.content);
             css(el, 'grid-column', `span ${look.widthRatio}`);
             css(el, 'grid-row', `span ${look.heightRatio}`);
         });

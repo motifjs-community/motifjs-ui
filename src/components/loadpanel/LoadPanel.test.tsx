@@ -53,7 +53,7 @@ describe('LoadPanel', () => {
         expect(document.activeElement).toBe(panel.element);
         panel.hide();
         expect(s.loading).toBe(false);
-        expect(panel.element.hidden).toBe(true);
+        expect(panel.element?.isConnected ?? false).toBe(false);
         expect(box.element.hasAttribute('aria-busy')).toBe(false);
         expect(field.hasAttribute('inert')).toBe(false);
         expect(document.activeElement).toBe(field);
@@ -114,7 +114,7 @@ describe('LoadPanel', () => {
         hosts.push(panel);
         panel.show();
         expect(panel.messagePart.element.textContent).toBe(enStrings.loading);
-        expect(panel.spinner.element.hidden).toBe(true);
+        expect(panel.spinner.element?.isConnected ?? false).toBe(false);
         expect(panel.element.hasAttribute('data-pane')).toBe(false);
         expect(panel.element.hasAttribute('data-shade')).toBe(true);
         await uiLocale.use('tr');

@@ -8,7 +8,7 @@ import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import { givenField, givenList, givenValue } from '../../core/given-field';
 import { clearParts, glyphPart, loose, part, partBefore, removePart, textPart } from '../../core/draw-parts';
-import { flag, mark, put, shown, text as writeText } from '../../core/part-writes';
+import { flag, kept, mark, put, text as writeText } from '../../core/part-writes';
 import { showsPresses } from '../../core/press-origin';
 import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
@@ -563,7 +563,8 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     // Every part is a component of the field, in order: the label, the box, the line under it.
     const labelPart = new Component<HTMLLabelElement>('label');
     labelPart.class.add('mx-field__label');
-    labelPart.attr.add({ id: `${id}-label`, hidden: true });
+    labelPart.attr.add({ id: `${id}-label` });
+    kept(labelPart, false);
     const labelText = part<HTMLSpanElement>(labelPart, 'span', '');
     // The box and the foot are components of the field after the label, so a control that is a component is the box's child.
     const boxPart = new Component<HTMLDivElement>('div');
@@ -689,7 +690,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const parsed = parseAccessKey(text ?? '');
     renderAccessKey(parts.labelText, parsed);
     put(parts.notch, 'data-label', parsed.text);
-    mark(parts.labelPart, 'hidden', !parsed.text);
+    kept(parts.labelPart, !!parsed.text);
     parts.labelShown = !!parsed.text;
     this.setAccessKey(parsed.key);
     if (labelable(parts.tag)) return;
@@ -788,7 +789,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       area.bindings.list(shownHere, (button: FieldButton) => this.makeButton(button));
       area.bindings.watch(() => {
         const any = shownHere().length > 0;
-        untracked(() => shown(area, any || area.controls.items.length > 1));
+        untracked(() => kept(area, any || area.controls.items.length > 1));
       });
     }
   }
@@ -825,7 +826,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       },
     );
     bind(() => givenField<IconSource | undefined>(button, 'icon'), (next) => {
-      shown(icon, next !== undefined);
+      kept(icon, next !== undefined);
       if (Object.is(next, source) && (release || next === undefined)) return;
       source = next;
       release?.();

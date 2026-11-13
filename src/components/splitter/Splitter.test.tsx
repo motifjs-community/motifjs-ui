@@ -57,7 +57,7 @@ describe('Splitter', () => {
         expect(s.panes[0].element.querySelector('span.a')).not.toBe(null);
         expect(s.panes[2].element.querySelector('b')).not.toBe(null);
         expect(s.panes[2].key).toBe('rest');
-        expect(bars[0].parentElement!.querySelector<HTMLElement>('.mx-splitter__fold[data-side="before"]')!.hidden).toBe(true);
+        expect(bars[0].parentElement!.querySelector<HTMLElement>('.mx-splitter__fold[data-side="before"]')?.isConnected ?? false).toBe(false);
         await uiLocale.use('tr');
         expect(bars[0].getAttribute('aria-label')).not.toBe(enStrings.resize);
     });
@@ -110,7 +110,7 @@ describe('Splitter', () => {
         await settle();
         const [first, second] = handles(s);
         const fold = first.parentElement!.querySelector<HTMLButtonElement>('.mx-splitter__fold[data-side="before"]')!;
-        expect(fold.hidden).toBe(false);
+        expect(fold?.isConnected).toBe(true);
         expect(fold.getAttribute('aria-label')).toBe(enStrings.splitterCollapse);
         s.panes[0].element.querySelector<HTMLElement>('button.inside')!.focus();
         fold.click();

@@ -66,7 +66,7 @@ describe('Slider', () => {
     expect([now(jsx), t.getAttribute('aria-valuemin'), t.getAttribute('aria-valuemax')]).toEqual([30, '0', '100']);
     expect(t.style.getPropertyValue('--_at')).toBe('30%');
     expect(jsx.element.querySelector('.mx-slider__control')!.hasAttribute('aria-labelledby')).toBe(false);
-    expect(thumb(jsx, 1).hidden).toBe(true);
+    expect(thumb(jsx, 1)?.isConnected ?? false).toBe(false);
 
     expect(coded.value).toBe(25);
     coded.value = 110;
@@ -193,7 +193,7 @@ describe('Slider', () => {
     const [start, end] = [thumb(b, 0), thumb(b, 1)];
     const label = b.element.querySelector('label')!;
     const control = b.element.querySelector('.mx-slider__control')!;
-    expect(end.hidden).toBe(false);
+    expect(end?.isConnected).toBe(true);
     expect(control.getAttribute('role')).toBe('group');
     expect(control.getAttribute('aria-labelledby')).toBe(label.id);
     expect(start.getAttribute('aria-label')).toBe('Minimum');
@@ -215,7 +215,7 @@ describe('Slider', () => {
 
     b.range = false;
     expect(b.value).toBe(70);
-    expect(end.hidden).toBe(true);
+    expect(end?.isConnected ?? false).toBe(false);
     expect(control.hasAttribute('role')).toBe(false);
     expect(start.hasAttribute('aria-label')).toBe(false);
   });
@@ -288,7 +288,7 @@ describe('Slider', () => {
     s.labels = false;
     await settle();
     expect(marks().length).toBe(0);
-    expect(b.element.querySelector<HTMLElement>('.mx-slider__ticks')!.hidden).toBe(true);
+    expect(b.element.querySelector('.mx-slider__ticks')).toBeNull();
   });
 
   it('writes the value in the bubble and for screen readers', async () => {

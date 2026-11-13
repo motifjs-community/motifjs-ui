@@ -58,7 +58,7 @@ describe('Gallery', () => {
         expect(dots(g).map(d => d.tabIndex)).toEqual([0, -1, -1]);
         expect(nav(g, 'previous').getAttribute('aria-disabled')).toBe('true');
         expect(nav(g, 'next').getAttribute('aria-disabled')).toBe(null);
-        expect(g.element.querySelector<HTMLElement>('.mx-gallery__play')!.hidden).toBe(true);
+        expect(g.element.querySelector('.mx-gallery__play')).toBeNull();
         expect(g.count).toBe(3);
     });
 
@@ -175,7 +175,7 @@ describe('Gallery', () => {
         await settle();
         const play = g.element.querySelector<HTMLButtonElement>('.mx-gallery__play')!;
         const viewport = g.element.querySelector<HTMLElement>('.mx-gallery__viewport')!;
-        expect(play.hidden).toBe(false);
+        expect(play?.isConnected).toBe(true);
         expect(play.getAttribute('aria-label')).toBe(enStrings.galleryPause);
         expect(g.element.hasAttribute('data-playing')).toBe(true);
         expect(viewport.getAttribute('aria-live')).toBe('off');

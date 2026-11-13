@@ -1,6 +1,6 @@
 import { untracked, type Bind, type Component, type ComponentBase, type IBaseProp } from '@motifx/core';
 import { loose, part, removePart } from '../../core/draw-parts';
-import { css, mark, put, text as writeText } from '../../core/part-writes';
+import { css, kept, mark, put, text as writeText } from '../../core/part-writes';
 import { follow } from '../../core/follow';
 import { givenField, givenList } from '../../core/given-field';
 import { LanguageLook } from '../../core/language-look';
@@ -261,7 +261,7 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
       row.value = look.value;
       row.enabled = look.enabled;
       row.visible = look.visible;
-      mark(row.part, 'hidden', !look.visible);
+      kept(row.part, !!look.visible);
       writeText(row.text, look.text);
       if (look.hint) put(row.part, 'title', look.hint);
       else put(row.part, 'title', null);

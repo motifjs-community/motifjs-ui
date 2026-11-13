@@ -126,14 +126,4 @@
         align-items: center;
         gap: var(--_gallery-indicator-gap);
     }
-
-    .mx-gallery__nav[hidden],
-    .mx-gallery__bar[hidden],
-    .mx-gallery__indicator[hidden],
-    .mx-gallery__play[hidden],
-    .mx-gallery__caption[hidden],
-    .mx-gallery__title[hidden],
-    .mx-gallery__description[hidden] {
-        display: none;
-    }
 }

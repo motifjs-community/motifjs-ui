@@ -6,7 +6,7 @@ import { givenList } from "../../core/given-field";
 import { boxOf, canMeasure, isInPage, lengthOf, measure, onLayout, probeLengths, rectOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { onReState } from "../../core/on-re-state";
-import { css, put, shown, text } from "../../core/part-writes";
+import { css, kept, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { areaPath, barPath, circlesPath, linePath, smoothPath, type Place } from "../../parts/chart/chart-paths";
 import { linearScale } from "../../parts/chart/chart-scale";
@@ -72,7 +72,7 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
         this.active = svgComponent(svg, 'path', 'mx-sparkline__active');
         this.tip = part<HTMLSpanElement>(this, 'span', 'mx-sparkline__tip');
         this.tip.attr.add({ 'aria-hidden': 'true' });
-        shown(this.tip, false);
+        kept(this.tip, false);
 
         // A function that takes a value is the value itself, not a live one.
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, FUNCTIONS.includes(name) ? functionValue(own[name]) : own[name]);
@@ -355,12 +355,12 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
         const p = this.places[best];
         put(this.active, 'd', circlesPath([{ x: p.x, y: p.y, r: (this.look?.marker ?? UNMEASURED.marker) / 2 }]));
         text(this.tip, this.valueText(this.values[best] as number));
-        shown(this.tip, true);
+        kept(this.tip, true);
         css(this.tip, 'left', `${Math.round(p.x)}px`);
     }
 
     leave(): void {
         put(this.active, 'd', null);
-        shown(this.tip, false);
+        kept(this.tip, false);
     }
 }

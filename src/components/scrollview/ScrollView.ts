@@ -4,7 +4,7 @@ import { part } from "../../core/draw-parts";
 import { boxOf, isRtl, measure, onLayout, scrollBy as scrollBoxBy, scrollIntoView as scrollPartIntoView, scrollTo as scrollBoxTo, type Box } from "../../core/measure";
 import { onWindow } from "../../core/window-events";
 import { onLanguage } from "../../core/on-language";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Spinner } from "../progress/Spinner";
 import type { PullDownEventArgs } from "./pull-down-event-args";
@@ -81,7 +81,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         this.bottomSpinner.attr.add({ 'aria-hidden': 'true' });
         this.bottomPanel.controls.add(this.bottomSpinner);
         this.bottomText = part<HTMLSpanElement>(this.bottomPanel, 'span', 'mx-scroll-view__bottom-text');
-        shown(this.bottomPanel, false);
+        kept(this.bottomPanel, false);
 
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
         if (own.onPullDown) this.pulled.event(own.onPullDown);
@@ -92,7 +92,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         this.observeProperty<ScrollViewBars>('showScrollbar', bars => put(this, 'data-bars', bars ?? 'onScroll'));
         this.observeProperty<boolean>('pullToRefresh', on => {
             mark(this, 'data-pull', !!on);
-            shown(this.pullPanel, !!on);
+            kept(this.pullPanel, !!on);
             if (!on) this.release();
         });
         this.observeProperty<boolean>('loadOnReachBottom', on => {
@@ -285,7 +285,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     startLoad(atEnd: boolean): void {
         this.loading = true;
         mark(this, 'data-loading', true);
-        shown(this.bottomPanel, true);
+        kept(this.bottomPanel, true);
         // At the very end the panel would open below the view: the view stays at the end, so it shows.
         if (atEnd) measure(this, this.readHeight, this.scrollToEnd);
         let open = true;
@@ -296,7 +296,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
             this.loading = false;
             this.ended = done;
             mark(this, 'data-loading', false);
-            shown(this.bottomPanel, false);
+            kept(this.bottomPanel, false);
         };
         const args: ReachBottomEventArgs = { release, source: this };
         this.reached.fire(args);
@@ -330,7 +330,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         const state = this.pullState;
         const pullText = state === 'refreshing' ? this.peekProperty<string>('refreshingText') || strings.scrollRefreshing : state === 'release' ? this.peekProperty<string>('releaseText') || strings.scrollRelease : this.peekProperty<string>('pullDownText') || strings.scrollPullDown;
         text(this.pullText, pullText);
-        shown(this.pullSpinner, state === 'refreshing');
+        kept(this.pullSpinner, state === 'refreshing');
         text(this.bottomText, this.peekProperty<string>('reachBottomText') || strings.loading);
     }
 

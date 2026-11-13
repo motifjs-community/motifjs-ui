@@ -1,5 +1,5 @@
 import type { ComponentBase } from '@motifx/core';
-import { mark, put } from '../../../core/part-writes';
+import { kept, mark, put } from '../../../core/part-writes';
 
 /** A cell's attributes, each written only when it changes. */
 export class CellAttributes {
@@ -14,6 +14,12 @@ export class CellAttributes {
 
   flag(name: string, on: boolean): this {
     mark(this.c, name, on);
+    return this;
+  }
+
+  /** In the page or out of it, the MotifJS way (core's show and hide). */
+  kept(on: boolean): this {
+    kept(this.c, on);
     return this;
   }
 }

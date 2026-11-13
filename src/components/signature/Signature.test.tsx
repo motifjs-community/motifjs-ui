@@ -56,7 +56,7 @@ describe('Signature', () => {
         page(pad);
         await tick();
         expect(pad.isEmpty).toBe(true);
-        expect(pad.placeholderPart.hidden).toBe(false);
+        expect(pad.placeholderPart?.isConnected).toBe(true);
         expect(pad.placeholderPart.textContent).toBe(enStrings.signatureHere);
         expect(pad.padPart.element.getAttribute('aria-roledescription')).toBe(enStrings.signatureName);
         expect(pad.padPart.element.getAttribute('aria-description')).toBe(enStrings.signatureEmpty);
@@ -78,7 +78,7 @@ describe('Signature', () => {
         expect(points[0]).toMatchObject({ x: 0.05, y: 0.5 });
         expect(points[points.length - 1]).toMatchObject({ x: 0.45, y: 0.5 });
         expect(changed).toHaveBeenCalledTimes(1);
-        expect(pad.placeholderPart.hidden).toBe(true);
+        expect(pad.placeholderPart?.isConnected ?? false).toBe(false);
         expect(pad.undoButton.enabled).toBe(true);
         expect(pad.padPart.element.getAttribute('aria-description')).toBe(enStrings.signatureSigned);
     });
@@ -169,11 +169,11 @@ describe('Signature', () => {
         expect(pad.value).toEqual([LINE]);
         pad.padPart.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
         expect(pad.isEmpty).toBe(true);
-        expect(pad.placeholderPart.hidden).toBe(false);
+        expect(pad.placeholderPart?.isConnected).toBe(true);
         expect(pad.undoButton.enabled).toBe(false);
         pad.value = [LINE];
         await tick();
-        expect(pad.placeholderPart.hidden).toBe(true);
+        expect(pad.placeholderPart?.isConnected ?? false).toBe(false);
         expect(pad.clearButton.enabled).toBe(true);
         pad.padPart.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
         expect(pad.isEmpty).toBe(true);
@@ -187,7 +187,7 @@ describe('Signature', () => {
         sign(pad);
         pad.clear();
         expect(pad.value).toEqual([LINE]);
-        expect(pad.actions.element.hidden).toBe(true);
+        expect(pad.actions.element?.isConnected ?? false).toBe(false);
         pad.readOnly = false;
         pad.enabled = false;
         await tick();
@@ -210,9 +210,9 @@ describe('Signature', () => {
         const pad = new Signature({ showClear: false, showUndo: false, showGuide: false, placeholder: '' });
         page(pad);
         await tick();
-        expect(pad.actions.element.hidden).toBe(true);
-        expect(pad.guidePart.element.hidden).toBe(true);
-        expect(pad.placeholderPart.hidden).toBe(true);
+        expect(pad.actions.element?.isConnected ?? false).toBe(false);
+        expect(pad.guidePart.element?.isConnected ?? false).toBe(false);
+        expect(pad.placeholderPart?.isConnected ?? false).toBe(false);
     });
 
     it('reports the begin and the end of a stroke', async () => {

@@ -16,11 +16,6 @@
         max-inline-size: none;
     }
 
-    .mx-barcode__svg[hidden],
-    .mx-barcode__text[hidden] {
-        display: none;
-    }
-
     .mx-barcode__text {
         white-space: pre;
         font-variant-numeric: tabular-nums;

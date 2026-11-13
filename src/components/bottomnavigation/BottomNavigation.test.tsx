@@ -182,10 +182,10 @@ describe('BottomNavigation', () => {
         s.count = null;
         await tick();
         expect(item.querySelector('.mx-bottom-navigation__label')!.textContent).toBe('Mail');
-        expect(badge().hidden).toBe(true);
+        expect(badge()?.isConnected ?? false).toBe(false);
         s.visible = false;
         await tick();
-        expect(item.hidden).toBe(true);
+        expect(item?.isConnected ?? false).toBe(false);
     });
 
     it('makes an item with href a link', async () => {

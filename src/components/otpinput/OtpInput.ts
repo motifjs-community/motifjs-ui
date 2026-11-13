@@ -2,7 +2,7 @@ import { Emitter, type Bind, type Component, type ComponentBase, type Event as M
 import { loose, part, removePart } from "../../core/draw-parts";
 import { onLanguage } from "../../core/on-language";
 import { rectOf } from "../../core/measure";
-import { kept, mark, put, shown, text } from "../../core/part-writes";
+import { kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import { Field } from "../../parts/field/Field";
 import type { ValidationRule } from "../../parts/validation/validation-rule";
@@ -262,7 +262,7 @@ export class OtpInput extends Field<string, OtpInputProps> {
             text(cell.charPart, filled ? (masked ? this.maskCharacter : chars[index]) : this.placeholder);
             mark(cell.boxPart, 'data-filled', filled);
             mark(cell.boxPart, 'data-active', focused && index === at);
-            shown(cell.caretPart, focused && index === at && !filled);
+            kept(cell.caretPart, focused && index === at && !filled);
         });
     }
 

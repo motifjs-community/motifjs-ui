@@ -70,13 +70,6 @@ export function callNow(part: ComponentBase, method: string, ...args: unknown[])
   return true;
 }
 
-/** Shown or not, staying in the page: `hidden` for what reads it, and `display: none` as well, since a part's own rules give it a display. */
-export function shown(part: ComponentBase | null, on: boolean): void {
-  if (!part) return;
-  mark(part, 'hidden', !on);
-  css(part, 'display', on ? '' : 'none');
-}
-
 /**
  * In the page or not, in its place: hidden the MotifJS way (a mark holds its place), so the part stays a child
  * and goes with its parent. Taken out at once, with no leave animation.

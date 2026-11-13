@@ -143,7 +143,7 @@ describe('OtpInput', () => {
         otp.inputPart.element.focus();
         await tick();
         expect(otp.cells[2].boxPart.element.hasAttribute('data-active')).toBe(true);
-        expect(otp.cells[2].caretPart.element.hidden).toBe(false);
+        expect(otp.cells[2].caretPart.element?.isConnected).toBe(true);
         otp.inputPart.element.blur();
         await tick();
         expect(otp.cells[2].boxPart.element.hasAttribute('data-active')).toBe(false);
@@ -156,7 +156,7 @@ describe('OtpInput', () => {
         otp.inputPart.element.focus();
         await tick();
         expect(otp.cells[2].boxPart.element.hasAttribute('data-active')).toBe(true);
-        expect(otp.cells[2].caretPart.element.hidden).toBe(true);
+        expect(otp.cells[2].caretPart.element?.isConnected ?? false).toBe(false);
     });
 
     /** What the browser does for a character typed or pasted at the caret: `beforeinput`, the text, then `input`. */
