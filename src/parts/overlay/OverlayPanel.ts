@@ -4,7 +4,7 @@ import { holdBackButton } from '../../core/back-button';
 import { isWithin } from '../../core/component-tree';
 import { FocusContainer } from '../../core/container';
 import { part } from '../../core/draw-parts';
-import { callNow, css, flag, mark, put, text } from '../../core/part-writes';
+import { callNow, css, flag, kept, mark, put, text } from '../../core/part-writes';
 import { windowOf } from '../../core/page-documents';
 import { appRootOf, placeOnPage } from '../../core/page-layer';
 import { focusFirstIn, focusOn, hasFocusableIn, holdsFocus, isFocused, rememberFocus } from '../../core/focus';
@@ -526,6 +526,8 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   private createParts(): Parts {
     const name = (this.constructor as typeof OverlayPanel).overlayClass;
     this.class.add(name);
+    // Closed with the attribute, not core's hide: an overlay opened before it is in the page waits for onMounted,
+    // which a part core hid never gets.
     mark(this, 'hidden', true);
     const div = (parent: ComponentBase, suffix: string) => part<HTMLDivElement>(parent, 'div', `${name}__${suffix}`);
     const scrimPart = div(this, 'scrim');
@@ -534,7 +536,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     panelPart.attr.add({ role: 'dialog' });
     put(panelPart, 'tabindex', '-1');
     const headerPart = div(panelPart, 'header');
-    mark(headerPart, 'hidden', true);
+    kept(headerPart, false);
     const titlePart = div(headerPart, 'title');
     const titleId = nextId('overlay-title');
     // A heading by role: the page's own heading styles stay out.
@@ -542,7 +544,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     const toolsPart = div(headerPart, 'tools');
     const bodyPart = div(panelPart, 'body');
     const footerPart = div(panelPart, 'footer');
-    mark(footerPart, 'hidden', true);
+    kept(footerPart, false);
     const self = this;
     return {
       scrimPart,
@@ -685,7 +687,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     const label = this.peekProperty<string>('label') ?? '';
     parts.hasTitle = !!plain;
     text(parts.titlePart, plain);
-    mark(parts.titlePart, 'hidden', !plain);
+    kept(parts.titlePart, !!plain);
     put(parts.panelPart, 'aria-labelledby', plain ? parts.titleId : null);
     put(parts.panelPart, 'aria-label', plain ? null : label);
     this.renderHeader();
@@ -693,7 +695,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
 
   private renderHeader(): void {
     const parts = this.parts;
-    mark(parts.headerPart, 'hidden', !parts.hasTitle && !parts.close);
+    kept(parts.headerPart, parts.hasTitle || !!parts.close);
   }
 
   private renderClose(): void {
@@ -752,7 +754,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     if (control === parts.footerControl) return;
     this.unplace(parts.footerControl);
     parts.footerControl = control;
-    mark(parts.footerPart, 'hidden', !control);
+    kept(parts.footerPart, !!control);
     if (control) this.placeIn(control, parts.footerPart);
   }
 
