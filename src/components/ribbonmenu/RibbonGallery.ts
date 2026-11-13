@@ -5,7 +5,7 @@ import { focusFirstIn, focusOn } from "../../core/focus";
 import { givenField, givenList, givenValue } from "../../core/given-field";
 import { chevronDown } from "../../core/glyphs";
 import { iconCopy, type IconSource } from "../../core/icon-source";
-import { css, mark, put, shown, text } from "../../core/part-writes";
+import { css, kept, mark, put, text } from "../../core/part-writes";
 import { Popup } from "../../parts/popup/Popup";
 import { Button } from "../button/Button";
 import type { RibbonCommand } from "./ribbon-command";
@@ -97,7 +97,7 @@ export class RibbonGallery extends Component<HTMLDivElement> {
         this.opener.text = on ? text : '';
         this.opener.iconPosition = on ? 'end' : 'start';
         this.opener.hint = text;
-        shown(this.row, !on);
+        kept(this.row, !on);
     }
 
     makeTile(item: RibbonGalleryItem, inGrid: boolean): Component<HTMLButtonElement> {
@@ -126,7 +126,7 @@ export class RibbonGallery extends Component<HTMLDivElement> {
                 const name = String(givenField(item, 'glyph') ?? '');
                 untracked(() => {
                     put(glyph, 'data-icon', name || null);
-                    shown(glyph, !!name);
+                    kept(glyph, !!name);
                 });
             });
         }

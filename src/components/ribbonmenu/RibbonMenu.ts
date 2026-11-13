@@ -14,7 +14,7 @@ import { boxOf, isRendered, isRtl, lengthOf, measure, mediaOf, onLayout, probeLe
 import { onDocument } from "../../core/window-events";
 import { nextId } from "../../core/next-id";
 import { onLanguage } from "../../core/on-language";
-import { mark, put, shown, text } from "../../core/part-writes";
+import { kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { MenuItem } from "../../parts/menu/menu-item";
 import type { MenuItemClickEventArgs } from "../../parts/menu/menu-item-click-event-args";
@@ -262,7 +262,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         this.app = part<HTMLButtonElement>(this.bar, 'button', 'mx-ribbon-menu__app');
         this.app.attr.add({ type: 'button' });
         this.appCaption = part<HTMLSpanElement>(this.app, 'span', 'mx-ribbon-menu__app-text');
-        shown(this.app, false);
+        kept(this.app, false);
         this.quickTop = part<HTMLDivElement>(this.bar, 'div', 'mx-ribbon-menu__quick');
         this.picker = new Button({ menu: [] });
         this.picker.class.add('mx-ribbon-menu__picker');
@@ -270,8 +270,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         this.tabList = part<HTMLDivElement>(this.bar, 'div', 'mx-ribbon-menu__tabs');
         this.tabList.attr.add({ role: 'tablist' });
         this.endHost = part<HTMLDivElement>(this.bar, 'div', 'mx-ribbon-menu__bar-end');
-        shown(this.startHost, false);
-        shown(this.endHost, false);
+        kept(this.startHost, false);
+        kept(this.endHost, false);
         this.body = part<HTMLDivElement>(this.frame, 'div', 'mx-ribbon-menu__body');
         // The commands scroll in the stage when they do not fit even after giving way; the buttons at its ends scroll it.
         this.stage = part<HTMLDivElement>(this.body, 'div', 'mx-ribbon-menu__stage');
@@ -285,7 +285,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         this.quickBelow = part<HTMLDivElement>(this.frame, 'div', 'mx-ribbon-menu__quick mx-ribbon-menu__quick--below');
         for (const quick of [this.quickTop, this.quickBelow]) {
             quick.attr.add({ role: 'toolbar' });
-            shown(quick, false);
+            kept(quick, false);
         }
         this.hints = new RibbonKeyHints(this, () => this.tabHints(), () => this.commandHints(), () => {});
         this.customMenu = new ContextMenu();
@@ -692,7 +692,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             const key = parsed.key && look.enabled ? accessKeyToken(parsed.key) : null;
             setAccessKeyAttribute(p.host, p.accessKey, key);
             p.accessKey = key;
-            shown(host, look.visible);
+            kept(host, look.visible);
             put(host, 'title', look.hint || null);
             put(host, 'aria-disabled', look.enabled ? null : 'true');
             put(host, 'data-key', String(look.key));
@@ -735,7 +735,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         });
         const look = this.looks.find(l => l.key === key);
         if (look) this.showPanel(look);
-        for (const [tab, panel] of this.panels) shown(panel.host, tab === look?.tab);
+        for (const [tab, panel] of this.panels) kept(panel.host, tab === look?.tab);
         this.drawPicker();
         this.queueLayout();
     }
@@ -899,7 +899,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             const group = keep.get(look.group)!;
             group.look = look;
             text(group.label, look.text);
-            shown(group.host, look.visible);
+            kept(group.host, look.visible);
             this.drawMore(panel, group, look);
         }
         this.drawDividers(panel);
@@ -1042,7 +1042,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             if (!items.includes(m.control)) host.controls.add(index, m.control);
             else if (items.indexOf(m.control) !== index) host.controls.moveToIndex(m.control, index);
             index++;
-            shown(m.control, want.visible);
+            kept(m.control, want.visible);
             // A row's commands are small; a group's take their size from how far the group gave way.
             if (inRow) this.drawSize(m, 'small');
         }
@@ -1162,7 +1162,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     drawLayout(): void {
         const simple = this.shownLayout() === 'simple';
         put(this, 'data-layout', simple ? 'simple' : 'classic');
-        shown(this.switcher, this.peekProperty('layoutSwitch') !== false && !this.compact);
+        kept(this.switcher, this.peekProperty('layoutSwitch') !== false && !this.compact);
         this.switcher.icon = glyph(simple ? 'chevron-down' : 'chevron-up');
         put(this.switcher.faceComponent, 'aria-expanded', String(!simple));
         this.drawNames();
@@ -1288,7 +1288,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         button.attr.add({ 'aria-hidden': 'true' });
         button.motif.on('mousedown', (_, e) => e.preventDefault());
         button.motif.on('click', () => this.scrollPanel(direction));
-        shown(button, false);
+        kept(button, false);
         this.stage.controls.add(button);
         return button;
     }
@@ -1305,8 +1305,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
     };
 
     readonly writeEnds = ({ room, needed, at }: { room: number; needed: number; at: number }): void => {
-        shown(this.back, needed > room + 1 && at > 1);
-        shown(this.forward, needed > room + 1 && at + room < needed - 1);
+        kept(this.back, needed > room + 1 && at > 1);
+        kept(this.forward, needed > room + 1 && at + room < needed - 1);
     };
 
     scrollPanel(direction: 1 | -1): void {
@@ -1335,7 +1335,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (control) host.controls.add(control);
         if (side === 'start') this.startControl = control;
         else this.endControl = control;
-        shown(host, !!control);
+        kept(host, !!control);
     }
 
     setLevel(group: GroupPart, level: number, simple: boolean): void {
@@ -1454,7 +1454,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         let first = true;
         for (const group of panel.groups.values()) {
             const on = group.look?.visible !== false && !group.out;
-            shown(group.divider, on && !first);
+            kept(group.divider, on && !first);
             if (on) first = false;
         }
     }
@@ -1481,7 +1481,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         if (!panel.overflow) return;
         panel.overflow.menu = items;
         panel.overflow.refresh();
-        shown(panel.overflow, items.length > 0);
+        kept(panel.overflow, items.length > 0);
     }
 
     menuItemsOf(made: Map<RibbonCommand, Made>, wanted: (m: Made) => boolean): MenuItem[] {
@@ -1702,7 +1702,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
         const key = parsed.key ? accessKeyToken(parsed.key) : null;
         setAccessKeyAttribute(this.app, this.appKey, key);
         this.appKey = key;
-        shown(this.app, parsed.text !== '');
+        kept(this.app, parsed.text !== '');
     }
 
     // The quick commands: the app's, then the ones the user added, small, in the row of tabs or under the commands.
@@ -1716,8 +1716,8 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             this.quickMade = new Map();
             this.quickHost = host;
         }
-        shown(this.quickTop, false);
-        shown(this.quickBelow, false);
+        kept(this.quickTop, false);
+        kept(this.quickBelow, false);
         if (!host) return;
         put(host, 'aria-label', uiLocale.strings.ribbonMenuQuick);
         this.stopQuick?.();
@@ -1735,7 +1735,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             },
             wanted => {
                 this.quickMade = this.placeCommands(host, this.quickMade, wanted, command => this.whereOf(command), true);
-                shown(host, wanted.some(w => w.visible));
+                kept(host, wanted.some(w => w.visible));
                 this.queueLayout();
             }
         );

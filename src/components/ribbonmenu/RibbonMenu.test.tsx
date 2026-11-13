@@ -149,7 +149,8 @@ describe('RibbonMenu', () => {
         const s = reactive({ picture: false, big: true, list: tabs() });
         s.list = tabs({ picture: { visible: () => s.picture }, paste: { size: () => (s.big ? 'large' : 'medium') } });
         const menu = await make({ items: () => s.list });
-        expect(tab(menu, 'picture').hidden).toBe(true);
+        // A tab that is not shown is out of the page.
+        expect(menu.element.querySelector('.mx-ribbon-menu__tab[data-key="picture"]')).toBeNull();
         s.picture = true;
         await settle();
         expect(shownTexts(menu)).toEqual(['Home', 'Insert', 'Format']);
@@ -214,7 +215,7 @@ describe('RibbonMenu', () => {
         expect(told).toEqual(['classic>simple']);
         menu.layoutSwitch = false;
         await settle();
-        expect(button.hidden).toBe(true);
+        expect(button.isConnected).toBe(false);
     });
 
     it('gives way when the commands do not fit: the least important group first, folded into one button that opens the group', async () => {
@@ -347,12 +348,11 @@ describe('RibbonMenu', () => {
         expect(Array.from(panel.querySelectorAll('.mx-ribbon-menu__group-label')).map(l => l.textContent)).toEqual(['Font', 'Clipboard']);
         const clipboard = panel.querySelectorAll<HTMLElement>(':scope > .mx-ribbon-menu__group')[1];
         // The command the user hid is kept out of sight.
-        expect(Array.from(clipboard.querySelectorAll<HTMLElement>('.mx-ribbon-menu__commands > .mx-ribbon-menu__command:not([hidden])')).map(b => b.textContent || b.getAttribute('title'))).toEqual(['Cut', 'Paste']);
-        const copy = clipboard.querySelector<HTMLElement>('.mx-ribbon-menu__commands > .mx-ribbon-menu__command[hidden]')!;
-        expect(copy).not.toBeNull();
+        const commands = () => Array.from(clipboard.querySelectorAll<HTMLElement>('.mx-ribbon-menu__commands > .mx-ribbon-menu__command')).map(b => b.textContent || b.getAttribute('title'));
+        expect(commands()).toEqual(['Cut', 'Paste']);
         menu.customization = {};
         await settle();
-        expect(copy.isConnected && !copy.hidden).toBe(true);
+        expect(commands()).toContain('Copy');
         menu.customization = { hidden: ['home/clipboard/copy'], order: { home: ['font', 'clipboard'], 'home/clipboard': ['cut', 'paste'] }, quick: ['home/clipboard/cut'], layout: 'simple' };
         await settle();
         expect(menu.layout).toBe('simple');
@@ -374,14 +374,14 @@ describe('RibbonMenu', () => {
         document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt', bubbles: true }));
         document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true }));
         // jsdom has no layout: the hints are drawn for elements with a size.
-        expect(menu.element.querySelector('.mx-ribbon-menu__hints')!.hasAttribute('hidden')).toBe(false);
+        expect(menu.element.querySelector('.mx-ribbon-menu__hints')).not.toBeNull();
         expect(hints()).toEqual([]);
         document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        expect(menu.element.querySelector('.mx-ribbon-menu__hints')!.hasAttribute('hidden')).toBe(true);
+        expect(menu.element.querySelector('.mx-ribbon-menu__hints')).toBeNull();
         menu.keyHints = false;
         await settle();
         document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'F10', bubbles: true }));
-        expect(menu.element.querySelector('.mx-ribbon-menu__hints')!.hasAttribute('hidden')).toBe(true);
+        expect(menu.element.querySelector('.mx-ribbon-menu__hints')).toBeNull();
     });
 
     it('gives a gallery its choices in a row and all of them in a grid, the chosen one marked', async () => {

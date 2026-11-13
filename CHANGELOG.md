@@ -20,6 +20,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - `TabDocumentManager` hides its parts the same way: the groups and splitters a maximized group hides (what scrolled
   in them comes back on restore), the strip rows, the empty text, the dock guides, the drop marks, auto-hidden
   strips, the stash of hidden documents, the document list's parts and the phone bar's buttons.
+- `RibbonMenu` hides its parts the same way: the panels of the tabs not selected, tabs, groups and commands that are
+  not shown, dividers, the layout switch, the scroll buttons, the quick bars, the side controls and the key hints.
 
 ## [0.1.0-beta.9] - 2026-11-13
 

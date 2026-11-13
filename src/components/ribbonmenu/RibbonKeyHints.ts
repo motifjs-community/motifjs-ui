@@ -1,7 +1,7 @@
 import { Component, type ComponentBase } from "@motifx/core";
 import { part } from "../../core/draw-parts";
 import { measure, rectOf, whenMeasured, type Rect } from "../../core/measure";
-import { css, mark, text } from "../../core/part-writes";
+import { css, kept, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 
 /** Something a key hint presses: the part its letters stand on, the letters wanted, and what pressing it does. */
@@ -57,7 +57,7 @@ export class RibbonKeyHints {
     constructor(readonly owner: Component<HTMLElement>, readonly tabs: () => KeyHint[], readonly commands: () => KeyHint[], readonly ended: () => void) {
         this.layer = part<HTMLDivElement>(owner, 'div', 'mx-ribbon-menu__hints');
         this.layer.attr.add({ 'aria-hidden': 'true' });
-        mark(this.layer, 'hidden', true);
+        kept(this.layer, false);
     }
 
     get active(): boolean {
@@ -75,7 +75,7 @@ export class RibbonKeyHints {
         this.level = null;
         this.clear();
         this.closeInner();
-        mark(this.layer, 'hidden', true);
+        kept(this.layer, false);
         this.ended();
     }
 
@@ -133,7 +133,7 @@ export class RibbonKeyHints {
     // The letters are drawn with the next measuring round, where what they stand on is read.
     draw(hints: KeyHint[], host: Component<HTMLElement> = this.layer): void {
         this.clear();
-        mark(this.layer, 'hidden', host !== this.layer);
+        kept(this.layer, host === this.layer);
         const parts = hints.map(hint => hint.part);
         this.wanted = { hints, parts, host };
         measure(this.owner, this.readSpots, this.drawBadges);
@@ -174,7 +174,7 @@ export class RibbonKeyHints {
 
     filter(typed: string): void {
         this.typed = typed;
-        for (const d of this.drawn) mark(d.badge, 'hidden', !d.keys.startsWith(typed));
+        for (const d of this.drawn) kept(d.badge, d.keys.startsWith(typed));
     }
 
     clear(): void {
