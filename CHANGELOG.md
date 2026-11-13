@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- `TabDocumentManager`: dragging a tab no longer lays the page out again in each move ("A layout read in the write of a
+  measure" in development); the drop marks are measured with the rest of the aim. A place `onDragOver` changes gets
+  its marks with the next round.
 - `DataGrid` group chip dragged back onto the headers no longer forces a reflow on the drop (Chrome's "Forced reflow"
   violation): focus moves to the next chip (or the rows) before the chip goes, as with Delete, and the drop place is the
   one the drag marked. `onGroupDropping` is asked once per drop.

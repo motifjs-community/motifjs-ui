@@ -13,6 +13,7 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabDragSubject } from './tab-drag-subject';
 import type { TabDropEventArgs } from './tab-drop-event-args';
+import type { TabDropMarks } from './tab-drop-marks';
 import type { TabDropPlace } from './tab-drop-place';
 import type { TabDropTarget } from './tab-drop-target';
 import type { TabGroup } from './TabGroup';
@@ -83,6 +84,13 @@ interface AimRead {
   place: TabDropPlace | null;
   target: TabDropTarget | null;
   tab: DocumentTab | null;
+  marks: TabDropMarks | null;
+}
+
+interface MarksRead {
+  session: Session;
+  place: TabDropPlace | null;
+  marks: TabDropMarks | null;
 }
 
 const OUTSIDE: TabDropPlace = { target: 'outside', manager: null, group: null, index: -1, side: null };
@@ -183,13 +191,17 @@ export class TabDrag {
     return true;
   }
 
-  /** Aims at a place (from a target, or chosen by the keys): `onDragOver` may change or refuse it. */
-  aim(place: TabDropPlace | null, target: TabDropTarget | null): boolean {
+  /**
+   * Aims at a place (from a target, or chosen by the keys): `onDragOver` may change or refuse it. `marks` are the
+   * place's marks read in the read of a measure; without them they are read here, where the keys aim.
+   */
+  aim(place: TabDropPlace | null, target: TabDropTarget | null, marks?: TabDropMarks | null): boolean {
     const s = this.session;
     if (!s) return false;
     const m = this.manager;
     s.place = null;
     s.target = null;
+    let known = marks;
     if (place) {
       const e = this.args(place, place.target === 'outside');
       m.dragOver(e);
@@ -200,8 +212,13 @@ export class TabDrag {
         s.place = chosen;
         s.target = chosen.target === place.target && chosen.manager === place.manager ? target : this.targetFor(chosen);
       }
+      // A place `onDragOver` changed has other marks: in a write they come with the next round.
+      if (known !== undefined && s.place && !samePlace(s.place, place)) {
+        known = null;
+        measure(this.ownerOf(s), this.readMarks, this.drawMarks);
+      }
     }
-    this.paint();
+    this.paint(known);
     return !!s.place;
   }
 
@@ -443,14 +460,28 @@ export class TabDrag {
     const s = this.session;
     if (!s || s.byKeyboard) return null;
     const { place, target } = this.find(s.x, s.y);
-    return { session: s, place, target, tab: this.tabAt(place, s.aim.x, s.aim.y) };
+    const marks = place && target && place.target !== 'outside' ? target.marks(place, s.subject) : null;
+    return { session: s, place, target, tab: this.tabAt(place, s.aim.x, s.aim.y), marks };
   };
 
   private readonly drawAim = (read: AimRead | null): void => {
     if (!read || this.session !== read.session) return;
     read.session.asked = null;
-    this.aim(read.place, read.target);
+    this.aim(read.place, read.target, read.marks);
     this.hover(read.tab);
+  };
+
+  /** The marks of a place `onDragOver` chose in a write, read with the next round's reads. */
+  private readonly readMarks = (): MarksRead | null => {
+    const s = this.session;
+    if (!s) return null;
+    const place = s.place;
+    return { session: s, place, marks: place && s.target ? s.target.marks(place, s.subject) : null };
+  };
+
+  private readonly drawMarks = (read: MarksRead | null): void => {
+    if (!read || this.session !== read.session || read.session.place !== read.place) return;
+    this.paint(read.marks);
   };
 
   /** Where the drag's frames are read: the window it started in. */
@@ -557,11 +588,11 @@ export class TabDrag {
   }
 
   /** Shows the marks where the drag aims, in the manager it aims at, and what a drop would do. */
-  private paint(): void {
+  private paint(known?: TabDropMarks | null): void {
     const s = this.session!;
     const place = s.place;
     const owner = place?.manager ?? null;
-    const marks = place && s.target ? s.target.marks(place, s.subject) : null;
+    const marks = !place || !s.target ? null : known !== undefined ? known : s.target.marks(place, s.subject);
     // The marks show in the window the place is in.
     const space = place?.group ? spaceOf(place.group) : place?.browserWindow ? place.browserWindow.window.document : s.aim.space;
     if (s.shownIn && s.shownSpace && (s.shownIn !== owner || s.shownSpace !== space)) s.shownIn.marksIn(s.shownSpace).hide();
@@ -675,6 +706,11 @@ export class TabDrag {
   private release(): void {
     for (const stop of this.stops.splice(0)) stop();
   }
+}
+
+/** Whether `onDragOver` left the place as the target found it. */
+function samePlace(a: TabDropPlace, b: TabDropPlace): boolean {
+  return a.target === b.target && a.manager === b.manager && a.group === b.group && a.index === b.index && a.side === b.side && (a.dockSide ?? null) === (b.dockSide ?? null) && (a.rect ?? null) === (b.rect ?? null);
 }
 
 function contains(box: Rect, x: number, y: number): boolean {
