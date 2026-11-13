@@ -245,7 +245,7 @@ export default function Validation() {
 }
 ```
 
-Without a group, `validateFields(panel)` validates every field inside a component or element, such as a panel, a dialog or a page.
+Without a group, `validateFields(panel)` validates every field inside a component, such as a panel, a dialog or a page.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -411,7 +411,7 @@ export default function Localization() {
 | `validationMessage` | read-only, reactive | The error being displayed, or `''` if there is none. |
 | `validating` | read-only, reactive | Indicates that an asynchronous rule is running. |
 | `maskComplete` | read-only | Indicates that every position of the mask is filled. |
-| `inputElement` | read-only | The native `<input>`. |
+| `inputPart` | read-only | The native `<input>`. |
 
 ### Methods
 
@@ -422,6 +422,7 @@ export default function Localization() {
 | `focus()` | `boolean` | Sets focus on the input. |
 | `select()` | `void` | Selects all text. |
 | `clear()` | `void` | Clears the field, as the clear button does. |
+| `typeText(text)` | `void` | Puts `text` in the field as if the user typed it; the value follows as typing commits it. |
 | `refresh()` | `void` | Your `buttons` can be plain or reactive, and the field reads them as they are. After changing them in place, call `refresh()`. Every editor has this method, and list editors also re-read their items. |
 
 ### Events
@@ -447,6 +448,8 @@ export default function Localization() {
 | `every rule` | `message` (a value or a function) and `enabled`. Empty values pass every rule except `required` and `compare`. |
 
 The frame (`Field`), the mask (`InputMask`, which works on any `<input>`) and validation (`ValidationGroup`, `validateFields`, `checkRules`) are shared parts, exported for use in other components and your own code.
+
+A `Field` subclass that renders a native control (`<input>`, `<select>`, `<textarea>`) declares it with `controlTag` (`protected get controlTag() { return 'input'; }`). Without it the label gets no `for` and the control gets no `readonly`.
 
 ## Feedback
 

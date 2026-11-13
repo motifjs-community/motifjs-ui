@@ -23,7 +23,7 @@ const PROPS = [
 
 const MEMBERS = [
     ['startDate, endDate', '`Date | null`', 'The start and end as separate properties.'],
-    ['inputElement, endInputElement', 'read-only', 'The start and end inputs.'],
+    ['inputPart, endInputPart', 'read-only', 'The start and end inputs.'],
     ['open(), close(), opened', '`boolean` / `void`', 'The popup with the calendars, along with `onOpened` and `onClosed`.'],
     ['clear()', '`void`', 'Clears both ends.'],
     ['validate(), validationMessage, isValid', '', 'Works the same way as on all fields. Validation covers incomplete dates, dates outside `min`, `max` or `disabledDates`, a start after the end, and ranges shorter than `minDays` or longer than `maxDays`.'],

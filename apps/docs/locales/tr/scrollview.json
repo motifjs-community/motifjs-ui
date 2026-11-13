@@ -36,7 +36,7 @@
   "Occurs when the position changes: `top`, `left`.": "Konum değiştiğinde oluşur: `top`, `left`.",
   "Scrolls to a top position, or to `{ top, left }`. `smooth` animates the scroll.": "Bir üst konuma veya `{ top, left }` değerine kaydırır. `smooth` kaydırmayı canlandırır.",
   "Scrolls by a distance.": "Bir mesafe kadar kaydırır.",
-  "Scrolls an element or component of the content into view.": "İçerikteki bir öğeyi veya bileşeni görünüme kaydırır.",
+  "Scrolls a component of the content into view.": "İçerikteki bir bileşeni görünüme kaydırır.",
   "Starts a refresh as a pull would, or ends it.": "Çekme gibi yenilemeyi başlatır veya bitirir.",
   "Requests more data now, or checks the position again after the content changes.": "Şimdi daha fazla veri ister veya içerik değiştikten sonra konumu yeniden denetler.",
   "The current scroll position.": "Geçerli kaydırma konumu.",

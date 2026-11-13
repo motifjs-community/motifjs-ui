@@ -433,7 +433,7 @@ export default function Localization() {
 | `selectedTab` | read-only, reactive | The selected `Tab`, or `null` if there is none. |
 | `Tab.isSelected, Tab.isClosable` | read-only, reactive | Indicate whether the tab is selected and whether it shows a close button. |
 | `Tab.contentBuilt` | read-only | Indicates whether its panel has been created. |
-| `Tab.owner, Tab.headerElement` | read-only | Its `Tabs` and its button in the strip. A tab's own element is its panel. |
+| `Tab.owner, Tab.headerPart` | read-only | Its `Tabs` and its button in the strip. A tab's own element is its panel. |
 
 ### Methods
 

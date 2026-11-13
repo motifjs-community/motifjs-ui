@@ -1,3 +1,4 @@
+import type { ComponentBase } from '@motifx/core';
 import { Panel, TreeView } from '@motifx-community/ui';
 import type { Entry } from './entry';
 
@@ -19,13 +20,9 @@ const MAIL: Entry[] = [
 
 /** Flat rows that name their parent, a text field given as a function, and rows drawn by a template. */
 export default function FlatData() {
-  const withCount = (item: Entry, host: HTMLElement) => {
-    host.append(item.text);
-    if (item.count) {
-      const badge = document.createElement('strong');
-      badge.textContent = ` · ${item.count}`;
-      host.append(badge);
-    }
+  const withCount = (item: Entry, host: ComponentBase) => {
+    host.controls.add(<span>{item.text}</span>);
+    if (item.count) host.controls.add(<strong>{` · ${item.count}`}</strong>);
   };
   return (
     <>

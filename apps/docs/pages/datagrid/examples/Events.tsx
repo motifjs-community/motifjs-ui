@@ -25,7 +25,7 @@ export default function Events() {
         settings={{ editable: true }}
         onCellPrepared={(e) => {
           // The cell is reused for other rows: set and clear.
-          if (e.field === 'amount') e.element.style.fontWeight = (e.value as number) > 900 ? 'bold' : '';
+          if (e.field === 'amount') e.part.style({ 'font-weight': (e.value as number) > 900 ? 'bold' : '' });
         }}
         onContextMenuPreparing={(e) => {
           if (e.target === 'row' && e.row) e.items.push({ text: `Log order ${e.row.id}`, click: () => log(`Order ${e.row!.id} from the row menu`) });

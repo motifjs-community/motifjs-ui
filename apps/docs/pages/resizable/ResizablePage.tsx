@@ -10,7 +10,7 @@ const PROPS = [
     ['handles', '`Bind<ResizeHandles>`', "`'all'`", '`all`, `edges`, `corners`, or a list of `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start` and `bottom-end`.'],
     ['minWidth, minHeight', '`Bind<number>`', '`30`', 'The minimum width and height, in pixels.'],
     ['maxWidth, maxHeight', '`Bind<number | null>`', '`null`', 'The maximum width and height, in pixels. `null` means no limit.'],
-    ['area', "`Bind<'parent' | HTMLElement | null>`", '`null`', 'The area the box stays inside: its parent, or an element that contains it.'],
+    ['area', "`Bind<'parent' | ComponentBase | null>`", '`null`', 'The area the box stays inside: its parent, or a component that contains it.'],
     ['keepAspectRatio', '`Bind<boolean>`', '`false`', 'Preserves the ratio of width to height.'],
     ['step', '`Bind<number>`', '`10`', 'The number of pixels an arrow key changes an edge.'],
     ['width, height', '`Bind<number | string | null>`', '`null`', 'The initial size, as a CSS length or in pixels. Without it, the content determines the size.'],
@@ -22,7 +22,7 @@ const MEMBERS = [
     ['onResizing', 'event', 'Occurs while the box is being resized (`edge`, and the current `width` and `height`).'],
     ['onResized', 'event', 'Occurs when a resize ends, either when the pointer is released or when a key moves an edge.'],
     ['currentSize', 'read-only', 'The current size in pixels.'],
-    ['gripElement', 'read-only', 'The grip in the end corner, which is the Tab stop for keyboard resizing.']
+    ['grip', 'read-only', 'The grip in the end corner, which is the Tab stop for keyboard resizing.']
 ];
 
 const KEYS = [
@@ -73,7 +73,7 @@ import { Resizable } from '@motifx-community/ui';
 
             <Section anchor="area" title="Staying within an area and keeping the aspect ratio">
                 <p>
-                    <Rich text="`area` keeps the box inside its parent or a specified element, and `keepAspectRatio` adjusts the other dimension. In this example, only the end edge, the bottom edge and the corner between them resize the image." />
+                    <Rich text="`area` keeps the box inside its parent or a specified component, and `keepAspectRatio` adjusts the other dimension. In this example, only the end edge, the bottom edge and the corner between them resize the image." />
                 </p>
                 <Example stack files={code('Area.tsx')}>
                     <Area />

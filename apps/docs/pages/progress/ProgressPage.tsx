@@ -42,7 +42,7 @@ const MEMBERS = [
   ['ProgressBar: fraction', 'read-only, reactive', 'The completed share from 0 to 1, or `null` while the progress is unknown.'],
   ['Spinner: every prop', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['Spinner: waiting', 'read-only', 'Indicates that it is still within its delay.'],
-  ['Spinner.cover(target, props?)', '`() => void`', 'Covers a component or element with a spinner. Call the returned function to remove it. See Covering a panel.'],
+  ['Spinner.cover(target, props?)', '`() => void`', 'Covers a component with a spinner. Call the returned function to remove it. See Covering a panel.'],
 ];
 
 const A11Y = [
@@ -153,7 +153,7 @@ import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
 
       <Section anchor="cover" title="Covering a panel while it loads">
         <p>
-          <Rich text="`Spinner.cover(target)` places a spinner over a component or element and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward." />
+          <Rich text="`Spinner.cover(target)` places a spinner over a component and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward." />
         </p>
         <Example files={code('Cover.tsx')} stack>
           <Cover />

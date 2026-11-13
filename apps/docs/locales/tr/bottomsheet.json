@@ -37,7 +37,7 @@
   "Blocks everything around it, within its container or on the whole page. Tab stays inside.": "Kapsayıcısı içinde veya sayfanın tamamında çevresindeki her şeyi engeller. Tab içeride kalır.",
   "When modal": "Modalken",
   "Shows a dimmed layer behind it.": "Arkasında karartılmış bir katman gösterir.",
-  "Opens over this element, which is made `relative` while open if it is static. `null` opens over the page, in the top layer.": "Bu öğenin üzerinde açılır; statik ise açıkken `relative` yapılır. `null` sayfanın üzerinde, üst katmanda açar.",
+  "Opens over this component, which is made `relative` while open if it is static. `null` opens over the page, in the top layer.": "Bu bileşenin üzerinde açılır; statik ise açıkken `relative` yapılır. `null` sayfanın üzerinde, üst katmanda açar.",
   "Content in addition to JSX children, and a non-scrolling row below it.": "JSX alt öğelerine ek içerik ve altında kaydırılmayan bir satır.",
   "Shows a close button next to the title.": "Başlığın yanında bir kapatma düğmesi gösterir.",
   "Shows the handle at the top, which is a grip for touch and mouse, and a slider for the keyboard.": "Üstte dokunma ve fare için kavrama, klavye için kaydırıcı olan tutamacı gösterir.",

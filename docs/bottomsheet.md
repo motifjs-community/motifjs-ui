@@ -282,7 +282,7 @@ export default function Localization() {
 | `detent` | `Bind<BottomSheetDetent>` | The first of `detents` | The height it opens at and its current height. User changes write to it, and setting it moves the sheet. |
 | `modal` | `Bind<boolean>` | `true` | Blocks everything around it, within its container or on the whole page. Tab stays inside. |
 | `scrim` | `Bind<boolean>` | When modal | Shows a dimmed layer behind it. |
-| `container` | `Bind<HTMLElement \| ComponentBase \| null>` | `null` | Opens over this element, which is made `relative` while open if it is static. `null` opens over the page, in the top layer. |
+| `container` | `Bind<ComponentBase \| null>` | `null` | Opens over this component, which is made `relative` while open if it is static. `null` opens over the page, in the top layer. |
 | `content, footer` | `Bind<ComponentBase \| null>` | — | Content in addition to JSX children, and a non-scrolling row below it. |
 | `showClose` | `Bind<boolean>` | `false` | Shows a close button next to the title. |
 | `showHandle` | `Bind<boolean>` | `true` | Shows the handle at the top, which is a grip for touch and mouse, and a slider for the keyboard. |
@@ -308,7 +308,7 @@ export default function Localization() {
 | `snapTo(detent)` | `boolean` | Moves it to a height, and opens it there if closed. |
 | `expand(), collapse()` | `boolean` | Moves to the next taller or shorter height. Returns `false` at the end. |
 | `isOpen, height` | read-only | Indicates whether it is open (reactive), and its current height in pixels. |
-| `panelElement, contentElement` | read-only | The surface with `role="dialog"`, and the scrolling area. |
+| `panelPart, contentPart` | read-only | The surface with `role="dialog"`, and the scrolling area. |
 | `onOpening / onOpened` | events | `{ cancel, source }` and `{ source }`. `opened` occurs after the slide-in animation. |
 | `onClosing / onClosed` | events | `{ cancel, reason, source }` and `{ reason, source }`, with `'code'`, `'escape'`, `'scrim'`, `'swipe'`, `'back'`, `'button'` or `'owner'`. A close caused by the owner being disposed cannot be canceled. |
 | `onDetentChanging / onDetentChanged` | events | `{ from, to, byUser, cancel, source }`. `to` can be changed, and if canceled the sheet returns to where it was. |

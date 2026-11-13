@@ -23,7 +23,7 @@ const MEMBERS = [
     ['onScrolled', 'event', 'Occurs when the position changes: `top`, `left`.'],
     ['scrollTo(where, smooth?)', '`void`', 'Scrolls to a top position, or to `{ top, left }`. `smooth` animates the scroll.'],
     ['scrollBy({ top, left }, smooth?)', '`void`', 'Scrolls by a distance.'],
-    ['scrollToElement(target, smooth?)', '`void`', 'Scrolls an element or component of the content into view.'],
+    ['scrollToElement(target, smooth?)', '`void`', 'Scrolls a component of the content into view.'],
     ['refresh(), release()', '`void`', 'Starts a refresh as a pull would, or ends it.'],
     ['loadMore(), update()', '`boolean` / `void`', 'Requests more data now, or checks the position again after the content changes.'],
     ['scrollTop, scrollLeft', 'read-only', 'The current scroll position.'],

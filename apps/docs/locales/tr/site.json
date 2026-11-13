@@ -5,7 +5,7 @@
   "A code stays dark on a light sheet in every theme, as readers expect.": "Kod, okuyucuların beklediği gibi her temada açık zemin üzerinde koyu kalır.",
   "A custom application value.": "Uygulamaya özel bir değer.",
   "A custom value.": "Özel bir değer.",
-  "A glyph name, or an image, an element or a component.": "Bir glif adı ya da bir resim, öğe veya bileşen.",
+  "A glyph name, or an image address or a component.": "Bir glif adı ya da bir resim adresi veya bileşen.",
   "A key combination displayed at the end (`Ctrl+S`). It is for display only: register the key with `addShortcut`, or name a command, whose keys are shown and run.": "Sonda gösterilen tuş bileşimi (`Ctrl+S`). Yalnızca gösterim içindir: tuşu `addShortcut` ile kaydedin ya da tuşları gösterilen ve çalışan bir komuta bağlayın.",
   "A kit string": "Bir kit metni",
   "A prop that accepts a function as its value (`textField`, a template) uses the function as is when it has parameters. A function without parameters is treated as a getter, as with every other prop.": "Değer olarak function alan bir prop (`textField`, bir template), parametreleri varsa function'ı olduğu gibi kullanır. Parametresiz bir function, diğer tüm prop'larda olduğu gibi getter kabul edilir.",

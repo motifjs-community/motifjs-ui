@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { reactive, type ComponentBase } from '@motifx/core';
 import { DropDown } from '@motifx-community/ui';
 
 interface Country {
@@ -21,8 +21,8 @@ const countries: Country[] = [
 ];
 
 /** Draws a country as its flag and its name, in the list and in the field. */
-const drawCountry = (c: Country, host: HTMLElement) => {
-  host.textContent = `${c.flag}  ${c.name}`;
+const drawCountry = (c: Country, host: ComponentBase) => {
+  host.setText(`${c.flag}  ${c.name}`);
 };
 
 /** Objects read through textField and valueField, under group headers, one that cannot be chosen, drawn with templates. */

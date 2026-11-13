@@ -114,10 +114,10 @@ An item with `items` opens a submenu at its side. Right (Left on right-to-left p
 
 ## ContextMenu
 
-A `ContextMenu` opens at the pointer when its target is right-clicked, and at the focused element with the Menu key or Shift+F10. `onOpening` receives the element (`e.target`) and builds the items for it, in this case for a row in a list. Setting `e.cancel = true` leaves the browser's own menu. The menu closes on Escape or a click outside. When the page scrolls, it follows the element it opened on and closes once that element is out of view.
+A `ContextMenu` opens at the pointer when its target is right-clicked, and at the focused element with the Menu key or Shift+F10. `onOpening` receives the component under the pointer or the focus (`e.part`) and builds the items for it, in this case for a row in a list. Setting `e.cancel = true` leaves the browser's own menu. The menu closes on Escape or a click outside. When the page scrolls, it follows the element it opened on and closes once that element is out of view.
 
 ```tsx
-import { reactive, type Component } from '@motifx/core';
+import { reactive, type Component, type ComponentBase } from '@motifx/core';
 import { ContextMenu, type MenuItem } from '@motifx-community/ui';
 
 interface FileRow {
@@ -156,9 +156,10 @@ export default function FileList() {
     { text: '&Delete', shortcut: 'Del', beginGroup: true, enabled: !row.locked, click: () => (s.files = s.files.filter((f) => f !== row)) },
   ];
 
-  const rowOf = (el: Element) => {
-    const id = Number(el.closest('[data-id]')?.getAttribute('data-id'));
-    return s.files.find((f) => f.id === id);
+  const rowOf = (part: ComponentBase) => {
+    let id: string | null = null;
+    for (let at: ComponentBase | null = part; at && !id; at = at.parent) id = at.attr.get('data-id');
+    return s.files.find((f) => f.id === Number(id));
   };
 
   return (
@@ -174,7 +175,7 @@ export default function FileList() {
         target={() => list}
         label="File"
         onOpening={(e) => {
-          const row = rowOf(e.target);
+          const row = rowOf(e.part);
           if (row) e.items = rowItems(row);
           else e.cancel = true;
         }}
@@ -192,13 +193,13 @@ import { attachContextMenu } from '@motifx-community/ui';
 const START = 'Right-click here, or focus me and press the Menu key.';
 const BOX = 'padding: var(--mx-space-4); background: var(--mx-color-bg-card); border: var(--mx-border-width-1) solid var(--mx-color-stroke-card); border-radius: var(--mx-radius-lg)';
 
-/** A menu given to an element with `attachContextMenu`, its items built from the opening. */
+/** A menu given to a component with `attachContextMenu`, its items built from the opening. */
 export default function AttachedMenu() {
   const s = reactive({ zone: START });
 
   const attach = (c: Component<HTMLDivElement>) => {
     const remove = attachContextMenu(c, (e) => [
-      { text: '&Say where', click: () => (s.zone = `Opened ${e.byKeyboard ? 'from the keyboard' : 'with the pointer'} on <${e.target.tagName.toLowerCase()}>.`) },
+      { text: '&Say where', click: () => (s.zone = `Opened ${e.byKeyboard ? 'from the keyboard' : 'with the pointer'} on ${e.part === c ? 'the zone' : 'its content'}.`) },
       { text: '&Reset', click: () => (s.zone = START) },
     ]);
     c.motif.setDisposable(remove);
@@ -275,8 +276,8 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands. `onOpening` can provide different ones for each element. |
-| `target` | `Bind<Element \| Component \| null>` | Its parent | The element the menu belongs to. If not set, this is the element the `ContextMenu` is placed in. |
+| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands. `onOpening` can provide different ones for each component. |
+| `target` | `Bind<Component \| null>` | Its parent | The component the menu belongs to. If not set, this is the component the `ContextMenu` is placed in. |
 | `label` | `Bind<string>` | `''` | The accessible name of the menu. |
 | `keyboard` | `Bind<boolean>` | `true` | The Menu key and Shift+F10 open the menu at the focused element. |
 | `closeOnScroll` | `Bind<boolean>` | `true` | Scrolling the element out of view closes the menu. Until then, the menu follows the element. |
@@ -289,8 +290,8 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 | --- | --- | --- |
 | `MenuBar.openItem` | read-only, reactive | The top-level item whose menu is open. |
 | `ContextMenu.opened` | read-only, reactive | Indicates whether it is open. |
-| `ContextMenu.targetElement` | read-only, reactive | The element the menu was last opened on. |
-| `ContextMenu.target` | read/write, reactive | The element the menu listens on. |
+| `ContextMenu.targetPart` | read-only, reactive | The component the menu was last opened on. |
+| `ContextMenu.target` | read/write, reactive | The component the menu listens on. |
 
 ### Methods
 
@@ -298,17 +299,17 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 | --- | --- | --- |
 | `MenuBar.open(item \| index)` | `boolean` | Opens a top-level item's menu with focus on its first item. |
 | `MenuBar.close()` | `void` | Closes the open menu. |
-| `ContextMenu.open(at, target?)` | `boolean` | Opens the menu programmatically, at `{ x, y }` or at an element. |
+| `ContextMenu.open(at, target?)` | `boolean` | Opens the menu programmatically, at `{ x, y }` or at a component. |
 | `ContextMenu.close()` | `void` | Closes it. |
 | `MenuBar.refresh(), ContextMenu.refresh()` | `void` | Your items can be plain or reactive, and the menu reads them as they are. After changing them in place, call `refresh()`. The bar, the open menu and its submenus update. |
-| `attachContextMenu(target, items)` | `() => void` | Attaches a menu to an element or component. `items` can be a function of the opening event (`e.target`). Returns a function that removes the menu. |
+| `attachContextMenu(target, items)` | `() => void` | Attaches a menu to a component. `items` can be a function of the opening event (`e.part`). Returns a function that removes the menu. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
 | `onItemClick(e)` | On both components, occurs when an item is selected, after its own `click`. |
-| `ContextMenu.onOpening(e)` | Occurs before the menu opens. `e`: `{ target, items, cancel, byKeyboard, event, source }`. Set `e.items` for the element, or set `e.cancel = true`. |
+| `ContextMenu.onOpening(e)` | Occurs before the menu opens. `e`: `{ part, items, cancel, byKeyboard, event, source }`. Set `e.items` for the component `part`, or set `e.cancel = true`. |
 | `ContextMenu.onClosed(reason)` | `escape`, `outside`, `focus` or `code`. |
 
 ## Feedback

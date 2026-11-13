@@ -18,7 +18,7 @@ const PROPS = [
   ['variant', '`Bind<ButtonVariant>`', "`'solid'`", '`solid` (filled and pressable), `outline` (framed) or `ghost` (visible only on hover).'],
   ['tone', '`Bind<ButtonTone>`', "`'standard'`", '`standard`, `accent` for the primary action, or `danger` for a destructive action.'],
   ['size', '`Bind<ButtonSize>`', "`'md'`", '`sm`, `md` or `lg`, which map to the control heights in the density tokens.'],
-  ['icon', '`Bind<IconSource | null>`', '—', 'An image address, or any element or component (an `<svg>` in JSX, an icon font tag). It is decorative and hidden from screen readers.'],
+  ['icon', '`Bind<IconSource | null>`', '—', 'An image address or a component (an `<svg>` in JSX, an icon font tag); given as a function, the “more” menu of a toolbar calls it again for its own copy. It is decorative and hidden from screen readers.'],
   ['iconPosition', "`Bind<'start' | 'end'>`", "`'start'`", 'Places the icon before or after the text.'],
   ['stretch', '`Bind<boolean>`', '`false`', 'Stretches to the full width of its container.'],
   ['type', "`Bind<'button' | 'submit' | 'reset'>`", "`'button'`", 'The native type. The default is `button`, so a button inside a form never submits by accident.'],
@@ -138,7 +138,7 @@ import { Button, type MenuItem } from '@motifx-community/ui';
 
       <Section anchor="content" title="Text, icons and children">
         <p>
-          <Rich text="`text` sets the caption, and JSX children follow it. `icon` accepts an image address or any element or component, placed before or after the text with `iconPosition`. A button with only an icon needs an accessible name, so give it a `hint`." />
+          <Rich text="`text` sets the caption, and JSX children follow it. `icon` accepts an image address or a component, placed before or after the text with `iconPosition`. A button with only an icon needs an accessible name, so give it a `hint`." />
         </p>
         <Example files={code('IconAndChildren.tsx')}>
           <IconAndChildren />

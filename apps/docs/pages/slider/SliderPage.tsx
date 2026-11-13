@@ -40,7 +40,7 @@ const PROPS = [
 
 const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
-  ['thumbElements', 'read-only', 'The thumb elements, `[start, end]`. The end thumb is hidden without `range`.'],
+  ['thumbParts', 'read-only', 'The thumbs as components, `[start, end]`. The end thumb is hidden without `range`.'],
   ['isValid, validationMessage, validating', 'read-only, reactive', 'These work the same way as on all fields.'],
 ];
 

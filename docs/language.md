@@ -45,7 +45,7 @@ export default function Switch() {
 
 | Rule | Details |
 | --- | --- |
-| `Start` | The initial language comes from the page's `<html lang>` attribute, or from the browser language if it is not set. Set `lang` before creating the first control. `uiLocale.ready` resolves once that language has loaded. |
+| `Start` | The initial language is the browser's language (`navigator.language`), English without one. The app gives its own with `connectI18n(i18n)` or `uiLocale.use(locale)`; the page's `<html lang>` is not read. `uiLocale.ready` resolves once the initial language has loaded. |
 | `Texts` | Every string a control displays on its own, such as a button name, a message or “No items”, comes from the active language pack. English is used for anything the pack does not include. |
 | `Formats` | Dates, numbers, the first day of the week and the 12 or 24-hour clock follow `uiLocale.locale`. A control's own `locale` prop takes precedence for that control. |
 | `Direction` | `uiLocale.dir` is `rtl` for Arabic, Hebrew, Persian, Urdu and similar languages. Controls lay themselves out based on `<html dir>`, which `@motifx-community/i18n` keeps in sync. |

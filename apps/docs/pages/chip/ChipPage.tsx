@@ -12,7 +12,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 const PROPS = [
   ['text', '`Bind<string>`', "`''`", 'The text.'],
   ['value', '`Bind<unknown>`', 'Its text', 'The value it represents in a group.'],
-  ['icon', '`Bind<IconSource | null>`', '`null`', 'An icon before the text: an image address, an element or a component.'],
+  ['icon', '`Bind<IconSource | null>`', '`null`', 'An icon before the text: an image address or a component.'],
   ['avatar', '`Bind<AvatarProps | null>`', '`null`', 'An avatar before the text (its props; the chip sets the size).'],
   ['selectable', '`Bind<boolean>`', '`false`', 'Pressing the chip toggles it, as a filter. In a group with selection, the group controls it.'],
   ['selected', '`Bind<boolean>`', '`false`', 'Indicates whether the chip is on.'],

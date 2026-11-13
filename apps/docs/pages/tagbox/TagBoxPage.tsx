@@ -25,7 +25,7 @@ const PROPS = [
   ['hideSelected', '`Bind<boolean>`', '`false`', 'Removes selected items from the list (in-memory items only).'],
   ['openOnFieldClick', '`Bind<boolean>`', '`true`', 'Clicking the field opens the list.'],
   ['showDropDownButton, clearButton', '`Bind<boolean>`', '`true`, `false`', 'The arrow that opens all items, and the button that removes all tags.'],
-  ['itemTemplate, tagTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Customizes how a list item or a tag is drawn.'],
+  ['itemTemplate, tagTemplate', '`Bind<(item, host: ComponentBase) => cleanup | void>`', '—', 'Customizes how a list item or a tag is drawn.'],
   ['matchWidth', '`Bind<boolean>`', '`true`', 'The list is at least as wide as the field.'],
   ['label, labelMode, helpText, hint, prefix, icon, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'Field props shared by all editors.'],
 ];
@@ -35,7 +35,7 @@ const PROPERTIES = [
   ['selectedItems', 'read-only, reactive', 'The known items for the selected values. With a data source, the others are looked up by key.'],
   ['listItems', 'read-only', 'The `DataItems` shown in the list, which are the results of the last search.'],
   ['opened', 'read/write, reactive', 'Indicates whether the list is open. Set it to open or close the list.'],
-  ['inputElement', 'read-only', 'The text input.'],
+  ['inputPart', 'read-only', 'The text input.'],
 ];
 
 const METHODS = [

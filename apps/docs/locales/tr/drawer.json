@@ -19,7 +19,7 @@
   "The opening size, the maximum share of the available space, the margin around it, and the font family.": "Açılış boyutu, kullanılabilir alandan alabileceği maksimum pay, çevresindeki kenar boşluğu ve yazı tipi ailesi.",
   "The edge it slides in from. `start` and `end` follow the reading direction, and `left` and `right` do not.": "Kayarak geldiği kenar. `start` ve `end` okuma yönünü izler, `left` ve `right` izlemez.",
   "Over the content, or pushing `pushTarget` aside by its size.": "İçeriğin üzerinde veya `pushTarget` öğesini boyutu kadar yana iterek.",
-  "The element `push` moves aside. Without it, `push` behaves like `over`.": "`push` modunun yana ittiği öğe. Ayarlanmazsa `push`, `over` gibi davranır.",
+  "The component `push` moves aside. Without it, `push` behaves like `over`.": "`push` modunun yana ittiği bileşen. Ayarlanmazsa `push`, `over` gibi davranır.",
   "Its width, or its height from the top or bottom, in pixels or as a CSS length. `null` uses `drawer.size`. It never exceeds 85% of the available space.": "Genişliği veya üstten ya da alttan açılıyorsa yüksekliği, piksel ya da CSS uzunluğu olarak. `null`, `drawer.size` kullanır. Kullanılabilir alanın %85'ini hiçbir zaman aşmaz.",
   "A finger swiping in from the edge of the container or page opens it, and it follows the finger.": "Kapsayıcının veya sayfanın kenarından kaydıran parmak paneli açar ve panel parmağı izler.",
   "The distance from the edge, in pixels, where that swipe can start.": "Bu kaydırmanın başlayabileceği, kenardan piksel uzaklığı.",

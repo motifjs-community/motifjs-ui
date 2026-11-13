@@ -21,7 +21,7 @@
   "The title, which also provides the accessible name of the card.": "Kartın erişilebilir adını da sağlayan başlık.",
   "An avatar before the titles (its props).": "Başlıklardan önce avatar (prop'ları).",
   "Content at the end of the header, such as a menu button or a badge.": "Üst bilginin sonundaki içerik, örneğin menü düğmesi veya badge.",
-  "An image that extends to the card edges: an image address, an element or a component.": "Kart kenarlarına uzanan görsel: görsel adresi, öğe veya bileşen.",
+  "An image that extends to the card edges: an image address or a component.": "Kart kenarlarına uzanan görsel: görsel adresi veya bileşen.",
   "Alternative text for the image when `media` is an image address. Without it, the image is decorative.": "`media` bir görsel adresi olduğunda görselin alternatif metni. Ayarlanmazsa görsel dekoratiftir.",
   "The content, in addition to JSX children.": "JSX alt öğelerine ek olarak içerik.",
   "A row of actions below the content. A replaced component is removed from the card and stays under your control.": "İçeriğin altındaki action satırı. Değiştirilen bileşen karttan çıkarılır ve sizin denetiminizde kalır.",

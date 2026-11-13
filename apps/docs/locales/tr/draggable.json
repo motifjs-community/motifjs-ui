@@ -1,7 +1,7 @@
 {
   "Makes any content movable with the pointer, touch or the arrow keys, optionally along one axis, inside a boundary, by a handle or as a copy. `DropTarget` defines areas that accept it. To reorder items in a list, see [Sortable](/sortable).": "Herhangi bir içeriği işaretçiyle, dokunmayla veya ok tuşlarıyla taşınabilir yapar; isteğe bağlı olarak tek eksen boyunca, bir sınır içinde, bir tutamaçla veya kopya olarak. `DropTarget`, onu kabul eden alanları tanımlar. Bir listedeki öğeleri yeniden sıralamak için bkz. [Sortable](/sortable).",
   "Moving content": "İçeriği taşıma",
-  "JSX children are the movable content. `boundary` keeps it inside its parent or an element, `axis` limits it to one direction, and `handle` sets the only part that responds to the pointer and keyboard. A drag writes the position to `x-model`, `onDragEnded` reports it, and Escape returns the content to its start.": "JSX alt öğeleri taşınabilir içeriktir. `boundary` içeriği üst öğesinin veya bir öğenin içinde tutar, `axis` tek yöne sınırlar, `handle` ise işaretçi ve klavyeye yanıt veren tek parçayı belirler. Sürükleme konumu `x-model` değerine yazar, `onDragEnded` bildirir, Escape içeriği başlangıcına döndürür.",
+  "JSX children are the movable content. `boundary` keeps it inside its parent or a component, `axis` limits it to one direction, and `handle` sets the only part that responds to the pointer and keyboard. A drag writes the position to `x-model`, `onDragEnded` reports it, and Escape returns the content to its start.": "JSX alt öğeleri taşınabilir içeriktir. `boundary` içeriği üst öğesinin veya bir bileşenin içinde tutar, `axis` tek yöne sınırlar, `handle` ise işaretçi ve klavyeye yanıt veren tek parçayı belirler. Sürükleme konumu `x-model` değerine yazar, `onDragEnded` bildirir, Escape içeriği başlangıcına döndürür.",
   "Drop targets": "Bırakma hedefleri",
   "A `DropTarget` in the same `group` accepts a draggable dropped on it and receives the draggable's `data` in `onDropped`. `onDragEntering` can reject it. With `clone`, a copy follows the pointer and the original stays, so one item can be dropped many times. Your code decides what a drop does to your data.": "Aynı `group` içindeki `DropTarget`, üzerine bırakılan draggable'ı kabul eder ve `data` değerini `onDropped` içinde alır. `onDragEntering` reddedebilir. `clone` ile bir kopya işaretçiyi izler ve orijinal yerinde kalır, böylece bir öğe birçok kez bırakılabilir. Bırakmanın verinize ne yapacağına kodunuz karar verir.",
   "`position` sets the location in pixels from the element's layout position, and `x-model` receives it after every drag or key press, so you can save and restore it.": "`position`, konumu öğenin yerleşim konumundan piksel olarak ayarlar, `x-model` her sürükleme veya tuş basışından sonra bunu alır, böylece kaydedip geri yükleyebilirsiniz.",
@@ -18,7 +18,7 @@
   "Unit: a target (`active`, `over`, `refused`).": "Unit: hedef (`active`, `over`, `refused`).",
   "Draggable props": "Draggable prop'ları",
   "`both`, `x` or `y`.": "`both`, `x` ya da `y`.",
-  "The area it stays inside: its parent, or an element that contains it.": "İçinde kaldığı alan: üst öğesi veya onu içeren bir öğe.",
+  "The area it stays inside: its parent, or a component that contains it.": "İçinde kaldığı alan: üst öğesi veya onu içeren bir bileşen.",
   "A selector inside the draggable. Only this part starts a drag, and it receives the Tab stop and keyboard input.": "Draggable içinde bir seçici. Sürüklemeyi yalnızca bu parça başlatır, Tab durağı ve klavye girişi de ona aittir.",
   "A copy follows the pointer and the draggable stays in place, ready to be dropped on a target.": "Bir kopya işaretçiyi izler, draggable yerinde kalır ve hedefe bırakılmaya hazırdır.",
   "Drop targets in the same group accept it.": "Aynı gruptaki bırakma hedefleri kabul eder.",
@@ -36,5 +36,5 @@
   "Occurs when the drag ends (`x`, `y`, `target`, `dropped`).": "Sürükleme bittiğinde oluşur (`x`, `y`, `target`, `dropped`).",
   "The current position.": "Geçerli konum.",
   "Indicates that a drag is in progress.": "Sürüklemenin sürdüğünü belirtir.",
-  "The element that handles the pointer and keyboard: the handle, or the draggable itself.": "İşaretçi ve klavyeyi yöneten öğe: tutamaç veya draggable'ın kendisi."
+  "The handle that `handle` names, which takes the pointer and the keyboard; `null` when the draggable itself takes them.": "`handle` ile adlandırılan, işaretçiyi ve klavyeyi alan tutamaç; draggable'ın kendisi aldığında `null`."
 }

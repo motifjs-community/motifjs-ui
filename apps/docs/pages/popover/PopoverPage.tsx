@@ -8,7 +8,7 @@ import Placements from './examples/Placements';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-    ['target', '`Bind<Element | ComponentBase | null>`', '`null`', 'The element or component it opens next to.'],
+    ['target', '`Bind<ComponentBase | null>`', '`null`', 'The component it opens next to.'],
     ['title', '`Bind<string>`', "`''`", 'A title in the header. This is the same property as `text`.'],
     ['label', '`Bind<string>`', "`''`", 'The accessible name when there is no title.'],
     ['content', '`Bind<ComponentBase | null>`', '`null`', 'Content set programmatically, shown after the JSX children.'],
@@ -77,7 +77,7 @@ import { Popover } from '@motifx-community/ui';
 
             <Section anchor="ways" title="Declarative and programmatic">
                 <p>
-                    <Rich text="JSX children are the content, and `target` specifies the element or component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open." />
+                    <Rich text="JSX children are the content, and `target` specifies the component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open." />
                 </p>
                 <Example files={code('Basic.tsx')}>
                     <Basic />

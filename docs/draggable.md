@@ -12,7 +12,7 @@ import { Draggable, DropTarget } from '@motifx-community/ui';
 
 ## Moving content
 
-JSX children are the movable content. `boundary` keeps it inside its parent or an element, `axis` limits it to one direction, and `handle` sets the only part that responds to the pointer and keyboard. A drag writes the position to `x-model`, `onDragEnded` reports it, and Escape returns the content to its start.
+JSX children are the movable content. `boundary` keeps it inside its parent or a component, `axis` limits it to one direction, and `handle` sets the only part that responds to the pointer and keyboard. A drag writes the position to `x-model`, `onDragEnded` reports it, and Escape returns the content to its start.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -164,7 +164,7 @@ export default function Programmatic() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `axis` | `Bind<DragAxis>` | `'both'` | `both`, `x` or `y`. |
-| `boundary` | `Bind<'parent' \| HTMLElement \| null>` | `null` | The area it stays inside: its parent, or an element that contains it. |
+| `boundary` | `Bind<'parent' \| ComponentBase \| null>` | `null` | The area it stays inside: its parent, or a component that contains it. |
 | `handle` | `Bind<string \| null>` | `null` | A selector inside the draggable. Only this part starts a drag, and it receives the Tab stop and keyboard input. |
 | `clone` | `Bind<boolean>` | `false` | A copy follows the pointer and the draggable stays in place, ready to be dropped on a target. |
 | `group` | `Bind<string \| null>` | `null` | Drop targets in the same group accept it. |
@@ -191,7 +191,7 @@ export default function Programmatic() {
 | `onDragEnded` | event | Occurs when the drag ends (`x`, `y`, `target`, `dropped`). |
 | `currentPosition` | read-only | The current position. |
 | `isDragging` | read-only | Indicates that a drag is in progress. |
-| `handleElement` | read-only | The element that handles the pointer and keyboard: the handle, or the draggable itself. |
+| `handlePart` | read-only | The handle that `handle` names, which takes the pointer and the keyboard; `null` when the draggable itself takes them. |
 
 ## Feedback
 

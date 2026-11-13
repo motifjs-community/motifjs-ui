@@ -31,7 +31,7 @@ const MEMBERS = [
     ['onActionClick', 'event', 'Occurs when an action is selected (`index`, `action`). The action\'s own `click` runs first.'],
     ['isOpen', 'read-only', 'Indicates whether the actions are open.'],
     ['single', 'read-only', 'The single visible action, or `null` if there is more than one.'],
-    ['mainElement', 'read-only', 'The main button.'],
+    ['main', 'read-only', 'The main button.'],
     ['show(), close(), toggle()', '`void`', 'Opens or closes the actions.'],
     ['refresh()', '`void`', 'Re-reads the actions after they have been changed in place.']
 ];

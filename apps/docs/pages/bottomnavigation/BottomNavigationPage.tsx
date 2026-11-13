@@ -15,14 +15,14 @@ const PROPS = [
     ['labelMode', "`Bind<'always' | 'active' | 'never'>`", "`'always'`", 'When items show their labels. A label out of view stays as the accessible name of the item.'],
     ['position', "`Bind<'fixed' | 'sticky' | 'static'>`", "`'fixed'`", 'How the bar stays on the page.'],
     ['hideOnScroll', '`Bind<boolean>`', '`false`', 'Moves the bar away while scrolling down, and brings it back while scrolling up.'],
-    ['scrollTarget', '`Bind<HTMLElement | null>`', 'The nearest ancestor that scrolls', 'What `hideOnScroll` watches. Without a scrolling ancestor, it is the page.'],
+    ['scrollTarget', '`Bind<ComponentBase | null>`', 'The nearest ancestor that scrolls', 'What `hideOnScroll` watches. Without a scrolling ancestor, it is the page.'],
 ];
 
 const ITEM = [
     ['value', '`string | number`', 'Its position', 'What `value` is when this item is selected.'],
     ['text', '`Bind<string>`', '—', 'The label, which is also the accessible name.'],
     ['glyph, activeGlyph', '`Bind<string>`', "`''`", 'The glyph, and the glyph while selected.'],
-    ['icon, activeIcon', '`Bind<IconSource | null>`', '`null`', 'An image, an element or a component, used instead of a glyph.'],
+    ['icon, activeIcon', '`Bind<IconSource | null>`', '`null`', 'An image address or a component, used instead of a glyph.'],
     ['href, rel, target', '`Bind<string>`', "`''`", 'Make the item a link. Use `rel: \'router\'` for routed pages.'],
     ['badge', '`Bind<number | null>`', '`null`', 'A count in a badge on the icon.'],
     ['dot', '`Bind<boolean>`', '`false`', 'A dot on the icon instead of a count.'],

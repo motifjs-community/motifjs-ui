@@ -113,7 +113,7 @@ Every rule accepts a `message` (`Bind<string>`). Without it, the text comes from
 | --- | --- | --- |
 | `onEditingStart` | `{ field, row, values, getValue, rowIndex, isNew, cancel }` | Occurs before a cell editor or a row's form (`field` `''`) opens. Set `cancel` to leave the row unchanged. `row` is the row itself (a class instance stays one), `values` holds the entered, unsaved values, and `getValue(field)` returns the entered value, otherwise the row's. |
 | `onEditorPreparing` | `{ field, row, values, getValue, isNew, options, cancel }` | Occurs before the editor of a cell or form field is created. Change its props, or set `cancel` to omit a field from the form. |
-| `onEditorPrepared` | `{ field, row, values, getValue, isNew, editor, element, place: 'cell' \| 'form' }` | Occurs after an editor is created. |
+| `onEditorPrepared` | `{ field, row, values, getValue, isNew, editor, part, place: 'cell' \| 'form' }` | Occurs after an editor is created. |
 | `onRowValidating` | `{ key, row, values, getValue, isNew, changed, errors, isValid, errorText, cancel }` | Occurs when a row is validated before saving, after its cells and their async rules. Add or remove messages in `errors` (by field, with `''` for the row), or set `isValid = false` with `errorText`. Occurs once per validation of the row. |
 | `onInitNewRow, onSaving, onRowInserting, onRowUpdating, onEditCanceling …` | See [Events](datagrid-layout.md#events) | The same in every edit mode: Save in a form is a save, and Cancel is a cancel. |
 

@@ -10,7 +10,7 @@
   "Spinner": "Spinner",
   "A spinner with `delay` stays hidden for that long after it is created or shown again. Quick operations show nothing, and slow ones show the spinner.": "`delay` değeri olan spinner, oluşturulduktan veya yeniden gösterildikten sonra bu süre boyunca gizli kalır. Kısa işlemler hiçbir şey göstermez, uzun işlemler spinner gösterir.",
   "Covering a panel while it loads": "Yüklenirken paneli örtme",
-  "`Spinner.cover(target)` places a spinner over a component or element and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward.": "`Spinner.cover(target)`, bir bileşenin veya öğenin üzerine spinner yerleştirir ve onu kaldıran bir function döndürür. Alttaki içeriğe tıklanamaz ve odaklanılamaz. Odak içerideyse spinner'a taşınır ve sonra geri döner.",
+  "`Spinner.cover(target)` places a spinner over a component and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward.": "`Spinner.cover(target)`, bir bileşenin üzerine spinner yerleştirir ve onu kaldıran bir function döndürür. Alttaki içeriğe tıklanamaz ve odaklanılamaz. Odak içerideyse spinner'a taşınır ve sonra geri döner.",
   "`role=\"progressbar\"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and `aria-valuetext` (the percentage or `valueText`). None of these are set while the progress is unknown.": "`aria-valuenow`, `aria-valuemin`, `aria-valuemax` ve `aria-valuetext` (yüzde veya `valueText`) ile `role=\"progressbar\"`. İlerleme bilinmiyorsa bunların hiçbiri ayarlanmaz.",
   "`role=\"progressbar\"` without a value, which indicates unknown progress. It is not a `status` live region, because those interrupt the screen reader each time one appears, and a page with several would be noisy.": "Değersiz `role=\"progressbar\"`, bilinmeyen ilerlemeyi belirtir. `status` canlı bölgesi değildir, çünkü bunlar her göründüğünde ekran okuyucuyu keser ve birkaç tane bulunan bir sayfa gürültülü olur.",
   "Named by the label (`aria-labelledby`), or by `uiLocale.strings.loading` if there is none.": "Label ile (`aria-labelledby`) veya label yoksa `uiLocale.strings.loading` ile adlandırılır.",
@@ -58,5 +58,5 @@
   "Access / return value": "Erişim / dönüş değeri",
   "The completed share from 0 to 1, or `null` while the progress is unknown.": "0 ile 1 arasında tamamlanan oran veya ilerleme bilinmiyorsa `null`.",
   "Indicates that it is still within its delay.": "Hâlâ gecikme süresinde olduğunu belirtir.",
-  "Covers a component or element with a spinner. Call the returned function to remove it. See Covering a panel.": "Bir bileşeni veya öğeyi spinner ile örter. Kaldırmak için döndürülen function'ı çağırın. Bkz. Paneli örtme."
+  "Covers a component with a spinner. Call the returned function to remove it. See Covering a panel.": "Bir bileşeni spinner ile örter. Kaldırmak için döndürülen function'ı çağırın. Bkz. Paneli örtme."
 }

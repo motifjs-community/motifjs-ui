@@ -36,7 +36,7 @@ const GROUP_PROPS = [
 
 const GROUP_PROPERTIES = [
   ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
-  ['avatars', 'read-only', 'The elements of the provided avatars in order, including those from JSX lists. The `+N` is not included.'],
+  ['members', 'read-only', 'The provided avatars in order, including those from JSX lists. The `+N` is not included.'],
   ['hiddenCount', 'read-only', 'The number of people counted in the `+N`, or 0 when it is not shown.'],
 ];
 

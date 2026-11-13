@@ -41,11 +41,11 @@ const Swatch = (props: { value: string }) => (
 
 function Value(props: { type: string; value: string | number }) {
   return (
-    <span class="value-cell" onConfig={(sender)=>{
-        if (props.type === 'color'){
-          sender.controls.add(<Swatch value={String(props.value)} />)
-        } 
-        sender.controls.add(<code>{String(props.value)}</code>);
+    <span class="value-cell" onConfig={(sender) => {
+      if (props.type === 'color') {
+        sender.controls.add(<Swatch value={String(props.value)} />)
+      }
+      sender.controls.add(<code>{String(props.value)}</code>);
     }}>
       {/* {props.type === 'color' && <Swatch value={String(props.value)} />}
       <code>{String(props.value)}</code> */}
@@ -82,8 +82,23 @@ export default function TokensPage() {
                 </th>
               </tr>
             </thead>
-            <tbody>
-              {componentDocs.map((t,i) => (
+            <tbody onconfig={(sender: any, e: any) => {
+              componentDocs.forEach((t) => {
+                sender.controls.add(<tr>
+                  <td>
+                    <code>{t.name}</code>
+                  </td>
+                  <td>
+                    <code>{t.cssVar}</code>
+                  </td>
+                  <td><code>{t.ref}</code></td>
+                  <td>
+                    <Value type={t.type} value={t.value} />
+                  </td> 
+                </tr>); 
+              })
+            }}>
+              {/* {componentDocs.map((t, i) => (
                 <tr key={i}>
                   <td>
                     <code>{t.name}</code>
@@ -96,7 +111,7 @@ export default function TokensPage() {
                     <Value type={t.type} value={t.value} />
                   </td>
                 </tr>
-              ))}
+              ))} */}
             </tbody>
           </table>
         </div>

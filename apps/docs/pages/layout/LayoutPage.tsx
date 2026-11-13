@@ -95,9 +95,9 @@ const CHILD_PROPS = [
 const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['SplitContainer.first, second', 'read-only', 'The two panes, as `Panel` objects: `split.first.controls.add(…)`, `split.second.scrollable = true`.'],
-  ['SplitContainer.splitterElement', 'read-only', 'The `role="separator"` element.'],
+  ['SplitContainer.splitterPart', 'read-only', 'The `role="separator"` part.'],
   ['SplitContainer.value', 'read/write', 'Maps to `position` for `x-model`.'],
-  ['GroupBox.legendElement', 'read-only', 'The `<legend>` element.'],
+  ['GroupBox.legendPart', 'read-only', 'The `<legend>` part.'],
 ];
 
 const METHODS = [

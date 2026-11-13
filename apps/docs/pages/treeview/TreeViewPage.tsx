@@ -31,14 +31,14 @@ const PROPS = [
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`, from the density tokens.'],
   ['label', '`Bind<string>`', "`''`", 'The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work.'],
   ['virtualFrom', '`Bind<number>`', '`500`', 'When more rows than this are on screen, only the visible rows are rendered.'],
-  ['itemTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Customizes the content of a row.'],
+  ['itemTemplate', '`Bind<(item, host: ComponentBase) => cleanup | void>`', '—', 'Customizes the content of a row.'],
   ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['selectedItems, checkedItems', 'read-only, reactive', 'The selected or checked items, in tree order.'],
-  ['treeElement', 'read-only', 'The element with `role="tree"`.'],
+  ['treePart', 'read-only', 'The part with `role="tree"`.'],
 ];
 
 const METHODS = [
@@ -132,7 +132,7 @@ import { TreeView } from '@motifx-community/ui';
         <p>
           <Rich text="`loadChildren` loads the children of a row the first time it expands, and `hasChildren: false` marks a row with nothing to load. The row shows a busy state while loading. If loading fails, the row reports the error and offers a retry (“Shared” fails once in this example). `iconField` provides the icons, and here it is a function." />
         </p>
-        <Example files={code('FileExplorer.tsx', 'icon.ts', 'entry.ts')} stack>
+        <Example files={code('FileExplorer.tsx', 'icon.tsx', 'entry.ts')} stack>
           <FileExplorer />
         </Example>
       </Section>
@@ -183,7 +183,7 @@ import { TreeView } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="look" title="Sizes, connector lines and expand behavior">
-        <Example files={code('SizesAndLines.tsx', 'project.ts', 'icon.ts', 'entry.ts')} stack>
+        <Example files={code('SizesAndLines.tsx', 'project.ts', 'icon.tsx', 'entry.ts')} stack>
           <SizesAndLines />
         </Example>
       </Section>

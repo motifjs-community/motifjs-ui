@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { reactive, type ComponentBase } from '@motifx/core';
 import { ListBox } from '@motifx-community/ui';
 
 interface Country {
@@ -32,8 +32,8 @@ export default function Countries() {
         valueField="code"
         groupField="region"
         enabledField={(c: Country) => c.member !== false}
-        itemTemplate={(c: Country, host: HTMLElement) => {
-          host.textContent = `${c.flag}  ${c.name}`;
+        itemTemplate={(c: Country, host: ComponentBase) => {
+          host.setText(`${c.flag}  ${c.name}`);
         }}
         height={8}
         x-model={() => form.country}

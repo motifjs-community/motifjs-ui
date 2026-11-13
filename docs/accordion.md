@@ -273,7 +273,7 @@ export default function VariantsAndSizes() {
 | `items` | read-only, reactive | The items in order. |
 | `expandedItems` | read-only, reactive | The open items. |
 | `AccordionItem.contentBuilt` | read-only | Indicates whether its section has been created. |
-| `AccordionItem.owner, headerElement, regionElement` | read-only | Its `Accordion`, its header button and its region. |
+| `AccordionItem.owner, headerPart, regionPart` | read-only | Its `Accordion`, its header button and its region. |
 
 ### Methods
 

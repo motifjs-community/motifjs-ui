@@ -33,6 +33,6 @@
   "Occurs when an item moves within this sortable (`fromIndex`, `toIndex`, `item`), by a drop or the keyboard. Reorder your data here.": "Bir öğe bu sortable içinde bırakma veya klavyeyle taşındığında oluşur (`fromIndex`, `toIndex`, `item`). Verinizi burada yeniden sıralayın.",
   "Occur when an item leaves for another sortable in the group and when it arrives, with `from`, `to`, the indexes and the item. Move the data between your arrays here.": "Bir öğe gruptaki başka bir sortable'a gittiğinde ve ulaştığında `from`, `to`, dizinler ve öğeyle oluşur. Veriyi dizileriniz arasında burada taşıyın.",
   "Moves an item programmatically as a drop would, and raises `onReorder`.": "Bir öğeyi bırakma gibi programmatic olarak taşır ve `onReorder` tetikler.",
-  "The item elements, in order.": "Sırasıyla öğe elementleri.",
+  "The components of the items, in order: the rows of `items`, or the children.": "Sırasıyla öğelerin bileşenleri: `items` satırları ya da alt öğeler.",
   "Indicates that an item is being dragged.": "Bir öğenin sürüklendiğini belirtir."
 }

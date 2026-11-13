@@ -1,11 +1,11 @@
-import { reactive } from '@motifx/core';
+import { reactive, type Component } from '@motifx/core';
 import { Button, Popover, Stack, TextBox } from '@motifx-community/ui';
 
-/** A popover with a title, a close button and a small form, and one created programmatically for a plain element. */
+/** A popover with a title, a close button and a small form, and one created programmatically for a link. */
 export default function Basic() {
     const s = reactive({ open: false, name: 'Ada', saved: '' });
     let button!: Button;
-    let link!: HTMLElement;
+    let link!: Component<HTMLAnchorElement>;
     const coded = new Popover({ title: 'Programmatically', content: new Button({ text: 'OK', variant: 'outline', onclick: () => coded.close() }) });
 
     return (
@@ -21,7 +21,7 @@ export default function Basic() {
             <a
                 href="#from-code"
                 class="po-link"
-                ref={(c: { element: HTMLElement }) => (link = c.element)}
+                ref={(c: Component<HTMLAnchorElement>) => (link = c)}
                 onclick={(e: Event) => {
                     e.preventDefault();
                     coded.target = link;

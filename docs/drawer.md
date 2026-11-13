@@ -211,7 +211,7 @@ Its default name and the close button come from `uiLocale.strings` (`drawerLabel
 | `value` | `Bind<boolean>` | `false` | Indicates whether it is open. `x-model` provides two-way binding. |
 | `side` | `Bind<'start' \| 'end' \| 'left' \| 'right' \| 'top' \| 'bottom'>` | `'start'` | The edge it slides in from. `start` and `end` follow the reading direction, and `left` and `right` do not. |
 | `mode` | `Bind<'over' \| 'push'>` | `'over'` | Over the content, or pushing `pushTarget` aside by its size. |
-| `pushTarget` | `Bind<HTMLElement \| ComponentBase \| null>` | — | The element `push` moves aside. Without it, `push` behaves like `over`. |
+| `pushTarget` | `Bind<ComponentBase \| null>` | — | The component `push` moves aside. Without it, `push` behaves like `over`. |
 | `size` | `Bind<number \| string \| null>` | `null` | Its width, or its height from the top or bottom, in pixels or as a CSS length. `null` uses `drawer.size`. It never exceeds 85% of the available space. |
 | `edgeSwipe` | `Bind<boolean>` | `false` | A finger swiping in from the edge of the container or page opens it, and it follows the finger. |
 | `edgeSize` | `Bind<number>` | `24` | The distance from the edge, in pixels, where that swipe can start. |

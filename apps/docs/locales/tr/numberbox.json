@@ -44,5 +44,6 @@
   "The value as displayed without focus, or `''` when empty.": "Odak yokken görüntülenen değer veya boşken `''`.",
   "Adds `step` × `times`, kept within `min` and `max`.": "`step` × `times` ekler, `min` ve `max` içinde kalır.",
   "Subtracts `step` × `times`.": "`step` × `times` çıkarır.",
+  "Puts `text` in the field as if the user typed it; characters a number is not written with are not taken.": "`text`'i kullanıcı yazmış gibi field'a koyar; sayının yazılmadığı karakterler alınmaz.",
   "Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. A held spin button reports every step.": "Değer değiştiğinde oluşur. `e`: `{ value, previousValue, byUser, source, event? }`. Basılı tutulan spin düğmesi her adımı bildirir."
 }

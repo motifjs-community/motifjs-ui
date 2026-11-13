@@ -283,7 +283,7 @@ TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own,
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `isValid, validationMessage, validating` | read-only, reactive | The validation result. |
-| `textAreaElement` | read-only | The native `<textarea>`. |
+| `textAreaPart` | read-only | The native `<textarea>`. |
 
 ### Methods
 

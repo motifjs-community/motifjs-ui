@@ -15,7 +15,7 @@ const PROPS = [
 const ITEM = [
     ['key', '`string | number`', 'Finds the item, and is `selected` while its page is shown. The default is its position.'],
     ['text, hint', '`Bind<string>`', 'The text (`&` marks the access key) and a tooltip.'],
-    ['glyph, icon', '`Bind<string>`, `Bind<IconSource>`', 'A glyph name, or an image, an element or a component.'],
+    ['glyph, icon', '`Bind<string>`, `Bind<IconSource>`', 'A glyph name, or an image address or a component.'],
     ['page', '`() => ComponentBase`', 'Makes it a page item. The page is made the first time it is shown, and kept.'],
     ['href, rel, target', '`Bind<string>`', 'Makes it a link.'],
     ['badge, dot', '`Bind<number | null>`, `Bind<boolean>`', 'A count in a badge, or a dot.'],

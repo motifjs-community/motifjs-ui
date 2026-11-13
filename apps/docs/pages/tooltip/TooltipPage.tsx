@@ -12,7 +12,7 @@ import ShowOn from './examples/ShowOn';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['target', '`Bind<Element | ComponentBase | null>`', '—', 'The element it describes. A function works for a component that appears later in the view (`() => this.save`).'],
+  ['target', '`Bind<ComponentBase | null>`', '—', 'The component it describes. A function works for a component that appears later in the view (`() => this.save`).'],
   ['text', '`Bind<string>`', "`''`", 'The tooltip text.'],
   ['content', '`Bind<ComponentBase | null>`', '—', 'Any content after the text, created the first time the tooltip appears. JSX children work too. Do not include interactive content.'],
   ['placement', '`Bind<PopupPlacement>`', "`'top'`", '`top`, `bottom`, `start` or `end`, each with `-start` or `-end`. It opens on the opposite side if there is no room, and start and end follow the reading direction.'],
@@ -147,7 +147,7 @@ import { Tooltip, addTooltip, type TooltipShowOn } from '@motifx-community/ui';
 
       <Section anchor="many" title="Tooltips on many elements">
         <p>
-          <Rich text="`addTooltip(target, text)` gives an element a tooltip that is created only when first needed. All tooltips on the page share one set of document listeners, so hundreds of them have almost no cost. The function returns a remover." />
+          <Rich text="`addTooltip(target, text)` gives a component a tooltip that is created only when first needed. All tooltips on the page share one set of document listeners, so hundreds of them have almost no cost. The function returns a remover." />
         </p>
         <Example files={code('ManyElements.tsx')} stack>
           <ManyElements />

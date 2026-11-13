@@ -23,7 +23,7 @@ const MEMBERS = [
     ['onReorder', 'event', 'Occurs when an item moves within this sortable (`fromIndex`, `toIndex`, `item`), by a drop or the keyboard. Reorder your data here.'],
     ['onRemove, onAdd', 'event', 'Occur when an item leaves for another sortable in the group and when it arrives, with `from`, `to`, the indexes and the item. Move the data between your arrays here.'],
     ['move(fromIndex, toIndex)', '`boolean`', 'Moves an item programmatically as a drop would, and raises `onReorder`.'],
-    ['elements', 'read-only', 'The item elements, in order.'],
+    ['itemParts()', '`ComponentBase[]`', 'The components of the items, in order: the rows of `items`, or the children.'],
     ['isDragging', 'read-only', 'Indicates that an item is being dragged.'],
     ['refresh()', '`void`', 'Re-reads the items after they have been changed in place.']
 ];

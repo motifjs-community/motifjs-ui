@@ -15,9 +15,9 @@ const OPTIONS = [
   ['handle', '`Bind<string>`', "`''`", 'A CSS selector for the part of a row used for dragging, instead of the icon or the whole row.'],
   ['group, data', '`Bind<string>`, `Bind<unknown>`', '—', 'Grids in the same group accept each other\'s rows. `data` is passed to the events as `fromData` and `toData`.'],
   ['dragDirection', "`Bind<'both' | 'vertical' | 'horizontal'>`", "`'both'`", 'Where the copy of the row can go.'],
-  ['boundary, container', '`Bind<string | HTMLElement>`', 'None, and the grid', 'The element the dragged row stays inside, and the element that displays its copy.'],
+  ['boundary, container', '`Bind<string | ComponentBase>`', 'None, and the grid', 'The component the dragged row stays inside, and the component that displays its copy, or a selector of each.'],
   ['cursorOffset', '`Bind<{ x, y } | string>`', 'Where the row was grabbed', 'The offset of the copy from the pointer.'],
-  ['dragTemplate', '`({ itemData, itemElement }) => unknown`', 'A copy of the row', 'Custom content under the pointer: a component, an element or text.'],
+  ['dragTemplate', '`({ itemData, itemPart }) => ComponentBase | string`', 'A copy of the row', 'Custom content under the pointer: a component or text.'],
   ['autoScroll, scrollSpeed, scrollSensitivity', '`Bind<boolean>`, `Bind<number>`, `Bind<number>`', '`true`, `30`, `60`', 'The rows scroll while the pointer is near their top or bottom edge: the speed in pixels per frame at the edge, and the distance at which it starts.'],
   ['keyboard, moveUpKeys, moveDownKeys', '`Bind<boolean>`, `Bind<string[]>`', "`true`, `['Ctrl+Shift+ArrowUp']`, `['Ctrl+Shift+ArrowDown']`", 'Moves the active row one position up or down with these keys (any combination, such as `Mod+Alt+Up`), with the same events as a drop. The move is announced.'],
   ['columnWidth', '`Bind<number>`', '`36`', 'The width of the drag icon column, in pixels.'],
@@ -35,7 +35,7 @@ const EVENTS = [
 
 const ARGS = [
   ['component, fromComponent, toComponent', 'The grid raising the event, the grid the row comes from, and the grid under the pointer (the same while reordering, or `null` when over none).'],
-  ['itemData, itemKey, itemElement', 'The dragged row, its key and its element.'],
+  ['itemData, itemKey, itemPart', 'The dragged row, its key and its part.'],
   ['fromIndex, toIndex', 'The grid\'s row indexes (as counted by `focusedRowIndex` and `getVisibleRows()`, also across pages): the current position, and the position after the drop.'],
   ['toItemData', 'The row at `toIndex` before the drop, which is where to insert the row. It is `undefined` at the end of the other grid or on a group row.'],
   ['dropInsideItem, fromData, toData, event', 'Whether it was dropped onto the row at `toIndex`, the grids\' `rowDragging.data`, and the pointer or key event.'],

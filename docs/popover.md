@@ -12,17 +12,17 @@ import { Popover } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-JSX children are the content, and `target` specifies the element or component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open.
+JSX children are the content, and `target` specifies the component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type Component } from '@motifx/core';
 import { Button, Popover, Stack, TextBox } from '@motifx-community/ui';
 
-/** A popover with a title, a close button and a small form, and one created programmatically for a plain element. */
+/** A popover with a title, a close button and a small form, and one created programmatically for a link. */
 export default function Basic() {
     const s = reactive({ open: false, name: 'Ada', saved: '' });
     let button!: Button;
-    let link!: HTMLElement;
+    let link!: Component<HTMLAnchorElement>;
     const coded = new Popover({ title: 'Programmatically', content: new Button({ text: 'OK', variant: 'outline', onclick: () => coded.close() }) });
 
     return (
@@ -38,7 +38,7 @@ export default function Basic() {
             <a
                 href="#from-code"
                 class="po-link"
-                ref={(c: { element: HTMLElement }) => (link = c.element)}
+                ref={(c: Component<HTMLAnchorElement>) => (link = c)}
                 onclick={(e: Event) => {
                     e.preventDefault();
                     coded.target = link;
@@ -57,16 +57,17 @@ export default function Basic() {
 `showOn: 'hover'` opens the popover after `delay` while the pointer rests on the target, and when the target has keyboard focus. The pointer can move onto the popover, which closes `hideDelay` after the pointer leaves both.
 
 ```tsx
+import type { Component } from '@motifx/core';
 import { Avatar, Popover, Stack } from '@motifx-community/ui';
 
 /** A card that opens while the pointer rests on a name, or when the name has keyboard focus. */
 export default function Hover() {
-    let name!: HTMLElement;
+    let name!: Component<HTMLAnchorElement>;
     return (
         <Stack orientation="horizontal" wrap align="center">
             <span>
                 Reviewed by{' '}
-                <a href="#ada" class="po-person" ref={(c: { element: HTMLElement }) => (name = c.element)} onclick={(e: Event) => e.preventDefault()}>
+                <a href="#ada" class="po-person" ref={(c: Component<HTMLAnchorElement>) => (name = c)} onclick={(e: Event) => e.preventDefault()}>
                     Ada Lovelace
                 </a>
             </span>
@@ -195,7 +196,7 @@ export default function Events() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | `Bind<Element \| ComponentBase \| null>` | `null` | The element or component it opens next to. |
+| `target` | `Bind<ComponentBase \| null>` | `null` | The component it opens next to. |
 | `title` | `Bind<string>` | `''` | A title in the header. This is the same property as `text`. |
 | `label` | `Bind<string>` | `''` | The accessible name when there is no title. |
 | `content` | `Bind<ComponentBase \| null>` | `null` | Content set programmatically, shown after the JSX children. |

@@ -1,6 +1,6 @@
 {
   "Displays content next to a related element, such as a title, a close button, a form or a card. It opens on click or on hover, follows its target, and points to it with an arrow where the design language includes one.": "Başlık, kapatma düğmesi, form veya kart gibi içerikleri ilişkili bir öğenin yanında görüntüler. Tıklamayla veya üzerine gelindiğinde açılır, hedefini izler ve tasarım dilinde bulunduğunda bir okla hedefi gösterir.",
-  "JSX children are the content, and `target` specifies the element or component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open.": "JSX alt öğeleri içeriktir, `target` ise yanında açılacağı öğeyi veya bileşeni belirtir. Programmatic olarak `content` içeriği ayarlar, `open()`, `close()` ve `toggle()` denetler. `value` ve `x-model` açık olup olmadığını bildirir.",
+  "JSX children are the content, and `target` specifies the component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open.": "JSX alt öğeleri içeriktir, `target` ise yanında açılacağı bileşeni belirtir. Programmatic olarak `content` içeriği ayarlar, `open()`, `close()` ve `toggle()` denetler. `value` ve `x-model` açık olup olmadığını bildirir.",
   "Opening on hover": "Üzerine gelindiğinde açma",
   "`showOn: 'hover'` opens the popover after `delay` while the pointer rests on the target, and when the target has keyboard focus. The pointer can move onto the popover, which closes `hideDelay` after the pointer leaves both.": "`showOn: 'hover'`, işaretçi hedefin üzerinde dururken `delay` sonrasında ve hedef klavye odağına sahipken popover'ı açar. İşaretçi popover'ın üzerine geçebilir, ikisinden de ayrıldıktan `hideDelay` sonra popover kapanır.",
   "Placement, arrow and width": "Yerleşim, ok ve genişlik",
@@ -21,7 +21,7 @@
   "Units: the surface (`focus`), the arrow (`display`, `size`, its fill and frame), the header, the title and the body.": "Unit'ler: yüzey (`focus`), ok (`display`, `size`, dolgusu ve çerçevesi), üst bölüm, başlık ve gövde.",
   "Place: the appearance of the close button (`variant`).": "Place: kapatma düğmesinin görünümü (`variant`).",
   "The gap to the target, the distance it animates in from, and the space between the title and close button.": "Hedefe olan boşluk, animasyonla geldiği uzaklık ve başlık ile kapatma düğmesi arasındaki boşluk.",
-  "The element or component it opens next to.": "Yanında açıldığı öğe ya da bileşen.",
+  "The component it opens next to.": "Yanında açıldığı bileşen.",
   "A title in the header. This is the same property as `text`.": "Üst bilgideki başlık. Bu, `text` ile aynı property'dir.",
   "The accessible name when there is no title.": "Başlık yokken erişilebilir ad.",
   "Content set programmatically, shown after the JSX children.": "Programmatic olarak ayarlanan içerik, JSX alt öğelerinden sonra gösterilir.",

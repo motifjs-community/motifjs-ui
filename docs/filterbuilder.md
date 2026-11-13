@@ -360,7 +360,7 @@ export const saleFields: FilterBuilderField[] = [
 | `root` | read-only | The tree: `{ kind: 'group', operation, items, parent }` containing `{ kind: 'condition', field, operation, value, parent }` items. Change it through the methods. |
 | `filterText` | read-only, reactive | The filter as a single line: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`. |
 | `model` | read-only | The `FilterBuilderModel`, which provides field operations, text, and conversion between expressions and the tree. |
-| `treeElement, editingCondition` | read-only | The `role="treegrid"` element, and the condition whose editor is open. |
+| `treePart, editingCondition` | read-only | The `role="treegrid"` part, and the condition whose editor is open. |
 
 ### Methods
 

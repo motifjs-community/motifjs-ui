@@ -44,11 +44,10 @@ const ACCESS = [
   ['AltGr', 'AltGr (Ctrl+Alt on Windows) is ignored, because it types characters such as `@` on a Turkish keyboard.'],
   ['Underline', 'Shown while Alt is held (Control + Option on Apple platforms). Tapping Alt keeps the underlines visible until Alt is tapped again, another key is pressed or the pointer is used. While the page has access keys, that tap is not passed to the browser, which would otherwise move keyboard focus to its menu bar. Set `data-mx-access-keys="always"` on `<html>` to show them all the time.'],
   ['Accessibility', 'The accessible name is the plain text, and the control receives `aria-keyshortcuts="Alt+S"` (`"Control+Alt+S"` on Apple platforms).'],
-  ['Plain elements', 'Any element with `aria-keyshortcuts="Alt+N"` takes part. A button-like element is clicked, an input receives focus, and a `<label>` moves focus to its field.'],
 ];
 
 const API = [
-  ['addShortcut(keys, handler, options?)', '`() => void`', 'Registers a shortcut and returns a function that removes it. `keys` is one set of keys or a list of them. `options.scope` limits it to a component, `options.inEditable` also enables it in text fields, and `options.name` lets the user assign other keys ([ShortcutEditor](/shortcuteditor)).'],
+  ['addShortcut(keys, handler, options?)', '`() => void`', 'Registers a shortcut and returns a function that removes it. `keys` is one set of keys or a list of them. `options.scope` limits it to a component, `options.within` further to parts of it (a component, a list of components, or a function that returns them, such as the tabs of a strip: shortcuts of different parts may share keys), `options.inEditable` also enables it in text fields, and `options.name` lets the user assign other keys ([ShortcutEditor](/shortcuteditor)).'],
   ['control.addShortcut(keys, handler, options?)', '`() => void`', 'Registers a shortcut scoped to the control and removes it when the control is disposed.'],
   ['parseAccessKey(text)', '`{ text, key, index }`', 'Parses `&Text` for your own controls. Render the result with the `mx-access-key` class and call `setAccessKey(key)`.'],
   ['tabIndex', 'prop / property', 'The order inside the container. The default is 0.'],
@@ -87,7 +86,6 @@ export default function KeyboardPage() {
 <Button text="&Save" onclick={save} />    // Alt+S
 <Button text="Save &as…" onclick={saveAs} /> // Alt+A
 <Button text="Tom && Jerry" />             // a literal &
-<input aria-keyshortcuts="Alt+N" />        // plain elements too
 `}
         />
         <ApiTable head={['Topic', 'Behavior']} rows={ACCESS} />

@@ -15,14 +15,14 @@ const BAR_PROPS = [
   ['mergeName', '`Bind<string>`', "`'main'`", 'The name of the app’s bar, when there are several.'],
   ['mergeInto', '`Bind<string | MenuBar | null>`', '`null`', 'The app’s bar to merge into: its name or the bar itself.'],
   ['mergeWhen', "`Bind<'shown' | 'focus' | 'manual'>`", "`'shown'`", 'When the bar merges.'],
-  ['mergeScope', '`Bind<HTMLElement | ComponentBase | null>`', 'Its parent', 'The place whose being shown or focused merges the bar.'],
+  ['mergeScope', '`Bind<ComponentBase | null>`', 'Its parent', 'The place whose being shown or focused merges the bar.'],
   ['hideWhenMerged', '`Bind<boolean>`', '`true`', 'The bar is hidden while it is merged.'],
   ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const MENU_PROPS = [
-  ['items', '`Bind<readonly MenuItem[]>`', '`[]`', 'The commands. `onOpening` can provide different ones for each element.'],
-  ['target', '`Bind<Element | Component | null>`', 'Its parent', 'The element the menu belongs to. If not set, this is the element the `ContextMenu` is placed in.'],
+  ['items', '`Bind<readonly MenuItem[]>`', '`[]`', 'The commands. `onOpening` can provide different ones for each component.'],
+  ['target', '`Bind<Component | null>`', 'Its parent', 'The component the menu belongs to. If not set, this is the component the `ContextMenu` is placed in.'],
   ['label', '`Bind<string>`', "`''`", 'The accessible name of the menu.'],
   ['keyboard', '`Bind<boolean>`', '`true`', 'The Menu key and Shift+F10 open the menu at the focused element.'],
   ['closeOnScroll', '`Bind<boolean>`', '`true`', 'Scrolling the element out of view closes the menu. Until then, the menu follows the element.'],
@@ -36,8 +36,8 @@ const PROPERTIES = [
   ['MenuBar.mergedInto', 'read-only', 'On a bar that merges: the app’s bar it is merged into, or `null`.'],
   ['MenuBar.mergedItems', 'read-only', 'The top-level items as drawn now, the merged bars’ included.'],
   ['ContextMenu.opened', 'read-only, reactive', 'Indicates whether it is open.'],
-  ['ContextMenu.targetElement', 'read-only, reactive', 'The element the menu was last opened on.'],
-  ['ContextMenu.target', 'read/write, reactive', 'The element the menu listens on.'],
+  ['ContextMenu.targetPart', 'read-only, reactive', 'The component the menu was last opened on.'],
+  ['ContextMenu.target', 'read/write, reactive', 'The component the menu listens on.'],
 ];
 
 const METHODS = [
@@ -52,9 +52,9 @@ const METHODS = [
   ['MenuBar.openCustomizer()', '`boolean`', 'Opens the customizer window. Returns `false` when it is already open.'],
   ['MenuBar.merge(), unmerge()', '`boolean`', 'Merges the bar into the app’s bar, or takes its items back.'],
   ['MenuBar.refresh(), ContextMenu.refresh()', '`void`', 'Reads items changed in place again. The bar, the open menu and its submenus update.'],
-  ['ContextMenu.open(at, target?)', '`boolean`', 'Opens the menu programmatically, at `{ x, y }` or at an element.'],
+  ['ContextMenu.open(at, target?)', '`boolean`', 'Opens the menu programmatically, at `{ x, y }` or at a component.'],
   ['ContextMenu.close()', '`void`', 'Closes it.'],
-  ['attachContextMenu(target, items)', '`() => void`', 'Attaches a menu to an element or component. `items` can be a function of the opening event (`e.target`). Returns a function that removes the menu.'],
+  ['attachContextMenu(target, items)', '`() => void`', 'Attaches a menu to a component. `items` can be a function of the opening event (`e.part`). Returns a function that removes the menu.'],
 ];
 
 const EVENTS = [
@@ -63,7 +63,7 @@ const EVENTS = [
   ['MenuBar.onCustomMenuOpening(e)', 'Before the menu of a right-click opens. `e`: `{ item, path, items, cancel, byKeyboard, event, source }`.'],
   ['MenuBar.onItemsChanged(e)', 'After a change by path. `e`: `{ items, source }`, the new list to keep.'],
   ['MenuBar.onMerged(e), onUnmerged(e)', 'On the app’s bar: a bar merged into it or left it. `e`: `{ bar, source }`.'],
-  ['ContextMenu.onOpening(e)', 'Occurs before the menu opens. `e`: `{ target, items, cancel, byKeyboard, event, source }`. Set `e.items` for the element, or set `e.cancel = true`.'],
+  ['ContextMenu.onOpening(e)', 'Occurs before the menu opens. `e`: `{ part, items, cancel, byKeyboard, event, source }`. Set `e.items` for the component `part`, or set `e.cancel = true`.'],
   ['ContextMenu.onClosed(reason)', '`escape`, `outside`, `focus` or `code`.'],
 ];
 

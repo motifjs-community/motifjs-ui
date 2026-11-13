@@ -61,7 +61,7 @@
   "How the form closed, or will close. `close()` without an argument uses this value. It is `cancel` on open.": "Formun nasıl kapandığı veya kapanacağı. Argümansız `close()` bu değeri kullanır. Açılışta `cancel` olur.",
   "Indicate whether the form is open, whether it is modal, and whether it is the front window of the page.": "Formun açık olup olmadığını, modal olup olmadığını ve sayfanın öndeki penceresi olup olmadığını belirtir.",
   "The child control that has focus, or last had it.": "Odağa sahip olan veya odağa en son sahip olan alt control.",
-  "The content area element.": "İçerik alanı öğesi.",
+  "The content area.": "İçerik alanı.",
   "Shows the form as modeless in `host` (a component or the application). It is disposed with `disposeRef`, or with the host.": "Formu `host` içinde (bileşen veya uygulama) modeless gösterir. `disposeRef` ile veya host ile birlikte dispose edilir.",
   "Shows the form as modal and resolves with the result when it closes.": "Formu modal gösterir ve kapanınca sonuçla çözümlenir.",
   "Brings it to the front with focus on its last active control.": "Son etkin control'üne odaklanarak öne getirir.",

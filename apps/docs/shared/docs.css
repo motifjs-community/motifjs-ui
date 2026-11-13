@@ -121,7 +121,7 @@
 /* Only the tools give way: the brand and the section links keep their size. */
 .docs-brand,
 .docs-topnav,
-.docs-topbar__tools > * {
+.docs-topbar__tools>* {
   flex: none;
 }
 
@@ -397,7 +397,7 @@
 }
 
 /* The line is cut to the capitals, so the letters sit in the middle; the tails of p and ş still show below it. */
-.docs-pagehead__badge > span {
+.docs-pagehead__badge>span {
   text-box: trim-both cap alphabetic;
 }
 
@@ -427,7 +427,7 @@
 }
 
 /* The page's opening words and every section sit on cards. */
-.docs-article > .lead,
+.docs-article>.lead,
 .docs-section {
   margin: 0;
   padding: var(--mx-space-6) var(--mx-space-8);
@@ -437,21 +437,21 @@
   box-shadow: var(--mx-shadow-2);
 }
 
-.docs-article > .lead {
+.docs-article>.lead {
   font-size: var(--mx-font-size-body-large);
   line-height: var(--mx-font-line-body-large);
   color: var(--mx-color-fg-primary);
 }
 
-.docs-section > h2:first-child {
+.docs-section>h2:first-child {
   margin-block-start: 0;
 }
 
-.docs-section > :last-child {
+.docs-section> :last-child {
   margin-block-end: 0;
 }
 
-.docs-section > p {
+.docs-section>p {
   max-inline-size: 80ch;
 }
 
@@ -476,7 +476,7 @@
   font-weight: var(--mx-font-weight-semibold);
 }
 
-.docs-example__bar > :last-child {
+.docs-example__bar> :last-child {
   margin-inline-start: auto;
 }
 
@@ -496,7 +496,7 @@
 
 /* Lined up at the start, a part would grow to its content: on a phone it stays as wide as the stage,
    so a toolbar folds its buttons and a field shrinks. */
-.docs-example__stage > * {
+.docs-example__stage>* {
   max-inline-size: 100%;
 }
 
@@ -754,7 +754,7 @@
     padding-inline: var(--mx-space-4);
   }
 
-  .docs-article > .lead,
+  .docs-article>.lead,
   .docs-section {
     padding: var(--mx-space-5);
   }
@@ -789,7 +789,8 @@
 .docs-main pre {
   padding: var(--mx-space-4);
   overflow-x: auto;
-  direction: ltr; /* code reads left to right in RTL pages too */
+  direction: ltr;
+  /* code reads left to right in RTL pages too */
   text-align: left;
   font-family: var(--mx-font-family-mono);
   font-size: var(--mx-font-size-body);
@@ -818,9 +819,9 @@
   --shiki-token-link: var(--mx-color-accent-fg);
 }
 
-.docs-main p > code,
-.docs-main li > code,
-.docs-main td > code {
+.docs-main p>code,
+.docs-main li>code,
+.docs-main td>code {
   padding-inline: var(--mx-space-1);
   background: var(--mx-color-bg-layer);
   border-radius: var(--mx-radius-sm);
@@ -857,8 +858,7 @@ ul.docs-list {
 .token-table {
   inline-size: 100%;
   margin-block: var(--mx-space-4);
-  font-size: var(--mx-font-size-body);
-  border-collapse: collapse;
+  font-size: var(--mx-font-size-body); 
 }
 
 .token-table th,
@@ -875,11 +875,15 @@ ul.docs-list {
 }
 
 .token-table code {
-  white-space: nowrap;
+  /*white-space: nowrap;*/
+}
+
+.api-table {
+  border-bottom: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
 }
 
 .api-table td:first-child {
-  white-space: nowrap;
+  /* white-space: nowrap;*/
 }
 
 .api-table td {
@@ -1161,7 +1165,7 @@ ul.docs-list {
   border-radius: var(--mx-radius-lg);
 }
 
-.sched-phone-frame > .mx-scheduler {
+.sched-phone-frame>.mx-scheduler {
   block-size: 100%;
 }
 
@@ -1192,7 +1196,7 @@ ul.docs-list {
   inline-size: 100%;
 }
 
-.sched-rule > .mx-recurrence-editor {
+.sched-rule>.mx-recurrence-editor {
   max-inline-size: 34rem;
 }
 
@@ -1225,7 +1229,7 @@ ul.docs-list {
   text-align: start;
 }
 
-.sched-person__name > * {
+.sched-person__name>* {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1289,7 +1293,7 @@ ul.docs-list {
   min-inline-size: 0;
 }
 
-.sched-agenda-row > small {
+.sched-agenda-row>small {
   color: var(--mx-color-fg-secondary);
 }
 

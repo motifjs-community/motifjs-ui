@@ -1,4 +1,4 @@
-import { reactive, type Component } from '@motifx/core';
+import { reactive, type Component, type ComponentBase } from '@motifx/core';
 import { ContextMenu, type MenuItem } from '@motifx-community/ui';
 
 interface FileRow {
@@ -37,9 +37,10 @@ export default function FileList() {
     { text: '&Delete', shortcut: 'Del', beginGroup: true, enabled: !row.locked, click: () => (s.files = s.files.filter((f) => f !== row)) },
   ];
 
-  const rowOf = (el: Element) => {
-    const id = Number(el.closest('[data-id]')?.getAttribute('data-id'));
-    return s.files.find((f) => f.id === id);
+  const rowOf = (part: ComponentBase) => {
+    let id: string | null = null;
+    for (let at: ComponentBase | null = part; at && !id; at = at.parent) id = at.attr.get('data-id');
+    return s.files.find((f) => f.id === Number(id));
   };
 
   return (
@@ -55,7 +56,7 @@ export default function FileList() {
         target={() => list}
         label="File"
         onOpening={(e) => {
-          const row = rowOf(e.target);
+          const row = rowOf(e.part);
           if (row) e.items = rowItems(row);
           else e.cancel = true;
         }}

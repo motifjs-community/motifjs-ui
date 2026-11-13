@@ -25,7 +25,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 The list stays open during selection, shows selected items as checked, and can include a “Select all” row. Each option is a prop you can bind.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type ComponentBase } from '@motifx/core';
 import { Stack, Switch, TagBox } from '@motifx-community/ui';
 
 interface Person {
@@ -47,12 +47,11 @@ const people: Person[] = [
 ];
 
 /** Draws a person as initials and a name. */
-const drawPerson = (p: Person, el: HTMLElement) => {
-  const badge = el.appendChild(document.createElement('span'));
-  badge.style.color = 'var(--mx-color-accent-fg)';
-  badge.style.fontWeight = 'var(--mx-font-weight-semibold)';
-  badge.textContent = p.initials;
-  el.append(` ${p.name}`);
+const drawPerson = (p: Person, host: ComponentBase) => {
+  host.controls.add(
+    <span style="color: var(--mx-color-accent-fg); font-weight: var(--mx-font-weight-semibold)">{p.initials}</span>,
+    <span>{` ${p.name}`}</span>,
+  );
 };
 
 /** Objects in groups, items that cannot be chosen, a template, and the switches of the list. */
@@ -230,7 +229,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `hideSelected` | `Bind<boolean>` | `false` | Removes selected items from the list (in-memory items only). |
 | `openOnFieldClick` | `Bind<boolean>` | `true` | Clicking the field opens the list. |
 | `showDropDownButton, clearButton` | `Bind<boolean>` | `true`, `false` | The arrow that opens all items, and the button that removes all tags. |
-| `itemTemplate, tagTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Customizes how a list item or a tag is drawn. |
+| `itemTemplate, tagTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how a list item or a tag is drawn. |
 | `matchWidth` | `Bind<boolean>` | `true` | The list is at least as wide as the field. |
 | `label, labelMode, helpText, hint, prefix, icon, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup` | see TextBox |  | Field props shared by all editors. |
 
@@ -242,7 +241,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `selectedItems` | read-only, reactive | The known items for the selected values. With a data source, the others are looked up by key. |
 | `listItems` | read-only | The `DataItems` shown in the list, which are the results of the last search. |
 | `opened` | read/write, reactive | Indicates whether the list is open. Set it to open or close the list. |
-| `inputElement` | read-only | The text input. |
+| `inputPart` | read-only | The text input. |
 
 ### Methods
 

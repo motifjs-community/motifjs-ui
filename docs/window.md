@@ -394,7 +394,7 @@ export default function Localization() {
 | `closeOnEscape` | `Bind<boolean>` | `true` for modal forms, `false` for modeless forms | Closes the form with `cancel` on Escape when there is no `cancelButton`. |
 | `acceptButton` | `Bind<Control \| null>` | — | The button Enter clicks from a single-line field. |
 | `cancelButton` | `Bind<Control \| null>` | — | The button Escape clicks. |
-| `minimizeTarget` | `Bind<HTMLElement \| ComponentBase \| null>` | — | Where a minimized form leaves a chip that restores it. Without it, the form collapses to its title bar. |
+| `minimizeTarget` | `Bind<ComponentBase \| null>` | — | Where a minimized form leaves a chip that restores it. Without it, the form collapses to its title bar. |
 | `windowState` | `Bind<FormWindowState>` | `'normal'` | `normal`, `minimized`, `maximized`. |
 | `startPosition` | `Bind<FormStartPosition>` | `'center'` | `center`, or `manual` at `left` and `top`. |
 | `left / top` | `Bind<number \| string>` | — | With `manual`, the position from the start edge (the right edge in RTL) and the top. A number is in pixels. |
@@ -411,7 +411,7 @@ export default function Localization() {
 | `result` | read/write, reactive | How the form closed, or will close. `close()` without an argument uses this value. It is `cancel` on open. |
 | `isOpen, isModal, isActive` | read-only, reactive | Indicate whether the form is open, whether it is modal, and whether it is the front window of the page. |
 | `activeControl` | read-only, reactive | The child control that has focus, or last had it. |
-| `contentElement` | read-only | The content area element. |
+| `contentPart` | read-only | The content area. |
 
 ### Methods
 

@@ -42,7 +42,7 @@ const CONTAINER = [
 
 const PROTECTED = [
   ['static elementTag', 'The root element. It is a `div` unless the subclass specifies another element (`button` for a button).'],
-  ['focusElement', 'Getter for the element that receives focus, which is the root by default. Composite controls override it. It runs from the constructor, so derive it from `this.element`.'],
+  ['focusPart', 'Getter for the part that receives focus, as a component. It is the control itself by default, or `null` when the control takes no focus. Composite controls override it, and a child control given here answers `focus`, `canFocus` and `focused`. It runs from the constructor, so derive it from parts created on demand.'],
   ['observeProperty(name, apply)', 'Renders a property without an effect. `apply` runs immediately and on every change, whether the change comes from a getter prop or from code.'],
   ['getProperty(name) / setProperty(name, value)', 'The storage behind the shared properties, available for your own: a tracked read, and a programmatic set that replaces any bound getter.'],
   ['bindProperty(name, prop)', 'Binds one of your own props. A getter is read immediately and tracked by a binding on the control, so `reState()` reads it again. A value is stored once. Call it from your constructor.'],

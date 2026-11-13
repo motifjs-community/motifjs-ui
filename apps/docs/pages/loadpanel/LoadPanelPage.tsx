@@ -7,7 +7,7 @@ import Page from './examples/Page';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-    ['target', '`Bind<ComponentBase | HTMLElement | null>`', '`null`', 'The area to cover, a component or element. `null` covers the whole page.'],
+    ['target', '`Bind<ComponentBase | null>`', '`null`', 'The area to cover, a component. `null` covers the whole page.'],
     ['message', '`Bind<string>`', 'The kit string “Loading…”', 'The message below the indicator. This is the same property as `text`.'],
     ['value', '`Bind<boolean>`', '`false`', 'Indicates whether the panel is shown. `x-model` provides two-way binding.'],
     ['delay', '`Bind<number>`', '`0`', 'The delay in milliseconds before it appears. Hiding it before then shows nothing.'],
@@ -71,7 +71,7 @@ import { LoadPanel } from '@motifx-community/ui';
 
             <Section anchor="ways" title="Covering a container">
                 <p>
-                    <Rich text="`target` specifies the component or element to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations." />
+                    <Rich text="`target` specifies the component to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations." />
                 </p>
                 <Example stack files={code('Container.tsx')}>
                     <Container />

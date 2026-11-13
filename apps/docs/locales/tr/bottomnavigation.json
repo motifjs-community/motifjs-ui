@@ -21,7 +21,7 @@
   "What `value` is when this item is selected.": "Bu öğe seçiliyken `value` değerinin ne olacağı.",
   "The label, which is also the accessible name.": "Label; aynı zamanda erişilebilir addır.",
   "The glyph, and the glyph while selected.": "Glyph ve seçiliyken gösterilen glyph.",
-  "An image, an element or a component, used instead of a glyph.": "Glyph yerine kullanılan görsel, element veya bileşen.",
+  "An image address or a component, used instead of a glyph.": "Glyph yerine kullanılan görsel adresi veya bileşen.",
   "Make the item a link. Use `rel: 'router'` for routed pages.": "Öğeyi bağlantı yapar. Yönlendirilen sayfalar için `rel: 'router'` kullanın.",
   "A count in a badge on the icon.": "İkondaki rozette gösterilen sayı.",
   "A dot on the icon instead of a count.": "Sayı yerine ikonda gösterilen nokta.",

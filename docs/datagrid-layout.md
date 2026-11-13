@@ -180,14 +180,14 @@ export interface Order {
 
 | Event | Parameters | Cancel | When |
 | --- | --- | --- | --- |
-| `onCellClick / onCellDblClick` | `{ field, row, rowIndex, rowType, groupKey?, element, event }` | yes | Occurs when a cell is clicked or double-clicked (also in a group footer, `rowType: 'groupFooter'`, and in the totals row, `'totalFooter'`). Canceling prevents selection, the group toggle and the editor. |
-| `onRowClick / onRowDblClick` | `{ row, rowIndex, rowType, groupKey?, element, event }` | yes | The same for the row, after its cell's event. |
-| `onCellPrepared` | `{ field, row, rowIndex, value, isNew, element }` |  | Occurs when a cell is rendered for a row, so that you can style it. Cells are reused while scrolling, so set and clear what you change. It has no cost when there are no listeners. |
-| `onRowPrepared` | `{ row, rowIndex, rowType, groupKey?, isSelected, element }` |  | Occurs when a data row, group row, group footer (`groupFooter`) or the totals row (`totalFooter`) is rendered. The same rule applies. |
+| `onCellClick / onCellDblClick` | `{ field, row, rowIndex, rowType, groupKey?, part, event }` | yes | Occurs when a cell is clicked or double-clicked (also in a group footer, `rowType: 'groupFooter'`, and in the totals row, `'totalFooter'`). Canceling prevents selection, the group toggle and the editor. |
+| `onRowClick / onRowDblClick` | `{ row, rowIndex, rowType, groupKey?, part, event }` | yes | The same for the row, after its cell's event. |
+| `onCellPrepared` | `{ field, row, rowIndex, value, isNew, part }` |  | Occurs when a cell is rendered for a row, so that you can style it. Cells are reused while scrolling, so set and clear what you change. It has no cost when there are no listeners. |
+| `onRowPrepared` | `{ row, rowIndex, rowType, groupKey?, isSelected, part }` |  | Occurs when a data row, group row, group footer (`groupFooter`) or the totals row (`totalFooter`) is rendered. The same rule applies. |
 | `onContentReady` | `{ total }` |  | Occurs when rows have arrived and been laid out (after a load, a filter, a sort, a page change or a resize). |
 | `onDataErrorOccurred` | `{ error, operation, row? }` |  | Occurs when a load (`operation: 'load'`) or the save of a row (`'save'`, with `row`) fails. |
 | `onEditingStart` | `{ field, row, rowIndex, isNew }` | yes | Occurs before a cell editor or a row's edit form (`field` `''`) opens. |
-| `onEditorPreparing / onEditorPrepared` | `{ field, row, isNew, options }` / `{ field, row, isNew, editor, element, place }` | yes / — | Occur before and after the editor of a cell or form field is created. Change its props in `options` in the first event. |
+| `onEditorPreparing / onEditorPrepared` | `{ field, row, isNew, options }` / `{ field, row, isNew, editor, part, place }` | yes / — | Occur before and after the editor of a cell or form field is created. Change its props in `options` in the first event. |
 | `onRowValidating` | `{ key, row, isNew, changed, errors, isValid, errorText }` | yes | Occurs when a row is validated before saving, after its cells. Add messages to `errors`, or set `isValid = false` (or cancel) with `errorText`. |
 | `onInitNewRow` | `{ data, values }` | yes | Occurs before a new row opens. `data` is its initial content, and `values` is what counts as entered. Canceling opens no row. |
 | `onSaving / onSaved` | `{ changes }` / `{ changes, saved, failed }` | yes / — | Occur before changes are sent (leaving a row, the background queue or “Save changes”) and after the response arrives. |
@@ -518,7 +518,7 @@ export default function Events() {
         settings={{ editable: true }}
         onCellPrepared={(e) => {
           // The cell is reused for other rows: set and clear.
-          if (e.field === 'amount') e.element.style.fontWeight = (e.value as number) > 900 ? 'bold' : '';
+          if (e.field === 'amount') e.part.style({ 'font-weight': (e.value as number) > 900 ? 'bold' : '' });
         }}
         onContextMenuPreparing={(e) => {
           if (e.target === 'row' && e.row) e.items.push({ text: `Log order ${e.row.id}`, click: () => log(`Order ${e.row!.id} from the row menu`) });

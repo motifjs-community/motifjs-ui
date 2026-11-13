@@ -303,8 +303,8 @@ The group has no strings of its own. The option text is yours, and functions of 
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `isValid, validationMessage, validating` | read-only, reactive | The result of the last validation. |
-| `listElement` | read-only | The element with `role="radiogroup"`. |
-| `inputs` | read-only | The native radios, in item order. |
+| `listPart` | read-only | The part with `role="radiogroup"`. |
+| `inputParts` | read-only | The native radios as components, in item order. |
 
 ### Methods
 

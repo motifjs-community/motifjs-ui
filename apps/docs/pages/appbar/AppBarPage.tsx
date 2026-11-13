@@ -12,7 +12,7 @@ const PROPS = [
     ['title, subtitle', '`Bind<string>`', "`''`", 'The title, and a smaller line under it.'],
     ['titleAlign', "`Bind<'start' | 'center'>`", "`'start'`", 'A centered title stays in the middle of the bar whatever lies beside it.'],
     ['headingLevel', '`Bind<number | null>`', '`null`', 'Makes the title a heading of this level.'],
-    ['logo', '`Bind<IconSource | null>`', '`null`', 'An image address, an element or a component before the title.'],
+    ['logo', '`Bind<IconSource | null>`', '`null`', 'An image address or a component before the title.'],
     ['navigation', "`Bind<'none' | 'menu' | 'back'>`", "`'none'`", 'The button at the start of the bar.'],
     ['navigationGlyph', '`Bind<string>`', "`'menu'`, `'arrow-start'`", 'The glyph of that button. The back arrow is mirrored in a right-to-left page.'],
     ['navigationLabel', '`Bind<string>`', 'A kit string', 'The accessible name of that button.'],
@@ -24,7 +24,7 @@ const PROPS = [
     ['prominent', '`Bind<boolean>`', '`false`', 'Puts a larger title on a row of its own under the buttons.'],
     ['position', "`Bind<'static' | 'sticky' | 'fixed'>`", "`'sticky'`", 'How the bar stays on the page.'],
     ['scrollBehavior', "`Bind<'none' | 'lift' | 'hide'>`", "`'none'`", '`lift` raises the bar over the content that scrolls under it. `hide` also moves it away while scrolling down, and brings it back while scrolling up.'],
-    ['scrollTarget', '`Bind<HTMLElement | null>`', 'The nearest ancestor that scrolls', 'What `scrollBehavior` watches. Without a scrolling ancestor, it is the page.'],
+    ['scrollTarget', '`Bind<ComponentBase | null>`', 'The nearest ancestor that scrolls', 'What `scrollBehavior` watches. Without a scrolling ancestor, it is the page.'],
 ];
 
 const EVENTS = [

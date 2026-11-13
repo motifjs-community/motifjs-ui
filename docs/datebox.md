@@ -195,7 +195,7 @@ export default function Localization() {
 | `unfinished` | Indicates that the typed text is not yet a complete, valid date. |
 | `opened, open(), close()` | The picker. |
 | `clear()` | Clears the value. |
-| `inputElement` | The native `<input>`. |
+| `inputPart` | The native `<input>`. |
 | `onValueChanged, onOpened, onClosed, onValidated` | These work the same way as in DropDown and TextBox. |
 
 The date helpers are shared: `datePatternOf(locale, kind)`, `dateToDigits`, `digitsToDate`.

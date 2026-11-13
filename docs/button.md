@@ -84,7 +84,7 @@ export default function VariantsTonesSizes() {
 
 ## Text, icons and children
 
-`text` sets the caption, and JSX children follow it. `icon` accepts an image address or any element or component, placed before or after the text with `iconPosition`. A button with only an icon needs an accessible name, so give it a `hint`.
+`text` sets the caption, and JSX children follow it. `icon` accepts an image address or a component, placed before or after the text with `iconPosition`. A button with only an icon needs an accessible name, so give it a `hint`.
 
 ```tsx
 import { Button } from '@motifx-community/ui';
@@ -300,7 +300,7 @@ export default function DropDown() {
 
 ## Localization
 
-The only string a button displays on its own is the name of a split button's arrow. It comes from `uiLocale.strings`, which starts from the page's `lang` (English and Turkish are included) and can be set to any `UiStrings`. Every button updates immediately. The set is used as provided, so to change one string, assign a new set: `uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' }`. Changing a string inside the existing set has no effect.
+The only string a button displays on its own is the name of a split button's arrow. It comes from `uiLocale.strings`, which follows the kit's language, `uiLocale.locale` (English and Turkish are included) and can be set to any `UiStrings`. Every button updates immediately. The set is used as provided, so to change one string, assign a new set: `uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' }`. Changing a string inside the existing set has no effect.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -360,7 +360,7 @@ All of these reference design system tokens (see [Tokens](tokens.md)). Override 
 | `variant` | `Bind<ButtonVariant>` | `'solid'` | `solid` (filled and pressable), `outline` (framed) or `ghost` (visible only on hover). |
 | `tone` | `Bind<ButtonTone>` | `'standard'` | `standard`, `accent` for the primary action, or `danger` for a destructive action. |
 | `size` | `Bind<ButtonSize>` | `'md'` | `sm`, `md` or `lg`, which map to the control heights in the density tokens. |
-| `icon` | `Bind<IconSource \| null>` | — | An image address, or any element or component (an `<svg>` in JSX, an icon font tag). It is decorative and hidden from screen readers. |
+| `icon` | `Bind<IconSource \| null>` | — | An image address or a component (an `<svg>` in JSX, an icon font tag); given as a function, the “more” menu of a toolbar calls it again for its own copy. It is decorative and hidden from screen readers. |
 | `iconPosition` | `Bind<'start' \| 'end'>` | `'start'` | Places the icon before or after the text. |
 | `stretch` | `Bind<boolean>` | `false` | Stretches to the full width of its container. |
 | `type` | `Bind<'button' \| 'submit' \| 'reset'>` | `'button'` | The native type. The default is `button`, so a button inside a form never submits by accident. |

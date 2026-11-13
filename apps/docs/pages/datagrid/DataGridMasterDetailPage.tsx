@@ -5,7 +5,7 @@ import MasterDetail from './examples/MasterDetail';
 
 const OPTIONS = [
   ['masterDetail.enabled', '`Bind<boolean>`', '`false`', 'The expand column, after the status and check box columns and pinned with them, lets the user open and close details. When disabled, they can be opened only programmatically.'],
-  ['masterDetail.template', '`(ctx: DetailContext<T>) => unknown`', '—', 'The content of a row\'s details: a component (another `DataGrid`, a `FormLayout`, `Tabs` …), an element or text. It is created the first time the details are shown. `ctx` provides `row` (the row itself) and `rowIndex`, both getters that are read again when the row shows another one and on `grid.repaint()` or `grid.repaintRows(keys)`, plus `key`, `grid` and `collapse()`.'],
+  ['masterDetail.template', '`(ctx: DetailContext<T>) => unknown`', '—', 'The content of a row\'s details: a component (another `DataGrid`, a `FormLayout`, `Tabs` …) or text. It is created the first time the details are shown. `ctx` provides `row` (the row itself) and `rowIndex`, both getters that are read again when the row shows another one and on `grid.repaint()` or `grid.repaintRows(keys)`, plus `key`, `grid` and `collapse()`.'],
   ['masterDetail.autoExpandAll', '`Bind<boolean>`', '`false`', 'Every row starts open. Changing this setting, `enabled` or `template` opens or closes every row again.'],
   ['masterDetail.canExpand', '`Bind<boolean> | (row) => boolean`', '`true`', 'Whether a row has details. A row without details has no arrow, and `expandRow` leaves it closed. Unsaved new rows have no details.'],
   ['masterDetail.keepDetails', '`Bind<boolean>`', '`true`', 'A closed row keeps the content of its details and shows it unchanged when it reopens. When disabled, closing disposes the content.'],
@@ -31,7 +31,7 @@ const KEYS = [
 const EVENTS = [
   ['onRowExpanding / onRowCollapsing', "`{ kind: 'detail', key, row, cancel }`", 'Occurs before a row\'s details open or close, from the user or programmatically. Set `cancel` to keep them as they are. These are the same events as for groups (`kind: \'group\'`).'],
   ['onRowExpanded / onRowCollapsed', "`{ kind: 'detail', key, row }`", 'Occurs after they open or close.'],
-  ['onRowPrepared', "`{ rowType: 'detail', row, rowIndex, element }`", 'Occurs when a row\'s details have been rendered for a row.'],
+  ['onRowPrepared', "`{ rowType: 'detail', row, rowIndex, part }`", 'Occurs when a row\'s details have been rendered for a row.'],
   ['onOptionChanged', '`{ name: \'masterDetail.enabled\', value, previous }`', 'Occurs when a `masterDetail` option is assigned through `grid.masterDetail`.'],
 ];
 

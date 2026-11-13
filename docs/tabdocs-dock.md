@@ -353,7 +353,7 @@ docs.onWindowClosing((e) => {
 | `hide(doc)` | `boolean` | Removes it from its group without closing it. Its content is kept according to its `contentLifetime`, and a group, area or window it leaves empty is removed. |
 | `show(doc, { group?, side?, index?, active?, focus? })` | `boolean` | Returns it to where it was hidden from: its group, otherwise its dock area (recreated at its size, collapsed if it was), otherwise a window in the same position, otherwise the documents. `group` or `side` names another place. `open(doc)` does the same. |
 | `hiddenDocuments` | read-only, reactive | The hidden documents, in the order they were hidden. `findDocument(id)` also finds them. |
-| `focusWindow(w), focusPart(by?)` | `boolean` | Brings a window to the front with focus where it was, or moves to the next (or with `-1`, previous) part: the documents, each area and each window. |
+| `focusWindow(w), focusNextPart(by?)` | `boolean` | Brings a window to the front with focus where it was, or moves to the next (or with `-1`, previous) part: the documents, each area and each window. |
 | `resizeDockArea(area, size)` | `boolean` | In pixels, or as a share such as `'25%'`. |
 | `floatingWindows, dockAreas` | read-only, reactive | The windows, with the one at the back first, and the areas, with the outermost first. `dockArea(side)` finds one. |
 | `saveLayout(), loadLayout(layout, factory?)` | `TabLayout` (version 3) | Also includes the areas (`side`, `size`, `autoHide`, their layout), the windows (`rect`, `maximized`, where they dock back, their layout) and the hidden documents (`hidden`, with where they return to). Older layouts still load. |

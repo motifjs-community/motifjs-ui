@@ -7,7 +7,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 const COMMAND = [
   ['key', '`string`', 'Names the command. Several commands may share a key in different scopes, such as `save` in each document.'],
   ['text, hint', '`Bind<string>`', 'The text (`&` marks the access key) and a tooltip.'],
-  ['icon, glyph', '`Bind<IconSource>`, `Bind<string>`', 'An image, an element or a component, or the name of a glyph for the items that take one.'],
+  ['icon, glyph', '`Bind<IconSource>`, `Bind<string>`', 'An image address or a component (as a function, so that a copy in a menu builds its own), or the name of a glyph for the items that take one.'],
   ['shortcut', '`string | string[]`', 'The keys that run it, as `addShortcut` reads them: `Mod+S`, or several.'],
   ['enabled, checked, visible', '`Bind<boolean>`', 'The state of the items that name it. Off, its keys do nothing.'],
   ['category', '`Bind<string>`', 'A heading lists group commands under, such as `File`.'],
@@ -24,7 +24,7 @@ const ITEMS = [
 
 const COMMANDS = [
   ['add(command)', '`() => void`', 'Adds a command with its keys; returns what takes it away.'],
-  ['get(key, from?)', '`Command | null`', 'The command that holds at `from` (an element): of the scope that holds it, else of the one that holds focus, else the app-wide one.'],
+  ['get(key, from?)', '`Command | null`', 'The command that holds at `from` (a component, such as the menu or toolbar of the item): of the scope that holds it, else of the one that holds focus, else the app-wide one.'],
   ['run(key, from?, event?)', '`boolean`', 'Runs it; `false` when there is none or it is off.'],
   ['keysOf(command)', '`string[]`', 'Its keys: the ones the user assigned to its key, else its own `shortcut`.'],
   ['list(), has(key)', '', 'Every command, in the order they came.'],

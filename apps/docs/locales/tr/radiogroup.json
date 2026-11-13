@@ -49,8 +49,8 @@
   "A smaller line below the text that describes the radio.": "Metnin altında radyoyu açıklayan daha küçük bir satır.",
   "`false` dims the option, and the arrow keys skip it.": "`false` seçeneği soluklaştırır ve ok tuşları onu atlar.",
   "`false` removes the option.": "`false` seçeneği kaldırır.",
-  "The element with `role=\"radiogroup\"`.": "`role=\"radiogroup\"` öğesi.",
-  "The native radios, in item order.": "Öğe sırasıyla yerel radyolar.",
+  "The part with `role=\"radiogroup\"`.": "`role=\"radiogroup\"` parçası.",
+  "The native radios as components, in item order.": "Öğe sırasıyla, bileşen olarak yerel radyolar.",
   "Sets focus on the selected option, or on the first available one.": "Odağı seçili seçeneğe veya kullanılabilir ilk seçeneğe taşır.",
   "Your items can be plain or reactive, and the group reads them as they are. After changing them in place, call `refresh()`. Their text, values and states are read again, and focus stays where it is.": "Öğeleriniz düz veya reaktif olabilir, grup onları olduğu gibi okur. Yerinde değiştirdikten sonra `refresh()` çağırın. Metinleri, değerleri ve durumları yeniden okunur, odak yerinde kalır.",
   "DOM events from the radios bubble up to the group.": "Radyolardan gelen DOM event'leri gruba kadar ilerler."

@@ -22,7 +22,7 @@ const PROPS = [
   ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How the search matches in-memory items.'],
   ['searchDelay', '`Bind<number>`', '`0` / `250`', 'The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source).'],
   ['height', '`Bind<number | string | null>`', '—', 'The height, in rows (`8`) or a CSS length (`"12rem"`). Without it, the list is as tall as its items, up to the `max-height` of the list (`list.container`).'],
-  ['itemTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Customizes how an item is drawn.'],
+  ['itemTemplate', '`Bind<(item, host: ComponentBase) => cleanup | void>`', '—', 'Customizes how an item is drawn.'],
   ['noItemsText', '`Bind<string>`', '—', 'The text for an empty list, which replaces the `uiLocale` “No items” string.'],
   ['label, labelMode, helpText, hint, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'Field props shared by all editors.'],
 ];

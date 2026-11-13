@@ -1,7 +1,7 @@
 {
   "A loading overlay for a container or the whole page. It includes a shade, a panel with the kit spinner and a message, and a Cancel button when the operation can be stopped. The content underneath is unavailable while it is shown, and focus returns afterward.": "Bir kapsayıcı veya sayfanın tamamı için yükleme katmanı. Gölge, kit spinner'ı ve mesaj içeren bir panel ile işlem durdurulabiliyorsa İptal düğmesi sunar. Gösterilirken alttaki içerik kullanılamaz, sonra odak geri döner.",
   "Covering a container": "Kapsayıcıyı örtme",
-  "`target` specifies the component or element to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations.": "`target`, örtülecek bileşeni veya öğeyi belirtir. `value` veya `x-model` paneli gösterir ve gizler, `show()` ile `hide()` da çağırabilirsiniz. `delay`, kısa işlemlerde parlamayı önler.",
+  "`target` specifies the component to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations.": "`target`, örtülecek bileşeni belirtir. `value` veya `x-model` paneli gösterir ve gizler, `show()` ile `hide()` da çağırabilirsiniz. `delay`, kısa işlemlerde parlamayı önler.",
   "Covering the page, with Cancel": "Sayfayı İptal ile örtme",
   "Shade, panel and indicator": "Gölge, panel ve gösterge",
   "The panel is placed inside the container, above its content. The container gets `aria-busy`, and the content under the panel is inert, so it cannot be clicked or focused.": "Panel, kapsayıcının içine içeriğin üstünde yerleştirilir. Kapsayıcı `aria-busy` alır, panelin altındaki içerik inert olur; bu içeriğe tıklanamaz ve odaklanılamaz.",
@@ -19,7 +19,7 @@
   "Units: the layer (`shaded`), the panel (`shown`) and the message.": "Unit'ler: katman (`shaded`), panel (`shown`) ve mesaj.",
   "Place: the appearance of the Cancel button (`variant`).": "Place: İptal düğmesinin görünümü (`variant`).",
   "The minimum distance to the edge of the covered area, and the space between the indicator, message and button.": "Örtülen alanın kenarına minimum uzaklık ile gösterge, mesaj ve düğme arasındaki boşluk.",
-  "The area to cover, a component or element. `null` covers the whole page.": "Örtülecek alan, bir bileşen veya öğe. `null` sayfanın tamamını örter.",
+  "The area to cover, a component. `null` covers the whole page.": "Örtülecek alan, bir bileşen. `null` sayfanın tamamını örter.",
   "The message below the indicator. This is the same property as `text`.": "Göstergenin altındaki mesaj. Bu, `text` ile aynı property'dir.",
   "Indicates whether the panel is shown. `x-model` provides two-way binding.": "Panelin gösterilip gösterilmediğini belirtir. `x-model` iki yönlü bağlama sağlar.",
   "The delay in milliseconds before it appears. Hiding it before then shows nothing.": "Görünmeden önceki gecikme, milisaniye olarak. Bu süreden önce gizlemek hiçbir şey göstermez.",

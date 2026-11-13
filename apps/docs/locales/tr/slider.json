@@ -63,7 +63,7 @@
   "Parts common to all fields. `prefix` and `suffix` appear at the two ends of the track.": "Tüm field'larda ortak olan parçalar. `prefix` ve `suffix` rayın iki ucunda görünür.",
   "The slider can receive focus and be read, but not moved.": "Kaydırıcı odak alabilir ve okunabilir ancak taşınamaz.",
   "`sm`, `md` or `lg`, which set the size of the rail and the thumbs.": "`sm`, `md` veya `lg`; hattın ve tutamaçların boyutunu belirler.",
-  "The thumb elements, `[start, end]`. The end thumb is hidden without `range`.": "Tutamaç öğeleri, `[start, end]`. `range` olmadan bitiş tutamacı gizlidir.",
+  "The thumbs as components, `[start, end]`. The end thumb is hidden without `range`.": "Bileşen olarak tutamaçlar, `[start, end]`. `range` olmadan bitiş tutamacı gizlidir.",
   "These work the same way as on all fields.": "Bunlar tüm field'lardaki gibi çalışır.",
   "Formats a value the same way as the tooltip.": "Bir değeri tooltip ile aynı şekilde biçimlendirir.",
   "Occurs when validation finishes.": "Validation bittiğinde oluşur."

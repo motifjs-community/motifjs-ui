@@ -14,7 +14,7 @@ const PROPS = [
   ['subtitle', '`Bind<string>`', "`''`", 'Text below the title.'],
   ['avatar', '`Bind<AvatarProps | null>`', '`null`', 'An avatar before the titles (its props).'],
   ['action', '`Bind<ComponentBase | null>`', '`null`', 'Content at the end of the header, such as a menu button or a badge.'],
-  ['media', '`Bind<IconSource | null>`', '`null`', 'An image that extends to the card edges: an image address, an element or a component.'],
+  ['media', '`Bind<IconSource | null>`', '`null`', 'An image that extends to the card edges: an image address or a component.'],
   ['mediaAlt', '`Bind<string>`', "`''`", 'Alternative text for the image when `media` is an image address. Without it, the image is decorative.'],
   ['content', '`Bind<ComponentBase | null>`', '`null`', 'The content, in addition to JSX children.'],
   ['footer', '`Bind<ComponentBase | null>`', '`null`', 'A row of actions below the content. A replaced component is removed from the card and stays under your control.'],

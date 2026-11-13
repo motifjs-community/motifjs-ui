@@ -406,7 +406,6 @@ docs.onError((e) => {
 | --- | --- |
 | `connectDocument(doc), disconnectDocument(doc), pageDocuments()` | The kit's document-level listeners (keys, access keys, tooltips, the focus guard) also work in another same-origin document, and are disconnected when its window closes. |
 | `mirrorPage(source, target)` | Copies the page's style sheets and the attributes of `<html>` and `<body>` into another document and keeps them in sync. Returns a function that stops this. |
-| `ResizeWatch` | A `ResizeObserver` that follows its elements into another window, because a browser's observer only reports elements of its own window. |
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md), [Drag and drop](tabdocs-drag.md) and [Dock and floating windows](tabdocs-dock.md) for the rest of the API.
 

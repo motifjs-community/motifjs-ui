@@ -252,7 +252,7 @@ export default function Delay() {
 
 ## Covering a panel while it loads
 
-`Spinner.cover(target)` places a spinner over a component or element and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward.
+`Spinner.cover(target)` places a spinner over a component and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -303,7 +303,7 @@ export default function Cover() {
 
 ## Localization
 
-A bar or spinner without a label is named `uiLocale.strings.loading`. The percentage uses `locale`, which defaults to the page `lang`.
+A bar or spinner without a label is named `uiLocale.strings.loading`. The percentage uses `locale`, which defaults to the kit's language, `uiLocale.locale`.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -372,7 +372,7 @@ export default function Localization() {
 | `labelPosition` | `Bind<'top' \| 'bottom' \| 'side'>` | `'top'` (`'bottom'` for a circle) | `top` places the label and value above the bar, `bottom` places them below it, and `side` places the label before it and the value after it. |
 | `showValue` | `Bind<boolean>` | `false` | Shows the percentage, rounded down to a whole number, or `valueText`. |
 | `valueText` | `(value, fraction) => string` | — | The text shown and announced for a value (`3 of 12 files`). Because it is a function, it is stored as is and not bound. |
-| `locale` | `Bind<string>` | The page `lang` | The locale of the percentage. |
+| `locale` | `Bind<string>` | `uiLocale.locale` | The locale of the percentage. |
 | `tone` | `Bind<ProgressTone>` | `'accent'` | `accent`, `neutral`, `success`, `caution`, `danger`. |
 | `size` | `Bind<ControlSize>` | `'md'` | The thickness, and the size of a circle: `sm`, `md` or `lg`. |
 | `stretch` | `Bind<boolean>` | `false` | Stretches to the full width of its container. |
@@ -398,7 +398,7 @@ export default function Localization() {
 | `ProgressBar: fraction` | read-only, reactive | The completed share from 0 to 1, or `null` while the progress is unknown. |
 | `Spinner: every prop` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `Spinner: waiting` | read-only | Indicates that it is still within its delay. |
-| `Spinner.cover(target, props?)` | `() => void` | Covers a component or element with a spinner. Call the returned function to remove it. See Covering a panel. |
+| `Spinner.cover(target, props?)` | `() => void` | Covers a component with a spinner. Call the returned function to remove it. See Covering a panel. |
 
 ## Feedback
 

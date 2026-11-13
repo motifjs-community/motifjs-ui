@@ -222,7 +222,7 @@ A switch has no strings of its own. `onText` and `offText` are yours and can be 
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `isValid, validationMessage, validating` | read-only, reactive | The result of the last validation. |
-| `inputElement` | read-only | The native `<input type="checkbox" role="switch">`. |
+| `inputPart` | read-only | The native `<input type="checkbox" role="switch">`. |
 
 ### Methods
 

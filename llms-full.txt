@@ -5883,7 +5883,7 @@ class Badge extends Control<HTMLSpanElement, BadgeProps> {
 | Member | Description |
 | --- | --- |
 | `static elementTag` | The root element. It is a `div` unless the subclass specifies another element (`button` for a button). |
-| `focusElement` | Getter for the element that receives focus, which is the root by default. Composite controls override it. It runs from the constructor, so derive it from `this.element`. |
+| `focusPart` | Getter for the part that receives focus, as a component. It is the control itself by default, or `null` when the control takes no focus. Composite controls override it, and a child control given here answers `focus`, `canFocus` and `focused`. It runs from the constructor, so derive it from parts created on demand. |
 | `observeProperty(name, apply)` | Renders a property without an effect. `apply` runs immediately and on every change, whether the change comes from a getter prop or from code. |
 | `getProperty(name) / setProperty(name, value)` | The storage behind the shared properties, available for your own: a tracked read, and a programmatic set that replaces any bound getter. |
 | `bindProperty(name, prop)` | Binds one of your own props. A getter is read immediately and tracked by a binding on the control, so `reState()` reads it again. A value is stored once. Call it from your constructor. |
@@ -6012,7 +6012,6 @@ A `FocusContainer` knows which child control holds focus (`activeControl`, react
 <Button text="&Save" onclick={save} />    // Alt+S
 <Button text="Save &as…" onclick={saveAs} /> // Alt+A
 <Button text="Tom && Jerry" />             // a literal &
-<input aria-keyshortcuts="Alt+N" />        // plain elements too
 ```
 
 | Topic | Behavior |
@@ -6025,7 +6024,6 @@ A `FocusContainer` knows which child control holds focus (`activeControl`, react
 | `AltGr` | AltGr (Ctrl+Alt on Windows) is ignored, because it types characters such as `@` on a Turkish keyboard. |
 | `Underline` | Shown while Alt is held (Control + Option on Apple platforms). Tapping Alt keeps the underlines visible until Alt is tapped again, another key is pressed or the pointer is used. While the page has access keys, that tap is not passed to the browser, which would otherwise move keyboard focus to its menu bar. Set `data-mx-access-keys="always"` on `<html>` to show them all the time. |
 | `Accessibility` | The accessible name is the plain text, and the control receives `aria-keyshortcuts="Alt+S"` (`"Control+Alt+S"` on Apple platforms). |
-| `Plain elements` | Any element with `aria-keyshortcuts="Alt+N"` takes part. A button-like element is clicked, an input receives focus, and a `<label>` moves focus to its field. |
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -6132,7 +6130,7 @@ export default function FocusGuard() {
 
 | Member | Return value / type | Description |
 | --- | --- | --- |
-| `addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut and returns a function that removes it. `options.scope` limits it to a component, and `options.inEditable` also enables it in text fields. |
+| `addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut and returns a function that removes it. `options.scope` limits it to a component, `options.within` further to parts of it (a component, a list of components, or a function that returns them, such as the tabs of a strip: shortcuts of different parts may share keys), and `options.inEditable` also enables it in text fields. |
 | `control.addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut scoped to the control and removes it when the control is disposed. |
 | `parseAccessKey(text)` | `{ text, key, index }` | Parses `&Text` for your own controls. Render the result with the `mx-access-key` class and call `setAccessKey(key)`. |
 | `tabIndex` | prop / property | The order inside the container. The default is 0. |
@@ -6643,7 +6641,7 @@ export default function VariantsTonesSizes() {
 
 ## Text, icons and children
 
-`text` sets the caption, and JSX children follow it. `icon` accepts an image address or any element or component, placed before or after the text with `iconPosition`. A button with only an icon needs an accessible name, so give it a `hint`.
+`text` sets the caption, and JSX children follow it. `icon` accepts an image address or a component, placed before or after the text with `iconPosition`. A button with only an icon needs an accessible name, so give it a `hint`.
 
 ```tsx
 import { Button } from '@motifx-community/ui';
@@ -6919,7 +6917,7 @@ All of these reference design system tokens (see [Tokens](tokens.md)). Override 
 | `variant` | `Bind<ButtonVariant>` | `'solid'` | `solid` (filled and pressable), `outline` (framed) or `ghost` (visible only on hover). |
 | `tone` | `Bind<ButtonTone>` | `'standard'` | `standard`, `accent` for the primary action, or `danger` for a destructive action. |
 | `size` | `Bind<ButtonSize>` | `'md'` | `sm`, `md` or `lg`, which map to the control heights in the density tokens. |
-| `icon` | `Bind<IconSource \| null>` | — | An image address, or any element or component (an `<svg>` in JSX, an icon font tag). It is decorative and hidden from screen readers. |
+| `icon` | `Bind<IconSource \| null>` | — | An image address or a component (an `<svg>` in JSX, an icon font tag); given as a function, the “more” menu of a toolbar calls it again for its own copy. It is decorative and hidden from screen readers. |
 | `iconPosition` | `Bind<'start' \| 'end'>` | `'start'` | Places the icon before or after the text. |
 | `stretch` | `Bind<boolean>` | `false` | Stretches to the full width of its container. |
 | `type` | `Bind<'button' \| 'submit' \| 'reset'>` | `'button'` | The native type. The default is `button`, so a button inside a form never submits by accident. |
@@ -7887,7 +7885,7 @@ export default function Single() {
 | `onActionClick` | event | Occurs when an action is selected (`index`, `action`). The action's own `click` runs first. |
 | `isOpen` | read-only | Indicates whether the actions are open. |
 | `single` | read-only | The single visible action, or `null` if there is more than one. |
-| `mainElement` | read-only | The main button. |
+| `main` | read-only | The main button. |
 | `show(), close(), toggle()` | `void` | Opens or closes the actions. |
 | `refresh()` | `void` | Re-reads the actions after they have been changed in place. |
 
@@ -8014,10 +8012,10 @@ An item with `items` opens a submenu at its side. Right (Left on right-to-left p
 
 ## ContextMenu
 
-A `ContextMenu` opens at the pointer when its target is right-clicked, and at the focused element with the Menu key or Shift+F10. `onOpening` receives the element (`e.target`) and builds the items for it, in this case for a row in a list. Setting `e.cancel = true` leaves the browser's own menu. The menu closes on Escape or a click outside. When the page scrolls, it follows the element it opened on and closes once that element is out of view.
+A `ContextMenu` opens at the pointer when its target is right-clicked, and at the focused element with the Menu key or Shift+F10. `onOpening` receives the component under the pointer or the focus (`e.part`) and builds the items for it, in this case for a row in a list. Setting `e.cancel = true` leaves the browser's own menu. The menu closes on Escape or a click outside. When the page scrolls, it follows the element it opened on and closes once that element is out of view.
 
 ```tsx
-import { reactive, type Component } from '@motifx/core';
+import { reactive, type Component, type ComponentBase } from '@motifx/core';
 import { ContextMenu, type MenuItem } from '@motifx-community/ui';
 
 interface FileRow {
@@ -8056,9 +8054,10 @@ export default function FileList() {
     { text: '&Delete', shortcut: 'Del', beginGroup: true, enabled: !row.locked, click: () => (s.files = s.files.filter((f) => f !== row)) },
   ];
 
-  const rowOf = (el: Element) => {
-    const id = Number(el.closest('[data-id]')?.getAttribute('data-id'));
-    return s.files.find((f) => f.id === id);
+  const rowOf = (part: ComponentBase) => {
+    let id: string | null = null;
+    for (let at: ComponentBase | null = part; at && !id; at = at.parent) id = at.attr.get('data-id');
+    return s.files.find((f) => f.id === Number(id));
   };
 
   return (
@@ -8074,7 +8073,7 @@ export default function FileList() {
         target={() => list}
         label="File"
         onOpening={(e) => {
-          const row = rowOf(e.target);
+          const row = rowOf(e.part);
           if (row) e.items = rowItems(row);
           else e.cancel = true;
         }}
@@ -8092,13 +8091,13 @@ import { attachContextMenu } from '@motifx-community/ui';
 const START = 'Right-click here, or focus me and press the Menu key.';
 const BOX = 'padding: var(--mx-space-4); background: var(--mx-color-bg-card); border: var(--mx-border-width-1) solid var(--mx-color-stroke-card); border-radius: var(--mx-radius-lg)';
 
-/** A menu given to an element with `attachContextMenu`, its items built from the opening. */
+/** A menu given to a component with `attachContextMenu`, its items built from the opening. */
 export default function AttachedMenu() {
   const s = reactive({ zone: START });
 
   const attach = (c: Component<HTMLDivElement>) => {
     const remove = attachContextMenu(c, (e) => [
-      { text: '&Say where', click: () => (s.zone = `Opened ${e.byKeyboard ? 'from the keyboard' : 'with the pointer'} on <${e.target.tagName.toLowerCase()}>.`) },
+      { text: '&Say where', click: () => (s.zone = `Opened ${e.byKeyboard ? 'from the keyboard' : 'with the pointer'} on ${e.part === c ? 'the zone' : 'its content'}.`) },
       { text: '&Reset', click: () => (s.zone = START) },
     ]);
     c.motif.setDisposable(remove);
@@ -8175,8 +8174,8 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands. `onOpening` can provide different ones for each element. |
-| `target` | `Bind<Element \| Component \| null>` | Its parent | The element the menu belongs to. If not set, this is the element the `ContextMenu` is placed in. |
+| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands. `onOpening` can provide different ones for each component. |
+| `target` | `Bind<Component \| null>` | Its parent | The component the menu belongs to. If not set, this is the component the `ContextMenu` is placed in. |
 | `label` | `Bind<string>` | `''` | The accessible name of the menu. |
 | `keyboard` | `Bind<boolean>` | `true` | The Menu key and Shift+F10 open the menu at the focused element. |
 | `closeOnScroll` | `Bind<boolean>` | `true` | Scrolling the element out of view closes the menu. Until then, the menu follows the element. |
@@ -8189,8 +8188,8 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 | --- | --- | --- |
 | `MenuBar.openItem` | read-only, reactive | The top-level item whose menu is open. |
 | `ContextMenu.opened` | read-only, reactive | Indicates whether it is open. |
-| `ContextMenu.targetElement` | read-only, reactive | The element the menu was last opened on. |
-| `ContextMenu.target` | read/write, reactive | The element the menu listens on. |
+| `ContextMenu.targetPart` | read-only, reactive | The component the menu was last opened on. |
+| `ContextMenu.target` | read/write, reactive | The component the menu listens on. |
 
 ### Methods
 
@@ -8198,17 +8197,17 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 | --- | --- | --- |
 | `MenuBar.open(item \| index)` | `boolean` | Opens a top-level item's menu with focus on its first item. |
 | `MenuBar.close()` | `void` | Closes the open menu. |
-| `ContextMenu.open(at, target?)` | `boolean` | Opens the menu programmatically, at `{ x, y }` or at an element. |
+| `ContextMenu.open(at, target?)` | `boolean` | Opens the menu programmatically, at `{ x, y }` or at a component. |
 | `ContextMenu.close()` | `void` | Closes it. |
 | `MenuBar.refresh(), ContextMenu.refresh()` | `void` | Your items can be plain or reactive, and the menu reads them as they are. After changing them in place, call `refresh()`. The bar, the open menu and its submenus update. |
-| `attachContextMenu(target, items)` | `() => void` | Attaches a menu to an element or component. `items` can be a function of the opening event (`e.target`). Returns a function that removes the menu. |
+| `attachContextMenu(target, items)` | `() => void` | Attaches a menu to a component. `items` can be a function of the opening event (`e.part`). Returns a function that removes the menu. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
 | `onItemClick(e)` | On both components, occurs when an item is selected, after its own `click`. |
-| `ContextMenu.onOpening(e)` | Occurs before the menu opens. `e`: `{ target, items, cancel, byKeyboard, event, source }`. Set `e.items` for the element, or set `e.cancel = true`. |
+| `ContextMenu.onOpening(e)` | Occurs before the menu opens. `e`: `{ part, items, cancel, byKeyboard, event, source }`. Set `e.items` for the component `part`, or set `e.cancel = true`. |
 | `ContextMenu.onClosed(reason)` | `escape`, `outside`, `focus` or `code`. |
 
 ## Feedback
@@ -8626,7 +8625,7 @@ export default function Validation() {
 }
 ```
 
-Without a group, `validateFields(panel)` validates every field inside a component or element, such as a panel, a dialog or a page.
+Without a group, `validateFields(panel)` validates every field inside a component, such as a panel, a dialog or a page.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -8792,7 +8791,7 @@ export default function Localization() {
 | `validationMessage` | read-only, reactive | The error being displayed, or `''` if there is none. |
 | `validating` | read-only, reactive | Indicates that an asynchronous rule is running. |
 | `maskComplete` | read-only | Indicates that every position of the mask is filled. |
-| `inputElement` | read-only | The native `<input>`. |
+| `inputPart` | read-only | The native `<input>`. |
 
 ### Methods
 
@@ -9121,7 +9120,7 @@ TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own,
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `isValid, validationMessage, validating` | read-only, reactive | The validation result. |
-| `textAreaElement` | read-only | The native `<textarea>`. |
+| `textAreaPart` | read-only | The native `<textarea>`. |
 
 ### Methods
 
@@ -9438,7 +9437,7 @@ export default function Localization() {
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. `locale` returns the locale in use. |
 | `formattedValue` | read-only, reactive | The value as displayed without focus, or `''` when empty. |
 | `isValid, validationMessage, validating` | read-only, reactive | The validation result. |
-| `inputElement` | read-only | The native `<input>`. |
+| `inputPart` | read-only | The native `<input>`. |
 
 ### Methods
 
@@ -9663,7 +9662,7 @@ export default function Localization() {
 | `unfinished` | Indicates that the typed text is not yet a complete, valid date. |
 | `opened, open(), close()` | The picker. |
 | `clear()` | Clears the value. |
-| `inputElement` | The native `<input>`. |
+| `inputPart` | The native `<input>`. |
 | `onValueChanged, onOpened, onClosed, onValidated` | These work the same way as in DropDown and TextBox. |
 
 The date helpers are shared: `datePatternOf(locale, kind)`, `dateToDigits`, `digitsToDate`.
@@ -9862,7 +9861,7 @@ export default function DateTime() {
 | Member | Type | Description |
 | --- | --- | --- |
 | `startDate, endDate` | `Date \| null` | The start and end as separate properties. |
-| `inputElement, endInputElement` | read-only | The start and end inputs. |
+| `inputPart, endInputPart` | read-only | The start and end inputs. |
 | `open(), close(), opened` | `boolean` / `void` | The popup with the calendars, along with `onOpened` and `onClosed`. |
 | `clear()` | `void` | Clears both ends. |
 | `validate(), validationMessage, isValid` |  | Works the same way as on all fields. Validation covers incomplete dates, dates outside `min`, `max` or `disabledDates`, a start after the end, and ranges shorter than `minDays` or longer than `maxDays`. |
@@ -10937,7 +10936,7 @@ export default function Localization() {
 | Property | Access | Description |
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
-| `thumbElements` | read-only | The thumb elements, `[start, end]`. The end thumb is hidden without `range`. |
+| `thumbParts` | read-only | The thumbs as components, `[start, end]`. The end thumb is hidden without `range`. |
 | `isValid, validationMessage, validating` | read-only, reactive | These work the same way as on all fields. |
 
 ### Methods
@@ -11897,7 +11896,7 @@ export default function Localization() {
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `isValid, validationMessage, validating` | read-only, reactive | The result of the last validation. |
-| `inputElement` | read-only | The native `<input type="checkbox">`. |
+| `inputPart` | read-only | The native `<input type="checkbox">`. |
 
 ### Methods
 
@@ -12149,7 +12148,7 @@ A switch has no strings of its own. `onText` and `offText` are yours and can be 
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `isValid, validationMessage, validating` | read-only, reactive | The result of the last validation. |
-| `inputElement` | read-only | The native `<input type="checkbox" role="switch">`. |
+| `inputPart` | read-only | The native `<input type="checkbox" role="switch">`. |
 
 ### Methods
 
@@ -12480,8 +12479,8 @@ The group has no strings of its own. The option text is yours, and functions of 
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `isValid, validationMessage, validating` | read-only, reactive | The result of the last validation. |
-| `listElement` | read-only | The element with `role="radiogroup"`. |
-| `inputs` | read-only | The native radios, in item order. |
+| `listPart` | read-only | The part with `role="radiogroup"`. |
+| `inputParts` | read-only | The native radios as components, in item order. |
 
 ### Methods
 
@@ -12533,7 +12532,7 @@ export const cities = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Kon
 Custom objects are read through `textField` and `valueField`, each a property name or a function. `groupField` places options under headers, `enabledField` disables specific options, and a template customizes how an option is drawn.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type ComponentBase } from '@motifx/core';
 import { DropDown } from '@motifx-community/ui';
 
 interface Country {
@@ -12556,8 +12555,8 @@ const countries: Country[] = [
 ];
 
 /** Draws a country as its flag and its name, in the list and in the field. */
-const drawCountry = (c: Country, host: HTMLElement) => {
-  host.textContent = `${c.flag}  ${c.name}`;
+const drawCountry = (c: Country, host: ComponentBase) => {
+  host.setText(`${c.flag}  ${c.name}`);
 };
 
 /** Objects read through textField and valueField, under group headers, one that cannot be chosen, drawn with templates. */
@@ -12720,7 +12719,7 @@ export default function Localization() {
 | `searchEnabled` | `Bind<boolean>` | `false` | Adds a search box at the top of the list. |
 | `searchMode` | `Bind<'contains' \| 'startswith'>` | `'contains'` | How the search matches option text. |
 | `clearButton` | `Bind<boolean>` | `false` | Shows a button that clears the value. Escape does the same while the list is closed. |
-| `itemTemplate / fieldTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Customizes how an option or the selected item is drawn. |
+| `itemTemplate / fieldTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how an option or the selected item is drawn. |
 | `matchWidth` | `Bind<boolean>` | `true` | The list is at least as wide as the field. |
 | `label, labelMode, helpText, hint, prefix, icon, buttons, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup` | see TextBox |  | Field props shared by all editors. |
 
@@ -13676,7 +13675,7 @@ export default function Delay() {
 
 ## Covering a panel while it loads
 
-`Spinner.cover(target)` places a spinner over a component or element and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward.
+`Spinner.cover(target)` places a spinner over a component and returns a function that removes it. The content underneath cannot be clicked or focused. If focus was inside, it moves to the spinner and returns afterward.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -13822,7 +13821,7 @@ export default function Localization() {
 | `ProgressBar: fraction` | read-only, reactive | The completed share from 0 to 1, or `null` while the progress is unknown. |
 | `Spinner: every prop` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `Spinner: waiting` | read-only | Indicates that it is still within its delay. |
-| `Spinner.cover(target, props?)` | `() => void` | Covers a component or element with a spinner. Call the returned function to remove it. See Covering a panel. |
+| `Spinner.cover(target, props?)` | `() => void` | Covers a component with a spinner. Call the returned function to remove it. See Covering a panel. |
 
 ## Feedback
 
@@ -14054,7 +14053,7 @@ export default function ShowOn() {
 
 ## Tooltips on many elements
 
-`addTooltip(target, text)` gives an element a tooltip that is created only when first needed. All tooltips on the page share one set of document listeners, so hundreds of them have almost no cost. The function returns a remover.
+`addTooltip(target, text)` gives a component a tooltip that is created only when first needed. All tooltips on the page share one set of document listeners, so hundreds of them have almost no cost. The function returns a remover.
 
 ```tsx
 import { addTooltip, Button, Stack } from '@motifx-community/ui';
@@ -14137,7 +14136,7 @@ export default function ManyElements() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | `Bind<Element \| ComponentBase \| null>` | — | The element it describes. A function works for a component that appears later in the view (`() => this.save`). |
+| `target` | `Bind<ComponentBase \| null>` | — | The component it describes. A function works for a component that appears later in the view (`() => this.save`). |
 | `text` | `Bind<string>` | `''` | The tooltip text. |
 | `content` | `Bind<ComponentBase \| null>` | — | Any content after the text, created the first time the tooltip appears. JSX children work too. Do not include interactive content. |
 | `placement` | `Bind<PopupPlacement>` | `'top'` | `top`, `bottom`, `start` or `end`, each with `-start` or `-end`. It opens on the opposite side if there is no room, and start and end follow the reading direction. |
@@ -14192,17 +14191,17 @@ import { Popover } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-JSX children are the content, and `target` specifies the element or component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open.
+JSX children are the content, and `target` specifies the component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type Component } from '@motifx/core';
 import { Button, Popover, Stack, TextBox } from '@motifx-community/ui';
 
-/** A popover with a title, a close button and a small form, and one created programmatically for a plain element. */
+/** A popover with a title, a close button and a small form, and one created programmatically for a link. */
 export default function Basic() {
     const s = reactive({ open: false, name: 'Ada', saved: '' });
     let button!: Button;
-    let link!: HTMLElement;
+    let link!: Component<HTMLAnchorElement>;
     const coded = new Popover({ title: 'Programmatically', content: new Button({ text: 'OK', variant: 'outline', onclick: () => coded.close() }) });
 
     return (
@@ -14218,7 +14217,7 @@ export default function Basic() {
             <a
                 href="#from-code"
                 class="po-link"
-                ref={(c: { element: HTMLElement }) => (link = c.element)}
+                ref={(c: Component<HTMLAnchorElement>) => (link = c)}
                 onclick={(e: Event) => {
                     e.preventDefault();
                     coded.target = link;
@@ -14237,16 +14236,17 @@ export default function Basic() {
 `showOn: 'hover'` opens the popover after `delay` while the pointer rests on the target, and when the target has keyboard focus. The pointer can move onto the popover, which closes `hideDelay` after the pointer leaves both.
 
 ```tsx
+import type { Component } from '@motifx/core';
 import { Avatar, Popover, Stack } from '@motifx-community/ui';
 
 /** A card that opens while the pointer rests on a name, or when the name has keyboard focus. */
 export default function Hover() {
-    let name!: HTMLElement;
+    let name!: Component<HTMLAnchorElement>;
     return (
         <Stack orientation="horizontal" wrap align="center">
             <span>
                 Reviewed by{' '}
-                <a href="#ada" class="po-person" ref={(c: { element: HTMLElement }) => (name = c.element)} onclick={(e: Event) => e.preventDefault()}>
+                <a href="#ada" class="po-person" ref={(c: Component<HTMLAnchorElement>) => (name = c)} onclick={(e: Event) => e.preventDefault()}>
                     Ada Lovelace
                 </a>
             </span>
@@ -14375,7 +14375,7 @@ export default function Events() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | `Bind<Element \| ComponentBase \| null>` | `null` | The element or component it opens next to. |
+| `target` | `Bind<ComponentBase \| null>` | `null` | The component it opens next to. |
 | `title` | `Bind<string>` | `''` | A title in the header. This is the same property as `text`. |
 | `label` | `Bind<string>` | `''` | The accessible name when there is no title. |
 | `content` | `Bind<ComponentBase \| null>` | `null` | Content set programmatically, shown after the JSX children. |
@@ -14421,7 +14421,7 @@ import { LoadPanel } from '@motifx-community/ui';
 
 ## Covering a container
 
-`target` specifies the component or element to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations.
+`target` specifies the component to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -14571,7 +14571,7 @@ export default function Options() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | `Bind<ComponentBase \| HTMLElement \| null>` | `null` | The area to cover, a component or element. `null` covers the whole page. |
+| `target` | `Bind<ComponentBase \| null>` | `null` | The area to cover, a component. `null` covers the whole page. |
 | `message` | `Bind<string>` | The kit string “Loading…” | The message below the indicator. This is the same property as `text`. |
 | `value` | `Bind<boolean>` | `false` | Indicates whether the panel is shown. `x-model` provides two-way binding. |
 | `delay` | `Bind<number>` | `0` | The delay in milliseconds before it appears. Hiding it before then shows nothing. |
@@ -15883,7 +15883,7 @@ Initials use the capitalization rules of the kit language (`uiLocale`), so “il
 | Property | Access | Description |
 | --- | --- | --- |
 | `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
-| `avatars` | read-only | The elements of the provided avatars in order, including those from JSX lists. The `+N` is not included. |
+| `members` | read-only | The provided avatars in order, including those from JSX lists. The `+N` is not included. |
 | `hiddenCount` | read-only | The number of people counted in the `+N`, or 0 when it is not shown. |
 
 ### Functions
@@ -15942,12 +15942,11 @@ import { Chip, Stack, type ChipVariant } from '@motifx-community/ui';
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
 // An inline star, so that the example needs no icon set.
-const star = () => {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  svg.innerHTML = '<path d="M8 1.5l1.9 4.1 4.4.5-3.3 3 .9 4.4L8 11.3l-3.9 2.2.9-4.4-3.3-3 4.4-.5z" fill="currentColor"/>';
-  return svg;
-};
+const star = () => (
+  <svg viewBox="0 0 16 16">
+    <path d="M8 1.5l1.9 4.1 4.4.5-3.3 3 .9 4.4L8 11.3l-3.9 2.2.9-4.4-3.3-3 4.4-.5z" fill="currentColor" />
+  </svg>
+);
 
 /** Each appearance: at rest, selected, with an icon, with an avatar, removable and disabled. */
 export default function Looks() {
@@ -16130,7 +16129,7 @@ The remove button's name is the `removeItem` kit string (“Remove {text}”) an
 | --- | --- | --- | --- |
 | `text` | `Bind<string>` | `''` | The text. |
 | `value` | `Bind<unknown>` | Its text | The value it represents in a group. |
-| `icon` | `Bind<IconSource \| null>` | `null` | An icon before the text: an image address, an element or a component. |
+| `icon` | `Bind<IconSource \| null>` | `null` | An icon before the text: an image address or a component. |
 | `avatar` | `Bind<AvatarProps \| null>` | `null` | An avatar before the text (its props; the chip sets the size). |
 | `selectable` | `Bind<boolean>` | `false` | Pressing the chip toggles it, as a filter. In a group with selection, the group controls it. |
 | `selected` | `Bind<boolean>` | `false` | Indicates whether the chip is on. |
@@ -16417,7 +16416,7 @@ export default function Sizes() {
 | `subtitle` | `Bind<string>` | `''` | Text below the title. |
 | `avatar` | `Bind<AvatarProps \| null>` | `null` | An avatar before the titles (its props). |
 | `action` | `Bind<ComponentBase \| null>` | `null` | Content at the end of the header, such as a menu button or a badge. |
-| `media` | `Bind<IconSource \| null>` | `null` | An image that extends to the card edges: an image address, an element or a component. |
+| `media` | `Bind<IconSource \| null>` | `null` | An image that extends to the card edges: an image address or a component. |
 | `mediaAlt` | `Bind<string>` | `''` | Alternative text for the image when `media` is an image address. Without it, the image is decorative. |
 | `content` | `Bind<ComponentBase \| null>` | `null` | The content, in addition to JSX children. |
 | `footer` | `Bind<ComponentBase \| null>` | `null` | A row of actions below the content. A replaced component is removed from the card and stays under your control. |
@@ -17526,7 +17525,7 @@ export default class Programmatic extends Component<HTMLDivElement> {
 | `title, subtitle` | `Bind<string>` | `''` | The title, and a smaller line under it. |
 | `titleAlign` | `Bind<'start' \| 'center'>` | `'start'` | A centered title stays in the middle of the bar whatever lies beside it. |
 | `headingLevel` | `Bind<number \| null>` | `null` | Makes the title a heading of this level. |
-| `logo` | `Bind<IconSource \| null>` | `null` | An image address, an element or a component before the title. |
+| `logo` | `Bind<IconSource \| null>` | `null` | An image address or a component before the title. |
 | `navigation` | `Bind<'none' \| 'menu' \| 'back'>` | `'none'` | The button at the start of the bar. |
 | `navigationGlyph` | `Bind<string>` | `'menu'`, `'arrow-start'` | The glyph of that button. The back arrow is mirrored in a right-to-left page. |
 | `navigationLabel` | `Bind<string>` | A kit string | The accessible name of that button. |
@@ -17538,7 +17537,7 @@ export default class Programmatic extends Component<HTMLDivElement> {
 | `prominent` | `Bind<boolean>` | `false` | Puts a larger title on a row of its own under the buttons. |
 | `position` | `Bind<'static' \| 'sticky' \| 'fixed'>` | `'sticky'` | How the bar stays on the page. |
 | `scrollBehavior` | `Bind<'none' \| 'lift' \| 'hide'>` | `'none'` | `lift` raises the bar over the content that scrolls under it. `hide` also moves it away while scrolling down, and brings it back while scrolling up. |
-| `scrollTarget` | `Bind<HTMLElement \| null>` | The nearest ancestor that scrolls | What `scrollBehavior` watches. Without a scrolling ancestor, it is the page. |
+| `scrollTarget` | `Bind<ComponentBase \| null>` | The nearest ancestor that scrolls | What `scrollBehavior` watches. Without a scrolling ancestor, it is the page. |
 
 ### Events
 
@@ -17770,7 +17769,7 @@ export default class Programmatic extends Component<HTMLDivElement> {
 | `labelMode` | `Bind<'always' \| 'active' \| 'never'>` | `'always'` | When items show their labels. A label out of view stays as the accessible name of the item. |
 | `position` | `Bind<'fixed' \| 'sticky' \| 'static'>` | `'fixed'` | How the bar stays on the page. |
 | `hideOnScroll` | `Bind<boolean>` | `false` | Moves the bar away while scrolling down, and brings it back while scrolling up. |
-| `scrollTarget` | `Bind<HTMLElement \| null>` | The nearest ancestor that scrolls | What `hideOnScroll` watches. Without a scrolling ancestor, it is the page. |
+| `scrollTarget` | `Bind<ComponentBase \| null>` | The nearest ancestor that scrolls | What `hideOnScroll` watches. Without a scrolling ancestor, it is the page. |
 
 ### Item fields
 
@@ -17779,7 +17778,7 @@ export default class Programmatic extends Component<HTMLDivElement> {
 | `value` | `string \| number` | Its position | What `value` is when this item is selected. |
 | `text` | `Bind<string>` | — | The label, which is also the accessible name. |
 | `glyph, activeGlyph` | `Bind<string>` | `''` | The glyph, and the glyph while selected. |
-| `icon, activeIcon` | `Bind<IconSource \| null>` | `null` | An image, an element or a component, used instead of a glyph. |
+| `icon, activeIcon` | `Bind<IconSource \| null>` | `null` | An image address or a component, used instead of a glyph. |
 | `href, rel, target` | `Bind<string>` | `''` | Make the item a link. Use `rel: 'router'` for routed pages. |
 | `badge` | `Bind<number \| null>` | `null` | A count in a badge on the icon. |
 | `dot` | `Bind<boolean>` | `false` | A dot on the icon instead of a count. |
@@ -18276,7 +18275,7 @@ export default function Localization() {
 | `selectedTab` | read-only, reactive | The selected `Tab`, or `null` if there is none. |
 | `Tab.isSelected, Tab.isClosable` | read-only, reactive | Indicate whether the tab is selected and whether it shows a close button. |
 | `Tab.contentBuilt` | read-only | Indicates whether its panel has been created. |
-| `Tab.owner, Tab.headerElement` | read-only | Its `Tabs` and its button in the strip. A tab's own element is its panel. |
+| `Tab.owner, Tab.headerPart` | read-only | Its `Tabs` and its button in the strip. A tab's own element is its panel. |
 
 ### Methods
 
@@ -18626,13 +18625,11 @@ Steps before the current one are completed automatically. An item can set `statu
 import { reactive } from '@motifx/core';
 import { Button, Stack, Stepper } from '@motifx-community/ui';
 
-const pencil = () => {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.innerHTML = '<path d="M11.5 2.5l2 2L5 13H3v-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>';
-    return svg;
-};
+const pencil = () => (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M11.5 2.5l2 2L5 13H3v-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+    </svg>
+);
 
 /** Completed and failed steps set by the items, an optional step, a disabled step, and an icon in place of the number. */
 export default function Statuses() {
@@ -19330,7 +19327,7 @@ export default function VariantsAndSizes() {
 | `items` | read-only, reactive | The items in order. |
 | `expandedItems` | read-only, reactive | The open items. |
 | `AccordionItem.contentBuilt` | read-only | Indicates whether its section has been created. |
-| `AccordionItem.owner, headerElement, regionElement` | read-only | Its `Accordion`, its header button and its region. |
+| `AccordionItem.owner, headerPart, regionPart` | read-only | Its `Accordion`, its header button and its region. |
 
 ### Methods
 
@@ -19964,7 +19961,7 @@ export default function Localization() {
 | `closeOnEscape` | `Bind<boolean>` | `true` for modal forms, `false` for modeless forms | Closes the form with `cancel` on Escape when there is no `cancelButton`. |
 | `acceptButton` | `Bind<Control \| null>` | — | The button Enter clicks from a single-line field. |
 | `cancelButton` | `Bind<Control \| null>` | — | The button Escape clicks. |
-| `minimizeTarget` | `Bind<HTMLElement \| ComponentBase \| null>` | — | Where a minimized form leaves a chip that restores it. Without it, the form collapses to its title bar. |
+| `minimizeTarget` | `Bind<ComponentBase \| null>` | — | Where a minimized form leaves a chip that restores it. Without it, the form collapses to its title bar. |
 | `windowState` | `Bind<FormWindowState>` | `'normal'` | `normal`, `minimized`, `maximized`. |
 | `startPosition` | `Bind<FormStartPosition>` | `'center'` | `center`, or `manual` at `left` and `top`. |
 | `left / top` | `Bind<number \| string>` | — | With `manual`, the position from the start edge (the right edge in RTL) and the top. A number is in pixels. |
@@ -19981,7 +19978,7 @@ export default function Localization() {
 | `result` | read/write, reactive | How the form closed, or will close. `close()` without an argument uses this value. It is `cancel` on open. |
 | `isOpen, isModal, isActive` | read-only, reactive | Indicate whether the form is open, whether it is modal, and whether it is the front window of the page. |
 | `activeControl` | read-only, reactive | The child control that has focus, or last had it. |
-| `contentElement` | read-only | The content area element. |
+| `contentPart` | read-only | The content area. |
 
 ### Methods
 
@@ -20416,7 +20413,7 @@ export default function Localization() {
 | `detent` | `Bind<BottomSheetDetent>` | The first of `detents` | The height it opens at and its current height. User changes write to it, and setting it moves the sheet. |
 | `modal` | `Bind<boolean>` | `true` | Blocks everything around it, within its container or on the whole page. Tab stays inside. |
 | `scrim` | `Bind<boolean>` | When modal | Shows a dimmed layer behind it. |
-| `container` | `Bind<HTMLElement \| ComponentBase \| null>` | `null` | Opens over this element, which is made `relative` while open if it is static. `null` opens over the page, in the top layer. |
+| `container` | `Bind<ComponentBase \| null>` | `null` | Opens over this component, which is made `relative` while open if it is static. `null` opens over the page, in the top layer. |
 | `content, footer` | `Bind<ComponentBase \| null>` | — | Content in addition to JSX children, and a non-scrolling row below it. |
 | `showClose` | `Bind<boolean>` | `false` | Shows a close button next to the title. |
 | `showHandle` | `Bind<boolean>` | `true` | Shows the handle at the top, which is a grip for touch and mouse, and a slider for the keyboard. |
@@ -20442,7 +20439,7 @@ export default function Localization() {
 | `snapTo(detent)` | `boolean` | Moves it to a height, and opens it there if closed. |
 | `expand(), collapse()` | `boolean` | Moves to the next taller or shorter height. Returns `false` at the end. |
 | `isOpen, height` | read-only | Indicates whether it is open (reactive), and its current height in pixels. |
-| `panelElement, contentElement` | read-only | The surface with `role="dialog"`, and the scrolling area. |
+| `panelPart, contentPart` | read-only | The surface with `role="dialog"`, and the scrolling area. |
 | `onOpening / onOpened` | events | `{ cancel, source }` and `{ source }`. `opened` occurs after the slide-in animation. |
 | `onClosing / onClosed` | events | `{ cancel, reason, source }` and `{ reason, source }`, with `'code'`, `'escape'`, `'scrim'`, `'swipe'`, `'back'`, `'button'` or `'owner'`. A close caused by the owner being disposed cannot be canceled. |
 | `onDetentChanging / onDetentChanged` | events | `{ from, to, byUser, cancel, source }`. `to` can be changed, and if canceled the sheet returns to where it was. |
@@ -20669,7 +20666,7 @@ Its default name and the close button come from `uiLocale.strings` (`drawerLabel
 | `value` | `Bind<boolean>` | `false` | Indicates whether it is open. `x-model` provides two-way binding. |
 | `side` | `Bind<'start' \| 'end' \| 'left' \| 'right' \| 'top' \| 'bottom'>` | `'start'` | The edge it slides in from. `start` and `end` follow the reading direction, and `left` and `right` do not. |
 | `mode` | `Bind<'over' \| 'push'>` | `'over'` | Over the content, or pushing `pushTarget` aside by its size. |
-| `pushTarget` | `Bind<HTMLElement \| ComponentBase \| null>` | — | The element `push` moves aside. Without it, `push` behaves like `over`. |
+| `pushTarget` | `Bind<ComponentBase \| null>` | — | The component `push` moves aside. Without it, `push` behaves like `over`. |
 | `size` | `Bind<number \| string \| null>` | `null` | Its width, or its height from the top or bottom, in pixels or as a CSS length. `null` uses `drawer.size`. It never exceeds 85% of the available space. |
 | `edgeSwipe` | `Bind<boolean>` | `false` | A finger swiping in from the edge of the container or page opens it, and it follows the finger. |
 | `edgeSize` | `Bind<number>` | `24` | The distance from the edge, in pixels, where that swipe can start. |
@@ -20783,7 +20780,7 @@ export default function InJsx() {
 `ContextMenu` has a `presentation` prop: `'menu'` (the default), `'sheet'`, or `'auto'`, which opens an action sheet when a finger opened the menu with a long press. The items, `onOpening` and `onItemClick` stay the same.
 
 ```tsx
-import { reactive, type Component } from '@motifx/core';
+import { reactive, type Component, type ComponentBase } from '@motifx/core';
 import { ContextMenu, RadioGroup, Stack, type ContextMenuPresentation, type MenuItem } from '@motifx-community/ui';
 
 const ROWS = ['Invoice 1042', 'Invoice 1043', 'Invoice 1044'];
@@ -20826,7 +20823,8 @@ export default function FromContextMenu() {
         target={() => list}
         presentation={() => s.presentation}
         onOpening={(e) => {
-          const row = (e.target as Element).closest('[data-row]')?.getAttribute('data-row');
+          let row: string | null = null;
+          for (let part: ComponentBase | null = e.part; part && !row; part = part.parent) row = part.attr.get('data-row');
           if (row) e.items = items(row);
           else e.cancel = true;
         }}
@@ -21471,9 +21469,9 @@ Every container also has the properties shared by `Control`: `enabled` and `disa
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `SplitContainer.first, second` | read-only | The two panes, as `Panel` objects: `split.first.controls.add(…)`, `split.second.scrollable = true`. |
-| `SplitContainer.splitterElement` | read-only | The `role="separator"` element. |
+| `SplitContainer.splitterPart` | read-only | The `role="separator"` part. |
 | `SplitContainer.value` | read/write | Maps to `position` for `x-model`. |
-| `GroupBox.legendElement` | read-only | The `<legend>` element. |
+| `GroupBox.legendPart` | read-only | The `<legend>` part. |
 
 ### Methods
 
@@ -21752,7 +21750,7 @@ export default function Basic() {
 
 ## Staying within an area and keeping the aspect ratio
 
-`area` keeps the box inside its parent or a specified element, and `keepAspectRatio` adjusts the other dimension. In this example, only the end edge, the bottom edge and the corner between them resize the image.
+`area` keeps the box inside its parent or a specified component, and `keepAspectRatio` adjusts the other dimension. In this example, only the end edge, the bottom edge and the corner between them resize the image.
 
 ```tsx
 import { Resizable } from '@motifx-community/ui';
@@ -21838,7 +21836,7 @@ export default function Programmatic() {
 | `handles` | `Bind<ResizeHandles>` | `'all'` | `all`, `edges`, `corners`, or a list of `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start` and `bottom-end`. |
 | `minWidth, minHeight` | `Bind<number>` | `30` | The minimum width and height, in pixels. |
 | `maxWidth, maxHeight` | `Bind<number \| null>` | `null` | The maximum width and height, in pixels. `null` means no limit. |
-| `area` | `Bind<'parent' \| HTMLElement \| null>` | `null` | The area the box stays inside: its parent, or an element that contains it. |
+| `area` | `Bind<'parent' \| ComponentBase \| null>` | `null` | The area the box stays inside: its parent, or a component that contains it. |
 | `keepAspectRatio` | `Bind<boolean>` | `false` | Preserves the ratio of width to height. |
 | `step` | `Bind<number>` | `10` | The number of pixels an arrow key changes an edge. |
 | `width, height` | `Bind<number \| string \| null>` | `null` | The initial size, as a CSS length or in pixels. Without it, the content determines the size. |
@@ -21852,7 +21850,7 @@ export default function Programmatic() {
 | `onResizing` | event | Occurs while the box is being resized (`edge`, and the current `width` and `height`). |
 | `onResized` | event | Occurs when a resize ends, either when the pointer is released or when a key moves an edge. |
 | `currentSize` | read-only | The current size in pixels. |
-| `gripElement` | read-only | The grip in the end corner, which is the Tab stop for keyboard resizing. |
+| `grip` | read-only | The grip in the end corner, which is the Tab stop for keyboard resizing. |
 
 ## Feedback
 
@@ -21875,7 +21873,7 @@ import { Draggable, DropTarget } from '@motifx-community/ui';
 
 ## Moving content
 
-JSX children are the movable content. `boundary` keeps it inside its parent or an element, `axis` limits it to one direction, and `handle` sets the only part that responds to the pointer and keyboard. A drag writes the position to `x-model`, `onDragEnded` reports it, and Escape returns the content to its start.
+JSX children are the movable content. `boundary` keeps it inside its parent or a component, `axis` limits it to one direction, and `handle` sets the only part that responds to the pointer and keyboard. A drag writes the position to `x-model`, `onDragEnded` reports it, and Escape returns the content to its start.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -22027,7 +22025,7 @@ export default function Programmatic() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `axis` | `Bind<DragAxis>` | `'both'` | `both`, `x` or `y`. |
-| `boundary` | `Bind<'parent' \| HTMLElement \| null>` | `null` | The area it stays inside: its parent, or an element that contains it. |
+| `boundary` | `Bind<'parent' \| ComponentBase \| null>` | `null` | The area it stays inside: its parent, or a component that contains it. |
 | `handle` | `Bind<string \| null>` | `null` | A selector inside the draggable. Only this part starts a drag, and it receives the Tab stop and keyboard input. |
 | `clone` | `Bind<boolean>` | `false` | A copy follows the pointer and the draggable stays in place, ready to be dropped on a target. |
 | `group` | `Bind<string \| null>` | `null` | Drop targets in the same group accept it. |
@@ -22054,7 +22052,7 @@ export default function Programmatic() {
 | `onDragEnded` | event | Occurs when the drag ends (`x`, `y`, `target`, `dropped`). |
 | `currentPosition` | read-only | The current position. |
 | `isDragging` | read-only | Indicates that a drag is in progress. |
-| `handleElement` | read-only | The element that handles the pointer and keyboard: the handle, or the draggable itself. |
+| `handlePart` | read-only | The handle that `handle` names, which takes the pointer and the keyboard; `null` when the draggable itself takes them. |
 
 ## Feedback
 
@@ -22080,7 +22078,7 @@ import { ScrollView } from '@motifx-community/ui';
 JSX children are the content. `showScrollbar` sets when scrollbars appear. `scrollTo` and `scrollToElement` scroll programmatically, and `onScrolled` reports the position.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type Component } from '@motifx/core';
 import { Button, ScrollView, Stack, type ScrollViewBars } from '@motifx-community/ui';
 
 const LINES = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of a long text that needs a box of its own to scroll in.`);
@@ -22090,19 +22088,20 @@ const MODES: ScrollViewBars[] = ['onScroll', 'onHover', 'always', 'never'];
 export default function Bars() {
     const s = reactive({ bars: 'onScroll' as ScrollViewBars, top: 0 });
     let view!: ScrollView;
+    const lines: Component<HTMLParagraphElement>[] = [];
     return (
         <Stack gap="md" style="inline-size: 100%">
             <Stack orientation="horizontal" wrap align="center">
                 {MODES.map(mode => (
                     <Button key={mode} text={mode} size="sm" variant={() => (s.bars === mode ? 'solid' : 'outline')} onclick={() => (s.bars = mode)} />
                 ))}
-                <Button text="Line 20" variant="outline" size="sm" onclick={() => view.scrollToElement(view.content.element.querySelectorAll('p')[19], true)} />
+                <Button text="Line 20" variant="outline" size="sm" onclick={() => view.scrollToElement(lines[19], true)} />
                 <Button text="Top" variant="outline" size="sm" onclick={() => view.scrollTo(0, true)} />
                 <output class="sv-top">{() => `scrollTop: ${Math.round(s.top)}`}</output>
             </Stack>
             <ScrollView ref={(v: ScrollView) => (view = v)} label="Long text" class="sv-text" showScrollbar={() => s.bars} style="block-size: 12rem" onScrolled={e => (s.top = e.top)}>
-                {LINES.map(line => (
-                    <p key={line}>{line}</p>
+                {LINES.map((line, i) => (
+                    <p key={line} ref={(c: Component<HTMLParagraphElement>) => (lines[i] = c)}>{line}</p>
                 ))}
             </ScrollView>
         </Stack>
@@ -22242,7 +22241,7 @@ export default function More() {
 | `onScrolled` | event | Occurs when the position changes: `top`, `left`. |
 | `scrollTo(where, smooth?)` | `void` | Scrolls to a top position, or to `{ top, left }`. `smooth` animates the scroll. |
 | `scrollBy({ top, left }, smooth?)` | `void` | Scrolls by a distance. |
-| `scrollToElement(target, smooth?)` | `void` | Scrolls an element or component of the content into view. |
+| `scrollToElement(target, smooth?)` | `void` | Scrolls a component of the content into view. |
 | `refresh(), release()` | `void` | Starts a refresh as a pull would, or ends it. |
 | `loadMore(), update()` | `boolean` / `void` | Requests more data now, or checks the position again after the content changes. |
 | `scrollTop, scrollLeft` | read-only | The current scroll position. |
@@ -22466,7 +22465,7 @@ export default function Handle() {
 | `onReorder` | event | Occurs when an item moves within this sortable (`fromIndex`, `toIndex`, `item`), by a drop or the keyboard. Reorder your data here. |
 | `onRemove, onAdd` | event | Occur when an item leaves for another sortable in the group and when it arrives, with `from`, `to`, the indexes and the item. Move the data between your arrays here. |
 | `move(fromIndex, toIndex)` | `boolean` | Moves an item programmatically as a drop would, and raises `onReorder`. |
-| `elements` | read-only | The item elements, in order. |
+| `itemParts()` | `ComponentBase[]` | The components of the items, in order: the rows of `items`, or the children. |
 | `isDragging` | read-only | Indicates that an item is being dragged. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
 
@@ -26624,7 +26623,7 @@ export default function Localization() {
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`, from the density tokens. |
 | `label` | `Bind<string>` | `''` | The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work. |
 | `virtualFrom` | `Bind<number>` | `500` | When more rows than this are on screen, only the visible rows are rendered. |
-| `itemTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Customizes the content of a row. |
+| `itemTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes the content of a row. |
 | `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### Properties
@@ -26633,7 +26632,7 @@ export default function Localization() {
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `selectedItems, checkedItems` | read-only, reactive | The selected or checked items, in tree order. |
-| `treeElement` | read-only | The element with `role="tree"`. |
+| `treePart` | read-only | The part with `role="tree"`. |
 
 ### Methods
 
@@ -26827,25 +26826,19 @@ export default function FileExplorer() {
 }
 ```
 
-`icon.ts`
+`icon.tsx`
 
 ```tsx
-const SVG = 'http://www.w3.org/2000/svg';
-
 export const FOLDER = 'M1.5 3.5h5l1.5 1.5h6.5v8h-13z';
 export const FILE = 'M3.5 1.5h6l3 3v10h-9zM9.5 1.5v3h3';
 
-/** A small outline icon, a new element for each row. */
-export function icon(path: string): SVGSVGElement {
-  const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  const line = svg.appendChild(document.createElementNS(SVG, 'path'));
-  line.setAttribute('d', path);
-  line.setAttribute('fill', 'none');
-  line.setAttribute('stroke', 'currentColor');
-  line.setAttribute('stroke-width', '1.2');
-  line.setAttribute('stroke-linejoin', 'round');
-  return svg;
+/** A small outline icon, a new component for each row. */
+export function icon(path: string) {
+  return (
+    <svg viewBox="0 0 16 16">
+      <path d={path} fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+    </svg>
+  );
 }
 ```
 
@@ -27007,6 +27000,7 @@ export default function Search() {
 `FlatData.tsx`
 
 ```tsx
+import type { ComponentBase } from '@motifx/core';
 import { Panel, TreeView } from '@motifx-community/ui';
 import type { Entry } from './entry';
 
@@ -27028,13 +27022,9 @@ const MAIL: Entry[] = [
 
 /** Flat rows that name their parent, a text field given as a function, and rows drawn by a template. */
 export default function FlatData() {
-  const withCount = (item: Entry, host: HTMLElement) => {
-    host.append(item.text);
-    if (item.count) {
-      const badge = document.createElement('strong');
-      badge.textContent = ` · ${item.count}`;
-      host.append(badge);
-    }
+  const withCount = (item: Entry, host: ComponentBase) => {
+    host.controls.add(<span>{item.text}</span>);
+    if (item.count) host.controls.add(<strong>{` · ${item.count}`}</strong>);
   };
   return (
     <>
@@ -27177,7 +27167,7 @@ export const cities = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Kon
 Custom objects are read through `textField` and `valueField`. `groupField` places items under headers, `enabledField` disables specific items, and `itemTemplate` customizes how an item is drawn.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type ComponentBase } from '@motifx/core';
 import { ListBox } from '@motifx-community/ui';
 
 interface Country {
@@ -27211,8 +27201,8 @@ export default function Countries() {
         valueField="code"
         groupField="region"
         enabledField={(c: Country) => c.member !== false}
-        itemTemplate={(c: Country, host: HTMLElement) => {
-          host.textContent = `${c.flag}  ${c.name}`;
+        itemTemplate={(c: Country, host: ComponentBase) => {
+          host.setText(`${c.flag}  ${c.name}`);
         }}
         height={8}
         x-model={() => form.country}
@@ -27363,7 +27353,7 @@ export default function Localization() {
 | `searchMode` | `Bind<'contains' \| 'startswith'>` | `'contains'` | How the search matches in-memory items. |
 | `searchDelay` | `Bind<number>` | `0` / `250` | The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source). |
 | `height` | `Bind<number \| string \| null>` | — | The height, in rows (`8`) or a CSS length (`"12rem"`). Without it, the list is as tall as its items, up to the `max-height` of the list (`list.container`). |
-| `itemTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Customizes how an item is drawn. |
+| `itemTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how an item is drawn. |
 | `noItemsText` | `Bind<string>` | — | The text for an empty list, which replaces the `uiLocale` “No items” string. |
 | `label, labelMode, helpText, hint, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup` | see TextBox |  | Field props shared by all editors. |
 
@@ -27550,7 +27540,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 The list stays open during selection, shows selected items as checked, and can include a “Select all” row. Each option is a prop you can bind.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type ComponentBase } from '@motifx/core';
 import { Stack, Switch, TagBox } from '@motifx-community/ui';
 
 interface Person {
@@ -27572,12 +27562,11 @@ const people: Person[] = [
 ];
 
 /** Draws a person as initials and a name. */
-const drawPerson = (p: Person, el: HTMLElement) => {
-  const badge = el.appendChild(document.createElement('span'));
-  badge.style.color = 'var(--mx-color-accent-fg)';
-  badge.style.fontWeight = 'var(--mx-font-weight-semibold)';
-  badge.textContent = p.initials;
-  el.append(` ${p.name}`);
+const drawPerson = (p: Person, host: ComponentBase) => {
+  host.controls.add(
+    <span style="color: var(--mx-color-accent-fg); font-weight: var(--mx-font-weight-semibold)">{p.initials}</span>,
+    <span>{` ${p.name}`}</span>,
+  );
 };
 
 /** Objects in groups, items that cannot be chosen, a template, and the switches of the list. */
@@ -27755,7 +27744,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `hideSelected` | `Bind<boolean>` | `false` | Removes selected items from the list (in-memory items only). |
 | `openOnFieldClick` | `Bind<boolean>` | `true` | Clicking the field opens the list. |
 | `showDropDownButton, clearButton` | `Bind<boolean>` | `true`, `false` | The arrow that opens all items, and the button that removes all tags. |
-| `itemTemplate, tagTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Customizes how a list item or a tag is drawn. |
+| `itemTemplate, tagTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how a list item or a tag is drawn. |
 | `matchWidth` | `Bind<boolean>` | `true` | The list is at least as wide as the field. |
 | `label, labelMode, helpText, hint, prefix, icon, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup` | see TextBox |  | Field props shared by all editors. |
 
@@ -27767,7 +27756,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `selectedItems` | read-only, reactive | The known items for the selected values. With a data source, the others are looked up by key. |
 | `listItems` | read-only | The `DataItems` shown in the list, which are the results of the last search. |
 | `opened` | read/write, reactive | Indicates whether the list is open. Set it to open or close the list. |
-| `inputElement` | read-only | The text input. |
+| `inputPart` | read-only | The text input. |
 
 ### Methods
 
@@ -28254,7 +28243,7 @@ export const saleFields: FilterBuilderField[] = [
 | `root` | read-only | The tree: `{ kind: 'group', operation, items, parent }` containing `{ kind: 'condition', field, operation, value, parent }` items. Change it through the methods. |
 | `filterText` | read-only, reactive | The filter as a single line: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`. |
 | `model` | read-only | The `FilterBuilderModel`, which provides field operations, text, and conversion between expressions and the tree. |
-| `treeElement, editingCondition` | read-only | The `role="treegrid"` element, and the condition whose editor is open. |
+| `treePart, editingCondition` | read-only | The `role="treegrid"` part, and the condition whose editor is open. |
 
 ### Methods
 
@@ -29275,7 +29264,7 @@ Everything `RibbonMenu` takes, offers and reports. Every prop is also a settable
 | `key` | `string \| number` | Finds the command. The default is its position. |
 | `type` | `Bind<RibbonCommandType>` | `button`, `toggle`, `split`, `menu`, `row`, `content`, `gallery`, `separator`. The default is `'button'`. |
 | `text, hint` | `Bind<string>` | The text (`&` marks the access key) and a tooltip. |
-| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | A glyph name, or an image, an element or a component. |
+| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | A glyph name, or an image address or a component. |
 | `size` | `Bind<'large' \| 'medium' \| 'small'>` | The default is `'medium'` (`'large'` for a gallery). |
 | `pressed` | `Bind<boolean>` | The state of a toggle. |
 | `menu` | `Bind<readonly MenuItem[]>` | The menu of a `menu` or `split` command. |
@@ -29679,7 +29668,7 @@ Everything `AppMenu` takes, offers and reports. Every prop is also a settable pr
 | --- | --- | --- |
 | `key` | `string \| number` | Finds the item, and is `selected` while its page is shown. The default is its position. |
 | `text, hint` | `Bind<string>` | The text (`&` marks the access key) and a tooltip. |
-| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | A glyph name, or an image, an element or a component. |
+| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | A glyph name, or an image address or a component. |
 | `page` | `() => ComponentBase` | Makes it a page item. The page is made the first time it is shown, and kept. |
 | `href, rel, target` | `Bind<string>` | Makes it a link. |
 | `badge, dot` | `Bind<number \| null>`, `Bind<boolean>` | A count in a badge, or a dot. |
@@ -33088,7 +33077,7 @@ docs.onWindowClosing((e) => {
 | `hide(doc)` | `boolean` | Removes it from its group without closing it. Its content is kept according to its `contentLifetime`, and a group, area or window it leaves empty is removed. |
 | `show(doc, { group?, side?, index?, active?, focus? })` | `boolean` | Returns it to where it was hidden from: its group, otherwise its dock area (recreated at its size, collapsed if it was), otherwise a window in the same position, otherwise the documents. `group` or `side` names another place. `open(doc)` does the same. |
 | `hiddenDocuments` | read-only, reactive | The hidden documents, in the order they were hidden. `findDocument(id)` also finds them. |
-| `focusWindow(w), focusPart(by?)` | `boolean` | Brings a window to the front with focus where it was, or moves to the next (or with `-1`, previous) part: the documents, each area and each window. |
+| `focusWindow(w), focusNextPart(by?)` | `boolean` | Brings a window to the front with focus where it was, or moves to the next (or with `-1`, previous) part: the documents, each area and each window. |
 | `resizeDockArea(area, size)` | `boolean` | In pixels, or as a share such as `'25%'`. |
 | `floatingWindows, dockAreas` | read-only, reactive | The windows, with the one at the back first, and the areas, with the outermost first. `dockArea(side)` finds one. |
 | `saveLayout(), loadLayout(layout, factory?)` | `TabLayout` (version 3) | Also includes the areas (`side`, `size`, `autoHide`, their layout), the windows (`rect`, `maximized`, where they dock back, their layout) and the hidden documents (`hidden`, with where they return to). Older layouts still load. |
@@ -34026,7 +34015,6 @@ docs.onError((e) => {
 | --- | --- |
 | `connectDocument(doc), disconnectDocument(doc), pageDocuments()` | The kit's document-level listeners (keys, access keys, tooltips, the focus guard) also work in another same-origin document, and are disconnected when its window closes. |
 | `mirrorPage(source, target)` | Copies the page's style sheets and the attributes of `<html>` and `<body>` into another document and keeps them in sync. Returns a function that stops this. |
-| `ResizeWatch` | A `ResizeObserver` that follows its elements into another window, because a browser's observer only reports elements of its own window. |
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md), [Drag and drop](tabdocs-drag.md) and [Dock and floating windows](tabdocs-dock.md) for the rest of the API.
 
@@ -41722,7 +41710,7 @@ Every rule accepts a `message` (`Bind<string>`). Without it, the text comes from
 | --- | --- | --- |
 | `onEditingStart` | `{ field, row, values, getValue, rowIndex, isNew, cancel }` | Occurs before a cell editor or a row's form (`field` `''`) opens. Set `cancel` to leave the row unchanged. `row` is the row itself (a class instance stays one), `values` holds the entered, unsaved values, and `getValue(field)` returns the entered value, otherwise the row's. |
 | `onEditorPreparing` | `{ field, row, values, getValue, isNew, options, cancel }` | Occurs before the editor of a cell or form field is created. Change its props, or set `cancel` to omit a field from the form. |
-| `onEditorPrepared` | `{ field, row, values, getValue, isNew, editor, element, place: 'cell' \| 'form' }` | Occurs after an editor is created. |
+| `onEditorPrepared` | `{ field, row, values, getValue, isNew, editor, part, place: 'cell' \| 'form' }` | Occurs after an editor is created. |
 | `onRowValidating` | `{ key, row, values, getValue, isNew, changed, errors, isValid, errorText, cancel }` | Occurs when a row is validated before saving, after its cells and their async rules. Add or remove messages in `errors` (by field, with `''` for the row), or set `isValid = false` with `errorText`. Occurs once per validation of the row. |
 | `onInitNewRow, onSaving, onRowInserting, onRowUpdating, onEditCanceling …` | See [Events](datagrid-layout.md#events) | The same in every edit mode: Save in a form is a save, and Cancel is a cancel. |
 
@@ -43476,7 +43464,7 @@ export function makeCustomers(n: number): Customer[] {
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `masterDetail.enabled` | `Bind<boolean>` | `false` | The expand column, after the status and check box columns and pinned with them, lets the user open and close details. When disabled, they can be opened only programmatically. |
-| `masterDetail.template` | `(ctx: DetailContext<T>) => unknown` | — | The content of a row's details: a component (another `DataGrid`, a `FormLayout`, `Tabs` …), an element or text. It is created the first time the details are shown. `ctx` provides `row` (the row itself) and `rowIndex`, both getters that are read again when the row shows another one and on `grid.repaint()` or `grid.repaintRows(keys)`, plus `key`, `grid` and `collapse()`. |
+| `masterDetail.template` | `(ctx: DetailContext<T>) => unknown` | — | The content of a row's details: a component (another `DataGrid`, a `FormLayout`, `Tabs` …) or text. It is created the first time the details are shown. `ctx` provides `row` (the row itself) and `rowIndex`, both getters that are read again when the row shows another one and on `grid.repaint()` or `grid.repaintRows(keys)`, plus `key`, `grid` and `collapse()`. |
 | `masterDetail.autoExpandAll` | `Bind<boolean>` | `false` | Every row starts open. Changing this setting, `enabled` or `template` opens or closes every row again. |
 | `masterDetail.canExpand` | `Bind<boolean> \| (row) => boolean` | `true` | Whether a row has details. A row without details has no arrow, and `expandRow` leaves it closed. Unsaved new rows have no details. |
 | `masterDetail.keepDetails` | `Bind<boolean>` | `true` | A closed row keeps the content of its details and shows it unchanged when it reopens. When disabled, closing disposes the content. |
@@ -43536,7 +43524,7 @@ The arrow is a button with `aria-expanded` and `aria-controls`, and the row also
 | --- | --- | --- |
 | `onRowExpanding / onRowCollapsing` | `{ kind: 'detail', key, row, cancel }` | Occurs before a row's details open or close, from the user or programmatically. Set `cancel` to keep them as they are. These are the same events as for groups (`kind: 'group'`). |
 | `onRowExpanded / onRowCollapsed` | `{ kind: 'detail', key, row }` | Occurs after they open or close. |
-| `onRowPrepared` | `{ rowType: 'detail', row, rowIndex, element }` | Occurs when a row's details have been rendered for a row. |
+| `onRowPrepared` | `{ rowType: 'detail', row, rowIndex, part }` | Occurs when a row's details have been rendered for a row. |
 | `onOptionChanged` | `{ name: 'masterDetail.enabled', value, previous }` | Occurs when a `masterDetail` option is assigned through `grid.masterDetail`. |
 
 | Member | Returns | Description |
@@ -44779,9 +44767,9 @@ export interface Task {
 | `handle` | `Bind<string>` | `''` | A CSS selector for the part of a row used for dragging, instead of the icon or the whole row. |
 | `group, data` | `Bind<string>`, `Bind<unknown>` | — | Grids in the same group accept each other's rows. `data` is passed to the events as `fromData` and `toData`. |
 | `dragDirection` | `Bind<'both' \| 'vertical' \| 'horizontal'>` | `'both'` | Where the copy of the row can go. |
-| `boundary, container` | `Bind<string \| HTMLElement>` | None, and the grid | The element the dragged row stays inside, and the element that displays its copy. |
+| `boundary, container` | `Bind<string \| ComponentBase>` | None, and the grid | The component the dragged row stays inside, and the component that displays its copy, or a selector of each. |
 | `cursorOffset` | `Bind<{ x, y } \| string>` | Where the row was grabbed | The offset of the copy from the pointer. |
-| `dragTemplate` | `({ itemData, itemElement }) => unknown` | A copy of the row | Custom content under the pointer: a component, an element or text. |
+| `dragTemplate` | `({ itemData, itemPart }) => ComponentBase \| string` | A copy of the row | Custom content under the pointer: a component or text. |
 | `autoScroll, scrollSpeed, scrollSensitivity` | `Bind<boolean>`, `Bind<number>`, `Bind<number>` | `true`, `30`, `60` | The rows scroll while the pointer is near their top or bottom edge: the speed in pixels per frame at the edge, and the distance at which it starts. |
 | `keyboard, moveUpKeys, moveDownKeys` | `Bind<boolean>`, `Bind<string[]>` | `true`, `['Ctrl+Shift+ArrowUp']`, `['Ctrl+Shift+ArrowDown']` | Moves the active row one position up or down with these keys (any combination, such as `Mod+Alt+Up`), with the same events as a drop. The move is announced. |
 | `columnWidth` | `Bind<number>` | `36` | The width of the drag icon column, in pixels. |
@@ -44808,7 +44796,7 @@ export interface Task {
 | Event field | Value |
 | --- | --- |
 | `component, fromComponent, toComponent` | The grid raising the event, the grid the row comes from, and the grid under the pointer (the same while reordering, or `null` when over none). |
-| `itemData, itemKey, itemElement` | The dragged row, its key and its element. |
+| `itemData, itemKey, itemPart` | The dragged row, its key and its part. |
 | `fromIndex, toIndex` | The grid's row indexes (as counted by `focusedRowIndex` and `getVisibleRows()`, also across pages): the current position, and the position after the drop. |
 | `toItemData` | The row at `toIndex` before the drop, which is where to insert the row. It is `undefined` at the end of the other grid or on a group row. |
 | `dropInsideItem, fromData, toData, event` | Whether it was dropped onto the row at `toIndex`, the grids' `rowDragging.data`, and the pointer or key event. |
@@ -45930,14 +45918,14 @@ export interface Order {
 
 | Event | Parameters | Cancel | When |
 | --- | --- | --- | --- |
-| `onCellClick / onCellDblClick` | `{ field, row, rowIndex, rowType, groupKey?, element, event }` | yes | Occurs when a cell is clicked or double-clicked (also in a group footer, `rowType: 'groupFooter'`, and in the totals row, `'totalFooter'`). Canceling prevents selection, the group toggle and the editor. |
-| `onRowClick / onRowDblClick` | `{ row, rowIndex, rowType, groupKey?, element, event }` | yes | The same for the row, after its cell's event. |
-| `onCellPrepared` | `{ field, row, rowIndex, value, isNew, element }` |  | Occurs when a cell is rendered for a row, so that you can style it. Cells are reused while scrolling, so set and clear what you change. It has no cost when there are no listeners. |
-| `onRowPrepared` | `{ row, rowIndex, rowType, groupKey?, isSelected, element }` |  | Occurs when a data row, group row, group footer (`groupFooter`) or the totals row (`totalFooter`) is rendered. The same rule applies. |
+| `onCellClick / onCellDblClick` | `{ field, row, rowIndex, rowType, groupKey?, part, event }` | yes | Occurs when a cell is clicked or double-clicked (also in a group footer, `rowType: 'groupFooter'`, and in the totals row, `'totalFooter'`). Canceling prevents selection, the group toggle and the editor. |
+| `onRowClick / onRowDblClick` | `{ row, rowIndex, rowType, groupKey?, part, event }` | yes | The same for the row, after its cell's event. |
+| `onCellPrepared` | `{ field, row, rowIndex, value, isNew, part }` |  | Occurs when a cell is rendered for a row, so that you can style it. Cells are reused while scrolling, so set and clear what you change. It has no cost when there are no listeners. |
+| `onRowPrepared` | `{ row, rowIndex, rowType, groupKey?, isSelected, part }` |  | Occurs when a data row, group row, group footer (`groupFooter`) or the totals row (`totalFooter`) is rendered. The same rule applies. |
 | `onContentReady` | `{ total }` |  | Occurs when rows have arrived and been laid out (after a load, a filter, a sort, a page change or a resize). |
 | `onDataErrorOccurred` | `{ error, operation, row? }` |  | Occurs when a load (`operation: 'load'`) or the save of a row (`'save'`, with `row`) fails. |
 | `onEditingStart` | `{ field, row, rowIndex, isNew }` | yes | Occurs before a cell editor or a row's edit form (`field` `''`) opens. |
-| `onEditorPreparing / onEditorPrepared` | `{ field, row, isNew, options }` / `{ field, row, isNew, editor, element, place }` | yes / — | Occur before and after the editor of a cell or form field is created. Change its props in `options` in the first event. |
+| `onEditorPreparing / onEditorPrepared` | `{ field, row, isNew, options }` / `{ field, row, isNew, editor, part, place }` | yes / — | Occur before and after the editor of a cell or form field is created. Change its props in `options` in the first event. |
 | `onRowValidating` | `{ key, row, isNew, changed, errors, isValid, errorText }` | yes | Occurs when a row is validated before saving, after its cells. Add messages to `errors`, or set `isValid = false` (or cancel) with `errorText`. |
 | `onInitNewRow` | `{ data, values }` | yes | Occurs before a new row opens. `data` is its initial content, and `values` is what counts as entered. Canceling opens no row. |
 | `onSaving / onSaved` | `{ changes }` / `{ changes, saved, failed }` | yes / — | Occur before changes are sent (leaving a row, the background queue or “Save changes”) and after the response arrives. |
@@ -46268,7 +46256,7 @@ export default function Events() {
         settings={{ editable: true }}
         onCellPrepared={(e) => {
           // The cell is reused for other rows: set and clear.
-          if (e.field === 'amount') e.element.style.fontWeight = (e.value as number) > 900 ? 'bold' : '';
+          if (e.field === 'amount') e.part.style({ 'font-weight': (e.value as number) > 900 ? 'bold' : '' });
         }}
         onContextMenuPreparing={(e) => {
           if (e.target === 'row' && e.row) e.items.push({ text: `Log order ${e.row.id}`, click: () => log(`Order ${e.row!.id} from the row menu`) });
@@ -46575,8 +46563,8 @@ export interface Order {
 | `cancelExport()` | `void` | Stops the export shown by the load panel. Its promise rejects with an `AbortError`. |
 | `getTotalSummaryValue(name)` | `unknown` | A totals value by the item's `name`, its position in `totalItems`, its type, its column or `type_column` (`'sum_amount'`). Reactive. |
 | `getGroupSummaryValue(key, name)` | `unknown` | A group summary value, with the group by its key (as in `expandGroup`) and the item as above. Reactive. |
-| `getVisibleRows()` | `GridVisibleRow[]` | The currently rendered rows: `{ rowIndex, rowType, row, key, groupKey?, element }`. |
-| `getRowElement(i) / getCellElement(i, field)` | `HTMLElement \| undefined` | The element of a rendered row or cell. |
+| `getVisibleRows()` | `GridVisibleRow[]` | The currently rendered rows: `{ rowIndex, rowType, row, key, groupKey?, part }`. |
+| `getRowPart(i) / getCellPart(i, field)` | `ComponentBase \| undefined` | The part of a rendered row or cell. |
 | `getKeyByRowIndex(i) / getRowIndexByKey(key)` | `unknown` / `number` | A row's key by its index, and the index of a loaded row by its key (-1 when it is not loaded). |
 | `byKey(key)` | `Promise<T \| undefined>` | The row with this key: loaded, previously found, or requested from the data source. |
 | `cellValue(i, field, value?)` | `unknown` | The value displayed in a cell. With `value`, writes it as the user would (validated, and saved according to the save mode). |

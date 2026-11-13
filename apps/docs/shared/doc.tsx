@@ -158,26 +158,27 @@ export class Example extends Component<HTMLDivElement, { title?: string; files?:
 /** A reference table: the first column is the name (rendered as code), the rest is rich text. */
 export function ApiTable(props: { head: string[]; rows: string[][] }) {
   const rows = props.rows.map((cells) => ({ id: ++seq, cells: cells.map((c) => ({ id: ++seq, text: c })) }));
+  const autoColumnWidthPercent = 100 / props.head.length;
   return (
     <div class="table-scroll" tabindex="0">
       <table class="token-table api-table">
         <thead>
           <tr>
             {props.head.map((h) => (
-              <th key={h}>{() => tx(h)}</th>
+              <th>{() => tx(h)}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id}>
+            <tr  >
               {row.cells.map((cell, i) =>
                 i === 0 ? (
-                  <td key={cell.id}>
+                  <td  >
                     <code>{cell.text}</code>
                   </td>
                 ) : (
-                  <td key={cell.id}>
+                  <td >
                     <Rich text={cell.text} />
                   </td>
                 ),

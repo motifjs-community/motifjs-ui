@@ -15,7 +15,7 @@ import { ScrollView } from '@motifx-community/ui';
 JSX children are the content. `showScrollbar` sets when scrollbars appear. `scrollTo` and `scrollToElement` scroll programmatically, and `onScrolled` reports the position.
 
 ```tsx
-import { reactive } from '@motifx/core';
+import { reactive, type Component } from '@motifx/core';
 import { Button, ScrollView, Stack, type ScrollViewBars } from '@motifx-community/ui';
 
 const LINES = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of a long text that needs a box of its own to scroll in.`);
@@ -25,19 +25,20 @@ const MODES: ScrollViewBars[] = ['onScroll', 'onHover', 'always', 'never'];
 export default function Bars() {
     const s = reactive({ bars: 'onScroll' as ScrollViewBars, top: 0 });
     let view!: ScrollView;
+    const lines: Component<HTMLParagraphElement>[] = [];
     return (
         <Stack gap="md" style="inline-size: 100%">
             <Stack orientation="horizontal" wrap align="center">
                 {MODES.map(mode => (
                     <Button key={mode} text={mode} size="sm" variant={() => (s.bars === mode ? 'solid' : 'outline')} onclick={() => (s.bars = mode)} />
                 ))}
-                <Button text="Line 20" variant="outline" size="sm" onclick={() => view.scrollToElement(view.content.element.querySelectorAll('p')[19], true)} />
+                <Button text="Line 20" variant="outline" size="sm" onclick={() => view.scrollToElement(lines[19], true)} />
                 <Button text="Top" variant="outline" size="sm" onclick={() => view.scrollTo(0, true)} />
                 <output class="sv-top">{() => `scrollTop: ${Math.round(s.top)}`}</output>
             </Stack>
             <ScrollView ref={(v: ScrollView) => (view = v)} label="Long text" class="sv-text" showScrollbar={() => s.bars} style="block-size: 12rem" onScrolled={e => (s.top = e.top)}>
-                {LINES.map(line => (
-                    <p key={line}>{line}</p>
+                {LINES.map((line, i) => (
+                    <p key={line} ref={(c: Component<HTMLParagraphElement>) => (lines[i] = c)}>{line}</p>
                 ))}
             </ScrollView>
         </Stack>
@@ -177,7 +178,7 @@ export default function More() {
 | `onScrolled` | event | Occurs when the position changes: `top`, `left`. |
 | `scrollTo(where, smooth?)` | `void` | Scrolls to a top position, or to `{ top, left }`. `smooth` animates the scroll. |
 | `scrollBy({ top, left }, smooth?)` | `void` | Scrolls by a distance. |
-| `scrollToElement(target, smooth?)` | `void` | Scrolls an element or component of the content into view. |
+| `scrollToElement(target, smooth?)` | `void` | Scrolls a component of the content into view. |
 | `refresh(), release()` | `void` | Starts a refresh as a pull would, or ends it. |
 | `loadMore(), update()` | `boolean` / `void` | Requests more data now, or checks the position again after the content changes. |
 | `scrollTop, scrollLeft` | read-only | The current scroll position. |

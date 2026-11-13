@@ -154,8 +154,8 @@ const METHODS = [
   ['cancelExport()', '`void`', 'Stops the export shown by the load panel. Its promise rejects with an `AbortError`.'],
   ['getTotalSummaryValue(name)', '`unknown`', 'A totals value by the item\'s `name`, its position in `totalItems`, its type, its column or `type_column` (`\'sum_amount\'`). Reactive.'],
   ['getGroupSummaryValue(key, name)', '`unknown`', 'A group summary value, with the group by its key (as in `expandGroup`) and the item as above. Reactive.'],
-  ['getVisibleRows()', '`GridVisibleRow[]`', 'The currently rendered rows: `{ rowIndex, rowType, row, key, groupKey?, element }`.'],
-  ['getRowElement(i) / getCellElement(i, field)', '`HTMLElement | undefined`', 'The element of a rendered row or cell.'],
+  ['getVisibleRows()', '`GridVisibleRow[]`', 'The currently rendered rows: `{ rowIndex, rowType, row, key, groupKey?, part }`.'],
+  ['getRowPart(i) / getCellPart(i, field)', '`ComponentBase | undefined`', 'The part of a rendered row or cell.'],
   ['getKeyByRowIndex(i) / getRowIndexByKey(key)', '`unknown` / `number`', 'A row\'s key by its index, and the index of a loaded row by its key (-1 when it is not loaded).'],
   ['byKey(key)', '`Promise<T | undefined>`', 'The row with this key: loaded, previously found, or requested from the data source.'],
   ['cellValue(i, field, value?)', '`unknown`', 'The value displayed in a cell. With `value`, writes it as the user would (validated, and saved according to the save mode).'],
@@ -267,6 +267,9 @@ export default function DataGridApiPage() {
   return (
     <>
       <Section anchor="columns" title="Columns">
+        <p class="docs-note">
+          <Rich text="Up to 0.1.0-beta.8, the root of the content that `cell`, `groupCell`, `headerCell`, a band's `headerCell` and the detail `template` return must not carry `x-display` or `x-wait`, and must not be a conditional or a fragment: such content can leave its cell when it is shown again. Put it inside a wrapper element, for example `<span hidden={() => !ctx.row}><Button … /></span>`. For buttons on each row, use the grid's `actions` with a `visible` function per row." />
+        </p>
         <ApiTable head={['Field', 'Description']} rows={COLUMN_FIELDS} />
       </Section>
 

@@ -252,7 +252,7 @@ export default function Localization() {
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`, from the density tokens. |
 | `label` | `Bind<string>` | `''` | The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work. |
 | `virtualFrom` | `Bind<number>` | `500` | When more rows than this are on screen, only the visible rows are rendered. |
-| `itemTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Customizes the content of a row. |
+| `itemTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes the content of a row. |
 | `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### Properties
@@ -261,7 +261,7 @@ export default function Localization() {
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `selectedItems, checkedItems` | read-only, reactive | The selected or checked items, in tree order. |
-| `treeElement` | read-only | The element with `role="tree"`. |
+| `treePart` | read-only | The part with `role="tree"`. |
 
 ### Methods
 
@@ -455,25 +455,19 @@ export default function FileExplorer() {
 }
 ```
 
-`icon.ts`
+`icon.tsx`
 
 ```tsx
-const SVG = 'http://www.w3.org/2000/svg';
-
 export const FOLDER = 'M1.5 3.5h5l1.5 1.5h6.5v8h-13z';
 export const FILE = 'M3.5 1.5h6l3 3v10h-9zM9.5 1.5v3h3';
 
-/** A small outline icon, a new element for each row. */
-export function icon(path: string): SVGSVGElement {
-  const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  const line = svg.appendChild(document.createElementNS(SVG, 'path'));
-  line.setAttribute('d', path);
-  line.setAttribute('fill', 'none');
-  line.setAttribute('stroke', 'currentColor');
-  line.setAttribute('stroke-width', '1.2');
-  line.setAttribute('stroke-linejoin', 'round');
-  return svg;
+/** A small outline icon, a new component for each row. */
+export function icon(path: string) {
+  return (
+    <svg viewBox="0 0 16 16">
+      <path d={path} fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+    </svg>
+  );
 }
 ```
 
@@ -635,6 +629,7 @@ export default function Search() {
 `FlatData.tsx`
 
 ```tsx
+import type { ComponentBase } from '@motifx/core';
 import { Panel, TreeView } from '@motifx-community/ui';
 import type { Entry } from './entry';
 
@@ -656,13 +651,9 @@ const MAIL: Entry[] = [
 
 /** Flat rows that name their parent, a text field given as a function, and rows drawn by a template. */
 export default function FlatData() {
-  const withCount = (item: Entry, host: HTMLElement) => {
-    host.append(item.text);
-    if (item.count) {
-      const badge = document.createElement('strong');
-      badge.textContent = ` · ${item.count}`;
-      host.append(badge);
-    }
+  const withCount = (item: Entry, host: ComponentBase) => {
+    host.controls.add(<span>{item.text}</span>);
+    if (item.count) host.controls.add(<strong>{` · ${item.count}`}</strong>);
   };
   return (
     <>

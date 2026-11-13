@@ -243,7 +243,7 @@ export default function States() {
 
 ## Localization
 
-The names of the two thumbs in a range come from `uiLocale.strings` (`minimum`, `maximum`). Numbers use `locale`, which defaults to the page `lang`.
+The names of the two thumbs in a range come from `uiLocale.strings` (`minimum`, `maximum`). Numbers use `locale`, which defaults to the kit's language, `uiLocale.locale`.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -326,7 +326,7 @@ export default function Localization() {
 | `tickLabels` | `Bind<boolean>` | `false` | Shows values under the marks, or at the two ends if there are no marks. |
 | `showValue` | `Bind<'never' \| 'drag' \| 'always'>` | `'never'` | Shows a value tooltip above the thumb: never, while it moves (with the pointer or keyboard), or always. |
 | `format` | `Bind<Intl.NumberFormatOptions \| null>` | `null` | The format used by the tooltip, the tick labels and screen readers. |
-| `locale` | `Bind<string>` | The page `lang` | The locale of `format`. |
+| `locale` | `Bind<string>` | `uiLocale.locale` | The locale of `format`. |
 | `valueText` | `(value: number) => string` | — | The text screen readers announce for a value. Because it is a function, it is stored as is and not bound. |
 | `updateOn` | `Bind<'input' \| 'change'>` | `'input'` | With `change`, the value updates when the thumb is released. The thumb still moves during the drag. |
 | `name` | `Bind<string>` | `''` | The name submitted with the form. A range submits two values. |
@@ -342,7 +342,7 @@ export default function Localization() {
 | Property | Access | Description |
 | --- | --- | --- |
 | `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
-| `thumbElements` | read-only | The thumb elements, `[start, end]`. The end thumb is hidden without `range`. |
+| `thumbParts` | read-only | The thumbs as components, `[start, end]`. The end thumb is hidden without `range`. |
 | `isValid, validationMessage, validating` | read-only, reactive | These work the same way as on all fields. |
 
 ### Methods

@@ -38,7 +38,7 @@ const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop. `locale` returns the locale in use.'],
   ['formattedValue', 'read-only, reactive', 'The value as displayed without focus, or `\'\'` when empty.'],
   ['isValid, validationMessage, validating', 'read-only, reactive', 'The validation result.'],
-  ['inputElement', 'read-only', 'The native `<input>`.'],
+  ['inputPart', 'read-only', 'The native `<input>`.'],
 ];
 
 const METHODS = [
@@ -48,6 +48,7 @@ const METHODS = [
   ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
   ['focus()', '`boolean`', 'Sets focus on the input.'],
   ['select()', '`void`', 'Selects all text.'],
+  ['typeText(text)', '`void`', 'Puts `text` in the field as if the user typed it; characters a number is not written with are not taken.'],
 ];
 
 const EVENTS = [

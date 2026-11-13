@@ -78,7 +78,7 @@
   "The tree: `{ kind: 'group', operation, items, parent }` containing `{ kind: 'condition', field, operation, value, parent }` items. Change it through the methods.": "Ağaç: `{ kind: 'condition', field, operation, value, parent }` öğeleri içeren `{ kind: 'group', operation, items, parent }`. Method'larla değiştirin.",
   "The filter as a single line: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`.": "Tek satır olarak filtre: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`.",
   "The `FilterBuilderModel`, which provides field operations, text, and conversion between expressions and the tree.": "Field işlemlerini, metni ve ifadeler ile ağaç arasındaki dönüşümü sağlayan `FilterBuilderModel`.",
-  "The `role=\"treegrid\"` element, and the condition whose editor is open.": "`role=\"treegrid\"` öğesi ve editörü açık olan koşul.",
+  "The `role=\"treegrid\"` part, and the condition whose editor is open.": "`role=\"treegrid\"` parçası ve editörü açık olan koşul.",
   "Adds at the end of a group (the root by default), on a field (the first by default). The events run.": "Bir grubun sonuna (varsayılan olarak kök), bir field üzerinde (varsayılan olarak ilki) ekler. Event'ler çalışır.",
   "Adds a group with one condition. Returns `null` past `maxGroupLevel`.": "Tek koşullu bir grup ekler. `maxGroupLevel` aşıldığında `null` döndürür.",
   "Removes a condition, or a group with its contents.": "Bir koşulu veya içeriğiyle birlikte bir grubu kaldırır.",

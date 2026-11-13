@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { reactive, type ComponentBase } from '@motifx/core';
 import { Stack, Switch, TagBox } from '@motifx-community/ui';
 
 interface Person {
@@ -20,12 +20,11 @@ const people: Person[] = [
 ];
 
 /** Draws a person as initials and a name. */
-const drawPerson = (p: Person, el: HTMLElement) => {
-  const badge = el.appendChild(document.createElement('span'));
-  badge.style.color = 'var(--mx-color-accent-fg)';
-  badge.style.fontWeight = 'var(--mx-font-weight-semibold)';
-  badge.textContent = p.initials;
-  el.append(` ${p.name}`);
+const drawPerson = (p: Person, host: ComponentBase) => {
+  host.controls.add(
+    <span style="color: var(--mx-color-accent-fg); font-weight: var(--mx-font-weight-semibold)">{p.initials}</span>,
+    <span>{` ${p.name}`}</span>,
+  );
 };
 
 /** Objects in groups, items that cannot be chosen, a template, and the switches of the list. */

@@ -26,7 +26,7 @@
   "Chip props": "Chip prop'ları",
   "Its text": "Metni",
   "The value it represents in a group.": "Grupta temsil ettiği değer.",
-  "An icon before the text: an image address, an element or a component.": "Metnin önünde icon: resim adresi, öğe ya da bileşen.",
+  "An icon before the text: an image address or a component.": "Metnin önünde icon: resim adresi ya da bileşen.",
   "An avatar before the text (its props; the chip sets the size).": "Metinden önce bir avatar (prop'ları; boyutu chip belirler).",
   "Pressing the chip toggles it, as a filter. In a group with selection, the group controls it.": "Chip'e basmak filtre gibi durumunu değiştirir. Seçimli bir grupta denetim gruptadır.",
   "Indicates whether the chip is on.": "Chip'in açık olup olmadığını belirtir.",

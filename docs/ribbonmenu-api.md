@@ -58,7 +58,7 @@ Everything `RibbonMenu` takes, offers and reports. Every prop is also a settable
 | `key` | `string \| number` | Finds the command. The default is its position. |
 | `type` | `Bind<RibbonCommandType>` | `button`, `toggle`, `split`, `menu`, `row`, `content`, `gallery`, `separator`. The default is `'button'`. |
 | `text, hint` | `Bind<string>` | The text (`&` marks the access key) and a tooltip. |
-| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | A glyph name, or an image, an element or a component. |
+| `glyph, icon` | `Bind<string>`, `Bind<IconSource>` | A glyph name, or an image address or a component. |
 | `size` | `Bind<'large' \| 'medium' \| 'small'>` | The default is `'medium'` (`'large'` for a gallery). |
 | `pressed` | `Bind<boolean>` | The state of a toggle. |
 | `menu` | `Bind<readonly MenuItem[]>` | The menu of a `menu` or `split` command. |

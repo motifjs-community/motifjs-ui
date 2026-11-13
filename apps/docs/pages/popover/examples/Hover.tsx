@@ -1,13 +1,14 @@
+import type { Component } from '@motifx/core';
 import { Avatar, Popover, Stack } from '@motifx-community/ui';
 
 /** A card that opens while the pointer rests on a name, or when the name has keyboard focus. */
 export default function Hover() {
-    let name!: HTMLElement;
+    let name!: Component<HTMLAnchorElement>;
     return (
         <Stack orientation="horizontal" wrap align="center">
             <span>
                 Reviewed by{' '}
-                <a href="#ada" class="po-person" ref={(c: { element: HTMLElement }) => (name = c.element)} onclick={(e: Event) => e.preventDefault()}>
+                <a href="#ada" class="po-person" ref={(c: Component<HTMLAnchorElement>) => (name = c)} onclick={(e: Event) => e.preventDefault()}>
                     Ada Lovelace
                 </a>
             </span>

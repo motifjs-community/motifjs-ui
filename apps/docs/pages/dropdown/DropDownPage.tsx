@@ -21,7 +21,7 @@ const PROPS = [
   ['searchEnabled', '`Bind<boolean>`', '`false`', 'Adds a search box at the top of the list.'],
   ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How the search matches option text.'],
   ['clearButton', '`Bind<boolean>`', '`false`', 'Shows a button that clears the value. Escape does the same while the list is closed.'],
-  ['itemTemplate / fieldTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Customizes how an option or the selected item is drawn.'],
+  ['itemTemplate / fieldTemplate', '`Bind<(item, host: ComponentBase) => cleanup | void>`', '—', 'Customizes how an option or the selected item is drawn.'],
   ['matchWidth', '`Bind<boolean>`', '`true`', 'The list is at least as wide as the field.'],
   ['label, labelMode, helpText, hint, prefix, icon, buttons, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'Field props shared by all editors.'],
 ];

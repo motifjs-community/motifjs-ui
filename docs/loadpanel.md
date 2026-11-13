@@ -12,7 +12,7 @@ import { LoadPanel } from '@motifx-community/ui';
 
 ## Covering a container
 
-`target` specifies the component or element to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations.
+`target` specifies the component to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -126,7 +126,7 @@ export default function Options() {
 | Topic | Details |
 | --- | --- |
 | `Covering a container` | The panel is placed inside the container, above its content. The container gets `aria-busy`, and the content under the panel is inert, so it cannot be clicked or focused. |
-| `Over the page` | Without a `target`, the panel covers the viewport and the rest of the page is inert. |
+| `Over the page` | Without a `target`, the panel covers the viewport and the rest of the page is inert. The app's root in that window (the `run()` host, an app window's host, or the body when no app runs) gets `aria-busy`. |
 | `Focus` | Focus moves from the content underneath to the panel (to the Cancel button if there is one) and returns to its original position when the panel hides. |
 | `Delay` | Quick operations show nothing. The panel appears after `delay`, and hiding it before then cancels it. |
 | `Spinner.cover` | The kit spinner can cover a container with a single call (`Spinner.cover`). LoadPanel is the full component, with the panel, message, delay and button. |
@@ -162,7 +162,7 @@ export default function Options() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | `Bind<ComponentBase \| HTMLElement \| null>` | `null` | The area to cover, a component or element. `null` covers the whole page. |
+| `target` | `Bind<ComponentBase \| null>` | `null` | The area to cover, a component. `null` covers the whole page. |
 | `message` | `Bind<string>` | The kit string “Loading…” | The message below the indicator. This is the same property as `text`. |
 | `value` | `Bind<boolean>` | `false` | Indicates whether the panel is shown. `x-model` provides two-way binding. |
 | `delay` | `Bind<number>` | `0` | The delay in milliseconds before it appears. Hiding it before then shows nothing. |

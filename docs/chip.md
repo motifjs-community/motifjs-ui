@@ -41,12 +41,11 @@ import { Chip, Stack, type ChipVariant } from '@motifx-community/ui';
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
 // An inline star, so that the example needs no icon set.
-const star = () => {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  svg.innerHTML = '<path d="M8 1.5l1.9 4.1 4.4.5-3.3 3 .9 4.4L8 11.3l-3.9 2.2.9-4.4-3.3-3 4.4-.5z" fill="currentColor"/>';
-  return svg;
-};
+const star = () => (
+  <svg viewBox="0 0 16 16">
+    <path d="M8 1.5l1.9 4.1 4.4.5-3.3 3 .9 4.4L8 11.3l-3.9 2.2.9-4.4-3.3-3 4.4-.5z" fill="currentColor" />
+  </svg>
+);
 
 /** Each appearance: at rest, selected, with an icon, with an avatar, removable and disabled. */
 export default function Looks() {
@@ -229,7 +228,7 @@ The remove button's name is the `removeItem` kit string (“Remove {text}”) an
 | --- | --- | --- | --- |
 | `text` | `Bind<string>` | `''` | The text. |
 | `value` | `Bind<unknown>` | Its text | The value it represents in a group. |
-| `icon` | `Bind<IconSource \| null>` | `null` | An icon before the text: an image address, an element or a component. |
+| `icon` | `Bind<IconSource \| null>` | `null` | An icon before the text: an image address or a component. |
 | `avatar` | `Bind<AvatarProps \| null>` | `null` | An avatar before the text (its props; the chip sets the size). |
 | `selectable` | `Bind<boolean>` | `false` | Pressing the chip toggles it, as a filter. In a group with selection, the group controls it. |
 | `selected` | `Bind<boolean>` | `false` | Indicates whether the chip is on. |

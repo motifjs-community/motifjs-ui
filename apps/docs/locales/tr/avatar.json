@@ -44,7 +44,7 @@
   "The total number of people when only some are provided. The rest are counted in the `+N`.": "Yalnızca bazıları sağlandığında toplam kişi sayısı. Geri kalanlar `+N` içinde sayılır.",
   "The accessible name of the group (“Members”).": "Grubun erişilebilir adı (“Üyeler”).",
   "AvatarGroup properties": "AvatarGroup property'leri",
-  "The elements of the provided avatars in order, including those from JSX lists. The `+N` is not included.": "JSX listelerinden gelenler dahil sağlanan avatarların öğeleri, sırasıyla. `+N` dahil değildir.",
+  "The provided avatars in order, including those from JSX lists. The `+N` is not included.": "JSX listelerinden gelenler dahil sağlanan avatarlar, sırasıyla. `+N` dahil değildir.",
   "The number of people counted in the `+N`, or 0 when it is not shown.": "`+N` içinde sayılan kişi sayısı veya gösterilmiyorsa 0.",
   "Creates initials from a name: the first letters of the first and last words, using the capitalization rules of the language.": "Bir addan baş harfler oluşturur: dilin büyük harf kurallarını kullanarak ilk ve son sözcüğün ilk harfleri."
 }

@@ -63,13 +63,11 @@ Steps before the current one are completed automatically. An item can set `statu
 import { reactive } from '@motifx/core';
 import { Button, Stack, Stepper } from '@motifx-community/ui';
 
-const pencil = () => {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.innerHTML = '<path d="M11.5 2.5l2 2L5 13H3v-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>';
-    return svg;
-};
+const pencil = () => (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M11.5 2.5l2 2L5 13H3v-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+    </svg>
+);
 
 /** Completed and failed steps set by the items, an optional step, a disabled step, and an icon in place of the number. */
 export default function Statuses() {

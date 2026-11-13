@@ -88,7 +88,7 @@ export default function InJsx() {
 `ContextMenu` has a `presentation` prop: `'menu'` (the default), `'sheet'`, or `'auto'`, which opens an action sheet when a finger opened the menu with a long press. The items, `onOpening` and `onItemClick` stay the same.
 
 ```tsx
-import { reactive, type Component } from '@motifx/core';
+import { reactive, type Component, type ComponentBase } from '@motifx/core';
 import { ContextMenu, RadioGroup, Stack, type ContextMenuPresentation, type MenuItem } from '@motifx-community/ui';
 
 const ROWS = ['Invoice 1042', 'Invoice 1043', 'Invoice 1044'];
@@ -131,7 +131,8 @@ export default function FromContextMenu() {
         target={() => list}
         presentation={() => s.presentation}
         onOpening={(e) => {
-          const row = (e.target as Element).closest('[data-row]')?.getAttribute('data-row');
+          let row: string | null = null;
+          for (let part: ComponentBase | null = e.part; part && !row; part = part.parent) row = part.attr.get('data-row');
           if (row) e.items = items(row);
           else e.cancel = true;
         }}

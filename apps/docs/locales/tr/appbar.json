@@ -11,7 +11,7 @@
   "The title, and a smaller line under it.": "Başlık ve altındaki daha küçük satır.",
   "A centered title stays in the middle of the bar whatever lies beside it.": "Ortalanmış başlık, yanında ne olursa olsun çubuğun ortasında kalır.",
   "Makes the title a heading of this level.": "Başlığı bu düzeyde bir heading yapar.",
-  "An image address, an element or a component before the title.": "Başlıktan önce gösterilen görsel adresi, element veya bileşen.",
+  "An image address or a component before the title.": "Başlıktan önce gösterilen görsel adresi veya bileşen.",
   "The button at the start of the bar.": "Çubuğun başındaki düğme.",
   "The glyph of that button. The back arrow is mirrored in a right-to-left page.": "Bu düğmenin glyph'i. Geri oku sağdan sola sayfalarda aynalanır.",
   "The accessible name of that button.": "Bu düğmenin erişilebilir adı.",

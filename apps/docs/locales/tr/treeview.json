@@ -60,7 +60,7 @@
   "When more rows than this are on screen, only the visible rows are rendered.": "Ekranda bundan fazla satır olduğunda yalnızca görünür satırlar çizilir.",
   "Customizes the content of a row.": "Bir satırın içeriğini özelleştirir.",
   "The selected or checked items, in tree order.": "Ağaç sırasıyla seçili veya işaretli öğeler.",
-  "The element with `role=\"tree\"`.": "`role=\"tree\"` öğesi.",
+  "The part with `role=\"tree\"`.": "`role=\"tree\"` parçası.",
   "Expands or collapses a row, loading its children first if needed. The cancelable events run.": "Bir satırı genişletir veya daraltır, gerekirse önce alt öğelerini yükler. İptal edilebilir event'ler çalışır.",
   "Applies to every row whose children are known, with no event per row.": "Alt öğeleri bilinen tüm satırlara, satır başına event olmadan uygulanır.",
   "Programmatic control. `select` adds to the selection with `multiple`.": "Programmatic denetim. `select`, `multiple` ile seçime ekler.",
