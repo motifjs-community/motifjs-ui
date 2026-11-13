@@ -19,6 +19,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- `Toolbar` fits its items into the room again from the sizes the size observers told, when the bar or one of its items
+  changes size: nothing is laid out to read them (a grid's toolbar in a document moved to another group, a window or
+  back). New items, another look or orientation, and `updateOverflow()` still put every item back and measure them.
+- `Toolbar`: adding the "more" button no longer counts it as an item of the bar for a moment, so a separator before the
+  items that moved into the menu goes with them.
+- `TabDocumentManager` lays nothing out when a document moves: a panel tells from its markup whether it holds anything
+  to focus, and a drop mark shown again starts where it is without reading the page's styles (`Tabs` too, for its
+  panels).
 - `DataGrid` no longer makes the browser lay the page out in the middle of its work (Chrome's "Forced reflow"
   violations on the first open, on scrolling and on grouping): the sizes of its viewport, head, totals and rows come from
   the size observers, after the browser laid them out, and how far the rows are scrolled from the viewport's scroll

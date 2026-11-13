@@ -1,7 +1,7 @@
 import type { Component, ComponentBase } from '@motifx/core';
 import { loose } from '../../core/draw-parts';
-import { afterStyle, type Rect } from '../../core/measure';
-import { css, kept, mark as markPart } from '../../core/part-writes';
+import type { Rect } from '../../core/measure';
+import { css, kept } from '../../core/part-writes';
 
 /**
  * What a drag shows for a manager: the translucent area a drop would take, and the mark between
@@ -12,8 +12,6 @@ import { css, kept, mark as markPart } from '../../core/part-writes';
 export class DropMarks {
   private readonly area: Component<HTMLDivElement>;
   private readonly mark: Component<HTMLDivElement>;
-  /** The marks showing now. */
-  private readonly showing = new Set<Component<HTMLDivElement>>();
 
   /** `host`: the manager, or a new window's part; the marks are its children while they show. */
   constructor(private readonly host: ComponentBase) {
@@ -40,14 +38,10 @@ export class DropMarks {
     if (part.isDisposed) return;
     if (!box) {
       kept(part, false);
-      this.showing.delete(part);
       return;
     }
     if (part.parent !== this.host) this.host.controls.add(part);
-    const fresh = !this.showing.has(part);
-    this.showing.add(part);
-    // Shown again: it starts where it is, it does not glide in from where it was last.
-    if (fresh) markPart(part, 'data-instant', true);
+    // Shown again, it is put back in the page: it starts where it is, with no style to glide from.
     kept(part, true);
     // Fixed in the viewport, so it shows over a floating window outside the manager too.
     css(part, 'left', `${Math.round(box.left)}px`);
@@ -55,6 +49,5 @@ export class DropMarks {
     // A line (no width) takes its width from the style, centred on the place.
     css(part, 'width', box.width ? `${Math.round(box.width)}px` : '');
     css(part, 'height', `${Math.round(box.height)}px`);
-    if (fresh) afterStyle(part, () => markPart(part, 'data-instant', false));
   }
 }

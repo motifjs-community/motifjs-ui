@@ -256,6 +256,15 @@ export function hasFocusableIn(part: ComponentBase): boolean {
 }
 
 /**
+ * Whether anything inside a component can take focus by its markup: a focusable element not under `[hidden]` or
+ * `[inert]`. No style is read, so the page is not laid out for it (what only CSS hides counts as focusable).
+ */
+export function holdsFocusable(part: ComponentBase): boolean {
+  const el = elementOf(part);
+  return !!el && Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).some((e) => !e.closest('[hidden], [inert]'));
+}
+
+/**
  * Moves focus to the first element of a kind inside a component: `'any'` (the default) an `[autofocus]` one, else
  * the first that takes focus and keeps the keys (not a frame); `'autofocus'` only an `[autofocus]` one; `'field'` the
  * first field (a box, a list, a check box, a slider…); `'text'` the first field to type in or pick from; `'stop'` the

@@ -565,10 +565,6 @@
     translate: -50% 0;
   }
 
-  .mx-tabdocs__drop[data-instant] {
-    transition: none;
-  }
-
   /* Floating windows: fixed in the viewport, stacked in the order of the page's window stack; the
      place and size come from --_x, --_y, --_w, --_h (the manager writes them). A group's strip is
      the title the window moves by. */

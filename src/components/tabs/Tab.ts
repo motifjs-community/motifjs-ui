@@ -2,7 +2,7 @@ import { read, type Bind, type Component, type ComponentBase, type IBaseProp } f
 import { parseAccessKey, renderAccessKey, setAccessKeyAttribute } from '../../core/access-key';
 import { Control } from '../../core/control';
 import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
-import { hasFocusableIn, standFor } from '../../core/focus';
+import { holdsFocusable, standFor } from '../../core/focus';
 import { keepScroll } from '../../core/measure';
 import { kept, mark, put, text as writeText } from '../../core/part-writes';
 import { showIcon } from '../../core/show-icon';
@@ -235,9 +235,9 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     this.parts.content?.build();
   }
 
-  /** @internal A panel with nothing focusable in it takes focus itself, so Tab reaches it. */
+  /** @internal A panel with nothing focusable in it takes focus itself, so Tab reaches it; read from the markup, which lays nothing out. */
   updatePanelFocus(): void {
-    if (this.parts.shown) put(this, 'tabindex', hasFocusableIn(this) ? null : '0');
+    if (this.parts.shown) put(this, 'tabindex', holdsFocusable(this) ? null : '0');
   }
 
   /** @internal The `Tabs` closable setting changed. */

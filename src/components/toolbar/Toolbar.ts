@@ -10,7 +10,7 @@ import { commands } from '../../core/command-registry';
 import { namesCommands, runItem, valueOf } from '../../core/command-fields';
 import { moreMark } from '../../core/glyphs';
 import { isElement } from '../../core/node-kind';
-import { boxOf, isRendered, isRtl, measure, onLayout, readAgain, rectOf, styleOf } from '../../core/measure';
+import { boxOf, canMeasure, isRendered, isRtl, measure, onLayout, readAgain, rectOf, styleOf, type Size } from '../../core/measure';
 import { mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
@@ -53,7 +53,7 @@ interface Bar {
   room: number;
   gap: number;
   sizes: Map<Kid, number>;
-  /** The bar's own size along it, as its size watch reports it. */
+  /** The bar's own room along it, as its size watch reports it (its content box). */
   length: number;
   /** The bar is laid out on the page (no hidden part holds it). */
   shown: boolean;
@@ -74,8 +74,18 @@ interface Parts {
   restyleQueued: boolean;
   /** The bar's parts as put back for the next overflow reading. */
   laying: readonly Kid[];
-  /** The size along the bar the last size change was laid out for. */
+  /** The room along the bar the last fit was laid out for. */
   laidOut: number;
+  /** The room along the bar as its size observer last told it; null until it does. */
+  room: number | null;
+  /** The gap between the bar's parts, as last read with its look. */
+  gap: number | null;
+  /** Each part's size along the bar, as last laid out on it (-1: it does not show); a part in the "more" menu keeps it. */
+  sizes: Map<ComponentBase, number>;
+  /** The size watches of the parts. */
+  watched: Map<ComponentBase, () => void>;
+  /** The parts the last fit put in the "more" menu (separators too). */
+  out: Set<ComponentBase>;
   /** The "more" button's size along the bar as last measured; null until it is, and after a change of look. */
   moreLength: number | null;
   itemClick: Emitter<ToolbarItemClickEventArgs>;
@@ -234,6 +244,11 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       restyleQueued: false,
       laying: [],
       laidOut: -1,
+      room: null,
+      gap: null,
+      sizes: new Map(),
+      watched: new Map(),
+      out: new Set(),
       moreLength: null,
       itemClick: new Emitter(),
     };
@@ -393,7 +408,9 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     return true;
   }
 
-  private childrenChanged(): void {
+  /** A control added to the bar or taken away: the arrows and the room follow. The "more" button is no part of the bar. */
+  private childChanged(control: ComponentBase): void {
+    if (control === this.parts.more) return;
     this.queueRestyle();
     this.layout();
   }
@@ -448,17 +465,79 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   // Overflow.
 
-  /** Puts back every item, then has the overflow read with the window's next frame (`menu` mode only). */
+  /**
+   * Puts back every item, then has the overflow read with the window's next frame (`menu` mode only): for a new look, new
+   * parts or another orientation, which change the sizes of the parts.
+   */
   private layout(): void {
     untracked(() => {
       const parts = this.parts;
       parts.laying = this.kids();
+      this.watchKids(parts.laying);
+      parts.out.clear();
       for (const kid of parts.laying) mark(kid.part, 'data-overflowed', false);
       if (parts.more) mark(parts.more, 'data-idle', true);
       if (this.menuMode()) measure(this, this.readBar, this.fit);
       else this.showOverflow([]);
     });
   }
+
+  /**
+   * Fits the parts into the room again from their sizes as last laid out, which the size observers keep: a change of the
+   * bar's room or of a part's size lays nothing out to read. Without them yet, it puts every part back and reads.
+   */
+  private refit(): void {
+    if (this.menuMode()) measure(this, this.readKnown, this.fitKnown);
+  }
+
+  /** Each part of the bar tells its size as the browser lays it out; a part that leaves the bar stops. */
+  private watchKids(kids: readonly Kid[]): void {
+    const parts = this.parts;
+    const now = new Set(kids.map((kid) => kid.part));
+    for (const [part, stop] of parts.watched) {
+      if (now.has(part)) continue;
+      stop();
+      parts.watched.delete(part);
+      parts.sizes.delete(part);
+    }
+    for (const part of now) {
+      if (parts.watched.has(part)) continue;
+      parts.watched.set(part, onLayout(part, 'size', (size) => this.kidResized(part, size), { owner: this }));
+    }
+  }
+
+  private kidResized(part: ComponentBase, size: Size): void {
+    const parts = this.parts;
+    const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
+    // Not laid out (no box at all): in the "more" menu it keeps the size it had on the bar; elsewhere it does not show.
+    const laidOut = size.width > 0 || size.height > 0 || !canMeasure(part);
+    if (!laidOut && parts.out.has(part)) return;
+    const along = laidOut ? (vertical ? size.height : size.width) : -1;
+    const known = parts.sizes.get(part);
+    if (known !== undefined && Math.abs(known - along) < 0.5) return;
+    parts.sizes.set(part, along);
+    if (known !== undefined) this.refit();
+  }
+
+  /** The bar as last laid out, from what the size observers told: nothing is read. `null` while a size is not known. */
+  private readonly readKnown = (): Bar | null => {
+    const parts = this.parts;
+    if (parts.room === null || parts.gap === null) return null;
+    const kids = this.kids();
+    const sizes = new Map<Kid, number>();
+    for (const kid of kids) {
+      if (!this.shownInBar(kid.part)) continue;
+      const size = parts.sizes.get(kid.part);
+      if (size === undefined) return null;
+      if (size >= 0) sizes.set(kid, size);
+    }
+    return { kids, room: parts.room, gap: parts.gap, sizes, length: parts.room, shown: parts.room > 0 };
+  };
+
+  private readonly fitKnown = (bar: Bar | null): void => {
+    if (bar) this.fit(bar);
+    else this.layout();
+  };
 
   private menuMode(): boolean {
     return (this.peekProperty<ToolbarOverflow>('overflow') ?? 'menu') === 'menu';
@@ -472,26 +551,36 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     const length = (name: keyof typeof style) => parseFloat(style[name]) || 0;
     const padding = vertical ? length('padding-top') + length('padding-bottom') : length('padding-left') + length('padding-right');
     const sizes = new Map<Kid, number>();
+    const known = this.parts.sizes;
     for (const kid of kids) {
-      if (!isRendered(kid.part)) continue;
+      if (!isRendered(kid.part)) {
+        known.set(kid.part, -1);
+        continue;
+      }
       const rect = rectOf(kid.part);
-      sizes.set(kid, vertical ? rect.height : rect.width);
+      const size = vertical ? rect.height : rect.width;
+      sizes.set(kid, size);
+      known.set(kid.part, size);
     }
-    return {
-      kids,
-      room: (vertical ? box.clientHeight : box.clientWidth) - padding,
-      gap: length(vertical ? 'row-gap' : 'column-gap'),
-      sizes,
-      length: vertical ? box.offsetHeight : box.offsetWidth,
-      shown: isRendered(this),
-    };
+    const room = (vertical ? box.clientHeight : box.clientWidth) - padding;
+    const gap = length(vertical ? 'row-gap' : 'column-gap');
+    this.parts.gap = gap;
+    this.parts.room = room;
+    return { kids, room, gap, sizes, length: room, shown: isRendered(this) };
   };
 
   /** Moves into the "more" menu what does not fit (and what always goes there). */
   private readonly fit = (bar: Bar): void => {
     this.parts.laidOut = bar.length;
     // A bar that does not show has no room to fit into: nothing moves, and its size notice fits it once it shows.
-    if (this.menuMode()) untracked(() => this.showOverflow(bar.shown ? this.findOverflow(bar) : []));
+    if (!this.menuMode()) return;
+    untracked(() => {
+      const out = bar.shown ? this.findOverflow(bar) : [];
+      // A fit from the sizes known puts back what fits now.
+      for (const kid of bar.kids) if (!out.includes(kid)) mark(kid.part, 'data-overflowed', false);
+      this.parts.out = new Set(out.map((kid) => kid.part));
+      this.showOverflow(out);
+    });
   };
 
   private showOverflow(out: readonly Kid[]): void {
@@ -557,6 +646,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     parts.styled.add(more);
     more.class.add('mx-toolbar__more');
     mark(more, 'data-idle', true);
+    // Known before it is added: the bar's parts never count it.
+    parts.more = more;
     this.controls.add(more);
     const face = more.faceComponent;
     parts.stopMoreLabel = onLanguage(this, () => {
@@ -564,7 +655,6 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       put(face, 'aria-label', label);
       put(face, 'title', label);
     });
-    parts.more = more;
     return more;
   }
 
@@ -596,8 +686,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       untracked(() => this.renderRoving());
     });
     // A control added or taken away (an item, a JSX child, `controls.add`): the arrows and the room follow.
-    void this.motif.on('controladded', () => this.childrenChanged(), false);
-    void this.motif.on('controlremoved', () => this.childrenChanged(), false);
+    void this.motif.on('controladded', (_sender, e: { control: ComponentBase }) => this.childChanged(e.control), false);
+    void this.motif.on('controlremoved', (_sender, e: { control: ComponentBase }) => this.childChanged(e.control), false);
     // Another design language, theme or density: the controls have other sizes.
     this.motif.setDisposable(
       onLayout(this, 'look', () => {
@@ -605,11 +695,18 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
         this.layout();
       }),
     );
+    // Its room: the content box, as the observer tells it once the browser laid it out.
     this.motif.setDisposable(
-      onLayout(this, 'size', (size) => {
-        const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
-        if ((vertical ? size.height : size.width) !== parts.laidOut) this.layout();
-      }),
+      onLayout(
+        this,
+        'size',
+        (size) => {
+          const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
+          parts.room = vertical ? size.height : size.width;
+          if (Math.abs(parts.room - parts.laidOut) >= 0.5) this.refit();
+        },
+        { box: 'content' },
+      ),
     );
   }
 

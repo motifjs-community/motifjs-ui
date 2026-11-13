@@ -1,7 +1,7 @@
 import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { setAccessKeyAttribute } from '../../core/access-key';
 import { follow } from '../../core/follow';
-import { canTakeFocus, focusFirstIn, focusOn, hasFocusableIn, isFocused, rememberFocus } from '../../core/focus';
+import { canTakeFocus, focusFirstIn, focusOn, holdsFocusable, isFocused, rememberFocus } from '../../core/focus';
 import type { FocusMark } from '../../core/focus-mark';
 import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
 import { keepScroll } from '../../core/measure';
@@ -127,9 +127,9 @@ export class DocumentTab {
     return true;
   }
 
-  /** A panel with nothing to focus in it takes focus itself, so Tab reaches it. */
+  /** A panel with nothing to focus in it takes focus itself, so Tab reaches it; read from the markup, which lays nothing out (it runs when a document moves). */
   updatePanelFocus(): void {
-    if (this.shown) put(this.panel, 'tabindex', hasFocusableIn(this.panel) ? null : '0');
+    if (this.shown) put(this.panel, 'tabindex', holdsFocusable(this.panel) ? null : '0');
   }
 
   /** Whether an event started on the tab's close button. */
