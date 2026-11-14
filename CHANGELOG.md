@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.12] - 2026-11-14
+
+Needs `@motifx/core` 1.2.0-rc.30.
+
 ### Added
 
 - `normalizeKey` on a `DataGrid` lookup column, `DropDown`, `TagBox`, `ComboBox`, `ListBox` and a `FilterBuilder`
