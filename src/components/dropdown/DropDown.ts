@@ -19,13 +19,14 @@ import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import { TextBox } from '../textbox/TextBox';
 import type { DropDownProps } from './drop-down-props';
+import type { NormalizeKey } from '../../parts/data/normalize-key';
 import { onLanguage } from '../../core/on-language';
 import { foldText } from '../../core/fold-text';
 
 const OWN = ['items', 'dataSource', 'valueText', 'placeholder', 'searchEnabled', 'searchMode', 'searchDelay', 'clearButton', 'matchWidth'] as const;
 
 /** Props whose value may be a function of its own. */
-const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enabledField', 'itemTemplate', 'fieldTemplate'] as const;
+const FUNCTIONS = ['textField', 'valueField', 'normalizeKey', 'iconField', 'groupField', 'enabledField', 'itemTemplate', 'fieldTemplate'] as const;
 
 type Template<T> = ((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null;
 
@@ -107,6 +108,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       () => {
         void this.getProperty('textField');
         void this.getProperty('valueField');
+        parts.source.normalizeKey = this.getProperty<NormalizeKey | undefined>('normalizeKey') ?? undefined;
         return {
           // A refresh or a choice draws the value again: an app's template reads its item as it is now.
           tick: `${this.getProperty('chosenTick') ?? 0}|${this.getProperty('refreshed') ?? 0}`,
@@ -153,6 +155,12 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   }
   set valueField(value: Bind<ItemField<T>>) {
     this.assignProperty('valueField', functionValue(value));
+  }
+  get normalizeKey(): NormalizeKey | undefined {
+    return this.getProperty<NormalizeKey | undefined>('normalizeKey');
+  }
+  set normalizeKey(value: Bind<NormalizeKey>) {
+    this.assignProperty('normalizeKey', functionValue(value));
   }
   get iconField(): ItemField<T> | undefined {
     return this.getProperty<ItemField<T> | undefined>('iconField');
@@ -383,23 +391,28 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     return itemOwnValue(item);
   }
 
+  /** The test for the item of `value`: the same value, the same once normalized, or the one the data source matched to it. */
+  private holderOf(value: V | null): (item: T) => boolean {
+    return this.dropParts.source.matcher(value, (item) => this.itemValue(item), (a, b) => this.sameValue(a as V | null, b as V | null));
+  }
+
   private indexOfValue(): number {
-    const value = this.peekValue();
+    const holds = this.holderOf(this.peekValue());
     const list = this.dropParts.list;
     if (this.dropParts.source.dataSource && list) {
       for (let i = 0; i < list.count; i++) {
         const item = list.itemOf(i);
-        if (item !== undefined && this.sameValue(this.itemValue(item) as V | null, value)) return i;
+        if (item !== undefined && holds(item)) return i;
       }
       return -1;
     }
-    return this.visibleItems().findIndex((item) => this.sameValue(this.itemValue(item) as V | null, value));
+    return this.visibleItems().findIndex(holds);
   }
 
   /** The item of `value`: among the items in memory, or the one known from a data source (asked by key when needed). */
   private itemOfValue(items: readonly T[], value: V | null): T | undefined {
     const parts = this.dropParts;
-    const same = (item: T) => this.sameValue(this.itemValue(item) as V | null, value);
+    const same = this.holderOf(value);
     if (!parts.source.dataSource) return givenList(items).find(same);
     // An empty text is no value, as the data source counts it: nothing to ask for.
     if (isEmptyKey(value)) return undefined;
@@ -605,7 +618,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     const list = new OptionList<T>();
     list.textOf = (item) => this.itemText(item);
     list.enabledOf = (item) => readItemField(item, this.peekProperty<ItemField<T>>('enabledField'), 'enabled') !== false;
-    list.isSelected = (item) => this.sameValue(this.itemValue(item) as V | null, this.peekValue());
+    list.isSelected = (item) => this.holderOf(this.peekValue())(item);
     // A list from a data source says it is loading until its rows arrive, not that there are none.
     list.emptyText = () => (parts.source.loading ? uiLocale.strings.loading : uiLocale.strings.noItems);
     list.onChosen((e) => this.choose(e.item, e.event));

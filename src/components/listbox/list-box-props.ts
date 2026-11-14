@@ -1,6 +1,7 @@
 import type { Bind } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 import type { FieldProps } from '../../parts/field/field-props';
+import type { NormalizeKey } from '../../parts/data/normalize-key';
 import type { ItemField } from '../../parts/list/item-field';
 import type { ItemTemplate } from './item-template';
 import type { ListSelectionMode } from './list-selection-mode';
@@ -13,6 +14,11 @@ export interface ListBoxProps<T, V> extends FieldProps<V | V[] | null> {
   dataSource?: Bind<data.DataSource<T, unknown> | null>;
   textField?: Bind<ItemField<T>>;
   valueField?: Bind<ItemField<T>>;
+  /**
+   * Values equal once normalized are one value (`NormalizeKey`). Without it, the item of a value a data source compares
+   * its own way (`'A  '` for `'A'`, a different case) is still found: the source is asked for it and decides.
+   */
+  normalizeKey?: Bind<NormalizeKey>;
   iconField?: Bind<ItemField<T>>;
   /** Applies to in-memory items only. */
   groupField?: Bind<ItemField<T>>;

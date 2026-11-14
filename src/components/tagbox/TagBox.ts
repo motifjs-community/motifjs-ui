@@ -7,6 +7,7 @@ import { functionValue } from '../../core/function-value';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { DataItems } from '../../parts/data/DataItems';
+import type { NormalizeKey } from '../../parts/data/normalize-key';
 import { Field } from '../../parts/field/Field';
 import { pressedFocusable } from '../../parts/field/pressed-focusable';
 import type { ItemField } from '../../parts/list/item-field';
@@ -47,7 +48,7 @@ const OWN = [
   'matchWidth',
 ] as const;
 
-const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enabledField', 'itemTemplate', 'tagTemplate', 'customValue'] as const;
+const FUNCTIONS = ['textField', 'valueField', 'normalizeKey', 'iconField', 'groupField', 'enabledField', 'itemTemplate', 'tagTemplate', 'customValue'] as const;
 
 /** Props the open list depends on. */
 const LIST_LOOK = ['selectAll', 'hideSelected', 'maxSelected', 'textField', 'iconField', 'groupField', 'enabledField', 'itemTemplate'] as const;
@@ -150,7 +151,14 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.observeProperty('matchWidth', (on) => {
       if (parts.popup) parts.popup.matchWidth = on !== false;
     });
-    this.observeProperty('valueField', () => {
+    this.observeProperty<ItemField<T> | undefined>('valueField', (field) => {
+      // A value field by name lets a value on no loaded page be asked for by that field.
+      parts.items.valueField = typeof field === 'string' ? field : undefined;
+      parts.known.clear();
+      this.renderValue(this.peekValue());
+    });
+    this.observeProperty<NormalizeKey | undefined>('normalizeKey', (rule) => {
+      parts.items.normalizeKey = rule ?? undefined;
       parts.known.clear();
       this.renderValue(this.peekValue());
     });
@@ -207,6 +215,12 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   }
   set valueField(value: Bind<ItemField<T>>) {
     this.assignProperty('valueField', functionValue(value));
+  }
+  get normalizeKey(): NormalizeKey | undefined {
+    return this.getProperty<NormalizeKey | undefined>('normalizeKey');
+  }
+  set normalizeKey(value: Bind<NormalizeKey>) {
+    this.assignProperty('normalizeKey', functionValue(value));
   }
   get iconField(): ItemField<T> | undefined {
     return this.getProperty<ItemField<T> | undefined>('iconField');
@@ -467,6 +481,12 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     return String(readItemField(item, this.peekProperty<ItemField<T>>('textField'), 'text') ?? '');
   }
 
+  /** Whether `item` is chosen: its value is, or a chosen value stands for it (`DataItems.sameItem`). */
+  private isChosen(item: T): boolean {
+    const parts = this.tagParts;
+    return parts.items.heldIn(parts.chosen, this.itemValue(item)) !== null;
+  }
+
   protected itemValue(item: T): unknown {
     const field = this.peekProperty<ItemField<T>>('valueField');
     if (field !== undefined) return readItemField(item, field, 'value');
@@ -535,7 +555,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
 
   private allState(): boolean | 'mixed' {
     const parts = this.tagParts;
-    return selectAllState(parts.items, parts.chosen, (item) => this.itemValue(item), (item) => this.canChoose(item));
+    return selectAllState(parts.items, parts.chosen, (item) => this.isChosen(item), (item) => this.canChoose(item));
   }
 
   private renderSource(): void {
@@ -684,9 +704,9 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     list.enabledOf = (row) => {
       if (row === selectAllRow) return true;
       const item = row as T;
-      return this.canChoose(item) && (!this.atLimit() || parts.chosen.has(this.itemValue(item)));
+      return this.canChoose(item) && (!this.atLimit() || this.isChosen(item));
     };
-    list.isSelected = (row) => (row === selectAllRow ? this.allState() === true : parts.chosen.has(this.itemValue(row as T)));
+    list.isSelected = (row) => (row === selectAllRow ? this.allState() === true : this.isChosen(row as T));
     list.emptyText = () => (parts.items.loading ? uiLocale.strings.loading : uiLocale.strings.noItems);
     list.onChosen((e) => this.chosen(e));
     popup.controls.add(list);
@@ -731,7 +751,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       list.groupOf =
         group === undefined ? null : (row) => (row === selectAllRow ? undefined : ((readItemField(row as T, group, 'group') as string | undefined) ?? undefined));
       let shown = parts.items.loaded;
-      if (this.peekProperty('hideSelected')) shown = shown.filter((item) => !parts.chosen.has(this.itemValue(item)));
+      if (this.peekProperty('hideSelected')) shown = shown.filter((item) => !this.isChosen(item));
       list.setItems(withAll && shown.length ? [selectAllRow, ...shown] : shown);
     }
     this.pointAt();
@@ -834,9 +854,10 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     if (!this.canChange() || !this.canChoose(item)) return;
     const value = this.itemValue(item) as V;
     const values = this.values();
-    if (parts.chosen.has(value)) {
+    const held = parts.items.heldIn(parts.chosen, value);
+    if (held) {
       this.commit(
-        values.filter((v) => !Object.is(v, value)),
+        values.filter((v) => !Object.is(v, held.value)),
         event,
       );
     } else {
@@ -869,7 +890,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const make = this.peekProperty<((text: string) => V | null) | null>('customValue');
     const value = make ? make(text) : (text as unknown as V);
     if (value === null || value === undefined || this.atLimit()) return false;
-    if (!this.tagParts.chosen.has(value)) this.commit([...this.values(), value], event);
+    if (!this.tagParts.items.heldIn(this.tagParts.chosen, value)) this.commit([...this.values(), value], event);
     this.chosenDone();
     return true;
   }
@@ -887,7 +908,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const current = this.values();
     const chosen = new Set<unknown>(current);
     const set = new Set<unknown>(shown);
-    let next = on ? [...current, ...shown.filter((v) => !chosen.has(v))] : current.filter((v) => !set.has(v));
+    let next = on ? [...current, ...shown.filter((v) => !parts.items.heldIn(chosen, v))] : current.filter((v) => !parts.items.heldIn(set, v));
     const max = this.peekProperty<number>('maxSelected') ?? 0;
     if (max > 0 && next.length > max) next = next.slice(0, Math.max(max, current.length));
     this.commit(next, event);

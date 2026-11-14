@@ -29,6 +29,7 @@
   "The list, the list box and the field.": "Liste, liste kutusu ve field.",
   "The values of the selected items. `x-model` binds them, and every change writes a new array.": "Seçili öğelerin değerleri. `x-model` bunları bağlar, her değişiklik yeni bir dizi yazar.",
   "Same as ListBox. Groups apply to in-memory items.": "ListBox ile aynı. Gruplar bellekteki öğelere uygulanır.",
+  "Same as DropDown.": "DropDown ile aynı.",
   "How and when typed text searches, as in ComboBox.": "ComboBox'taki gibi yazılan metnin nasıl ve ne zaman aradığı.",
   "Pressing Enter adds text that matches no item as a custom tag.": "Enter, hiçbir öğeyle eşleşmeyen metni özel etiket olarak ekler.",
   "The text": "Metin",

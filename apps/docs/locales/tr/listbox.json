@@ -32,6 +32,7 @@
   "The selected value (single) or values (multiple). `x-model` binds it, and a change writes a new array.": "Seçili değer (tekli) veya değerler (çoklu). `x-model` bunu bağlar, değişiklik yeni bir dizi yazar.",
   "An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server. A data source takes precedence.": "Bellekteki bir dizi (arama istemcide yapılır) veya bir `@motifx-community/data` veri kaynağı (arama sunucuda yapılır). Veri kaynağı önceliklidir.",
   "A property name or a function `(item) => …`. Plain values serve as their own text and value.": "Property adı veya `(item) => …` function'ı. Düz değerler kendi metni ve değeri olarak kullanılır.",
+  "Same as DropDown.": "DropDown ile aynı.",
   "An icon for each item, headers between groups (in-memory items), and items that cannot be selected.": "Her öğe için ikon, gruplar arasında başlıklar (bellekteki öğeler) ve seçilemeyen öğeler.",
   "A single value, or an array of values.": "Tek değer veya değerler dizisi.",
   "In multiple selection, shows check boxes in front of the items. `false` draws a check mark instead, and a plain click selects only that item.": "Çoklu seçimde öğelerin önünde onay kutuları gösterir. `false` bunun yerine onay işareti çizer ve düz tıklama yalnızca o öğeyi seçer.",

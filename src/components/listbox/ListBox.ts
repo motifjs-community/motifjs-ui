@@ -6,6 +6,7 @@ import { css, mark, put, text as writeText } from '../../core/part-writes';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { DataItems } from '../../parts/data/DataItems';
+import type { NormalizeKey } from '../../parts/data/normalize-key';
 import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import type { OptionChosenEventArgs } from '../../parts/list/option-chosen-event-args';
@@ -38,7 +39,7 @@ const OWN = [
   'noItemsText',
 ] as const;
 
-const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enabledField', 'itemTemplate'] as const;
+const FUNCTIONS = ['textField', 'valueField', 'normalizeKey', 'iconField', 'groupField', 'enabledField', 'itemTemplate'] as const;
 
 /** Props the drawn rows depend on. */
 const LOOK = ['selectionMode', 'showCheckBoxes', 'selectAll', 'textField', 'iconField', 'groupField', 'enabledField', 'itemTemplate', 'noItemsText'] as const;
@@ -91,7 +92,14 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     this.observeProperty('searchEnabled', () => this.renderSearch());
     this.observeProperty<number | string | null>('height', (height) => this.renderHeight(height));
     this.observeProperty<ListSelectionMode>('selectionMode', (mode) => put(this, 'data-selection-mode', mode ?? 'single'));
-    this.observeProperty('valueField', () => {
+    this.observeProperty<ItemField<T> | undefined>('valueField', (field) => {
+      // A value field by name lets a value on no loaded page be asked for by that field.
+      parts.items.valueField = typeof field === 'string' ? field : undefined;
+      parts.known.clear();
+      this.renderValue(this.peekValue());
+    });
+    this.observeProperty<NormalizeKey | undefined>('normalizeKey', (rule) => {
+      parts.items.normalizeKey = rule ?? undefined;
       parts.known.clear();
       this.renderValue(this.peekValue());
     });
@@ -136,6 +144,12 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
   }
   set valueField(value: Bind<ItemField<T>>) {
     this.assignProperty('valueField', functionValue(value));
+  }
+  get normalizeKey(): NormalizeKey | undefined {
+    return this.getProperty<NormalizeKey | undefined>('normalizeKey');
+  }
+  set normalizeKey(value: Bind<NormalizeKey>) {
+    this.assignProperty('normalizeKey', functionValue(value));
   }
   get iconField(): ItemField<T> | undefined {
     return this.getProperty<ItemField<T> | undefined>('iconField');
@@ -305,6 +319,12 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     return String(readItemField(item, this.peekProperty<ItemField<T>>('textField'), 'text') ?? '');
   }
 
+  /** Whether `item` is chosen: its value is, or a chosen value stands for it (`DataItems.sameItem`). */
+  private isChosen(item: T): boolean {
+    const parts = this.listParts;
+    return parts.items.heldIn(parts.chosen, this.itemValue(item)) !== null;
+  }
+
   protected itemValue(item: T): unknown {
     const field = this.peekProperty<ItemField<T>>('valueField');
     if (field !== undefined) return readItemField(item, field, 'value');
@@ -337,7 +357,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
   private setUpList(list: OptionList<T | SelectAllRow>): void {
     list.textOf = (row) => (row === selectAllRow ? '' : this.itemText(row as T));
     list.enabledOf = (row) => row === selectAllRow || this.canChoose(row as T);
-    list.isSelected = (row) => (row === selectAllRow ? this.allState() === true : this.listParts.chosen.has(this.itemValue(row as T)));
+    list.isSelected = (row) => (row === selectAllRow ? this.allState() === true : this.isChosen(row as T));
     list.emptyText = () => this.peekProperty<string>('noItemsText') || (this.listParts.items.loading ? uiLocale.strings.loading : uiLocale.strings.noItems);
   }
 
@@ -378,7 +398,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
 
   private allState(): boolean | 'mixed' {
     const parts = this.listParts;
-    return selectAllState(parts.items, parts.chosen, (item) => this.itemValue(item), (item) => this.canChoose(item));
+    return selectAllState(parts.items, parts.chosen, (item) => this.isChosen(item), (item) => this.canChoose(item));
   }
 
   private renderSource(): void {
@@ -538,7 +558,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       if (parts.chosen.size) {
         for (let i = 0; i < list.count && index < 0; i++) {
           const row = list.itemOf(i);
-          if (row !== undefined && row !== selectAllRow && parts.chosen.has(this.itemValue(row as T))) index = i;
+          if (row !== undefined && row !== selectAllRow && this.isChosen(row as T)) index = i;
         }
       }
       if (index >= 0) list.setActive(index);
@@ -632,8 +652,9 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     }
     const values = this.valuesOf(this.peekValue());
     let next: unknown[];
+    const held = parts.items.heldIn(parts.chosen, value);
     if (how === 'only') next = [value];
-    else if (parts.chosen.has(value)) next = how === 'toggle' ? values.filter((v) => !Object.is(v, value)) : values;
+    else if (held) next = how === 'toggle' ? values.filter((v) => !Object.is(v, held.value)) : values;
     else next = [...values, value];
     this.commit(next as V[], event);
   }
@@ -649,7 +670,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       const row = parts.list.itemOf(i);
       if (row === undefined || row === selectAllRow || !this.canChoose(row as T)) continue;
       const value = this.itemValue(row as T);
-      if (!next.some((v) => Object.is(v, value))) next.push(value);
+      if (!next.some((v) => parts.items.sameItem(v, value))) next.push(value);
     }
     this.commit(next as V[], event);
   }
@@ -668,7 +689,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     const current = this.valuesOf(this.peekValue());
     const chosen = new Set(current);
     const set = new Set(shown);
-    const next = on ? [...current, ...shown.filter((v) => !chosen.has(v))] : current.filter((v) => !set.has(v));
+    const next = on ? [...current, ...shown.filter((v) => !parts.items.heldIn(chosen, v))] : current.filter((v) => !parts.items.heldIn(set, v));
     this.commit(next as V[], event);
   }
 }

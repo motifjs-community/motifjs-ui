@@ -18,7 +18,18 @@ type Entry = { value: unknown; text: string; count?: number };
  * source itself. Keys become texts through the column's shared cache.
  */
 export class LookupValues<T> {
+  /** By column, the keys each entry of its last list stands for, when the source matched more than one key to its item. */
+  private readonly merged = new Map<string, Map<string, unknown[]>>();
+
   constructor(private readonly model: GridModel<T>) {}
+
+  /** The keys `value` stands with in the column's list (see `FilterModel.keysOf`): itself alone, unless its entry holds several. */
+  keysOf(field: string, value: unknown): readonly unknown[] {
+    const byKey = this.merged.get(field);
+    if (!byKey?.size) return [value];
+    const items = this.model.lookups.items(this.model.columns.get(field));
+    return byKey.get(items ? items.keyStringOf(value) : String(value)) ?? [value];
+  }
 
   /** The filter of the other columns (and the source's own), which a synced list honors. */
   otherFilter(field: string): data.FilterExpression | null {
@@ -88,9 +99,23 @@ export class LookupValues<T> {
         }
       }
       await items?.request([...counts.values()].map((b) => b.value));
+      // Keys the source matched to one item (`'A'` and `'A  '` where it disregards trailing spaces) are one entry,
+      // which filters by all of them.
+      const byItem = new Map<string, { value: unknown; count: number; keys: unknown[] }>();
+      for (const b of counts.values()) {
+        const id = b.value === null ? '' : items ? `i${items.itemKeyOf(b.value)}` : `v${typeof b.value}:${String(b.value)}`;
+        const one = byItem.get(id);
+        if (one) {
+          one.count += b.count;
+          one.keys.push(b.value);
+        } else byItem.set(id, { value: b.value, count: b.count, keys: [b.value] });
+      }
+      const merged = new Map<string, unknown[]>();
+      for (const one of byItem.values()) if (one.keys.length > 1 && items) merged.set(items.keyStringOf(one.value), one.keys);
+      this.merged.set(field, merged);
       const lower = search.trim().toLocaleLowerCase(model.formatter.locale);
       const collator = model.formatter.collator;
-      const all = [...counts.values()]
+      const all = [...byItem.values()]
         .filter((b) => !lookups.isMissing(col, b.value))
         .map((b) => entry(b.value, b.count))
         .filter((e) => !lower || (e.value !== null && e.text.toLocaleLowerCase(model.formatter.locale).includes(lower)))

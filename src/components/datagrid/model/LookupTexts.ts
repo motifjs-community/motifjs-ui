@@ -38,13 +38,18 @@ export class LookupTexts<T> {
     if (!lookup) return null;
     const source = readField(lookup, 'dataSource');
     if (!source) return null;
-    const items = KeyedItems.of<any>(source, lookup.valueField);
+    const items = KeyedItems.of<any>(source, lookup.valueField, lookup.normalizeKey);
     if (lookup.resolve) items.resolve = lookup.resolve;
     if (lookup.batchSize) items.batchSize = lookup.batchSize;
     if (lookup.parallelRequests) items.parallelRequests = lookup.parallelRequests;
     if (lookup.pasteSearchLimit) items.pasteSearchLimit = lookup.pasteSearchLimit;
     if (!this.watched.has(items)) this.watched.set(items, items.onResolved((keys) => this.changedEmitter.fire({ items, keys })));
     return items;
+  }
+
+  /** The string a key of the column is kept under: by its cache (`normalizeKey`), else as it is. */
+  private keyOf(col: GridColumn<T>, value: unknown): string {
+    return this.items(col)?.keyStringOf(value) ?? KeyedItems.keyString(value);
   }
 
   /** The text of an item: `textField`, else its `text`, else its value. */
@@ -74,7 +79,7 @@ export class LookupTexts<T> {
   cell(col: GridColumn<T>, row: T | undefined, value: unknown, edited: boolean, ask = true): LookupCell {
     if (row === undefined || row === null || data.isEmpty(value)) return { text: '', state: 'none' };
     if (Array.isArray(value) && !(col.textFrom && !edited)) return this.listText(col, value, ask);
-    const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
+    const chosen = this.chosen.get(col.field)?.get(this.keyOf(col, value));
     if (chosen !== undefined) return { text: chosen, state: 'found' };
     if (col.textFrom && !edited) {
       const from = col.textFrom;
@@ -88,7 +93,7 @@ export class LookupTexts<T> {
   keyText(col: GridColumn<T>, value: unknown, ask = true): LookupCell {
     if (data.isEmpty(value)) return { text: '', state: 'none' };
     if (Array.isArray(value)) return this.listText(col, value, ask);
-    const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
+    const chosen = this.chosen.get(col.field)?.get(this.keyOf(col, value));
     if (chosen !== undefined) return { text: chosen, state: 'found' };
     const items = this.items(col);
     if (!items) return { text: String(value), state: 'none' };
@@ -119,7 +124,7 @@ export class LookupTexts<T> {
   textOfKey(col: GridColumn<T>, value: unknown): string {
     if (data.isEmpty(value)) return '';
     if (Array.isArray(value)) return joinItems(listValues(value).map((v) => this.textOfKey(col, v)), this.locale());
-    const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
+    const chosen = this.chosen.get(col.field)?.get(this.keyOf(col, value));
     if (chosen !== undefined) return chosen;
     const known = this.items(col)?.get(value);
     return known?.state === 'found' ? (known.text ?? this.textOf(col, known.item)) : String(value);
@@ -137,14 +142,14 @@ export class LookupTexts<T> {
     const text = typeof itemOrText === 'string' ? itemOrText : this.textOf(col, itemOrText);
     let byKey = this.chosen.get(col.field);
     if (!byKey) this.chosen.set(col.field, (byKey = new Map()));
-    byKey.set(KeyedItems.keyString(value), text);
+    byKey.set(this.keyOf(col, value), text);
     this.items(col)?.remember(value, itemOrText as object | string);
   }
 
   /** Whether the source said it does not have the key (a failed request does not count). */
   isMissing(col: GridColumn<T>, value: unknown): boolean {
     if (Array.isArray(value)) return listValues(value).some((v) => this.isMissing(col, v));
-    if (data.isEmpty(value) || this.chosen.get(col.field)?.has(KeyedItems.keyString(value))) return false;
+    if (data.isEmpty(value) || this.chosen.get(col.field)?.has(this.keyOf(col, value))) return false;
     const known = this.items(col)?.get(value);
     return known?.state === 'missing' && !known.failed;
   }
@@ -215,7 +220,7 @@ export class LookupTexts<T> {
     return (row) => {
       const value = cellValue(col, row);
       if (data.isEmpty(value)) return null;
-      const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
+      const chosen = this.chosen.get(col.field)?.get(this.keyOf(col, value));
       if (chosen !== undefined) return chosen;
       const known = this.items(col)?.get(value);
       return known?.state === 'found' ? (known.text ?? this.textOf(col, known.item)) : null;

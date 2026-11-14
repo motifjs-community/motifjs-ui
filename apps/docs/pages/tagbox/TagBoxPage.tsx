@@ -13,6 +13,7 @@ const PROPS = [
   ['value', '`Bind<V[]>`', '`[]`', 'The values of the selected items. `x-model` binds them, and every change writes a new array.'],
   ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server.'],
   ['textField, valueField, iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'Same as ListBox. Groups apply to in-memory items.'],
+  ['normalizeKey', '`Bind<NormalizeKey>`', '—', 'Same as DropDown.'],
   ['placeholder', '`Bind<string>`', "`''`", 'Displayed when no item is selected.'],
   ['searchMode, minSearchLength, searchDelay', '', "`'contains'`, `0`, `0` / `250`", 'How and when typed text searches, as in ComboBox.'],
   ['acceptCustomValue', '`Bind<boolean>`', '`false`', 'Pressing Enter adds text that matches no item as a custom tag.'],

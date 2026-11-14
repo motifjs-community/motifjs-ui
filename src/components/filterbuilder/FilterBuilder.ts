@@ -1119,7 +1119,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     if (lookup) {
       const source = givenField<data.DataSource<unknown, unknown> | readonly unknown[]>(lookup, 'dataSource');
       const from = Array.isArray(source) ? { items: source } : { dataSource: source };
-      const fields = { valueField: lookup.valueField, textField: lookup.textField };
+      const fields = { valueField: lookup.valueField, textField: lookup.textField, normalizeKey: lookup.normalizeKey };
       if (many) return new TagBox<unknown, unknown>({ ...from, ...fields, ...options, value: Array.isArray(value) ? [...value] : [], onValueChanged } as never);
       return new DropDown<unknown, unknown>({ ...from, ...fields, searchEnabled: true, clearButton: !!givenField(lookup, 'allowClearing'), ...options, value: empty(value) ? null : value, onValueChanged } as never);
     }

@@ -1,5 +1,6 @@
 import type { Bind } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import type { NormalizeKey } from '../../parts/data/normalize-key';
 
 /**
  * The source of a lookup column's text: the cell holds a key (a customer id), and the grid displays the
@@ -17,6 +18,13 @@ export interface GridLookup<T = any> {
    * array of plain values, the value itself.
    */
   valueField?: string;
+  /**
+   * Keys equal once normalized are one key (`NormalizeKey`), such as `(k) => (typeof k === 'string' ? k.trimEnd() : k)`
+   * for codes a database pads with spaces. Without it, a key the source compares its own way (`'A  '` for `'A'`, a
+   * different case) is still matched: the source is asked for it and decides. Give it to spare those requests, and for
+   * an in-memory array, where no source decides. Give one function wherever the source is used, so they share a cache.
+   */
+  normalizeKey?: NormalizeKey;
   /** The displayed text: a field of the item or a function of it. The default is the value. */
   textField?: string | ((item: any) => string);
   /** The fields the editor and the text search cover. By default, `textField` when it is a field. */

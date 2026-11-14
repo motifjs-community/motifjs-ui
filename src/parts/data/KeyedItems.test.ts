@@ -211,3 +211,150 @@ describe('KeyedItems', () => {
     expect(most).toBe(6);
   });
 });
+
+type Code = { id: string; code: string; text: string };
+
+/**
+ * A pretend service that compares keys its own way, as a database does (`same`): in a batch filter, in a one-field
+ * filter and by key. It records every load and every one-key request.
+ */
+class OwnWay extends data.ArrayAdapter<Code, string> {
+  readonly loads: data.LoadOptions[] = [];
+  readonly byKeys: string[] = [];
+
+  constructor(
+    rows: Code[],
+    private readonly same: (a: unknown, b: unknown) => boolean,
+  ) {
+    super({ data: rows.map((r) => ({ ...r })), key: 'id' });
+  }
+
+  protected override async loadRows(options: data.LoadOptions): Promise<data.LoadResult<Code>> {
+    this.loads.push(options);
+    const f = options.filter as { field?: string; op?: string; value?: unknown } | null | undefined;
+    if (f && f.field && (f.op === 'in' || f.op === '=')) {
+      const wanted = f.op === 'in' ? (f.value as unknown[]) : [f.value];
+      const { rows } = await super.loadRows({});
+      const found = rows.filter((row) => wanted.some((w) => this.same((row as Record<string, unknown>)[f.field!], w)));
+      return { rows: options.take ? found.slice(0, options.take) : found, total: found.length };
+    }
+    return super.loadRows(options);
+  }
+
+  protected override async findRow(key: string): Promise<Code | undefined> {
+    this.byKeys.push(key);
+    const { rows } = await super.loadRows({});
+    return rows.find((row) => this.same(row.id, key));
+  }
+}
+
+const trailingSpaces = (a: unknown, b: unknown) => String(a).trimEnd() === String(b).trimEnd();
+const noCase = (a: unknown, b: unknown) => String(a).toLowerCase() === String(b).toLowerCase();
+const CODES: Code[] = [
+  { id: 'A', code: 'a1', text: 'Group A' },
+  { id: 'B', code: 'b1', text: 'Group B' },
+  { id: 'C', code: 'c1', text: 'Group C' },
+];
+const codes = (adapter: OwnWay) => new data.DataSource<Code, string>({ adapter, loadMode: 'page' });
+
+describe('KeyedItems with a source that compares keys its own way', () => {
+  it('asks for the keys a batch left over one by one, and takes what the source answers for each', async () => {
+    const service = new OwnWay(CODES, trailingSpaces);
+    const items = KeyedItems.of<Code>(codes(service));
+    await items.request(['A  ', 'B']);
+    expect(items.get('A  ')).toEqual({ state: 'found', item: CODES[0] });
+    expect(items.get('B')).toEqual({ state: 'found', item: CODES[1] });
+    // One batch, then the key that matched nothing here, alone.
+    expect(service.loads.length).toBe(1);
+    expect(service.byKeys).toEqual(['A  ']);
+    // Keys the source matched to the same item stand for one item.
+    expect(items.itemKeyOf('A  ')).toBe(items.itemKeyOf('A'));
+    expect(items.itemKeyOf('A  ')).not.toBe(items.itemKeyOf('B'));
+  });
+
+  it('follows a source that disregards case, such as an id written in capitals', async () => {
+    const service = new OwnWay([{ id: '3F2504E0-4F89', code: 'x', text: 'Item' }], noCase);
+    const items = KeyedItems.of<Code>(codes(service));
+    await items.request(['3f2504e0-4f89']);
+    expect(items.get('3f2504e0-4f89')?.item?.text).toBe('Item');
+  });
+
+  it('finds nothing the source does not match: a source that keeps case has no item for another case', async () => {
+    const service = new OwnWay(CODES, (a, b) => a === b);
+    const items = KeyedItems.of<Code>(codes(service));
+    await items.request(['A', 'a']);
+    expect(items.get('A')?.state).toBe('found');
+    // 'a' looks like 'A', so the source is asked for it alone, and it has none.
+    expect(items.get('a')).toEqual({ state: 'missing' });
+    expect(service.byKeys).toEqual(['a']);
+  });
+
+  it('asks for the keys left over parallelRequests at a time', async () => {
+    const many: Code[] = Array.from({ length: 12 }, (_, i) => ({ id: `K${i}`, code: `k${i}`, text: `Item ${i}` }));
+    const service = new OwnWay(many, trailingSpaces);
+    let running = 0;
+    let most = 0;
+    const real = service.byKey.bind(service);
+    service.byKey = async (key, options) => {
+      running++;
+      most = Math.max(most, running);
+      await new Promise((r) => setTimeout(r, 1));
+      running--;
+      return real(key, options);
+    };
+    const items = KeyedItems.of<Code>(codes(service));
+    items.parallelRequests = 3;
+    await items.request(many.map((c) => `${c.id}  `));
+    expect(items.get('K11  ')?.item?.text).toBe('Item 11');
+    expect(most).toBe(3);
+  });
+
+  it('asks nothing more for a key that is simply not in the source', async () => {
+    const service = new OwnWay(CODES, trailingSpaces);
+    const items = KeyedItems.of<Code>(codes(service));
+    await items.request(['B', 'Z']);
+    expect(items.get('Z')).toEqual({ state: 'missing' });
+    expect(service.loads.length).toBe(1);
+    expect(service.byKeys).toEqual([]);
+  });
+
+  it('asks by the value field alone when the value is not the key', async () => {
+    const service = new OwnWay(CODES, trailingSpaces);
+    const items = KeyedItems.of<Code>(codes(service), 'code');
+    await items.request(['a1   ', 'c1']);
+    expect(items.get('a1   ')?.item?.text).toBe('Group A');
+    expect(items.get('c1')?.item?.text).toBe('Group C');
+    expect(service.byKeys).toEqual([]);
+    const alone = service.loads.at(-1)!;
+    expect(alone.filter).toEqual(data.where('code', '=', 'a1   '));
+    expect(alone.take).toBe(1);
+  });
+
+  it('counts keys equal once normalized as one key with normalizeKey, with no request more, in a cache of its own', async () => {
+    const trimEnd = (k: unknown) => (typeof k === 'string' ? k.trimEnd() : k);
+    const service = new OwnWay(CODES, trailingSpaces);
+    const items = KeyedItems.of<Code>(codes(service), undefined, trimEnd);
+    expect(KeyedItems.of<Code>(codes(service), undefined, trimEnd)).toBe(items);
+    expect(KeyedItems.of<Code>(codes(service))).not.toBe(items);
+    await items.request(['A  ', 'A']);
+    expect(items.get('A  ')?.item?.text).toBe('Group A');
+    expect(items.sameKey('A  ', 'A')).toBe(true);
+    expect(service.loads.length).toBe(1);
+    expect(service.byKeys).toEqual([]);
+    // An array has no source to decide: normalizeKey is the rule there.
+    const array = KeyedItems.of<Code>(CODES, 'id', trimEnd);
+    expect(array.get('B ')?.item?.text).toBe('Group B');
+    expect(KeyedItems.of<Code>(CODES, 'id').get('B ')).toEqual({ state: 'missing' });
+  });
+
+  it('asks again for a key the source matched to an item that changed', async () => {
+    const service = new OwnWay(CODES, trailingSpaces);
+    const items = KeyedItems.of<Code>(codes(service));
+    await items.request(['A  ']);
+    const told: (readonly string[] | null)[] = [];
+    items.onResolved((keys) => told.push(keys));
+    await service.update('A', { text: 'Group A2' });
+    expect(items.get('A  ')).toBeUndefined();
+    expect(told).toEqual([[items.keyStringOf('A  ')]]);
+  });
+});

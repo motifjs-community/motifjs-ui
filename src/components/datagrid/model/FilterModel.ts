@@ -33,6 +33,11 @@ export class FilterModel<T> {
   typed = false;
   /** How a column's header filter value filters when not by being equal (a range, an expression); the grid gives it. */
   conditionOf: (field: string) => ((value: unknown) => data.FilterExpression | null) | null = () => null;
+  /**
+   * The keys a lookup column's chosen key stands with: the keys its list showed as one item (the source matched them to
+   * it); a key alone otherwise. The grid gives it.
+   */
+  keysOf: (field: string, value: unknown) => readonly unknown[] = (_field, value) => [value];
   /** Whether the filter row and the header filters are part of the filter value (`filterSyncEnabled`); the grid gives it. */
   sync: () => boolean = () => false;
   private searchPart: data.FilterExpression | null = null;
@@ -383,7 +388,11 @@ export class FilterModel<T> {
     if (!this.columns.can(field, 'filterRow')) return null;
     const col = this.columns.get(field);
     if (col.type === 'boolean') return typeof f.value === 'boolean' ? data.where(field, '=', f.value) : null;
-    if (col.lookup) return empty(f.value) ? null : data.where(field, '=', f.value);
+    if (col.lookup) {
+      if (empty(f.value)) return null;
+      const keys = this.keysOf(field, f.value);
+      return keys.length > 1 ? data.where(field, 'in', [...keys]) : data.where(field, '=', f.value);
+    }
     const op = this.operator(field);
     if (op === 'isblank' || op === 'isnotblank') return data.where(field, op);
     if (op === 'between') {
@@ -410,7 +419,7 @@ export class FilterModel<T> {
       const condition = empty(v) ? null : own?.(v);
       if (empty(v)) blank = true;
       else if (condition) parts.push(condition);
-      else plain.push(v);
+      else plain.push(...this.keysOf(field, v));
     }
     const any = data.or(plain.length ? data.where(field, 'in', plain) : null, ...parts, blank ? data.where(field, 'isblank') : null);
     return any && f.filterType === 'exclude' ? data.not(any) : any;

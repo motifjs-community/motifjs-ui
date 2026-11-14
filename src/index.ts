@@ -108,6 +108,7 @@ export type { ItemSource } from './parts/list/item-source';
 export { DataItems } from './parts/data/DataItems';
 export { KeyedItems } from './parts/data/KeyedItems';
 export type { KeyedItem } from './parts/data/keyed-item';
+export type { NormalizeKey } from './parts/data/normalize-key';
 export type { TextSearch } from './parts/data/text-search';
 export { readItemField } from './parts/list/read-item-field';
 export type { ItemField } from './parts/list/item-field';

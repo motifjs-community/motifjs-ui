@@ -290,6 +290,39 @@ describe('TagBox', () => {
     expect(options(c).length).toBeLessThan(100);
   });
 
+  it('counts a value the data source matched its own way as its item: shown, checked, and taken out by it', async () => {
+    type Code = { id: string; text: string };
+    // A service that disregards trailing spaces, as a database compares a `char(n)` code.
+    class Codes extends data.ArrayAdapter<Code, string> {
+      protected override async loadRows(options: data.LoadOptions): Promise<data.LoadResult<Code>> {
+        const f = options.filter as { field?: string; op?: string; value?: unknown } | null | undefined;
+        if (f?.op !== 'in' && f?.op !== '=') return super.loadRows(options);
+        const wanted = (f.op === 'in' ? (f.value as unknown[]) : [f.value]).map((v) => String(v).trimEnd());
+        const { rows } = await super.loadRows({});
+        const found = rows.filter((r) => wanted.includes(r.id.trimEnd()));
+        return { rows: found, total: found.length };
+      }
+      protected override async findRow(key: string): Promise<Code | undefined> {
+        return (await super.loadRows({})).rows.find((r) => r.id.trimEnd() === String(key).trimEnd());
+      }
+    }
+    const source = new data.DataSource<Code, string>({ adapter: new Codes({ data: [{ id: 'A', text: 'Group A' }, { id: 'B', text: 'Group B' }], key: 'id' }) });
+    let c!: TagBox<Code, string>;
+    page(<TagBox ref={(x: TagBox<Code, string>) => (c = x)} dataSource={source} textField="text" valueField="id" value={['A  ']} />);
+    await settle(30);
+    expect(tagTexts(c)).toEqual(['Group A']);
+    c.open();
+    await settle(30);
+    expect(checked(c)).toEqual(['Group A']);
+    // Its item, picked again, takes the value out instead of adding a second tag for it.
+    option(c, 'Group A').click();
+    await settle();
+    expect(c.value).toEqual([]);
+    option(c, 'Group B').click();
+    await settle();
+    expect(c.value).toEqual(['B']);
+  });
+
   it('is complete programmatically, follows uiLocale and checks required', async () => {
     const c = new TagBox<string, string>({ label: 'Skills', placeholder: 'Pick some', clearButton: true });
     page(c);

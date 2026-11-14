@@ -389,6 +389,8 @@ export class CellEditor<T> {
       clearButton: lookup.allowClearing ?? false,
       searchEnabled: true,
     };
+    // The editor reads the column's cache: the same rule for keys.
+    if (lookup.normalizeKey) options.normalizeKey = lookup.normalizeKey;
     if (Array.isArray(source)) {
       const test = search.filter ? data.createRowFilter<object>(search.filter, { locale: search.locale }) : null;
       options.items = test ? source.filter((item) => item !== null && typeof item === 'object' && test(item as object)) : source;

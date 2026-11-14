@@ -1,5 +1,6 @@
 import type { Bind } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import type { NormalizeKey } from '../../parts/data/normalize-key';
 
 /** The values of a lookup field come from a list: a drop-down of its items, or a tag box for "is any of". */
 export interface FilterBuilderLookup {
@@ -10,6 +11,8 @@ export interface FilterBuilderLookup {
    * plain values.
    */
   valueField?: string;
+  /** Keys equal once normalized are one key (`NormalizeKey`); see `GridLookup.normalizeKey`. */
+  normalizeKey?: NormalizeKey;
   /** The display text: an item field or a function of the item. The default is the value. */
   textField?: string | ((item: any) => string);
   /** Shows a clear button in the drop-down. The default is `false`. */

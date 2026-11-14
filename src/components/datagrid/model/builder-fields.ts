@@ -25,7 +25,7 @@ export function builderFields<T>(model: GridModel<T>, customOperations: readonly
     // A function's choices come from it with no row: the list says it is loading until they are there.
     const asked = col.type === 'list' && typeof col.options === 'function';
     const lookup: FilterBuilderLookup | undefined = col.lookup
-      ? { dataSource: col.lookup.dataSource, valueField: col.lookup.valueField, textField: col.lookup.textField }
+      ? { dataSource: col.lookup.dataSource, valueField: col.lookup.valueField, normalizeKey: col.lookup.normalizeKey, textField: col.lookup.textField }
       : options
         ? { dataSource: options, valueField: 'value', textField: 'label' }
         : asked

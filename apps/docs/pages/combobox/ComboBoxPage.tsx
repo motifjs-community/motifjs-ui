@@ -11,6 +11,7 @@ const PROPS = [
   ['value', '`Bind<V | null>`', '`null`', 'The value of the selected item. `x-model` binds it.'],
   ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server.'],
   ['textField, valueField, iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'Same as DropDown. Groups apply to in-memory items.'],
+  ['normalizeKey', '`Bind<NormalizeKey>`', '—', 'Same as DropDown.'],
   ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How in-memory items are matched.'],
   ['minSearchLength', '`Bind<number>`', '`0`', 'The number of characters to type before the list opens.'],
   ['searchDelay', '`Bind<number>`', '`0` / `250`', 'The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source).'],

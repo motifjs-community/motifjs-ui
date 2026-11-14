@@ -7,7 +7,7 @@ import type { GridColumn } from '../grid-column';
 import { part, removePart, textPart } from '../../../core/draw-parts';
 import { css, kept, mark, put, text as writeText } from '../../../core/part-writes';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
-import { KeyedItems } from '../../../parts/data/KeyedItems';
+import type { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
 import type { RowState } from '../row-state';
 import type { ActionWidths } from './ActionWidths';
@@ -213,7 +213,11 @@ export class GridRow<T> {
     for (const [field, text] of this.texts) {
       const col = model.columns.get(field);
       if (!col.lookup || model.lookups.items(col) !== items) continue;
-      if (wanted && !wanted.has(KeyedItems.keyString(model.value(this.rowId, this.row, col)))) continue;
+      if (wanted) {
+        // Under the cache's own strings (`normalizeKey`): a list of keys is drawn again when one of them came.
+        const value = model.value(this.rowId, this.row, col);
+        if (!(Array.isArray(value) ? value : [value]).some((key) => wanted.has(items.keyStringOf(key)))) continue;
+      }
       this.drawLookup(this.cellParts.get(field)!, text, col);
     }
   }

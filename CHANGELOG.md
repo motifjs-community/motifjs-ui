@@ -6,7 +6,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- `normalizeKey` on a `DataGrid` lookup column, `DropDown`, `TagBox`, `ComboBox`, `ListBox` and a `FilterBuilder`
+  lookup (the `NormalizeKey` type): keys equal once normalized are one key, such as
+  `(k) => (typeof k === 'string' ? k.trimEnd() : k)` for codes a database pads with spaces. It spares the requests a
+  source that compares keys its own way needs (below), and it is the rule for in-memory items, where no source decides.
+  One function per source keeps one shared cache.
+
 ### Fixed
+
+- Lookup keys a data source compares its own way are matched to their items (#2): a database that disregards trailing
+  spaces (`char(n)` codes such as `'A  '` against `'A'`), case (an ID written in capitals) or accents, or reads `'007'`
+  as `7`. When a batch leaves keys unmatched while the source returned items no key matched exactly, or items that
+  differ from a key only in such a way, those keys are asked for one by one, and what the source returns for a key is
+  that key's item; a key the source does not have stays missing with no request more. A lookup cell shows the item's
+  text instead of the key, its editor shows it and its list marks it, the filter row and the header filter list it
+  (only "(All)" was listed when a server grouped by padded keys), and keys matched to one item are one entry there,
+  which filters by all of them. `DropDown`, `TagBox`, `ComboBox` and `ListBox` over a data source mark the item of such
+  a value, and picking it again in a `TagBox` or a multiple `ListBox` takes the value out instead of adding the item a
+  second time. The row's value is never changed: an editor writes another value only when another item is picked.
+- `TagBox` and `ListBox` with a `dataSource` ask for a value on no loaded page by their `valueField`, as `DropDown` and
+  `ComboBox` do, instead of by the adapter's key.
 
 - `RibbonMenu` key hints: the letter of the button before the tabs (Alt, then F) ends the hints, as a command does,
   instead of going on to the commands of the selected tab over the app menu it opened; Escape then reaches that menu

@@ -6,6 +6,7 @@ import { functionValue } from '../../core/function-value';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { DataItems } from '../../parts/data/DataItems';
+import type { NormalizeKey } from '../../parts/data/normalize-key';
 import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import { OptionList } from '../../parts/list/OptionList';
@@ -31,7 +32,7 @@ const OWN = [
   'matchWidth',
 ] as const;
 
-const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enabledField', 'itemTemplate'] as const;
+const FUNCTIONS = ['textField', 'valueField', 'normalizeKey', 'iconField', 'groupField', 'enabledField', 'itemTemplate'] as const;
 
 type Template<T> = ((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null;
 
@@ -86,6 +87,10 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.observeProperty('dataSource', () => this.renderSource());
     // A value field by name lets a value on no loaded page be asked for by that field.
     this.observeProperty<ItemField<T> | undefined>('valueField', (field) => (parts.items.valueField = typeof field === 'string' ? field : undefined));
+    this.observeProperty<NormalizeKey | undefined>('normalizeKey', (rule) => {
+      parts.items.normalizeKey = rule ?? undefined;
+      this.renderValue(this.peekValue());
+    });
     this.observeProperty('searchMode', (mode) => (parts.items.searchMode = mode === 'startswith' ? 'startswith' : 'contains'));
     parts.items.textOf = (item) => this.itemText(item);
     parts.items.onChanged(() => this.itemsChanged());
@@ -129,6 +134,12 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   }
   set valueField(value: Bind<ItemField<T>>) {
     this.assignProperty('valueField', functionValue(value));
+  }
+  get normalizeKey(): NormalizeKey | undefined {
+    return this.getProperty<NormalizeKey | undefined>('normalizeKey');
+  }
+  set normalizeKey(value: Bind<NormalizeKey>) {
+    this.assignProperty('normalizeKey', functionValue(value));
   }
   get iconField(): ItemField<T> | undefined {
     return this.getProperty<ItemField<T> | undefined>('iconField');
@@ -307,7 +318,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     }
     // On no loaded page: asked by key; a later value wins.
     const lookup = ++parts.lookup;
-    this.showText(parts.chosen !== undefined && this.sameValue(this.itemValue(parts.chosen) as V, value) ? this.itemText(parts.chosen) : '');
+    this.showText(parts.chosen !== undefined && this.holderOf(value)(parts.chosen) ? this.itemText(parts.chosen) : '');
     void parts.items.find(value, (item) => this.itemValue(item)).then((item) => {
       if (lookup !== parts.lookup || this.isDisposed) return;
       parts.chosen = item;
@@ -322,6 +333,11 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
 
   protected itemText(item: T): string {
     return String(readItemField(item, this.peekProperty<ItemField<T>>('textField'), 'text') ?? '');
+  }
+
+  /** The test for the item of `value`: the same value, the same once normalized, or the one the data source matched to it. */
+  private holderOf(value: V | null): (item: T) => boolean {
+    return this.comboParts.items.matcher(value, (item) => this.itemValue(item), (a, b) => this.sameValue(a as V, b as V));
   }
 
   protected itemValue(item: T): unknown {
@@ -517,9 +533,10 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     const value = this.peekValue();
     let index = -1;
     if (!parts.editing && value !== null) {
+      const holds = this.holderOf(value);
       for (let i = 0; i < list.count; i++) {
         const item = list.itemOf(i);
-        if (item !== undefined && this.sameValue(this.itemValue(item) as V, value)) {
+        if (item !== undefined && holds(item)) {
           index = i;
           break;
         }
@@ -565,7 +582,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     const list = new OptionList<T>();
     list.textOf = (item) => this.itemText(item);
     list.enabledOf = (item) => this.canChoose(item);
-    list.isSelected = (item) => this.sameValue(this.itemValue(item) as V, this.peekValue());
+    list.isSelected = (item) => this.holderOf(this.peekValue())(item);
     list.emptyText = () => (parts.items.loading ? uiLocale.strings.loading : uiLocale.strings.noItems);
     list.onChosen((e) => {
       this.choose(e.item, this.itemValue(e.item) as V, e.event);

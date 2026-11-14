@@ -390,7 +390,7 @@ export class FilterBuilderModel {
     const source = givenField<data.DataSource<any, any> | readonly unknown[] | undefined>(lookup, 'dataSource');
     if (!source) return String(v);
     void this.state.texts;
-    const items = KeyedItems.of<unknown>(source, givenValue<string | undefined>(lookup, 'valueField'));
+    const items = KeyedItems.of<unknown>(source, givenValue<string | undefined>(lookup, 'valueField'), lookup.normalizeKey);
     const known = items.get(v);
     if (!known) {
       void items.request([v]).then(() => untracked(() => this.state.texts++));

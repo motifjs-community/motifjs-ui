@@ -255,6 +255,7 @@ export class GridModel<T> {
     };
     this.values = new FilterValues<T>(this);
     this.filters.conditionOf = (field) => this.values.conditionOf(field);
+    this.filters.keysOf = (field, value) => this.values.lookups.keysOf(field, value);
     // The filter value given (or kept) after the columns' own: with sync it is shared out to them.
     const filterValue = stored ? this.reviveExpression(stored.filterValue ?? null) : read(props.filterValue);
     if (filterValue) {
