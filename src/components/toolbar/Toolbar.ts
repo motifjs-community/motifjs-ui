@@ -86,6 +86,15 @@ interface Parts {
   watched: Map<ComponentBase, () => void>;
   /** The parts the last fit put in the "more" menu (separators too). */
   out: Set<ComponentBase>;
+  /**
+   * The bar had room to spare when every part was last put back and measured: its size comes from what holds it, not
+   * from its parts, so a change of its size alone is fitted from the sizes known.
+   */
+  stretched: boolean;
+  /** Every part is put back and measured in the next round: a fit from the sizes known waits for it. */
+  measuring: boolean;
+  /** Takes back the fit from the sizes known that is asked for. */
+  stopRefit: (() => void) | null;
   /** The "more" button's size along the bar as last measured; null until it is, and after a change of look. */
   moreLength: number | null;
   itemClick: Emitter<ToolbarItemClickEventArgs>;
@@ -249,6 +258,9 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       sizes: new Map(),
       watched: new Map(),
       out: new Set(),
+      stretched: false,
+      measuring: false,
+      stopRefit: null,
       moreLength: null,
       itemClick: new Emitter(),
     };
@@ -477,17 +489,23 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       parts.out.clear();
       for (const kid of parts.laying) mark(kid.part, 'data-overflowed', false);
       if (parts.more) mark(parts.more, 'data-idle', true);
-      if (this.menuMode()) measure(this, this.readBar, this.fit);
-      else this.showOverflow([]);
+      parts.stopRefit?.();
+      parts.stopRefit = null;
+      if (this.menuMode()) {
+        parts.measuring = true;
+        measure(this, this.readBar, this.fit);
+      } else this.showOverflow([]);
     });
   }
 
   /**
-   * Fits the parts into the room again from their sizes as last laid out, which the size observers keep: a change of the
-   * bar's room or of a part's size lays nothing out to read. Without them yet, it puts every part back and reads.
+   * Fits the parts into the room again from their sizes as last laid out, which the size observers keep, when only the
+   * room of a stretched bar changed: nothing is laid out to read. Without them yet, it puts every part back and reads.
    */
   private refit(): void {
-    if (this.menuMode()) measure(this, this.readKnown, this.fitKnown);
+    const parts = this.parts;
+    if (!this.menuMode() || parts.measuring) return;
+    parts.stopRefit = measure(this, this.readKnown, this.fitKnown);
   }
 
   /** Each part of the bar tells its size as the browser lays it out; a part that leaves the bar stops. */
@@ -516,7 +534,9 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     const known = parts.sizes.get(part);
     if (known !== undefined && Math.abs(known - along) < 0.5) return;
     parts.sizes.set(part, along);
-    if (known !== undefined) this.refit();
+    // A part came, went or changed size: the bar may need more room than it has now (a bar sized by its parts grows only
+    // once they are back), so every part is put back and measured.
+    if (known !== undefined) this.layout();
   }
 
   /** The bar as last laid out, from what the size observers told: nothing is read. `null` while a size is not known. */
@@ -535,6 +555,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   };
 
   private readonly fitKnown = (bar: Bar | null): void => {
+    this.parts.stopRefit = null;
     if (bar) this.fit(bar);
     else this.layout();
   };
@@ -566,11 +587,14 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     const gap = length(vertical ? 'row-gap' : 'column-gap');
     this.parts.gap = gap;
     this.parts.room = room;
+    const needed = [...sizes.values()].reduce((sum, size) => sum + size, 0) + gap * Math.max(0, sizes.size - 1);
+    this.parts.stretched = room > needed + 1;
     return { kids, room, gap, sizes, length: room, shown: isRendered(this) };
   };
 
   /** Moves into the "more" menu what does not fit (and what always goes there). */
   private readonly fit = (bar: Bar): void => {
+    this.parts.measuring = false;
     this.parts.laidOut = bar.length;
     // A bar that does not show has no room to fit into: nothing moves, and its size notice fits it once it shows.
     if (!this.menuMode()) return;
@@ -703,7 +727,10 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
         (size) => {
           const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
           parts.room = vertical ? size.height : size.width;
-          if (Math.abs(parts.room - parts.laidOut) >= 0.5) this.refit();
+          if (Math.abs(parts.room - parts.laidOut) < 0.5) return;
+          // A bar sized by its parts changes size with them (a part put in the "more" menu too): it is measured again.
+          if (parts.stretched) this.refit();
+          else this.layout();
         },
         { box: 'content' },
       ),

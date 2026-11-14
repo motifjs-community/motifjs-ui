@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- `Toolbar` sized by its items (a `Card`'s `action` beside a title that takes the rest of the header) no longer stays
+  narrow after items hide and show again, with the others moved into the "more" menu and fewer each time (0.1.0-beta.10).
+  A part that comes, goes or changes size puts every part back and measures them again, as before beta.10; a bar sized
+  by its parts is measured again when its size changes too. Only a bar that had room to spare (its size comes from what
+  holds it, such as a grid's toolbar) is fitted from the sizes its observers told.
+
 ## [0.1.0-beta.10] - 2026-11-14
 
 Needs `@motifx/core` 1.2.0-rc.29 and `@motifx-community/data` 0.1.0-beta.1.
