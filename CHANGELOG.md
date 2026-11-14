@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.11] - 2026-11-14
+
 ### Fixed
 
 - `Toolbar` sized by its items (a `Card`'s `action` beside a title that takes the rest of the header) no longer stays
