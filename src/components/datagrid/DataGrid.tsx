@@ -2967,11 +2967,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         return [visible.join('\n'), visible.map((f) => cols.zoneOf(f)).join('\n'), JSON.stringify(cols.hasBands ? cols.shownBands(visible) : []), model.showsFilterRow()];
       },
       () => {
+        // Focus in the active cell, as it was before the change.
+        const held = this.tabbable && !this.tabbable.isDisposed && holdsFocus(this.tabbable) ? this.tabbable : null;
         const visible = model.columns.visible();
         this.findColumns(visible);
         this.arrangeColumns(visible, model.showsFilterRow());
         model.keepActiveFieldVisible();
-        this.syncTabStop();
+        // Its column left (a header dropped on the group panel, a column hidden): focus goes to the cell active now, in
+        // the grid, instead of falling to the page.
+        if (held && this.activePart() !== held) this.focusActive(false);
+        else this.syncTabStop();
       },
     );
 
@@ -3541,14 +3546,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return view.actions?.buttonParts() ?? [];
   }
 
-  /** Exactly one cell is in the tab order: the active one. */
-  private syncTabStop() {
+  /**
+   * Exactly one cell is in the tab order: the active one. `leave: false` keeps the one it was in the tab order, for the
+   * caller to take it out once focus has left it (`focusActive`).
+   */
+  private syncTabStop(leave = true) {
     // A virtual column the active cell moved to gets its cells first.
     const active = this.keptColumn();
     if (active && !this.model.columnWindow.has(active)) this.updateColumns();
     const part = this.activePart();
     if (!part) return;
-    if (this.tabbable && this.tabbable !== part && !this.tabbable.isDisposed) put(this.tabbable, 'tabindex', '-1');
+    if (leave && this.tabbable && this.tabbable !== part && !this.tabbable.isDisposed) put(this.tabbable, 'tabindex', '-1');
     put(part, 'tabindex', this.tabStop ? '0' : '-1');
     this.tabbable = part;
   }
@@ -3605,10 +3613,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (reveal && activeRow >= 0) this.body.reveal(activeRow);
     const cols = this.model.columns;
     if (reveal) this.revealColumn(cols.isBand(activeField) ? (cols.leavesIn(activeField, cols.visible())[0] ?? activeField) : activeField);
-    this.syncTabStop();
+    // The Tab stop it was leaves the tab order once focus has left it: a change to the tab index of the element that
+    // has focus makes the browser work out the page's style at once.
+    const was = this.tabbable;
+    this.syncTabStop(false);
     const part = this.activePart();
     if (!part) return;
     focusOn(part, { preventScroll: true });
+    if (was && was !== part && !was.isDisposed) put(was, 'tabindex', '-1');
     if (this.model.settings.get('tooltips')) this.tip.focus(part);
   }
 

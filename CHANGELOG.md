@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- `DataGrid` keeps focus in the grid when the column of the focused header leaves (a header dropped on the group
+  panel, a column hidden): focus goes to the cell that is active then. Before, it fell to the page and the focus guard
+  moved it to the next button after the grid, with two forced style recalcs on the way. Moving focus between cells no
+  longer changes the tab index of the cell that still has focus, which made the browser work out the page's style.
+
 - `Toolbar` sized by its items takes back the items it put in the "more" menu when what holds it grows (an `AppBar`'s
   actions in a window made narrow, then wide again). The bar keeps asking for the room of all its items, also of the
   ones in the menu, through a hidden part that takes no room on the bar; so it grows with what holds it, and its size

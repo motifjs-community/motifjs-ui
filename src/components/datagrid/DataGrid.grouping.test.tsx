@@ -461,6 +461,23 @@ describe('the group panel and the column menu', () => {
     await grid.dispose();
   });
 
+  it('keeps focus in the grid when the column of the focused header leaves: on the cell active then, the only Tab stop', async () => {
+    const grid = await make({ settings: { groupPanel: true } });
+    const headerOf = (f: string) => grid.element.querySelector<HTMLElement>(`.mx-data-grid__header-cell[data-field="${f}"]`);
+    headerOf('city')!.focus();
+    await settle();
+    expect(document.activeElement).toBe(headerOf('city'));
+    grid.groupBy('city');
+    await settle();
+    const active = document.activeElement as HTMLElement;
+    expect(active.classList.contains('mx-data-grid__header-cell')).toBe(true);
+    expect(active.dataset.field).not.toBe('city');
+    expect(grid.element.contains(active)).toBe(true);
+    const stops = [...grid.element.querySelectorAll<HTMLElement>('[tabindex="0"]')].filter((el) => el.closest('.mx-data-grid__row--header, .mx-data-grid__body'));
+    expect(stops).toEqual([active]);
+    await grid.dispose();
+  });
+
   it('groups and ungroups from the column menu, which shows them with groupMenu or a panel that takes headers', async () => {
     const grid = await make();
     const menu = (grid as any).menu;
