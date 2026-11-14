@@ -12,8 +12,8 @@ const DISPLAYS = [
 
 const HINTS = [
     ['On the tabs', 'Each tab shows its access key (the letter after `&` in its text), else its first letter. The button before the tabs has a letter too, and the quick commands have digits.'],
-    ['On the commands', 'A command shows its `keyHint`, else its access key, else its first letter. Several commands starting with the same letter have a letter and a digit.'],
-    ['Typing', 'The letters press what they stand on. A tab goes on to the letters of its commands; a command ends the hints. Typing the first of two letters hides the others.'],
+    ['On the commands', 'A command shows its `keyHint`, else its access key, else its first letter. A command that holds a field and has no text takes them from the field\'s label. Several commands starting with the same letter have a letter and a digit.'],
+    ['Typing', 'The letters press what they stand on. A tab goes on to the letters of its commands; a command ends the hints, and so do the button before the tabs and a quick command (what the button opens, such as an `AppMenu`, has access keys of its own). Typing the first of two letters hides the others.'],
     ['Escape', 'Goes back one level: from the commands to the tabs, then ends the hints. Any other key, a click and leaving the page end them too.']
 ];
 

@@ -11,6 +11,9 @@ export interface KeyHint {
     keys: string;
     text: string;
     press: () => void;
+    // A tab: pressing it goes on to the hints of the commands it shows. Anything else pressed ends them (the button
+    // before the tabs too: what it opens, such as an app menu, has keys of its own).
+    tab?: boolean;
     // What it opens has hints of its own (a folded group's popup): drawn in `host`, closed by `close`.
     opens?: () => InnerHints;
 }
@@ -121,8 +124,8 @@ export class RibbonKeyHints {
                 });
                 return true;
             }
-            // Pressing a tab goes on to the hints of its commands once they are laid out; pressing a command ends them.
-            if (level === 'tabs' && this.level === 'tabs') void whenMeasured(this.owner).then(() => untouched() && this.start('commands'));
+            // Pressing a tab goes on to the hints of its commands once they are laid out; pressing anything else ends them.
+            if (exact.hint.tab && level === 'tabs' && this.level === 'tabs') void whenMeasured(this.owner).then(() => untouched() && this.start('commands'));
             else if (this.level === level) this.stop();
             return true;
         }

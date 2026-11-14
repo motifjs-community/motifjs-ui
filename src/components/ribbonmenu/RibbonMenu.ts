@@ -18,6 +18,7 @@ import { kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
 import type { MenuItem } from "../../parts/menu/menu-item";
 import type { MenuItemClickEventArgs } from "../../parts/menu/menu-item-click-event-args";
+import { Field } from "../../parts/field/Field";
 import { Popup } from "../../parts/popup/Popup";
 import { Button } from "../button/Button";
 import type { ButtonProps } from "../button/button-props";
@@ -1630,7 +1631,7 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
             if (!look.visible || !look.enabled) return;
             const parsed = parseAccessKey(look.text);
             const host = this.compact ? this.picker : this.entries[i].host;
-            hints.push({ part: host, keys: parsed.key ?? '', text: parsed.text, press: () => this.pressTab(look) });
+            hints.push({ part: host, keys: parsed.key ?? '', text: parsed.text, press: () => this.pressTab(look), tab: true });
         });
         let n = 1;
         for (const m of this.quickMade.values()) {
@@ -1683,9 +1684,12 @@ export class RibbonMenu extends Control<HTMLDivElement, RibbonMenuProps> {
                 hints.push({ part: gallery.opener.faceComponent, keys, text: text.text, press: () => gallery.toggle() });
             } else if (m.type === 'content') {
                 // The app's content: its letters stand on it, and typing them gives focus to its first field. With no
-                // text, its hint names it.
+                // text, its hint names it, else the label of its field (with the access key it gives).
                 const content = m.control;
-                if (hasFocusableIn(content)) hints.push({ part: content, keys, text: text.text || String(fieldOf(command, 'hint', this) ?? ''), press: () => focusFirstIn(content) });
+                if (!hasFocusableIn(content)) return;
+                const label = parseAccessKey(contentName(content));
+                const named = text.text || String(fieldOf(command, 'hint', this) ?? '');
+                hints.push({ part: content, keys: keys || (named ? '' : label.key ?? ''), text: named || label.text, press: () => focusFirstIn(content) });
             } else if (m.made) {
                 for (const inner of m.made.values()) add(inner);
             }
@@ -2116,6 +2120,18 @@ function partStops(part: ComponentBase, stops: ComponentBase[]): void {
     if (part instanceof Popup) return;
     if (canTakeFocus(part)) stops.push(part);
     for (const child of part.controls.items) partStops(child, stops);
+}
+
+// The name of the app's content in a command: the label of its first field, or the first `aria-label` in it.
+function contentName(part: ComponentBase): string {
+    if (part instanceof Field) return part.label;
+    const own = part.attr.get('aria-label');
+    if (typeof own === 'string' && own) return own;
+    for (const child of part.controls.items) {
+        const name = contentName(child);
+        if (name) return name;
+    }
+    return '';
 }
 
 // A key hint on a button: its letters stand on the part that is pressed (its main part when it has a menu), and

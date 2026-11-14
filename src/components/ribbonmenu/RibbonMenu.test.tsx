@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
+import { TextBox } from '../textbox/TextBox';
 import { RibbonMenu } from './RibbonMenu';
 import type { RibbonCommand } from './ribbon-command';
 import type { RibbonTab } from './ribbon-tab';
@@ -382,6 +383,55 @@ describe('RibbonMenu', () => {
         await settle();
         document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'F10', bubbles: true }));
         expect(menu.element.querySelector('.mx-ribbon-menu__hints')).toBeNull();
+    });
+
+    it('ends the key hints on the button before the tabs, goes on to commands from a tab only, and names a field by its label', async () => {
+        const told: string[] = [];
+        const items = tabs();
+        (items[0].groups as unknown as { commands: RibbonCommand[] }[])[1].commands.push({ key: 'width', type: 'content', content: () => new TextBox({ label: '&Width' }) });
+        // Every part has a size, so the hints are drawn.
+        const proto = HTMLElement.prototype;
+        const original = proto.getBoundingClientRect;
+        proto.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 20, bottom: 20, width: 20, height: 20, toJSON: () => ({}) }) as DOMRect;
+        try {
+            const menu = await make({ items, appButton: '&File', onAppButton: () => told.push('app') });
+            const shown = () => Array.from(menu.element.querySelectorAll<HTMLElement>('.mx-ribbon-menu__hint:not([hidden])')).map(h => h.textContent);
+            const key = (k: string) => document.body.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+            const alt = () => {
+                key('Alt');
+                document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true }));
+            };
+            const drawn = async () => {
+                await settle();
+                await whenMeasured(menu);
+                await settle();
+            };
+            tab(menu, 'home').focus();
+            alt();
+            await drawn();
+            expect(shown()).toEqual(['F', 'H', 'I']);
+            // What the button before the tabs opens (an app menu) has keys of its own: the hints end.
+            key('f');
+            await drawn();
+            expect(told).toEqual(['app']);
+            expect(shown()).toEqual([]);
+            expect(menu.hints.active).toBe(false);
+            alt();
+            await drawn();
+            key('h');
+            await drawn();
+            // The tab's commands are laid out, then their hints drawn.
+            await drawn();
+            // The field with no text of its command is named by its label, with the access key it gives.
+            expect(shown()).toEqual(['P', 'C1', 'C2', 'C3', 'B', 'I', 'W']);
+            key('Escape');
+            await drawn();
+            expect(shown()).toEqual(['F', 'H', 'I']);
+            key('Escape');
+            expect(menu.hints.active).toBe(false);
+        } finally {
+            proto.getBoundingClientRect = original;
+        }
     });
 
     it('gives a gallery its choices in a row and all of them in a grid, the chosen one marked', async () => {

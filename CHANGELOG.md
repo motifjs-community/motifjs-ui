@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- `RibbonMenu` key hints: the letter of the button before the tabs (Alt, then F) ends the hints, as a command does,
+  instead of going on to the commands of the selected tab over the app menu it opened; Escape then reaches that menu
+  and closes it. A quick command's digit ends them too. A command that holds a field and has no text takes its letters
+  from the field's label (and its access key), instead of `?1`.
+
 - `DataGrid` keeps focus in the grid when the column of the focused header leaves (a header dropped on the group
   panel, a column hidden): focus goes to the cell that is active then. Before, it fell to the page and the focus guard
   moved it to the next button after the grid, with two forced style recalcs on the way. Moving focus between cells no
