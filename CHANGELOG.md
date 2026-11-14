@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- `Toolbar` sized by its items takes back the items it put in the "more" menu when what holds it grows (an `AppBar`'s
+  actions in a window made narrow, then wide again). The bar keeps asking for the room of all its items, also of the
+  ones in the menu, through a hidden part that takes no room on the bar; so it grows with what holds it, and its size
+  notice puts the items back. The `AppBar`'s actions keep to the end, with that room before them.
+
 - `DataGrid` and `Toolbar` no longer make the browser lay the page out from script when they first show ("Forced
   reflow" in the console, about 30 to 60 ms on a page with grids). Their first measure waits until the page is drawn,
   and every measure asked for that frame reads in one go before any of them writes. A grid's row action buttons stay out

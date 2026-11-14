@@ -1,4 +1,4 @@
-import { Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
 import { follow } from '../../core/follow';
@@ -11,7 +11,8 @@ import { namesCommands, runItem, valueOf } from '../../core/command-fields';
 import { moreMark } from '../../core/glyphs';
 import { isElement } from '../../core/node-kind';
 import { boxOf, canMeasure, isRendered, isRtl, measure, measureAfterDrawn, onLayout, readAgain, rectOf, styleOf, type Size } from '../../core/measure';
-import { mark, put } from '../../core/part-writes';
+import { loose } from '../../core/draw-parts';
+import { css, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Popup } from '../../parts/popup/Popup';
@@ -71,6 +72,8 @@ interface Parts {
   overflowed: Set<Control>;
   more: Button | null;
   stopMoreLabel: (() => void) | null;
+  /** Holds the room of the parts in the "more" menu in the bar's own size (see `keepRoom`); no part of the bar. */
+  reserve: Component<HTMLSpanElement> | null;
   restyleQueued: boolean;
   /** The bar's parts as put back for the next overflow reading. */
   laying: readonly Kid[];
@@ -254,6 +257,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       overflowed: new Set(),
       more: null,
       stopMoreLabel: null,
+      reserve: null,
       restyleQueued: false,
       laying: [],
       laidOut: -1,
@@ -401,7 +405,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   /** The parts in the bar in order, without the "more" button. For a list or a condition, the parts it holds. */
   private barContent(from: ComponentBase = this, found: ComponentBase[] = []): ComponentBase[] {
     for (const part of from.controls.items) {
-      if (part === this.parts.more) continue;
+      if (part === this.parts.more || part === this.parts.reserve) continue;
       if (isElement(part.element)) found.push(part);
       else this.barContent(part, found);
     }
@@ -428,7 +432,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   /** A control added to the bar or taken away: the arrows and the room follow. The "more" button is no part of the bar. */
   private childChanged(control: ComponentBase): void {
-    if (control === this.parts.more) return;
+    if (control === this.parts.more || control === this.parts.reserve) return;
     this.queueRestyle();
     this.layout();
   }
@@ -495,6 +499,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       parts.out.clear();
       for (const kid of parts.laying) mark(kid.part, 'data-overflowed', false);
       if (parts.more) mark(parts.more, 'data-idle', true);
+      if (parts.reserve) mark(parts.reserve, 'data-idle', true);
       parts.stopRefit?.();
       parts.stopRefit = null;
       parts.stopFirst?.();
@@ -621,8 +626,47 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       for (const kid of bar.kids) if (!out.includes(kid)) mark(kid.part, 'data-overflowed', false);
       this.parts.out = new Set(out.map((kid) => kid.part));
       this.showOverflow(out);
+      this.keepRoom(bar, out);
     });
   };
+
+  /**
+   * Keeps the room of the parts put in the "more" menu in the bar's own size, so it still asks what holds it for the
+   * room of every part: a hidden part as long as they are, which takes no room on the bar (it grows by a millionth of
+   * the room to spare). A bar sized by its parts then grows when what holds it does, and its size notice puts them
+   * back; without it, the bar would stay as small as the parts left on it.
+   */
+  private keepRoom({ kids, gap, sizes }: Bar, out: readonly Kid[]): void {
+    const parts = this.parts;
+    const shown = kids.filter((kid) => sizes.has(kid));
+    const always = new Set(shown.filter((kid) => kid.movable && kid.overflow === 'always'));
+    const length = (list: readonly Kid[], more: boolean) =>
+      list.reduce((sum, kid) => sum + sizes.get(kid)!, 0) +
+      gap * Math.max(0, list.length - 1) +
+      (more ? (list.length ? gap : 0) + (parts.moreLength ?? 0) : 0);
+    // Every part that may show on the bar, with the "more" button when some always go there; against the bar as it is.
+    const full = length(shown.filter((kid) => !always.has(kid)), always.size > 0);
+    const now = length(shown.filter((kid) => !out.includes(kid)), out.some((kid) => !kid.separator));
+    const missing = full - now;
+    if (missing < 0.5) {
+      if (parts.reserve) mark(parts.reserve, 'data-idle', true);
+      return;
+    }
+    const reserve = parts.reserve ?? this.makeReserve();
+    css(reserve, '--_reserve', `${missing}px`);
+    // Its margin takes back the gap before it.
+    css(reserve, '--_reserve-gap', `${gap}px`);
+    mark(reserve, 'data-idle', false);
+  }
+
+  private makeReserve(): Component<HTMLSpanElement> {
+    const reserve = loose<HTMLSpanElement>('span', 'mx-toolbar__reserve');
+    put(reserve, 'aria-hidden', 'true');
+    // Known before it is added: the bar's parts never count it.
+    this.parts.reserve = reserve;
+    this.controls.add(reserve);
+    return reserve;
+  }
 
   private showOverflow(out: readonly Kid[]): void {
     const parts = this.parts;

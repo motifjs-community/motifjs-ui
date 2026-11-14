@@ -42,6 +42,27 @@
     margin-inline-start: auto;
   }
 
+  /* Holds the room of the parts in the "more" menu in the bar's own size (Toolbar.keepRoom): as long as they are, yet
+     grows by a millionth of the room to spare from nothing, so it takes no room on the bar; its margin takes back the
+     gap before it. */
+  .mx-toolbar > .mx-toolbar__reserve {
+    flex: 0.000001 0 0;
+    min-inline-size: 0;
+    min-block-size: 0;
+    inline-size: var(--_reserve, 0);
+    block-size: 0;
+    margin-inline-start: calc(-1 * var(--_reserve-gap, 0px));
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .mx-toolbar[data-orientation='vertical'] > .mx-toolbar__reserve {
+    inline-size: 0;
+    block-size: var(--_reserve, 0);
+    margin-inline-start: 0;
+    margin-block-start: calc(-1 * var(--_reserve-gap, 0px));
+  }
+
   .mx-toolbar[data-orientation='vertical'] > .mx-toolbar__more {
     margin-inline-start: 0;
     margin-block-start: auto;

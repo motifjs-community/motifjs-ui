@@ -307,6 +307,43 @@ describe('Toolbar', () => {
     expect(more(t)!.hasAttribute('data-idle')).toBe(false);
   });
 
+  it('keeps the room of the parts in the "more" menu in its own size, with a part that is no part of the bar', async () => {
+    const t = new Toolbar({ items: [{ text: 'A' }, { text: 'B' }, { text: 'C' }, { text: 'D', overflow: 'always' }] });
+    page(t);
+    // Buttons 50 wide, the "more" button 20; no gap.
+    const proto = HTMLElement.prototype;
+    const original = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function (this: HTMLElement) {
+      const width = this.classList.contains('mx-toolbar__more') ? 20 : this.classList.contains('mx-button') ? 50 : 0;
+      return { x: 0, y: 0, left: 0, top: 0, right: width, bottom: 30, width, height: 30, toJSON: () => ({}) } as DOMRect;
+    };
+    let room = 130;
+    Object.defineProperty(t.element, 'clientWidth', { configurable: true, get: () => room });
+    try {
+      t.updateOverflow();
+      await settle();
+      expect(t.overflowed.map((c) => (c as Button).text)).toEqual(['C', 'D']);
+      // A, B and C with the "more" button (for D) want 170; A and B with it take 120.
+      const reserve = t.element.querySelector<HTMLElement>(':scope > .mx-toolbar__reserve')!;
+      expect(reserve.hasAttribute('data-idle')).toBe(false);
+      expect(reserve.style.getPropertyValue('--_reserve')).toBe('50px');
+      expect(reserve.getAttribute('aria-hidden')).toBe('true');
+      expect(faces(t).length).toBe(4);
+      expect(tabbable(t)).not.toContain(reserve);
+      moreFace(t).click();
+      expect(moreItems(t).map(name)).toEqual(['C', 'D']);
+      // Room for every part that may show: it holds none.
+      room = 200;
+      t.updateOverflow();
+      await settle();
+      expect(t.overflowed.map((c) => (c as Button).text)).toEqual(['D']);
+      expect(reserve.hasAttribute('data-idle')).toBe(true);
+      expect(t.element.querySelectorAll('.mx-toolbar__reserve').length).toBe(1);
+    } finally {
+      proto.getBoundingClientRect = original;
+    }
+  });
+
   it('gives the "more" menu its own icon: a function is called again, a component given as is stays in its button', async () => {
     const kept = new Component<HTMLElement>('i');
     let t!: Toolbar;

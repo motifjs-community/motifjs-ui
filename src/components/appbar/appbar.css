@@ -110,8 +110,14 @@
         min-inline-size: 0;
     }
 
+    /* The actions keep to the end: room the bar holds for its parts in the "more" menu stays before them. */
     .mx-app-bar__actions > .mx-toolbar {
+        justify-content: flex-end;
         min-inline-size: 0;
+    }
+
+    .mx-app-bar__actions > .mx-toolbar > .mx-toolbar__more {
+        margin-inline-start: 0;
     }
 
     /* A back arrow points to where the page came from. */
