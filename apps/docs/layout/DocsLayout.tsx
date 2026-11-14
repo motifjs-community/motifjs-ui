@@ -98,10 +98,16 @@ export class DocsLayout extends Component<HTMLDivElement> {
   }
 
   override onMounted(): void {
-    // The menu comes back scrolled as the reader left it, once its open groups are drawn.
+    // The menu comes back scrolled as the reader left it, once the browser has laid it out: its size observer tells that
+    // moment, so the scroll written then lays nothing out again (written earlier, it would make the browser lay the whole
+    // page out there and then). A scroll changes no size, so the observer is not told again.
     const sidebar = this.sidebar;
     if (sidebar) {
-      requestAnimationFrame(() => (sidebar.scrollTop = Number(stored(NAV_SCROLL) ?? 0) || 0));
+      const laidOut = new ResizeObserver(() => {
+        laidOut.disconnect();
+        sidebar.scrollTop = Number(stored(NAV_SCROLL) ?? 0) || 0;
+      });
+      laidOut.observe(sidebar);
       let queued = false;
       sidebar.addEventListener(
         'scroll',

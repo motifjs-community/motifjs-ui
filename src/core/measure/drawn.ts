@@ -1,9 +1,8 @@
 import { errorHandler, untracked, type ComponentBase } from '@motifx/core';
+import { afterFrame } from './after-frame';
 import { viewOf } from './element-of';
-
-/** A window that draws no frames (in the background) still runs it this much later. */
-const LONGEST_WAIT = 200;
-const FRAME_TIME = 16;
+import { measure, measureNow } from './rounds';
+import type { View } from './view';
 
 /**
  * Runs `then` once the window of `owner` has drawn its next frame: what was written by then is laid out and on the
@@ -13,36 +12,60 @@ const FRAME_TIME = 16;
 export function afterDrawn(owner: ComponentBase, then: () => void): () => void {
   const view = viewOf(owner);
   if (!view) return () => {};
-  let done = false;
-  let frame = 0;
-  let after: ReturnType<typeof setTimeout> | undefined;
-  const run = (): void => {
-    if (done) return;
-    stop();
-    if (owner.isDisposed) return;
-    try {
-      untracked(then);
-    } catch (error) {
-      errorHandler.report(error instanceof Error ? error : new Error(String(error)));
-    }
-  };
+  return afterFrame(view, () => {
+    if (!owner.isDisposed) runSafely(then);
+  });
+}
+
+function runSafely(then: () => void): void {
   try {
-    // A task after the frame: the frame's own work (style, layout, paint) is done by then.
-    if (!view.closed && typeof view.requestAnimationFrame === 'function') frame = view.requestAnimationFrame(() => (after = setTimeout(run, 0)));
-  } catch {
-    frame = 0;
+    untracked(then);
+  } catch (error) {
+    errorHandler.report(error instanceof Error ? error : new Error(String(error)));
   }
-  const timer = setTimeout(run, frame ? LONGEST_WAIT : FRAME_TIME);
-  function stop(): void {
-    done = true;
-    clearTimeout(timer);
-    clearTimeout(after);
-    if (!frame) return;
-    try {
-      view!.cancelAnimationFrame(frame);
-    } catch {
-      // The window closed in between: its frame is gone with it.
-    }
+}
+
+/** A measure waiting for the next frame of its window. */
+interface Waiting {
+  readonly owner: ComponentBase;
+  readonly ask: () => () => void;
+  asked: (() => void) | null;
+}
+
+/** What waits for the next frame of each window: every measure asked until then runs in one run there. */
+const waitingIn = new WeakMap<View, { readonly all: Set<Waiting>; readonly stop: () => void }>();
+
+/**
+ * Reads once the window of `owner` has drawn its next frame, in one run with every other measure asked for that frame:
+ * the page is laid out by then and the reads come before the writes, so nothing is laid out to read. What `write`
+ * writes shows a frame later. For a first measure that can wait a frame (a part that clips what does not fit until
+ * then). Returns what takes it back.
+ */
+export function measureAfterDrawn<T>(owner: ComponentBase, read: () => T, write: (value: T) => void): () => void {
+  const view = viewOf(owner);
+  if (!view) return () => {};
+  const waiting: Waiting = { owner, ask: () => measure(owner, read, write), asked: null };
+  let batch = waitingIn.get(view);
+  if (!batch) {
+    const all = new Set<Waiting>();
+    batch = {
+      all,
+      stop: afterFrame(view, () => {
+        waitingIn.delete(view);
+        const live = [...all].filter((one) => !one.owner.isDisposed);
+        if (!live.length) return;
+        for (const one of live) runSafely(() => (one.asked = one.ask()));
+        runSafely(() => measureNow(live[0].owner));
+      }),
+    };
+    waitingIn.set(view, batch);
   }
-  return stop;
+  const { all, stop } = batch;
+  all.add(waiting);
+  return () => {
+    waiting.asked?.();
+    if (!all.delete(waiting) || all.size || waitingIn.get(view)?.all !== all) return;
+    stop();
+    waitingIn.delete(view);
+  };
 }

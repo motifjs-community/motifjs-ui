@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- `DataGrid` and `Toolbar` no longer make the browser lay the page out from script when they first show ("Forced
+  reflow" in the console, about 30 to 60 ms on a page with grids). Their first measure waits until the page is drawn,
+  and every measure asked for that frame reads in one go before any of them writes. A grid's row action buttons stay out
+  of sight in their place until their widths are known, as before.
+- A scroll event no longer reads the scrolled element at once (it could lay out a page written since the last frame):
+  the element is read once the frame is drawn, and at once only when its place is asked before that.
+
 ## [0.1.0-beta.11] - 2026-11-14
 
 ### Fixed

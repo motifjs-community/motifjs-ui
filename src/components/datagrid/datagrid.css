@@ -493,6 +493,11 @@
     flex: none;
   }
 
+  /* The buttons wait out of sight, in their place, until their widths are measured (a frame after the rows show). */
+  .mx-data-grid[data-measuring-actions] .mx-data-grid__row > .mx-data-grid__actions > * {
+    visibility: hidden;
+  }
+
   /* Hidden cell where the action buttons are measured once. */
   .mx-data-grid__measure {
     position: absolute;

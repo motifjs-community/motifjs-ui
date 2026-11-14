@@ -10,7 +10,7 @@ import { commands } from '../../core/command-registry';
 import { namesCommands, runItem, valueOf } from '../../core/command-fields';
 import { moreMark } from '../../core/glyphs';
 import { isElement } from '../../core/node-kind';
-import { boxOf, canMeasure, isRendered, isRtl, measure, onLayout, readAgain, rectOf, styleOf, type Size } from '../../core/measure';
+import { boxOf, canMeasure, isRendered, isRtl, measure, measureAfterDrawn, onLayout, readAgain, rectOf, styleOf, type Size } from '../../core/measure';
 import { mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
@@ -95,6 +95,10 @@ interface Parts {
   measuring: boolean;
   /** Takes back the fit from the sizes known that is asked for. */
   stopRefit: (() => void) | null;
+  /** The bar has not been fitted while shown yet: its first measure waits for the page to be drawn. */
+  first: boolean;
+  /** Takes back the first measure that waits for the page to be drawn. */
+  stopFirst: (() => void) | null;
   /** The "more" button's size along the bar as last measured; null until it is, and after a change of look. */
   moreLength: number | null;
   itemClick: Emitter<ToolbarItemClickEventArgs>;
@@ -261,6 +265,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       stretched: false,
       measuring: false,
       stopRefit: null,
+      first: true,
+      stopFirst: null,
       moreLength: null,
       itemClick: new Emitter(),
     };
@@ -491,10 +497,19 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       if (parts.more) mark(parts.more, 'data-idle', true);
       parts.stopRefit?.();
       parts.stopRefit = null;
-      if (this.menuMode()) {
-        parts.measuring = true;
-        measure(this, this.readBar, this.fit);
-      } else this.showOverflow([]);
+      parts.stopFirst?.();
+      parts.stopFirst = null;
+      if (!this.menuMode()) {
+        // A first measure taken back above fits nothing now: refits are not held for it.
+        parts.measuring = false;
+        this.showOverflow([]);
+        return;
+      }
+      parts.measuring = true;
+      // The first time it shows, it is measured once the page is drawn: read then, it lays nothing out, and until then
+      // the bar clips what does not fit. A window that lays nothing out (a test document) reads at once.
+      if (parts.first && canMeasure(this)) parts.stopFirst = measureAfterDrawn(this, this.readBar, this.fit);
+      else measure(this, this.readBar, this.fit);
     });
   }
 
@@ -595,6 +610,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   /** Moves into the "more" menu what does not fit (and what always goes there). */
   private readonly fit = (bar: Bar): void => {
     this.parts.measuring = false;
+    this.parts.stopFirst = null;
+    if (bar.shown) this.parts.first = false;
     this.parts.laidOut = bar.length;
     // A bar that does not show has no room to fit into: nothing moves, and its size notice fits it once it shows.
     if (!this.menuMode()) return;

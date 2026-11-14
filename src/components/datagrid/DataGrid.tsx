@@ -399,7 +399,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.motif.setDisposable(() => this.bands.dispose());
     this.filterRow = new FilterRow<T>(model);
     // Widths read later than the rows were drawn: the rows fit their action buttons again.
-    this.widths = new ActionWidths(() => this.measurePart, () => model.notices.tell('actions'));
+    // Until then the rows keep their action buttons out of sight, so no button shows unfitted for a frame.
+    this.widths = new ActionWidths(
+      () => this.measurePart,
+      () => model.notices.tell('actions'),
+      (on) => mark(this, 'data-measuring-actions', on),
+    );
     // Another design language, theme or density: the action buttons and the sizes are measured again.
     onLayout(this, 'look', () => {
       this.widths.clear();
