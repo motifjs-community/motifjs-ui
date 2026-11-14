@@ -1,0 +1,1 @@
+import{Qn as e}from"./next-id-IxLtiCRk.js";import{r as t}from"./docs-DpibOHDk.js";function n(){return e(`p`,{initializeComponent:n=>{n.class.add(`lead`);let r=e(t,{text:`There is no page at this address. Start from the [overview](/) or pick one on the left.`,runover:{},childs:[]});n.controls.add(r)}},1)}export{n as default};

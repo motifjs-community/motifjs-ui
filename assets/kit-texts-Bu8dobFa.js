@@ -1,0 +1,1 @@
+import{F as e,tr as t}from"./next-id-IxLtiCRk.js";var n=t({strings:e.strings,locale:e.locale});e.onChanged(()=>{n.strings=e.strings,n.locale=e.locale});export{n as t};

@@ -1,0 +1,1 @@
+function e(e,t){let n=!1,r={propertyName:`reState`,dataSource:t,activate(){},deactivate(){},reActivate(){n||t()}};return e.bindings.add(r),()=>{n=!0,e.bindings.remove(r)}}export{e as t};
