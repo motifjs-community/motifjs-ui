@@ -1,6 +1,6 @@
 # Showcase: a smart home
 
-> Get started · @motifx-community/ui 0.1.0-beta.8
+> Get started · @motifx-community/ui 0.1.0-beta.10
 
 A smart home panel for a tablet, built with the kit as a MotifJS application of its own: a rail of screens, the day and the home's state at the top, and tiles you can touch. The devices report new values every two seconds.
 

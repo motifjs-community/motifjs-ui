@@ -1,6 +1,6 @@
 # Button
 
-> Buttons · @motifx-community/ui 0.1.0-beta.8
+> Buttons · @motifx-community/ui 0.1.0-beta.10
 
 A native `<button>` styled with design tokens. It comes in three variants, three tones and three sizes, and supports an icon and an `&` access key. A button can act as a toggle, indicate that work is in progress, and open a menu or any other content, either from the whole button or from an arrow next to it with `split`, so the button keeps its own action.
 
@@ -300,7 +300,7 @@ export default function DropDown() {
 
 ## Localization
 
-The only string a button displays on its own is the name of a split button's arrow. It comes from `uiLocale.strings`, which follows the kit's language, `uiLocale.locale` (English and Turkish are included) and can be set to any `UiStrings`. Every button updates immediately. The set is used as provided, so to change one string, assign a new set: `uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' }`. Changing a string inside the existing set has no effect.
+The only string a button displays on its own is the name of a split button's arrow. It comes from `uiLocale.strings`, which starts from the page's `lang` (English and Turkish are included) and can be set to any `UiStrings`. Every button updates immediately. The set is used as provided, so to change one string, assign a new set: `uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' }`. Changing a string inside the existing set has no effect.
 
 ```tsx
 import { reactive } from '@motifx/core';

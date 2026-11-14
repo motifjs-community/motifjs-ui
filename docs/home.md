@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> Get started · @motifx-community/ui 0.1.0-beta.8
+> Get started · @motifx-community/ui 0.1.0-beta.10
 
 Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 
@@ -28,7 +28,7 @@ The library includes more than fifty components built on a shared base. Each one
 
 | Group | Components |
 | --- | --- |
-| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`SpeedDial`](speeddial.md), [`MenuBar`](menus.md) and [`ContextMenu`](menus.md) |
+| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`SpeedDial`](speeddial.md), [`MenuBar`](menus.md) and [`ContextMenu`](menus-context.md) |
 | Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox`](colorbox.md) and [`ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md), [`ValidationSummary`](validationsummary.md) |
 | Choice | [`CheckBox`](checkbox.md), [`Switch`](switch.md), [`RadioGroup`](radiogroup.md), [`DropDown`](dropdown.md), [`ComboBox`](combobox.md) and [`Autocomplete`](combobox.md), [`Lookup`](lookup.md), [`TagBox`](tagbox.md), [`ListBox`](listbox.md) |
 | Display and feedback | [`Badge`](badge.md), [`Avatar`](avatar.md) and [`AvatarGroup`](avatar.md), [`Chip`](chip.md) and [`ChipGroup`](chip.md), [`Card`](card.md), [`Gallery`](gallery.md), [`TileView`](tileview.md), [`Timeline`](timeline.md), [`Skeleton`](skeleton.md), [`ProgressBar`](progress.md) and [`Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |

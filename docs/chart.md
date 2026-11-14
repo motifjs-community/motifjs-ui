@@ -1,6 +1,6 @@
 # Chart
 
-> Charts · @motifx-community/ui 0.1.0-beta.8
+> Charts · @motifx-community/ui 0.1.0-beta.10
 
 Displays lines, areas, bars, scatter points and bubbles on a shared value axis. The chart has no dependencies, takes its appearance from the design language, and makes every value available through the keyboard and a table view.
 

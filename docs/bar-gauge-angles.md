@@ -1,6 +1,6 @@
 # BarGauge: Angles and size
 
-> Gauges · @motifx-community/ui 0.1.0-beta.8
+> Gauges · @motifx-community/ui 0.1.0-beta.10
 
 How far the bars go round and which way they face fit a bar gauge to the room it has.
 

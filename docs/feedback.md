@@ -1,6 +1,6 @@
 # Feedback
 
-> Feedback · @motifx-community/ui 0.1.0-beta.8
+> Feedback · @motifx-community/ui 0.1.0-beta.10
 
 Feedback components tell the reader what is happening: how far a task has come, that something is loading, what a control does, and what has just happened.
 

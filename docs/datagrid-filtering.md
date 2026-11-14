@@ -1,6 +1,6 @@
 # DataGrid: Filtering and search
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.8
+> DataGrid · @motifx-community/ui 0.1.0-beta.10
 
 ## Filters
 
@@ -96,7 +96,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 ## Ranges, dates and custom entries
 
-A column's `headerFilterInterval` groups its header filter. A number column uses ranges of that size (“0 – 250”, “250 – 500”), and several sizes such as `[1000, 100]` create a tree. A date column uses a tree of years, months and days, down to the part it names (`'year'`, `'quarter'`, `'month'`, `'day'`, `'hour'`, `'minute'`, `'second'`), and `null` lists individual dates. Dates are a tree by default, down to the day (`headerFilterDateInterval`). The tree is the kit's `TreeView` with check boxes and “Select all”. A checked month is stored as `'2026/3'` and a year as `2026`, and each filters with `>=` its first moment and `<` the next one's, so a server can run it too. Counts are calculated in the browser from the column's distinct values, whether counted in memory, grouped by an adapter that supports grouping, or from `loadValues`.
+A column's `headerFilterInterval` groups its header filter. A number column uses ranges of that size (“0 – 250”, “250 – 500”), and several sizes such as `[1000, 100]` create a tree. A date column uses a tree of years, months and days, down to the part it names (`'year'`, `'quarter'`, `'month'`, `'day'`, `'hour'`, `'minute'`, `'second'`), and `null` lists individual dates. Dates are a tree by default, down to the day (`headerFilterDateInterval`). The tree is the kit's `TreeView` with check boxes and “Select all”. A checked month is stored as `'2026/3'` and a year as `2026`, and each filters with `>=` its first moment and `<` the next one's, so a server can run it too. Counts are calculated in the browser from the column's distinct values, whether counted in memory, grouped by an adapter that supports grouping, or from `loadValues`. A `datetime` column's tree goes down to the hour by default, and its filter row compares to the minute; a `date` column's compares by the day.
 
 `headerFilterItems` provides custom header filter entries, as `{ text, value }`, where a value is a value or a filter expression (`data.where('city', 'in', […])`). A function receives the other filters and `values()`, the entries it would list, so that you can add to them. `filterValues` and `filterType` (both can be tracked functions) set the contents of the header filter. `'exclude'` leaves those values out, so values added later appear. In the list, selecting every value and then deselecting some leaves those out in the same way.
 
@@ -418,6 +418,12 @@ import { columns, makeOrders } from './orders';
 
 const COAST = ['Antalya', 'İstanbul', 'İzmir', 'Trabzon'];
 
+/** An order with the moment it was placed: its day and a time of that day. */
+type Placed = Order & { placed: string };
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const withTimes = (orders: Order[]): Placed[] => orders.map((o) => ({ ...o, placed: `${o.date}T${pad(8 + ((o.id * 7) % 10))}:${pad((o.id * 13) % 60)}:00` }));
+
 /** The order columns with header filters: amounts in ranges, dates in a tree, cities with custom entries, and excluded statuses. */
 const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
   switch (c.field) {
@@ -444,6 +450,8 @@ const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
       return c;
   }
 });
+// A date and time: shown with its time, its header filter down to the hour, its filter row to the minute.
+intervalColumns.splice(intervalColumns.findIndex((c) => c.field === 'date') + 1, 0, { field: 'placed', title: 'Placed', type: 'datetime', width: 160, headerFilter: true, filterRow: true });
 
 /** The header filter with ranges of amounts, a tree of dates, custom entries and excluded values. */
 export default function HeaderFilterIntervals() {
@@ -460,7 +468,7 @@ export default function HeaderFilterIntervals() {
       <DataGrid
         class="dg-intervals"
         style="block-size: 30rem"
-        rows={makeOrders(300)}
+        rows={withTimes(makeOrders(300))}
         rowKey="id"
         columns={intervalColumns}
         label="Orders filtered by ranges and dates"

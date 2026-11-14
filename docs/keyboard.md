@@ -1,6 +1,6 @@
 # Keyboard and focus
 
-> Foundations · @motifx-community/ui 0.1.0-beta.8
+> Foundations · @motifx-community/ui 0.1.0-beta.10
 
 Every control follows the same rules for Tab order, the active control of a container, focus handling, `&File` access keys and application-wide shortcuts.
 
@@ -149,6 +149,8 @@ export default class Shortcut extends Component {
 }
 ```
 
+Commands defined once, with their keys, for menus, toolbars and ribbons, the list of every shortcut with its conflicts, and the keys the user gives are on [Commands and shortcuts](commands.md). [ShortcutEditor](shortcuteditor.md) lets the user assign other keys to any shortcut with a name.
+
 ## Focus never lands on &lt;body&gt;
 
 When the focused part of a control is disabled, hidden, removed (a list row, a tree branch) or disposed, focus moves to the next usable element from that position in the same window, or to the previous one. Clicking an empty area still clears focus as usual, and route changes are left to the router.
@@ -177,8 +179,8 @@ export default function FocusGuard() {
 
 | Member | Return value / type | Description |
 | --- | --- | --- |
-| `addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut and returns a function that removes it. `options.scope` limits it to a component, `options.within` further to parts of it (a component, a list of components, or a function that returns them, such as the tabs of a strip: shortcuts of different parts may share keys), and `options.inEditable` also enables it in text fields. |
-| `control.addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut scoped to the control and removes it when the control is disposed. |
+| `addShortcut(keys, handler, options?)` | `() => void` | Registers a shortcut and returns a function that removes it. `keys` is one set of keys or a list of them. `options.scope` limits it to a component, `options.within` further to parts of it (a component, a list of components, or a function that returns them, such as the tabs of a strip: shortcuts of different parts may share keys), `options.inEditable` also enables it in text fields, and `options.name` lets the user assign other keys ([ShortcutEditor](shortcuteditor.md)). |
+| `control.addShortcut(keys, handler, options?)` | `() => void` | Registers a shortcut scoped to the control and removes it when the control is disposed. |
 | `parseAccessKey(text)` | `{ text, key, index }` | Parses `&Text` for your own controls. Render the result with the `mx-access-key` class and call `setAccessKey(key)`. |
 | `tabIndex` | prop / property | The order inside the container. The default is 0. |
 | `activeControl / restoreFocus()` | FocusContainer | See the Control page. |

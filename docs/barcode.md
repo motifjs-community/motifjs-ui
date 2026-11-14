@@ -1,6 +1,6 @@
 # Barcode
 
-> Display · @motifx-community/ui 0.1.0-beta.8
+> Display · @motifx-community/ui 0.1.0-beta.10
 
 A linear barcode, drawn as vectors: Code 128, Code 39, EAN-13, EAN-8, UPC-A or Interleaved 2 of 5. It has no dependencies, works out check digits and refuses a value the format cannot hold.
 

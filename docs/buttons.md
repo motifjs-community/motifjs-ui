@@ -1,8 +1,8 @@
 # Buttons
 
-> Buttons · @motifx-community/ui 0.1.0-beta.8
+> Buttons · @motifx-community/ui 0.1.0-beta.10
 
-Buttons start commands. The group covers single buttons, groups of them, toolbars that keep commands in reach at any width, application and context menus, and a floating button for the main action of a screen.
+Buttons start commands. The group covers single buttons, groups of them and a floating button for the main action of a screen. Toolbars and menus, which hold the many commands of an application, are in [Navigation](navigation.md).
 
 ## Commands of an editor
 
@@ -131,9 +131,7 @@ Each component has its own page with its examples and its full API.
 | --- | --- |
 | `[Button](button.md)` | One command, with an icon, a menu or a split part; a toggle; a busy state while the command runs. |
 | `[ButtonGroup](buttongroup.md)` | A few related buttons side by side: one or several pressed, or plain actions. |
-| `[Toolbar](toolbar.md)` | A row of commands that moves what does not fit into a menu. |
 | `[SpeedDial](speeddial.md)` | A floating button for the main action, opening related actions in a line or a circle. |
-| `[MenuBar and ContextMenu](menus.md)` | The menus of an application and the menu of an element, with shortcuts, check items and access keys. |
 
 ## Choosing a component
 
@@ -145,7 +143,7 @@ Several components can do the same job; this table points to the one that reads 
 | `Show a choice of a few options at once` | [ButtonGroup](buttongroup.md), or [RadioGroup](radiogroup.md) in a form |
 | `Keep many commands in one bar at any width` | [Toolbar](toolbar.md) |
 | `Offer the commands of a whole application` | [MenuBar](menus.md) |
-| `Act on what is under the pointer` | [ContextMenu](menus.md) |
+| `Act on what is under the pointer` | [ContextMenu](menus-context.md) |
 | `Give a screen one main action, on a phone too` | [SpeedDial](speeddial.md) |
 
 ## What they share

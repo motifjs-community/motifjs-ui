@@ -1,6 +1,6 @@
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.8
+> Feedback · @motifx-community/ui 0.1.0-beta.10
 
 ProgressBar shows how far an operation has progressed, as a line or a circle, or indicates activity when the progress is unknown. Spinner shows that the system is busy. It is a rotating ring that can stand alone or cover a panel while it loads, and it can wait for a delay so that quick operations do not cause a flash.
 
@@ -303,7 +303,7 @@ export default function Cover() {
 
 ## Localization
 
-A bar or spinner without a label is named `uiLocale.strings.loading`. The percentage uses `locale`, which defaults to the kit's language, `uiLocale.locale`.
+A bar or spinner without a label is named `uiLocale.strings.loading`. The percentage uses `locale`, which defaults to the page `lang`.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -372,7 +372,7 @@ export default function Localization() {
 | `labelPosition` | `Bind<'top' \| 'bottom' \| 'side'>` | `'top'` (`'bottom'` for a circle) | `top` places the label and value above the bar, `bottom` places them below it, and `side` places the label before it and the value after it. |
 | `showValue` | `Bind<boolean>` | `false` | Shows the percentage, rounded down to a whole number, or `valueText`. |
 | `valueText` | `(value, fraction) => string` | — | The text shown and announced for a value (`3 of 12 files`). Because it is a function, it is stored as is and not bound. |
-| `locale` | `Bind<string>` | `uiLocale.locale` | The locale of the percentage. |
+| `locale` | `Bind<string>` | The page `lang` | The locale of the percentage. |
 | `tone` | `Bind<ProgressTone>` | `'accent'` | `accent`, `neutral`, `success`, `caution`, `danger`. |
 | `size` | `Bind<ControlSize>` | `'md'` | The thickness, and the size of a circle: `sm`, `md` or `lg`. |
 | `stretch` | `Bind<boolean>` | `false` | Stretches to the full width of its container. |

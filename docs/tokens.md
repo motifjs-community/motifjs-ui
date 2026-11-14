@@ -1,6 +1,6 @@
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.8
+> Get started · @motifx-community/ui 0.1.0-beta.10
 
 The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 
@@ -1097,6 +1097,9 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `combo-box.arrow-glyph.icon` | `--mx-combo-box-arrow-glyph-icon` | `` | `var(--mx-icon-chevron-down)` |
 | `combo-box.arrow-glyph.open.rotate` | `--mx-combo-box-arrow-glyph-open-rotate` | `` | `0.5turn` |
 | `combo-box.loading.color` | `--mx-combo-box-loading-color` | `color.fg.secondary` | `#5e5c55` |
+| `customizer.page.gap` | `--mx-customizer-page-gap` | `space.3` | `0.75rem` |
+| `customizer.buttons.gap` | `--mx-customizer-buttons-gap` | `space.2` | `0.5rem` |
+| `customizer.footer.gap` | `--mx-customizer-footer-gap` | `space.2` | `0.5rem` |
 | `datagrid.record-height` | `--mx-datagrid-record-height` | `control.height.md` | `2rem` |
 | `datagrid.row-space` | `--mx-datagrid-row-space` | `space.1` | `0.25rem` |
 | `datagrid.cell-inset` | `--mx-datagrid-cell-inset` | `control.padding.sm` | `0.5rem` |
@@ -3423,6 +3426,15 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `sheet.footer.gap` | `--mx-sheet-footer-gap` | `space.2` | `0.5rem` |
 | `sheet.footer.border-top-width` | `--mx-sheet-footer-border-top-width` | `border.width.1` | `1px` |
 | `sheet.footer.border-top-color` | `--mx-sheet-footer-border-top-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `shortcut-editor.editor.gap` | `--mx-shortcut-editor-editor-gap` | `space.3` | `0.75rem` |
+| `shortcut-editor.keys.gap` | `--mx-shortcut-editor-keys-gap` | `space.3` | `0.75rem` |
+| `shortcut-editor.status.color` | `--mx-shortcut-editor-status-color` | `color.fg.secondary` | `#5e5c55` |
+| `shortcut-editor.row-keys.padding-start` | `--mx-shortcut-editor-row-keys-padding-start` | `space.6` | `1.5rem` |
+| `shortcut-editor.row-keys.color` | `--mx-shortcut-editor-row-keys-color` | `color.fg.secondary` | `#5e5c55` |
+| `shortcut-editor.row-keys.font-size` | `--mx-shortcut-editor-row-keys-font-size` | `font.size.caption` | `0.75rem` |
+| `shortcut-editor.changed.padding-start` | `--mx-shortcut-editor-changed-padding-start` | `space.2` | `0.5rem` |
+| `shortcut-editor.changed.color` | `--mx-shortcut-editor-changed-color` | `color.fg.secondary` | `#5e5c55` |
+| `shortcut-editor.changed.font-size` | `--mx-shortcut-editor-changed-font-size` | `font.size.caption` | `0.75rem` |
 | `signature.width` | `--mx-signature-width` | `` | `420px` |
 | `signature.height` | `--mx-signature-height` | `` | `160px` |
 | `signature.guide-inset` | `--mx-signature-guide-inset` | `space.6` | `1.5rem` |

@@ -1,6 +1,6 @@
 # FileUploader
 
-> Editors · @motifx-community/ui 0.1.0-beta.8
+> Editors · @motifx-community/ui 0.1.0-beta.10
 
 Lets users select files with a button or drop them on the box. Files are listed with their size and status, and can upload automatically, on a button click or programmatically, with progress, cancel, retry and remove for each file. Files that exceed the limits are listed with the reason.
 

@@ -1,6 +1,6 @@
 # LoadPanel
 
-> Feedback · @motifx-community/ui 0.1.0-beta.8
+> Feedback · @motifx-community/ui 0.1.0-beta.10
 
 A loading overlay for a container or the whole page. It includes a shade, a panel with the kit spinner and a message, and a Cancel button when the operation can be stopped. The content underneath is unavailable while it is shown, and focus returns afterward.
 
@@ -126,7 +126,7 @@ export default function Options() {
 | Topic | Details |
 | --- | --- |
 | `Covering a container` | The panel is placed inside the container, above its content. The container gets `aria-busy`, and the content under the panel is inert, so it cannot be clicked or focused. |
-| `Over the page` | Without a `target`, the panel covers the viewport and the rest of the page is inert. The app's root in that window (the `run()` host, an app window's host, or the body when no app runs) gets `aria-busy`. |
+| `Over the page` | Without a `target`, the panel covers the viewport and the rest of the page is inert. |
 | `Focus` | Focus moves from the content underneath to the panel (to the Cancel button if there is one) and returns to its original position when the panel hides. |
 | `Delay` | Quick operations show nothing. The panel appears after `delay`, and hiding it before then cancels it. |
 | `Spinner.cover` | The kit spinner can cover a container with a single call (`Spinner.cover`). LoadPanel is the full component, with the panel, message, delay and button. |

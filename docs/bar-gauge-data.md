@@ -1,6 +1,6 @@
 # BarGauge: Data
 
-> Gauges · @motifx-community/ui 0.1.0-beta.8
+> Gauges · @motifx-community/ui 0.1.0-beta.10
 
 A bar gauge reads numbers, or rows through their fields, and follows them as they change.
 

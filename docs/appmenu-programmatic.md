@@ -1,6 +1,6 @@
 # AppMenu: Programmatic changes
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.8
+> AppMenu · @motifx-community/ui 0.1.0-beta.10
 
 Items can be added, removed, moved and changed at any time, by their keys. Items that stay keep their place, and pages that were opened keep their state.
 

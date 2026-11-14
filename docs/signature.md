@@ -1,6 +1,6 @@
 # Signature
 
-> Editors · @motifx-community/ui 0.1.0-beta.8
+> Editors · @motifx-community/ui 0.1.0-beta.10
 
 A pad to sign on with a pen, a finger or a mouse. The value is the strokes themselves, so a signature can be stored as data, drawn again at any size and exported as an image.
 

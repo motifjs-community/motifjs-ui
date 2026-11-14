@@ -1,6 +1,6 @@
 # Editors
 
-> Editors · @motifx-community/ui 0.1.0-beta.8
+> Editors · @motifx-community/ui 0.1.0-beta.10
 
 Editors take values: text, numbers, dates and times, ranges, colors, ratings, codes, files and signatures. They share one field model, so a label, help text, validation and binding work the same in all of them.
 
@@ -119,6 +119,7 @@ Each component has its own page with its examples and its full API.
 | `[Rating](rating.md)` | A score in stars or other marks. |
 | `[ValidationSummary](validationsummary.md)` | The invalid fields of a group, with links to them. |
 | `[FileUploader](fileuploader.md)` | Files dropped or chosen, with limits, progress and uploading in chunks. |
+| `[ShortcutEditor](shortcuteditor.md)` | The app’s keyboard shortcuts, for the user to assign other keys. |
 
 ## Choosing a component
 
@@ -135,6 +136,7 @@ Several components can do the same job; this table points to the one that reads 
 | `Show a month all the time` | [Calendar](calendar.md) |
 | `Take a code sent by message` | [OtpInput](otpinput.md) |
 | `Take files` | [FileUploader](fileuploader.md) |
+| `Let the user change keyboard shortcuts` | [ShortcutEditor](shortcuteditor.md) |
 
 ## What they share
 

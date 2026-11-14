@@ -1,6 +1,6 @@
 # Display
 
-> Display · @motifx-community/ui 0.1.0-beta.8
+> Display · @motifx-community/ui 0.1.0-beta.10
 
 Display components present content: people, counts and labels, cards, pictures, tiles, events in time, codes to scan, and placeholders while content loads.
 

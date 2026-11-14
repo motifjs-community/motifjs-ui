@@ -1,6 +1,6 @@
 # DataGrid: Editing
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.8
+> DataGrid · @motifx-community/ui 0.1.0-beta.10
 
 ## Editing and save modes
 
@@ -65,6 +65,34 @@ export interface Order {
   note: string;
 }
 ```
+
+## Columns with several values
+
+With `multiple: true`, a cell holds a list of values (an array) of the column's `type`: `list` choices, `lookup` keys, numbers or texts. It shows their texts joined the way the locale writes lists (“Red, Navy”) and is edited with a `TagBox`. A pick adds or removes a value and leaves the list open, and a text or number column takes typed texts as values. Enter on the empty input, Tab or leaving the cell keeps the values; Escape closes the list, then clears the typed text, then cancels the edit. An empty list is no value, so `required` asks for at least one.
+
+```tsx
+/** A customer, as stored by a second sample service. */
+export interface Customer {
+  id: number;
+  name: string;
+  city: string;
+}
+
+const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara', 'Donald', 'İlhan', 'Margaret', 'Feza', 'Ali Nesin'];
+const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
+const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
+
+/** `n` sample customers, the same ones every time. */
+export function makeCustomers(n: number): Customer[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: i + 1,
+    name: `${FIRST[i % FIRST.length]} ${LAST[Math.floor(i / FIRST.length) % LAST.length]} ${Math.floor(i / (FIRST.length * LAST.length)) + 1}`,
+    city: CITIES[(i * 5) % CITIES.length],
+  }));
+}
+```
+
+A filter condition holds when one of the values passes it, and with `<>` when none of them does. The header filter lists the values one by one, a row counted once for each, and the search finds the text of any value. Rows sort and group by the joined texts, copying and exporting write them, and pasted text is split at the locale's separator. With an `ODataAdapter`, name the fields in its `collections` option so that their conditions are written with `any()`.
 
 ## Row actions
 
@@ -396,6 +424,84 @@ export default function NewRows() {
       />
     </>
   );
+}
+```
+
+`MultipleValues.tsx`
+
+```tsx
+import { DataGrid, type GridColumn } from '@motifx-community/ui';
+import { makeCustomers } from './customers';
+
+type Product = { id: number; name: string; colors: string[]; tags: string[]; sizes: number[]; buyers: number[] };
+
+const COLORS: { value: string; label: string }[] = [
+  { value: 'black', label: 'Black' },
+  { value: 'white', label: 'White' },
+  { value: 'red', label: 'Red' },
+  { value: 'navy', label: 'Navy' },
+  { value: 'olive', label: 'Olive' },
+];
+const TAGS = ['new', 'sale', 'organic', 'limited', 'bestseller'];
+const NAMES = ['T-shirt', 'Hoodie', 'Jacket', 'Sneakers', 'Cap', 'Scarf', 'Jeans', 'Shirt', 'Socks', 'Coat'];
+
+/** Products whose cells hold several values: colors from a list, free tags, sizes, and buyers from another source. */
+export default function MultipleValues() {
+  const buyers = makeCustomers(40);
+  const products: Product[] = Array.from({ length: 60 }, (_, i) => ({
+    id: i + 1,
+    name: `${NAMES[i % NAMES.length]} ${Math.floor(i / NAMES.length) + 1}`,
+    colors: COLORS.filter((_, c) => (i + c) % 3 === 0).map((o) => o.value),
+    tags: TAGS.filter((_, t) => (i * 7 + t) % 4 === 0),
+    sizes: i % 5 === 0 ? [] : [36 + (i % 3) * 2, 42 + (i % 4) * 2],
+    // None, one or two buyers.
+    buyers: [((i * 7) % 40) + 1, ((i * 13) % 40) + 1].slice(0, i % 3),
+  }));
+  const columns: GridColumn<Product>[] = [
+    { field: 'id', title: 'No', type: 'number', width: 70, editable: false },
+    { field: 'name', title: 'Product', width: 140 },
+    { field: 'colors', title: 'Colors', type: 'list', options: COLORS, multiple: true, width: 180, required: true },
+    { field: 'tags', title: 'Tags', multiple: true, width: 180 },
+    { field: 'sizes', title: 'Sizes', type: 'number', multiple: true, width: 120 },
+    { field: 'buyers', title: 'Buyers', multiple: true, flex: 1, width: 240, lookup: { dataSource: buyers, valueField: 'id', textField: 'name' } },
+  ];
+
+  return (
+    <DataGrid
+      style="block-size: 28rem"
+      rows={products}
+      rowKey="id"
+      columns={columns}
+      label="Products with several values in a cell"
+      locale="en"
+      saveMode="batch"
+      settings={{ editable: true, filterRow: true, headerFilter: true, searchPanel: true, filterDelay: 200 }}
+    />
+  );
+}
+```
+
+`customers.ts`
+
+```tsx
+/** A customer, as stored by a second sample service. */
+export interface Customer {
+  id: number;
+  name: string;
+  city: string;
+}
+
+const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara', 'Donald', 'İlhan', 'Margaret', 'Feza', 'Ali Nesin'];
+const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
+const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
+
+/** `n` sample customers, the same ones every time. */
+export function makeCustomers(n: number): Customer[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: i + 1,
+    name: `${FIRST[i % FIRST.length]} ${LAST[Math.floor(i / FIRST.length) % LAST.length]} ${Math.floor(i / (FIRST.length * LAST.length)) + 1}`,
+    city: CITIES[(i * 5) % CITIES.length],
+  }));
 }
 ```
 

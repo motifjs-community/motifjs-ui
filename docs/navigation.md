@@ -1,8 +1,8 @@
 # Navigation
 
-> Navigation · @motifx-community/ui 0.1.0-beta.8
+> Navigation · @motifx-community/ui 0.1.0-beta.10
 
-Navigation components move the reader around an application and lay out its screens: bars at the top and bottom, tabs, paths, steps and pages, panels that slide in, and the containers that arrange everything.
+Navigation components move the reader around an application and lay out its screens: bars at the top and bottom, menus and toolbars, tabs, paths, steps and pages, panels that slide in, and the containers that arrange everything.
 
 ## A project app
 
@@ -97,6 +97,8 @@ Each component has its own page with its examples and its full API.
 | Component | For |
 | --- | --- |
 | `[AppBar](appbar.md)` | The bar at the top of an application. |
+| `[MenuBar and ContextMenu](menus.md)` | The menus of an application and the menu of an element, with shortcuts, check items and access keys. |
+| `[Toolbar](toolbar.md)` | A row of commands that moves what does not fit into a menu. |
 | `[BottomNavigation](bottomnavigation.md)` | The main places of an application at the bottom of a phone screen. |
 | `[Tabs](tabs.md)` | Views of the same thing, one at a time. |
 | `[Breadcrumb](breadcrumb.md)` | Where the reader is in a hierarchy. |
@@ -120,6 +122,9 @@ Several components can do the same job; this table points to the one that reads 
 | `Split a long list` | [Pagination](pagination.md) |
 | `Fold away sections` | [Accordion](accordion.md) |
 | `Give an application its menu` | [Drawer](drawer.md), or [AppBar](appbar.md) with its menu button |
+| `Offer the commands of a whole application` | [MenuBar](menus.md), or [RibbonMenu](ribbonmenu.md) for many commands in tabs |
+| `Keep many commands in one bar at any width` | [Toolbar](toolbar.md) |
+| `Act on what is under the pointer` | [ContextMenu](menus-context.md) |
 | `Reach the main places on a phone` | [BottomNavigation](bottomnavigation.md) |
 | `Offer actions on a phone` | [ActionSheet](actionsheet.md) |
 | `Put content beside content, resizable` | [Splitter](splitter.md) |

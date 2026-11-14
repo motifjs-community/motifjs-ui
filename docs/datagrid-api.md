@@ -1,15 +1,15 @@
 # DataGrid: API reference
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.8
+> DataGrid · @motifx-community/ui 0.1.0-beta.10
 
 ## Columns
 
-> Up to 0.1.0-beta.8, the root of the content that `cell`, `groupCell`, `headerCell`, a band's `headerCell` and the detail `template` return must not carry `x-display` or `x-wait`, and must not be a conditional or a fragment: such content can leave its cell when it is shown again. Put it inside a wrapper element, for example `<span hidden={() => !ctx.row}><Button … /></span>`. For buttons on each row, use the grid's `actions` with a `visible` function per row.
+Up to 0.1.0-beta.8, the root of the content that `cell`, `groupCell`, `headerCell`, a band's `headerCell` and the detail `template` return must not carry `x-display` or `x-wait`, and must not be a conditional or a fragment: such content can leave its cell when it is shown again. Put it inside a wrapper element, for example `<span hidden={() => !ctx.row}><Button … /></span>`. For buttons on each row, use the grid's `actions` with a `visible` function per row.
 
 | Field | Description |
 | --- | --- |
 | `field, title` | The value's key (a dotted path reads a nested value) and the header text (`Bind<string>`). |
-| `type` | `text`, `number`, `date`, `boolean`, `list`. Determines the alignment, format, sorting and editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`). |
+| `type` | `text`, `number`, `date`, `datetime`, `boolean`, `list`. Determines the alignment, format, sorting and editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`). `datetime` is a date with its time: shown with both, edited with a `DateBox` of `type: 'datetime'`, filtered to the minute, and its header filter goes down to the hour. |
 | `width, minWidth, maxWidth, flex` | In pixels (by default, the `columnWidth` and `columnMinWidth` settings). `flex` shares the free space until the user resizes. |
 | `sticky, hidden, align` | Pinned to an edge (a column in a band sticks with its band), initially hidden, and the alignment. |
 | `ownerBand, hidingPriority` | The band of a column in a flat list (its `name` or position), and its position in the order columns hide to fit the width, lowest first. |

@@ -1,6 +1,6 @@
 # Foundations
 
-> Foundations · @motifx-community/ui 0.1.0-beta.8
+> Foundations · @motifx-community/ui 0.1.0-beta.10
 
 The foundations are what every control of the kit shares: the Control base with its properties, keyboard and focus, and the language of the texts and formats.
 

@@ -1,6 +1,6 @@
 # Gauge
 
-> Gauges · @motifx-community/ui 0.1.0-beta.8
+> Gauges · @motifx-community/ui 0.1.0-beta.10
 
 Shows a value against its scale, as an arc, a circle or a straight bar. Ranges give stretches of the scale a meaning, markers and marks point at values, and every part takes its look from the design language.
 

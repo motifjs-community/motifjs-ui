@@ -1,6 +1,6 @@
 # Slider
 
-> Editors · @motifx-community/ui 0.1.0-beta.8
+> Editors · @motifx-community/ui 0.1.0-beta.10
 
 Selects a value on a track by dragging a thumb or using the keyboard. It supports a single number or a range with two thumbs, steps, labeled tick marks, a value tooltip, a vertical orientation and number formatting, along with the label, help text and validation common to all fields.
 
@@ -243,7 +243,7 @@ export default function States() {
 
 ## Localization
 
-The names of the two thumbs in a range come from `uiLocale.strings` (`minimum`, `maximum`). Numbers use `locale`, which defaults to the kit's language, `uiLocale.locale`.
+The names of the two thumbs in a range come from `uiLocale.strings` (`minimum`, `maximum`). Numbers use `locale`, which defaults to the page `lang`.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -326,7 +326,7 @@ export default function Localization() {
 | `tickLabels` | `Bind<boolean>` | `false` | Shows values under the marks, or at the two ends if there are no marks. |
 | `showValue` | `Bind<'never' \| 'drag' \| 'always'>` | `'never'` | Shows a value tooltip above the thumb: never, while it moves (with the pointer or keyboard), or always. |
 | `format` | `Bind<Intl.NumberFormatOptions \| null>` | `null` | The format used by the tooltip, the tick labels and screen readers. |
-| `locale` | `Bind<string>` | `uiLocale.locale` | The locale of `format`. |
+| `locale` | `Bind<string>` | The page `lang` | The locale of `format`. |
 | `valueText` | `(value: number) => string` | — | The text screen readers announce for a value. Because it is a function, it is stored as is and not bound. |
 | `updateOn` | `Bind<'input' \| 'change'>` | `'input'` | With `change`, the value updates when the thumb is released. The thumb still moves during the drag. |
 | `name` | `Bind<string>` | `''` | The name submitted with the form. A range submits two values. |

@@ -1,6 +1,6 @@
 # Chart: Heat map
 
-> Charts · @motifx-community/ui 0.1.0-beta.8
+> Charts · @motifx-community/ui 0.1.0-beta.10
 
 A heat map shows a value for each pair of two categories as a color.
 

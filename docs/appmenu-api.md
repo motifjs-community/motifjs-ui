@@ -1,6 +1,6 @@
 # AppMenu: API reference
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.8
+> AppMenu · @motifx-community/ui 0.1.0-beta.10
 
 Everything `AppMenu` takes, offers and reports. Every prop is also a settable property, and a function is followed.
 

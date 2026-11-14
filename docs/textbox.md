@@ -1,6 +1,6 @@
 # TextBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.8
+> Editors · @motifx-community/ui 0.1.0-beta.10
 
 A single-line text input with a label, help text and error display. It supports a placeholder, a prefix and suffix, buttons inside the box, a clear button, a password reveal button, a character counter, an input mask and validation, either on its own, in a group, or across all fields in a panel.
 

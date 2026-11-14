@@ -1,6 +1,6 @@
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.8
+> Editors · @motifx-community/ui 0.1.0-beta.10
 
 A numeric input with arrow key support, PageUp and PageDown, spin buttons that repeat while held, min and max limits, exact decimal stepping, display formats such as currency and percent, and locale-aware input.
 
@@ -111,7 +111,7 @@ export default function SpinButtons() {
 
 ## Format and locale
 
-Without focus, the value is displayed through `Intl.NumberFormat` using `format` and `locale` (the kit's language, `uiLocale.locale`, by default). With focus, it switches to a plain number for editing. Input is parsed in the same locale: `1.234,5` in Turkish and `1,234.5` in English. A `.` also works as the decimal point where it cannot be a group separator. A percent is edited as displayed, so 0.125 is entered as 12.5.
+Without focus, the value is displayed through `Intl.NumberFormat` using `format` and `locale` (the page `lang` by default). With focus, it switches to a plain number for editing. Input is parsed in the same locale: `1.234,5` in Turkish and `1,234.5` in English. A `.` also works as the decimal point where it cannot be a group separator. A percent is edited as displayed, so 0.125 is entered as 12.5.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -266,7 +266,7 @@ export default function Localization() {
 | `spinLayout` | `Bind<SpinLayout>` | `'stacked'` | `stacked` shows arrows on top of each other, and `inline` shows − and + side by side. |
 | `wheel` | `Bind<boolean>` | `false` | The mouse wheel changes the value while the field has focus. |
 | `format` | `Bind<Intl.NumberFormatOptions>` | `{}` | The display format without focus: `{ style: 'currency', currency: 'TRY' }`, `{ style: 'percent' }`, `{ minimumFractionDigits: 2 }`… |
-| `locale` | `Bind<string>` | `uiLocale.locale` | The locale of the format and of the input. |
+| `locale` | `Bind<string>` | The page `lang` | The locale of the format and of the input. |
 | `decimals` | `Bind<number \| null>` | `null` | The number of digits after the decimal point. Every value is rounded to this precision (half away from zero) regardless of its source, and displayed with exactly that many digits while the field is not being edited. |
 | `clamp` | `Bind<boolean>` | `true` | Brings a value outside `min` and `max` into range when entered. `false` leaves it to the range validation. |
 | `allowEmpty` | `Bind<boolean>` | `true` | An empty field is `null`. `false` replaces it with `min` (or 0) when the field loses focus. |

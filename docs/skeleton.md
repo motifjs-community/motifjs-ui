@@ -1,6 +1,6 @@
 # Skeleton
 
-> Display · @motifx-community/ui 0.1.0-beta.8
+> Display · @motifx-community/ui 0.1.0-beta.10
 
 A placeholder that matches the shape of content that is loading, so the page keeps its layout while data arrives. If you provide content, it replaces the placeholder in the same place when loading ends.
 
