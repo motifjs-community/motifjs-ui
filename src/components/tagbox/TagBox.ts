@@ -156,9 +156,12 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     });
     for (const name of LIST_LOOK) this.observeProperty(name, () => this.listChanged());
     for (const name of TAG_LOOK) this.observeProperty(name, () => this.renderTags());
-    // Items given anew are shown; items changed in place wait for `refresh`.
+    // Items given anew are shown, the tags with them (the items known for the values are those now); items changed in
+    // place wait for `refresh`.
     this.observeProperty<readonly T[] | undefined>('items', (items) => {
-      if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
+      if (this.peekProperty('dataSource')) return;
+      parts.known.clear();
+      parts.items.setArray(items ?? []);
     });
     const stopLocale = onLanguage(this, () => {
       const strings = uiLocale.strings;
@@ -761,8 +764,9 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       this.highlight();
       parts.popup.place();
     }
-    // Items of the tags may have come in.
-    if (this.values().some((value) => parts.known.itemOf(value) === undefined)) this.renderTags();
+    // Items of the tags may have come in or changed: a tag draws its label again only when its item did.
+    this.renderTags();
+    untracked(() => this.setProperty('found', (this.peekProperty<number>('found') ?? 0) + 1));
   }
 
   /** Keeps a "Select all" row the list drew, to mark it again when the selection changes. */

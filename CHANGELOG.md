@@ -19,6 +19,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
+- `TagBox` draws its tags again with their texts when in-memory items come later or are given anew (a list of choices
+  loaded after the box was made): the tags kept showing the bare values.
 - `Toolbar` fits its items into the room again from the sizes the size observers told, when the bar or one of its items
   changes size: nothing is laid out to read them (a grid's toolbar in a document moved to another group, a window or
   back). New items, another look or orientation, and `updateOverflow()` still put every item back and measure them.

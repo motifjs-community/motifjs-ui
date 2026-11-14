@@ -141,6 +141,27 @@ describe('TagBox', () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it('draws the tags again with their texts when in-memory items come later, or are given anew', async () => {
+    const c = new TagBox<{ value: string; text: string }, string>({ label: 'Colors', value: ['r', 'b'] });
+    page(c);
+    await settle();
+    expect(tagTexts(c)).toEqual(['r', 'b']);
+    c.items = [
+      { value: 'r', text: 'Red' },
+      { value: 'g', text: 'Green' },
+      { value: 'b', text: 'Blue' },
+    ];
+    await settle();
+    expect(tagTexts(c)).toEqual(['Red', 'Blue']);
+    expect(tags(c)[0].querySelector('button')!.getAttribute('aria-label')).toBe('Remove Red');
+    c.items = [
+      { value: 'r', text: 'Kırmızı' },
+      { value: 'b', text: 'Mavi' },
+    ];
+    await settle();
+    expect(tagTexts(c)).toEqual(['Kırmızı', 'Mavi']);
+  });
+
   it('keeps the tags of the values that stay when a value comes or goes', async () => {
     const c = new TagBox<string, string>({ items: SKILLS, value: ['CSS', 'HTML', 'Rust'], maxTags: 2 });
     page(c);

@@ -222,6 +222,39 @@ describe('DataGrid multiple columns: editing', () => {
   });
 });
 
+describe('DataGrid multiple columns: lists written by code, choices that come later', () => {
+  it('takes a list of keys written by code, checking each key in the lookup source', async () => {
+    const people = new People();
+    const { grid } = await make({ columns: columns(new data.DataSource<Person, number>({ adapter: people, loadMode: 'page' })), settings: { editable: true }, saveMode: 'batch' });
+    grid.cellValue(2, 'owners', [3, 1]);
+    await settle();
+    expect(column(grid, 'owners')[2]).toBe('Mehmet, Zeynep');
+    expect(cellOf(grid, 2, 'owners').dataset.error).toBeUndefined();
+    // A key the source does not have stops the row, the others still show their names.
+    grid.cellValue(1, 'owners', [2, 99]);
+    await settle();
+    expect(column(grid, 'owners')[1]).toBe('Ali, 99');
+    expect(cellOf(grid, 1, 'owners').dataset.error).toBe(uiLocale.strings.gridLookupMissing);
+    expect(await grid.saveChanges()).toEqual({ saved: 1, failed: 1 });
+    await grid.dispose();
+  });
+
+  it('draws the labels of a list column whose choices come later, in the cells and in the editor', async () => {
+    // Asked for the cells (no row) and for the editor (its row): every question waits for the answer.
+    const waiting: ((choices: readonly ListOption[]) => void)[] = [];
+    const options = () => new Promise<readonly ListOption[]>((done) => waiting.push(done));
+    const { grid } = await make({ columns: columns(PEOPLE, { colors: { options } }), settings: { editable: true } });
+    const box = startEdit(grid, 0, 'colors');
+    await settle();
+    expect(tagTexts(box)).toEqual(['r', 'b']);
+    for (const done of waiting.splice(0)) done(COLORS);
+    await settle();
+    expect(tagTexts(box)).toEqual(['Red', 'Blue']);
+    expect(column(grid, 'colors')[1]).toBe('Green');
+    await grid.dispose();
+  });
+});
+
 describe('DataGrid multiple columns: filters, search, sorting and grouping', () => {
   it('keeps the rows with one value that passes, none with a negative operator', async () => {
     const { grid } = await make({ settings: { filterRow: true, filterDelay: 0 } });
