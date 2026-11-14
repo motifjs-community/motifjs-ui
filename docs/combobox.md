@@ -1,6 +1,6 @@
 # ComboBox and Autocomplete
 
-> Choice · @motifx-community/ui 0.1.0-beta.11
+> Choice · @motifx-community/ui 0.1.0-beta.12
 
 A text input with a list that filters as the user types. Items can come from memory or from a data layer source that is searched on the server. `Autocomplete` is the free-text variant, where the value is the text itself.
 
@@ -75,6 +75,7 @@ export const cities = ['Adana', 'Ankara', 'Antalya', 'Bursa', 'Diyarbakır', 'Er
 | `value` | `Bind<V \| null>` | `null` | The value of the selected item. `x-model` binds it. |
 | `items / dataSource` | `Bind<readonly T[]>` / `Bind<DataSource \| null>` | — | An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server. |
 | `textField, valueField, iconField, groupField, enabledField` | `Bind<ItemField<T>>` | — | Same as DropDown. Groups apply to in-memory items. |
+| `normalizeKey` | `Bind<NormalizeKey>` | — | Same as DropDown. |
 | `searchMode` | `Bind<'contains' \| 'startswith'>` | `'contains'` | How in-memory items are matched. |
 | `minSearchLength` | `Bind<number>` | `0` | The number of characters to type before the list opens. |
 | `searchDelay` | `Bind<number>` | `0` / `250` | The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source). |

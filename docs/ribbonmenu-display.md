@@ -1,6 +1,6 @@
 # RibbonMenu: Showing and keys
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.12
 
 The menu can show only its tabs or hide itself to leave the page more room. A button before the tabs opens the app’s main menu, quick commands are at hand from every tab, and key hints let the keyboard reach any command in a few letters.
 
@@ -85,8 +85,8 @@ A double-click on a tab and Ctrl+F1 switch between `always` and `tabs`; the menu
 | When | What happens |
 | --- | --- |
 | `On the tabs` | Each tab shows its access key (the letter after `&` in its text), else its first letter. The button before the tabs has a letter too, and the quick commands have digits. |
-| `On the commands` | A command shows its `keyHint`, else its access key, else its first letter. Several commands starting with the same letter have a letter and a digit. |
-| `Typing` | The letters press what they stand on. A tab goes on to the letters of its commands; a command ends the hints. Typing the first of two letters hides the others. |
+| `On the commands` | A command shows its `keyHint`, else its access key, else its first letter. A command that holds a field and has no text takes them from the field's label. Several commands starting with the same letter have a letter and a digit. |
+| `Typing` | The letters press what they stand on. A tab goes on to the letters of its commands; a command ends the hints, and so do the button before the tabs and a quick command (what the button opens, such as an `AppMenu`, has access keys of its own). Typing the first of two letters hides the others. |
 | `Escape` | Goes back one level: from the commands to the tabs, then ends the hints. Any other key, a click and leaving the page end them too. |
 
 Alt and F10 reach the menu that has focus, else the first menu of the page. `keyHints: false` turns them off, and `showKeyHints()` shows them programmatically.

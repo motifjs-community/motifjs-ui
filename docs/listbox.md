@@ -1,6 +1,6 @@
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.11
+> Data · @motifx-community/ui 0.1.0-beta.12
 
 A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be searched and grouped, and long lists render only the visible rows.
 
@@ -211,6 +211,7 @@ export default function Localization() {
 | `value` | `Bind<V \| V[] \| null>` | `null` / `[]` | The selected value (single) or values (multiple). `x-model` binds it, and a change writes a new array. |
 | `items / dataSource` | `Bind<readonly T[]>` / `Bind<DataSource \| null>` | — | An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server. A data source takes precedence. |
 | `textField, valueField` | `Bind<ItemField<T>>` | `'text'`, `'value'` | A property name or a function `(item) => …`. Plain values serve as their own text and value. |
+| `normalizeKey` | `Bind<NormalizeKey>` | — | Same as DropDown. |
 | `iconField, groupField, enabledField` | `Bind<ItemField<T>>` | — | An icon for each item, headers between groups (in-memory items), and items that cannot be selected. |
 | `selectionMode` | `Bind<'single' \| 'multiple'>` | `'single'` | A single value, or an array of values. |
 | `showCheckBoxes` | `Bind<boolean>` | `true` | In multiple selection, shows check boxes in front of the items. `false` draws a check mark instead, and a plain click selects only that item. |

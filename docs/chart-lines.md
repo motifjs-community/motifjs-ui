@@ -1,6 +1,6 @@
 # Chart: Lines and areas
 
-> Charts · @motifx-community/ui 0.1.0-beta.11
+> Charts · @motifx-community/ui 0.1.0-beta.12
 
 Lines and areas show how values change along an axis: over time, or from one category to the next.
 

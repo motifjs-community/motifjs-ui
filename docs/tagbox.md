@@ -1,6 +1,6 @@
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.11
+> Data · @motifx-community/ui 0.1.0-beta.12
 
 Selects multiple items. Selected items appear as tags in the field, followed by a text input that searches the list. Items can come from memory or from a data source, and typed text can become a custom tag.
 
@@ -217,6 +217,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `value` | `Bind<V[]>` | `[]` | The values of the selected items. `x-model` binds them, and every change writes a new array. |
 | `items / dataSource` | `Bind<readonly T[]>` / `Bind<DataSource \| null>` | — | An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server. |
 | `textField, valueField, iconField, groupField, enabledField` | `Bind<ItemField<T>>` | — | Same as ListBox. Groups apply to in-memory items. |
+| `normalizeKey` | `Bind<NormalizeKey>` | — | Same as DropDown. |
 | `placeholder` | `Bind<string>` | `''` | Displayed when no item is selected. |
 | `searchMode, minSearchLength, searchDelay` |  | `'contains'`, `0`, `0` / `250` | How and when typed text searches, as in ComboBox. |
 | `acceptCustomValue` | `Bind<boolean>` | `false` | Pressing Enter adds text that matches no item as a custom tag. |

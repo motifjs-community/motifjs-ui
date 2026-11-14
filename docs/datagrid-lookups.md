@@ -1,6 +1,6 @@
 # DataGrid: Lookup columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.11
+> DataGrid · @motifx-community/ui 0.1.0-beta.12
 
 ## Lookup columns
 
@@ -80,10 +80,13 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 }
 ```
 
+Which item a key stands for is the source's decision, as its database compares keys: one that disregards trailing spaces (a `char(n)` column) matches `'A  '` to `'A'`, one that disregards case matches an ID written in capitals, and a numeric column reads `'007'` as `7`. The grid asks for the keys of a moment together; when the source returns items no key matched exactly, or items that differ from a key only in such a way, it asks for those keys one by one, and what the source returns for a key is that key's item. A key the source does not have stays a missing key, with no request more. The cell, the editor (its list marks the item), the filter row and the header filter follow the same answer; keys matched to one item are one entry in the lists, which filters by all of them. The row's value is never changed: the editor writes another value only when another item is picked. `normalizeKey` states the rule instead, for an in-memory array, or to spare those requests.
+
 | Lookup field | Description |
 | --- | --- |
 | `dataSource` | `Bind<DataSource \| unknown[]>`. The items, searched and resolved on their own service, or an in-memory array. |
 | `valueField, textField` | The field that matches the cell value (by default, the source's key, or the value itself in an array of plain values), and the displayed text as a field or `(item) => text` (by default, the value). |
+| `normalizeKey` | `(key) => unknown`. The rule of keys a source compares its own way: keys equal once normalized are one key, such as `(k) => (typeof k === 'string' ? k.trimEnd() : k)` for codes a database pads with spaces. Without it, such keys are still matched (see above); give it to spare those requests, and for an in-memory array, where no source decides. Use one function for a source, so every use of it shares one cache. |
 | `searchFields` | The fields searched by the editor and text searches. By default, `textField` when it is a field. |
 | `filter` | `(row, context) => FilterExpression`. Narrows the items for a row (for cascading lists, `context.getValue('province')` returns the entered value, otherwise the row's). `row` is `null` for filter lists. |
 | `allowClearing` | `Bind<boolean>`. Adds a clear button to the editor. The default is `false`. |

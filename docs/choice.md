@@ -1,6 +1,6 @@
 # Choice
 
-> Choice · @motifx-community/ui 0.1.0-beta.11
+> Choice · @motifx-community/ui 0.1.0-beta.12
 
 Choice components let the reader pick: on or off, one of a few, several of a list, or one of many with search.
 

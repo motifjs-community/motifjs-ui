@@ -1,6 +1,6 @@
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.11
+> Choice · @motifx-community/ui 0.1.0-beta.12
 
 Selects one item from a list. The field shows the selected item, and the list opens below it on click or from the keyboard. The list can be searched, grouped and customized, and it stays fast with thousands of items.
 
@@ -206,6 +206,7 @@ export default function Localization() {
 | `valueText` | `Bind<string>` | `''` | The display text for the value while its item is requested from `dataSource`, shown immediately instead of waiting. Use it when a record already has the name: `valueText={() => order.customerName}`. |
 | `searchDelay` | `Bind<number>` | `250` with a data source, otherwise `0` | The delay, in milliseconds, between the last keystroke in the search box and the search. |
 | `textField / valueField` | `Bind<ItemField<T>>` | `'text'` / `'value'` | A property name or a function `(item) => …`. Without `valueField`, an object with a `value` property uses that value, and anything else is its own value. |
+| `normalizeKey` | `Bind<NormalizeKey>` | — | Values equal once normalized are one value, such as `(k) => k.trimEnd()` for codes padded with spaces. Without it, the item of a value a data source compares its own way (trailing spaces, case) is still found: the source is asked for it and decides, and the list marks that item. |
 | `iconField, groupField, enabledField` | `Bind<ItemField<T>>` | — | An icon for each option. Options in the same group appear together under its name. `enabled` marks options that cannot be selected. |
 | `placeholder` | `Bind<string>` | `''` | Displayed when no item is selected. |
 | `searchEnabled` | `Bind<boolean>` | `false` | Adds a search box at the top of the list. |
