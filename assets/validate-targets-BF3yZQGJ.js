@@ -1,0 +1,1 @@
+import{on as e}from"./next-id-CtzpBrBT.js";function t(t,n){return e(t.part,n.part)}async function n(e,n=!0){let r=await Promise.all(e.map(e=>e.validate())),i=e.filter((e,t)=>!r[t]).sort(t);return n&&i.find(e=>e.focus()),{valid:!i.length,invalid:i}}export{n as t};

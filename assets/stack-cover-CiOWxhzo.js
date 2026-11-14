@@ -1,0 +1,1 @@
+import{jn as e,k as t}from"./next-id-CtzpBrBT.js";function n(n){let r=t.frontFirst(e(n));return{surfaces:r.map(e=>e.part),modal:r.find(e=>e.modal)?.part??null}}export{n as t};

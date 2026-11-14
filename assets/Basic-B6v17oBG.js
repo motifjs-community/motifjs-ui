@@ -1,0 +1,1 @@
+import{Zn as e}from"./next-id-CtzpBrBT.js";import{t}from"./BarGauge-Cts5tjSr.js";function n(){return e(t,{class:`bg-basic`,data:[47.3,65.3,84.6,71.9],format:{style:`unit`,unit:`percent`,maximumFractionDigits:1},label:`Ratings`,runover:{},childs:[]})}export{n as t};

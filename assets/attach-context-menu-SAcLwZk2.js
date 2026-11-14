@@ -1,0 +1,1 @@
+import{t as e}from"./ContextMenu-D9pbQKHG.js";function t(t,n){let r=new e({target:t,items:typeof n==`function`?[]:n});typeof n==`function`&&r.onOpening(e=>e.items=n(e)??[]);let i=()=>{r.isDisposed||(r.target=null,r.dispose())};return t.motif.setDisposable(i),i}export{t};

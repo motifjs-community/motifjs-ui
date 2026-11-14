@@ -1,0 +1,1 @@
+import{b as e,or as t}from"./next-id-CtzpBrBT.js";function n(n,r,i){return typeof r==`function`?t(()=>r(n)):typeof n!=`object`||!n?n:e(n,r??i)}export{n as t};

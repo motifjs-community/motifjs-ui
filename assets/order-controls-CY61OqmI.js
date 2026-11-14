@@ -1,0 +1,1 @@
+import{rt as e}from"./next-id-CtzpBrBT.js";function t(t,n){let r=t.controls.items;for(let i=0;i<n.length;i++){let a=n[i];if(a.parent!==t){t.controls.insert(i,a);continue}if(r[i]!==a){if(e(a)){for(;r[i]!==a;)t.controls.move(r[i],r[r.indexOf(a)+1]??null);continue}t.controls.move(a,r[i]??null)}}}export{t};

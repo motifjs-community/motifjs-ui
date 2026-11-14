@@ -1,0 +1,1 @@
+import{i as e}from"./item-own-value-BI1Pj7jY.js";var t=class extends e.ArrayAdapter{delayMs;constructor(e,t=300){super(e),this.delayMs=t}async load(e={}){return await new Promise(e=>setTimeout(e,this.delayMs)),super.load(e)}};export{t};

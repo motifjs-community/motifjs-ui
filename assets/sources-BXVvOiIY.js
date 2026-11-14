@@ -1,0 +1,1 @@
+function e(e){return(...t)=>t.map(t=>{let n=e[`./examples/${t}`];if(typeof n!=`string`)throw Error(`docs: no example file "${t}"`);return{name:t,source:n}})}export{e as t};
