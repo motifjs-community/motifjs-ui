@@ -18,6 +18,7 @@ import type { GridColumn } from '../grid-column';
 import type { ListOption } from '../list-option';
 import { emptyCell, listValues } from '../model/cell-list';
 import { dateLike } from '../model/date-like';
+import { isDateType } from '../model/date-type';
 import type { GridModel } from '../model/GridModel';
 import { optionOf } from '../model/option-of';
 import { sameValue } from '../model/same-value';
@@ -74,7 +75,7 @@ export class CellEditor<T> {
   ) {
     this.custom = value;
     const type = column.type;
-    this.kind = column.editor ? 'custom' : column.multiple ? 'tags' : column.lookup ? 'lookup' : type === 'number' || type === 'date' || type === 'boolean' || type === 'list' ? type : 'text';
+    this.kind = column.editor ? 'custom' : column.multiple ? 'tags' : column.lookup ? 'lookup' : type === 'number' || type === 'boolean' || type === 'list' ? type : isDateType(type) ? 'date' : 'text';
     const box = new Component<HTMLDivElement>('div');
     this.box = box;
     owner.controls.add(box);
@@ -194,7 +195,7 @@ export class CellEditor<T> {
       case 'date': {
         const box = field as DateBox;
         if (box.unfinished) return { ok: false, message: this.model.text('invalidDate') };
-        return { ok: true, value: dateLike(box.value, this.value) };
+        return { ok: true, value: dateLike(box.value, this.value, this.column.type === 'datetime') };
       }
       case 'number': {
         const n = parseNumber((field as NumberBox).inputText, this.model.formatter.locale);
@@ -264,7 +265,7 @@ export class CellEditor<T> {
       case 'number':
         return { ...common, value: typeof value === 'number' ? value : null, showSpinButtons: false, locale: this.model.formatter.locale, align };
       case 'date':
-        return { ...common, value: data.toDate(value), locale: this.model.formatter.locale };
+        return { ...common, value: data.toDate(value), locale: this.model.formatter.locale, type: col.type === 'datetime' ? 'datetime' : 'date' };
       case 'boolean':
         return { ...common, value: !!value };
       case 'list':

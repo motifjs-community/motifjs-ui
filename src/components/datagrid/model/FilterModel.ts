@@ -4,7 +4,7 @@ import type { ColumnFilter } from '../column-filter';
 import type { GridFilterOperator } from '../grid-filter-operator';
 import type { GridFilters } from '../grid-filters';
 import type { ColumnModel } from './ColumnModel';
-import { dayCondition, dayEnd, dayStart } from './day-condition';
+import { dayCondition, dayEnd, dayStart, minuteCondition, minuteEnd, minuteStart } from './day-condition';
 
 const TEXT_OPS: readonly GridFilterOperator[] = ['contains', 'startswith', 'endswith', '=', '<>', 'isblank', 'isnotblank'];
 const RANGE_OPS: readonly GridFilterOperator[] = ['=', '<>', '<', '<=', '>', '>=', 'between', 'isblank', 'isnotblank'];
@@ -320,6 +320,7 @@ export class FilterModel<T> {
         return [];
       case 'number':
       case 'date':
+      case 'datetime':
         return own ?? RANGE_OPS;
       case 'list':
         return own ?? LIST_OPS;
@@ -361,12 +362,14 @@ export class FilterModel<T> {
     return data.and(...parts);
   }
 
-  /** A filter value's condition as the data layer runs it: a date column's by calendar day. */
+  /** A filter value's condition as the data layer runs it: a date column's by calendar day, a date and time column's by the minute. */
   applied(e: data.FilterExpression): data.FilterExpression | null {
     if (data.isCondition(e)) {
-      if (this.columns.defs.get(e.field)?.type !== 'date') return e;
-      if (e.op === 'between' && Array.isArray(e.value)) return data.where(e.field, 'between', [dayStart(e.value[0]), dayEnd(e.value[1])]);
-      if (['=', '<>', '<', '<=', '>', '>='].includes(e.op) && !empty(e.value)) return dayCondition(e.field, e.op as GridFilterOperator, e.value);
+      const type = this.columns.defs.get(e.field)?.type;
+      if (type !== 'date' && type !== 'datetime') return e;
+      const minute = type === 'datetime';
+      if (e.op === 'between' && Array.isArray(e.value)) return data.where(e.field, 'between', minute ? [minuteStart(e.value[0]), minuteEnd(e.value[1])] : [dayStart(e.value[0]), dayEnd(e.value[1])]);
+      if (['=', '<>', '<', '<=', '>', '>='].includes(e.op) && !empty(e.value)) return (minute ? minuteCondition : dayCondition)(e.field, e.op as GridFilterOperator, e.value);
       return e;
     }
     if ('and' in e) return data.and(...e.and.map((x) => this.applied(x))) ?? { and: [] };

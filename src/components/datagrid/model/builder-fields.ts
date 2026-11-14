@@ -20,7 +20,7 @@ export function builderFields<T>(model: GridModel<T>, customOperations: readonly
   for (const col of model.columns.definitions()) {
     const field = col.field;
     if (!model.columns.can(field, 'filterBuilder')) continue;
-    const dataType: FilterBuilderDataType = col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : col.type === 'boolean' ? 'boolean' : 'string';
+    const dataType: FilterBuilderDataType = col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : col.type === 'datetime' ? 'datetime' : col.type === 'boolean' ? 'boolean' : 'string';
     const options = col.type === 'list' && Array.isArray(col.options) ? col.options.map(optionOf) : null;
     // A function's choices come from it with no row: the list says it is loading until they are there.
     const asked = col.type === 'list' && typeof col.options === 'function';

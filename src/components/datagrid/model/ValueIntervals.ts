@@ -17,10 +17,14 @@ export class ValueIntervals {
     readonly levels: readonly (number | GridDateInterval)[],
   ) {}
 
-  /** The levels of a column, from its own interval or (dates) the grid's; `null` for one entry per value. */
+  /**
+   * The levels of a column, from its own interval or (dates) the grid's; `null` for one entry per value. A date and time
+   * column goes down to the hour at least, unless the grid lists every value (`null`) or quarters.
+   */
   static of(type: ColumnType | undefined, own: GridHeaderFilterInterval | undefined, dateDefault: GridDateInterval | null): ValueIntervals | null {
-    if (type === 'date') {
-      const deepest = own === undefined ? dateDefault : own;
+    if (type === 'date' || type === 'datetime') {
+      const timed = type === 'datetime' && typeof dateDefault === 'string' && dateDefault !== 'quarter' && DATE_PARTS.indexOf(dateDefault) < DATE_PARTS.indexOf('hour');
+      const deepest = own === undefined ? (timed ? 'hour' : dateDefault) : own;
       if (deepest === 'quarter') return new ValueIntervals('date', ['year', 'quarter']);
       const at = typeof deepest === 'string' ? DATE_PARTS.indexOf(deepest) : -1;
       return at < 0 ? null : new ValueIntervals('date', DATE_PARTS.slice(0, at + 1));

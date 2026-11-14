@@ -22,6 +22,7 @@ import { ActionSets } from './ActionSets';
 import { CellFormatter } from './CellFormatter';
 import { CellRules } from './CellRules';
 import { emptyCell, listValues } from './cell-list';
+import { isDateType } from './date-type';
 import { cellValue } from './cell-value';
 import { GridNotices } from './GridNotices';
 import { ColumnModel } from './ColumnModel';
@@ -63,7 +64,7 @@ export const FILTER_ROW = -2;
 export const DEFAULT_PAGE_SIZE = 100;
 export const DEFAULT_ROW_HEIGHT = 36;
 
-const FIELD_TYPES: Record<string, data.FieldType> = { number: 'number', date: 'datetime', boolean: 'boolean' };
+const FIELD_TYPES: Record<string, data.FieldType> = { number: 'number', date: 'datetime', datetime: 'datetime', boolean: 'boolean' };
 
 const hasKeys = (o: object) => Object.keys(o).length > 0;
 
@@ -1697,7 +1698,7 @@ export class GridModel<T> {
     if (!e) return null;
     const revive = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? new Date(v) : v);
     if (data.isCondition(e)) {
-      if (this.columns.defs.get(e.field)?.type !== 'date') return e;
+      if (!isDateType(this.columns.defs.get(e.field)?.type)) return e;
       return { ...e, value: Array.isArray(e.value) ? e.value.map(revive) : revive(e.value) };
     }
     if ('and' in e) return { and: e.and.map((x) => this.reviveExpression(x)!) };
@@ -1710,7 +1711,7 @@ export class GridModel<T> {
     const out: GridFilters = {};
     const revive = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? new Date(v) : v);
     for (const [field, f] of Object.entries(filters)) {
-      const date = this.columns.defs.get(field)?.type === 'date';
+      const date = isDateType(this.columns.defs.get(field)?.type);
       out[field] = date ? { ...f, value: revive(f.value), value2: revive(f.value2), values: f.values?.map(revive) } : f;
       if (date) for (const key of ['value', 'value2', 'values'] as const) if (out[field][key] === undefined) delete out[field][key];
     }

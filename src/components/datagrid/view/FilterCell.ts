@@ -92,9 +92,11 @@ export class FilterCell<T> {
         }
         break;
       case 'date':
+      case 'datetime':
         for (const key of ['value', 'value2'] as const) {
           const editor = new DateBox({
             ...common,
+            type: col.type,
             onValueChanged: (e) => e.byUser && set({ [key]: e.value }, false),
           });
           this.drawers.push(() => {

@@ -71,7 +71,7 @@ const SETTINGS = [
   ['pageSizeSelector, allowedPageSizes', "`false`, `'auto'`", 'The page sizes in the pager, and the sizes it offers (numbers and `all`, where `auto` is half, once and twice the page size).'],
   ['pageKeys', "`'page'`", 'In paged mode, PageUp and PageDown move to the previous and next page, or move a screen of rows (`rows`).'],
   ['headerFilterPageSize, headerFilterRows', '`100`, `8`', 'The values the header filter loads per request, and the height of its list or tree in rows.'],
-  ['headerFilterDateInterval', "`'day'`", 'The deepest level of the year → month → day tree in a date column\'s header filter. `null` lists every date. A column\'s `headerFilterInterval` takes precedence.'],
+  ['headerFilterDateInterval', "`'day'`", 'The deepest level of the year → month → day tree in a date column\'s header filter. `null` lists every date. A column\'s `headerFilterInterval` takes precedence. A `datetime` column goes down to the hour at least.'],
   ['exportPageSize', '`1000`', 'The rows an export requests from a server per request. `exportCsv({ pageSize })` takes precedence.'],
   ['trueTexts, falseTexts', "`['true', '1', 'x', '✓', '✔']`, `['false', '0', '']`", 'Pasted text read as yes and as no in a yes/no column, in addition to the `yes` and `no` strings. A column can set its own values.'],
   ['editKeys, clearKeys', "`['Enter', 'F2']`, `['Delete']`", 'The keys that open the active cell\'s editor, and the keys that clear it (`KeyboardEvent.key` values).'],

@@ -3714,7 +3714,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.closeEditor();
     const col = model.columns.get(field);
     const value = model.value(rowId, row, col);
-    const typed = col.type === 'date' || col.type === 'boolean' ? undefined : initialText;
+    const typed = col.type === 'date' || col.type === 'datetime' || col.type === 'boolean' ? undefined : initialText;
     const entered = model.enteredOf(rowId, row);
     if (!model.events.ask(model.events.editingStart, () => ({ field, row, values: { ...entered.values }, getValue: entered.getValue, rowIndex: i, isNew: !!rec?.isNew, cancel: false }))) return false;
     const prepare = (options: Record<string, unknown>) => this.editorPreparing(field, row, entered, !!rec?.isNew, options);

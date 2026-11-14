@@ -1,7 +1,7 @@
 import { reactive, untracked, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import type { GridColumn } from '../grid-column';
-import { dayCondition } from './day-condition';
+import { dayCondition, minuteCondition, minuteStart } from './day-condition';
 import type { GridModel } from './GridModel';
 import { parseDateText } from './parse-date-text';
 import { textRanges } from './text-ranges';
@@ -192,9 +192,16 @@ export class GridSearch<T> {
         marks.set(field, (v) => v === n || (typeof v === 'string' && Number(v) === n));
         return data.where(field, '=', n);
       }
-      case 'date': {
+      case 'date':
+      case 'datetime': {
         const day = parseDateText(text, locale);
         if (!day) return null;
+        // A time written with the date finds that minute of a date and time column; a date alone, the whole day.
+        if (col.type === 'datetime' && (text.match(/\d+/g)?.length ?? 0) > 3) {
+          const at = minuteStart(day)!.getTime();
+          marks.set(field, (v) => minuteStart(v)?.getTime() === at);
+          return minuteCondition(field, '=', day);
+        }
         const at = data.dayNumber(day);
         marks.set(field, (v) => data.dayNumber(v) === at);
         return dayCondition(field, '=', day);

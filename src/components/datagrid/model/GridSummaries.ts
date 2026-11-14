@@ -420,7 +420,7 @@ export class GridSummaries<T> {
     if (typeof given === 'function' && given.length > 0) return (given as (v: unknown) => string)(value);
     const options = read(given as Bind<Intl.NumberFormatOptions | Intl.DateTimeFormatOptions | undefined>);
     const col = i.field !== undefined && !this.model.columns.isInternal(i.field) ? this.model.columns.defs.get(i.field) : undefined;
-    const date = value instanceof Date ? value : col?.type === 'date' ? data.toDate(value) : null;
+    const date = value instanceof Date ? value : col?.type === 'date' || col?.type === 'datetime' ? data.toDate(value) : null;
     if (options && date) return new Intl.DateTimeFormat(formatter.locale, options as Intl.DateTimeFormatOptions).format(date);
     if (options && typeof value === 'number') return new Intl.NumberFormat(formatter.locale, options as Intl.NumberFormatOptions).format(value);
     if (i.type === 'count' && typeof value === 'number') return formatter.count(value);

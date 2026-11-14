@@ -268,7 +268,7 @@ export class FilterValues<T> {
       const ra = rank(a.value);
       const rb = rank(b.value);
       if (ra !== null && rb !== null) return ra - rb;
-      if (col.type === 'date') return (data.toDate(a.value)?.getTime() ?? 0) - (data.toDate(b.value)?.getTime() ?? 0);
+      if (col.type === 'date' || col.type === 'datetime') return (data.toDate(a.value)?.getTime() ?? 0) - (data.toDate(b.value)?.getTime() ?? 0);
       return collator.compare(a.text, b.text);
     });
     return list;

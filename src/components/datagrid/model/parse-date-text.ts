@@ -17,7 +17,10 @@ export function parseDateText(text: string, locale: string): Date | null {
   const value = { year: 0, month: 0, day: 0 };
   order.forEach((part, i) => (value[part] = Number(groups[i])));
   if (groups[order.indexOf('year')].length <= 2) value.year += 2000;
-  const [hour = 0, minute = 0, second = 0] = groups.slice(3, 6).map(Number);
+  let [hour = 0, minute = 0, second = 0] = groups.slice(3, 6).map(Number);
+  // A 12-hour time: 2:30 PM is 14:30, 12:15 AM is 00:15.
+  const meridiem = /\b([ap])\.?\s?m\.?\b/i.exec(trimmed)?.[1].toLowerCase();
+  if (meridiem && hour >= 1 && hour <= 12) hour = (hour % 12) + (meridiem === 'p' ? 12 : 0);
   const { year, month, day } = value;
   if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return null;
   const date = new Date(2000, month - 1, day, hour, minute, second);

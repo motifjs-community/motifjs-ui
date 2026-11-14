@@ -6,6 +6,12 @@ import { columns, makeOrders } from './orders';
 
 const COAST = ['Antalya', 'İstanbul', 'İzmir', 'Trabzon'];
 
+/** An order with the moment it was placed: its day and a time of that day. */
+type Placed = Order & { placed: string };
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const withTimes = (orders: Order[]): Placed[] => orders.map((o) => ({ ...o, placed: `${o.date}T${pad(8 + ((o.id * 7) % 10))}:${pad((o.id * 13) % 60)}:00` }));
+
 /** The order columns with header filters: amounts in ranges, dates in a tree, cities with custom entries, and excluded statuses. */
 const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
   switch (c.field) {
@@ -32,6 +38,8 @@ const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
       return c;
   }
 });
+// A date and time: shown with its time, its header filter down to the hour, its filter row to the minute.
+intervalColumns.splice(intervalColumns.findIndex((c) => c.field === 'date') + 1, 0, { field: 'placed', title: 'Placed', type: 'datetime', width: 160, headerFilter: true, filterRow: true });
 
 /** The header filter with ranges of amounts, a tree of dates, custom entries and excluded values. */
 export default function HeaderFilterIntervals() {
@@ -48,7 +56,7 @@ export default function HeaderFilterIntervals() {
       <DataGrid
         class="dg-intervals"
         style="block-size: 30rem"
-        rows={makeOrders(300)}
+        rows={withTimes(makeOrders(300))}
         rowKey="id"
         columns={intervalColumns}
         label="Orders filtered by ranges and dates"

@@ -5,6 +5,7 @@ import type { GridColumn } from '../grid-column';
 import type { EditorValue } from '../view/editor-value';
 import { joinItems, listValues, splitItems } from './cell-list';
 import { dateLike } from './date-like';
+import { isDateType } from './date-type';
 import { optionOf } from './option-of';
 import { parseDateText } from './parse-date-text';
 import { sameValue } from './same-value';
@@ -16,6 +17,7 @@ export class CellFormatter {
   readonly collator: Intl.Collator;
   private readonly number: Intl.NumberFormat;
   private readonly date: Intl.DateTimeFormat;
+  private readonly dateTime: Intl.DateTimeFormat;
   /** Formatters of the columns' own `Intl` options. */
   private readonly own = new WeakMap<object, Intl.NumberFormat | Intl.DateTimeFormat>();
 
@@ -30,6 +32,7 @@ export class CellFormatter {
   ) {
     this.number = new Intl.NumberFormat(locale);
     this.date = new Intl.DateTimeFormat(locale, { dateStyle: 'short' });
+    this.dateTime = new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' });
     this.collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
   }
 
@@ -53,7 +56,8 @@ export class CellFormatter {
     switch (col.type) {
       case 'number':
         return typeof v === 'number' ? this.numberFormat(col).format(v) : String(v);
-      case 'date': {
+      case 'date':
+      case 'datetime': {
         const d = data.toDate(v);
         return d ? this.dateFormat(col).format(d) : String(v);
       }
@@ -72,17 +76,17 @@ export class CellFormatter {
     return (col.format as Intl.NumberFormatOptions | undefined) ?? {};
   }
 
-  /** The `Intl` options a date column shows its values with; `undefined` when its `format` is a function. */
+  /** The `Intl` options a date column shows its values with (the time too for `datetime`); `undefined` when its `format` is a function. */
   dateOptions<T>(col: GridColumn<T>): Intl.DateTimeFormatOptions | undefined {
     if (typeof col.format === 'function') return undefined;
-    return (col.format as Intl.DateTimeFormatOptions | undefined) ?? { dateStyle: 'short' };
+    return (col.format as Intl.DateTimeFormatOptions | undefined) ?? (col.type === 'datetime' ? { dateStyle: 'short', timeStyle: 'short' } : { dateStyle: 'short' });
   }
 
   /** A value as plain text in no locale's format: numbers as written in code, dates as `yyyy-mm-dd` (with the time when it has one), `true` / `false`. */
   raw<T>(col: GridColumn<T>, v: unknown): string {
     if (col.multiple && Array.isArray(v)) return joinItems(listValues(v).map((x) => this.raw({ ...col, multiple: false }, x)), this.locale);
     if (data.isEmpty(v)) return '';
-    if (v instanceof Date || (col.type === 'date' && typeof v === 'number')) {
+    if (v instanceof Date || (isDateType(col.type) && typeof v === 'number')) {
       const d = data.toDate(v)!;
       const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       return d.getHours() || d.getMinutes() || d.getSeconds() ? `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}` : day;
@@ -115,9 +119,10 @@ export class CellFormatter {
         const n = parseNumber(plain, this.locale);
         return n === null || Number.isNaN(n) ? { ok: false, message: this.messages().number } : { ok: true, value: n };
       }
-      case 'date': {
+      case 'date':
+      case 'datetime': {
         const d = parseDateText(plain, this.locale);
-        return d ? { ok: true, value: dateLike(d, like) } : { ok: false, message: this.messages().date };
+        return d ? { ok: true, value: dateLike(d, like, col.type === 'datetime') } : { ok: false, message: this.messages().date };
       }
       case 'boolean': {
         const lower = plain.toLocaleLowerCase(this.locale);
@@ -153,7 +158,7 @@ export class CellFormatter {
 
   private dateFormat<T>(col: GridColumn<T>): Intl.DateTimeFormat {
     const options = col.format;
-    if (!options || typeof options !== 'object') return this.date;
+    if (!options || typeof options !== 'object') return col.type === 'datetime' ? this.dateTime : this.date;
     let f = this.own.get(options);
     if (!f) this.own.set(options, (f = new Intl.DateTimeFormat(this.locale, options as Intl.DateTimeFormatOptions)));
     return f as Intl.DateTimeFormat;

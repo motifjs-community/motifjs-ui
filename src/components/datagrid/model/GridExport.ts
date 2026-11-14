@@ -153,7 +153,7 @@ export class GridExport<T> {
         width: options.widthOf(fields[j]),
         align: model.columns.align(fields[j]),
         numberFormat: column.type === 'number' && !column.lookup ? formatter.numberOptions(column) : undefined,
-        dateFormat: column.type === 'date' && !column.lookup ? formatter.dateOptions(column) : undefined,
+        dateFormat: (column.type === 'date' || column.type === 'datetime') && !column.lookup ? formatter.dateOptions(column) : undefined,
       })),
       rows: out,
       headerRows: options.headers !== false ? this.bandRows(fields).length + 1 : 0,
@@ -375,6 +375,7 @@ function typed<T>(col: GridColumn<T>, value: unknown, text: string): string | nu
     case 'number':
       return typeof value === 'number' && Number.isFinite(value) ? value : text || null;
     case 'date':
+    case 'datetime':
       return data.toDate(value) ?? (text || null);
     case 'boolean':
       return typeof value === 'boolean' ? value : text || null;

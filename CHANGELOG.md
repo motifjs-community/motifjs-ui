@@ -16,6 +16,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   write them, and pasted text is split at the locale's separator. An empty list is no value, so `required` asks for at
   least one.
 - `TagBox.typeText(text)`: puts text in the input as if it were typed, and the list searches it.
+- `DataGrid` column type `datetime`: a date with its time. It shows both in the locale (`5.01.2026 14:30`; `format`
+  changes it), is edited with a `DateBox` of `type: 'datetime'`, and keeps the kind of value it had (a `Date`, a
+  timestamp, a local `yyyy-mm-ddThh:mm:ss` text, an ISO moment for a text with a zone). The filter row compares to the
+  minute with a date and time box, the header filter's tree goes down to the hour (a column's `headerFilterInterval`
+  deeper still), the search finds a day or, with a time written, a minute, pasted text keeps its time (12-hour times
+  too), and the filter builder and the exports take it as a date and time.
 
 ### Fixed
 
