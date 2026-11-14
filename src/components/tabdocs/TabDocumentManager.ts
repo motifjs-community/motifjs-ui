@@ -1,7 +1,8 @@
 import { Component, ComponentBase, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
 import { follow } from '../../core/follow';
-import { bringWindowUp, focusGoesInto, focusOn, holdsFocus, rememberFocus, windowWithFocus } from '../../core/focus';
+import { bringWindowUp, canTakeFocus, focusGoesInto, focusOn, holdsFocus, rememberFocus, setFocusAside, windowWithFocus } from '../../core/focus';
+import type { FocusMark } from '../../core/focus-mark';
 import { fillTemplate } from '../../core/fill-template';
 import { fillText } from '../../core/fill-text';
 import { functionValue } from '../../core/function-value';
@@ -131,7 +132,7 @@ import { TabPresenter } from './TabPresenter';
 import type { TabNarrowBars } from './tab-narrow-bars';
 import type { TabTabletWhen } from './tab-tablet-when';
 import { onLanguage } from '../../core/on-language';
-import { isInPage, isRtl, keepScroll, measure, mediaOf, onLayout, onMedia, pageOf, rectOf, sameWindow, styleOf, type Rect, type Size } from '../../core/measure';
+import { afterDrawn, canMeasure, isInPage, isRtl, keepScroll, measure, mediaOf, onLayout, onMedia, pageOf, rectOf, sameWindow, styleOf, type Rect, type Size } from '../../core/measure';
 import { windowOf } from '../../core/page-documents';
 import { Popup } from '../../parts/popup/Popup';
 
@@ -311,6 +312,11 @@ interface Parts {
   targets: TabDropTarget[];
   /** Where the last drop put the document (or the group's documents), for `onDropped`. */
   dropResult: { group: TabGroup | null; document: TabDocument | null } | null;
+  /** Where focus was when a move by the user took it out of the documents, until it comes back (`parkFocus`). */
+  parked: FocusMark | null;
+  /** Where focus goes once the page is drawn (it tells whether it went), and what takes that back. */
+  refocus: (() => boolean) | null;
+  stopRefocus: (() => void) | null;
   /** The dock areas by side, and the order they nest in (the outermost first). */
   areas: Map<TabDockSide, TabDockArea>;
   order: TabDockSide[];
@@ -1685,10 +1691,18 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       const target = typeof group === 'number' ? this.groups[group] : group;
       if (!target || !this.groups.includes(target)) return false;
       this.useGroup(target, false);
-      if (target.restoreFocus()) return true;
-      const tab = target.activeTab;
-      if (tab) focusOn(tab.headerPart);
-      return !!tab;
+      const give = (): boolean => {
+        if (target.restoreFocus()) return true;
+        const tab = target.activeTab;
+        if (tab) focusOn(tab.headerPart);
+        return !!tab;
+      };
+      // Focus was taken out for a move: it comes back once the page is drawn.
+      if (this.parts.parked) {
+        this.settleFocus(give);
+        return true;
+      }
+      return give();
     });
   }
 
@@ -2610,6 +2624,16 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
    * their events): a move or a copy into a strip or a group, a split, a group moved or merged.
    */
   dropAt(place: TabDropPlace, drag: TabDragSubject): boolean {
+    const toWindow = place.target === 'new-window' || place.target === 'main-window';
+    if (!toWindow) this.parkFocus();
+    try {
+      return this.dropHere(place, drag);
+    } finally {
+      this.settleFocus();
+    }
+  }
+
+  private dropHere(place: TabDropPlace, drag: TabDragSubject): boolean {
     return untracked(() => {
       const parts = this.parts;
       parts.dropResult = null;
@@ -2763,8 +2787,21 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (focus) focusOn(tab.headerPart);
   }
 
-  /** @internal What a context menu item does, as the user. */
+  /** @internal What a context menu item does, as the user. A command that moves a document takes focus out first. */
   runCommand(command: TabMenuCommand, group: TabGroup, document: TabDocument | null): void {
+    if (!MOVES.has(command)) {
+      this.command(command, group, document);
+      return;
+    }
+    this.parkFocus();
+    try {
+      this.command(command, group, document);
+    } finally {
+      this.settleFocus();
+    }
+  }
+
+  private command(command: TabMenuCommand, group: TabGroup, document: TabDocument | null): void {
     untracked(() => {
       const doc = document;
       switch (command) {
@@ -3325,7 +3362,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.moving.fire(e);
     if (e.cancel && !force) return false;
     if (force) e.to = group;
-    const hadFocus = holdsFocus(tab.headerPart) || holdsFocus(tab.panel);
+    const parked = this.parts.parked;
+    const hadFocus = holdsFocus(tab.headerPart) || holdsFocus(tab.panel) || !!parked?.isIn(tab.headerPart) || !!parked?.isIn(tab.panel);
     if (from === group) {
       group.moveTab(tab, Math.max(0, Math.min(e.toIndex, last)));
     } else {
@@ -3345,8 +3383,48 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.moved.fire({ document: doc, from, fromIndex, to: group, toIndex: group.tabs.indexOf(tab), byUser, source: this });
     if (from !== group) this.say('tabDocsMoved', { title: doc.title, n: this.groups.indexOf(group) + 1 });
     if (doc.preview) this.keepBy(doc, byUser);
-    if (hadFocus) focusOn(tab.headerPart);
+    if (hadFocus && parked) {
+      this.settleFocus(() => {
+        if (tab.headerPart.isDisposed || !canTakeFocus(tab.headerPart)) return false;
+        focusOn(tab.headerPart);
+        return true;
+      });
+    } else if (hadFocus) focusOn(tab.headerPart);
     return true;
+  }
+
+  /**
+   * Takes focus out of the documents before a move by the user changes the page, while it is still as drawn. A focused
+   * element taken out of the page, or focus given on a changed page, makes the browser work out the whole page's style
+   * at once; taken now, it costs nothing, and it comes back once the page is drawn (`settleFocus`). A window that lays
+   * nothing out (a test document) keeps focus where it is.
+   */
+  /** @internal */
+  parkFocus(): void {
+    const parts = this.parts;
+    if (parts.parked || !canMeasure(this) || !holdsFocus(this)) return;
+    parts.parked = rememberFocus();
+    if (parts.parked) setFocusAside(this);
+  }
+
+  /**
+   * @internal Gives focus back once the page is drawn: where `to` puts it (the tab of the document moved, a group), else
+   * where it was taken from. Focus the user put somewhere in the documents meanwhile stays there.
+   */
+  settleFocus(to?: () => boolean): void {
+    const parts = this.parts;
+    if (to) parts.refocus = to;
+    if (!parts.parked && !parts.refocus) return;
+    parts.stopRefocus?.();
+    parts.stopRefocus = afterDrawn(this, () => {
+      const target = parts.refocus;
+      const mark = parts.parked;
+      parts.refocus = null;
+      parts.parked = null;
+      parts.stopRefocus = null;
+      if (holdsFocus(this)) return;
+      if (!target?.()) mark?.restore();
+    });
   }
 
   private moveToGroupBy(doc: TabDocument, which: 'next' | 'previous' | SplitDirection, byUser: boolean): boolean {
@@ -5486,6 +5564,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       layoutTarget: null,
       targets: [],
       dropResult: null,
+      parked: null,
+      refocus: null,
+      stopRefocus: null,
       areas: new Map(),
       order: [],
       windows: [],
@@ -5586,6 +5667,9 @@ function titleGroup(item: LayoutItem): TabGroup {
   if (item instanceof TabGroup) return item;
   return titleGroup(item.orientation === 'horizontal' ? item.children[item.children.length - 1] : item.children[0]);
 }
+
+/** The menu commands that move a document: focus leaves the documents before them and comes back once the page is drawn. */
+const MOVES = new Set<TabMenuCommand>(['float', 'dock', 'dockLeft', 'dockRight', 'dockTop', 'dockBottom', 'moveNext', 'movePrevious']);
 
 /** A layout item as a component: a group is one, a split has its part. */
 function itemPart(item: LayoutItem): ComponentBase {

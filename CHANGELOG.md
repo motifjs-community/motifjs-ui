@@ -24,9 +24,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   back). New items, another look or orientation, and `updateOverflow()` still put every item back and measure them.
 - `Toolbar`: adding the "more" button no longer counts it as an item of the bar for a moment, so a separator before the
   items that moved into the menu goes with them.
+- `TabDocumentManager`: a document dropped or moved from its menu (float, dock, move to the next group) makes the
+  browser work out no styles in the middle of the move. Focus leaves the documents before the page changes and comes
+  back to the tab once the page is drawn, so the focused tab taken out of its strip and the focus given again cost no
+  layout. The focus guard leaves focus taken out this way where it is (`setFocusAside`), and the measuring layer runs
+  work after the next frame is drawn (`afterDrawn`).
 - `keepScroll` (the measuring layer) notes the places from what the page told of its scrolls instead of reading every
   component under the part moved: a document moved to another group, a window or back reads nothing to keep its scroll.
-  A window that tells no scrolls (a test document) is still read.
+  A window that tells no scrolls (a test document) is still read. A scroll the app writes itself (`scrollTop = …`) is
+  known from its scroll event in the next frame, so a move in that same moment does not keep it; the layer's
+  `scrollTo` notes it at once.
 - `TabDocumentManager` lays nothing out when a document moves: a panel tells from its markup whether it holds anything
   to focus, and a drop mark shown again starts where it is without reading the page's styles (`Tabs` too, for its
   panels).

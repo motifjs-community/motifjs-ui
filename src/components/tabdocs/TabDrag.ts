@@ -227,6 +227,10 @@ export class TabDrag {
     const s = this.session;
     if (!s) return false;
     const m = this.manager;
+    // A drop moves the page: focus leaves before the drag's own marks go, while the page is as drawn, and comes back
+    // once it is drawn again (into a new window or the main one, that window takes it).
+    const toWindow = s.place?.target === 'new-window' || s.place?.target === 'main-window';
+    if (drop && s.place && s.target && !toWindow) m.parkFocus();
     this.session = null;
     this.release();
     clearTimeout(s.hover?.timer);
@@ -256,6 +260,7 @@ export class TabDrag {
       if (!quiet) m.announceCanceled();
     }
     m.dragEnded({ document: s.subject.document, from: s.subject.group, dropped, byKeyboard: s.byKeyboard, source: m });
+    m.settleFocus();
     return dropped;
   }
 

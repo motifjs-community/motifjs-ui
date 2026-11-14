@@ -319,6 +319,26 @@ export function releaseFocus(part: ComponentBase): void {
   if (active && el!.contains(active)) active.blur();
 }
 
+let settingAside = false;
+
+/**
+ * Takes focus out of `part` on purpose, to give it back soon (`FocusMark.restore`): the focus guard leaves it on the page
+ * meanwhile instead of moving it on.
+ */
+export function setFocusAside(part: ComponentBase): void {
+  settingAside = true;
+  try {
+    releaseFocus(part);
+  } finally {
+    settingAside = false;
+  }
+}
+
+/** Whether focus is being taken out on purpose now (`setFocusAside`). */
+export function isSettingFocusAside(): boolean {
+  return settingAside;
+}
+
 /**
  * Moves focus out of `area` when it holds it and is about to stop being usable: to the next tabbable element
  * of its window (or page), else the one before. The page is not scrolled: the user did not move there.

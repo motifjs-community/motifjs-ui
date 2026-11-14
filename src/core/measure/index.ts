@@ -18,6 +18,7 @@ export type { Size } from './size';
 export type { SizeBox } from './size-box';
 export type { Viewport } from './viewport-rect';
 export { everyFrame } from './every-frame';
+export { afterDrawn } from './drawn';
 export { componentAt, shareAlong, visibleRectOf } from './hits';
 export { lengthOf, probeLengths } from './lengths';
 export { onLookChange } from './look';

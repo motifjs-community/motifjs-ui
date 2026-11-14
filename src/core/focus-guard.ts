@@ -1,4 +1,4 @@
-import { isFromStandIn, isShown, keepsKeys, rescueStop, tabbableIn, windowElementAround } from './focus';
+import { isFromStandIn, isSettingFocusAside, isShown, keepsKeys, rescueStop, tabbableIn, windowElementAround } from './focus';
 import { liveControls } from './live-controls';
 import { isHtmlElement } from './node-kind';
 import { eachDocument } from './page-documents';
@@ -28,6 +28,7 @@ export function installFocusGuard(): void {
 
 function onFocusOut(e: FocusEvent): void {
   if (e.relatedTarget) return; // focus moves somewhere: nothing is lost
+  if (isSettingFocusAside()) return; // taken out on purpose, and given back soon
   const el = e.target;
   if (!isHtmlElement(el) || !inControl(e)) return;
   const doc = el.ownerDocument;

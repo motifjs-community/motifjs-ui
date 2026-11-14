@@ -77,7 +77,8 @@ export function reveal(scroller: ComponentBase, target: ComponentBase | RevealRa
  * parent or window, a part hidden, a drag that may be canceled). The function returned scrolls them back in the next
  * round of the windows they are in then. Only components are kept: content that is no component scrolls back on its own
  * or not at all. The places come from what the page told of its scrolls, so nothing is laid out to note them; a window
- * that tells no scrolls (a test document) is read.
+ * that tells no scrolls (a test document) is read. A scroll written by the app itself (`scrollTop = …`) is told with its
+ * scroll event, in the next frame: a move in the same moment does not keep it. `scrollTo` here notes it at once.
  */
 export function keepScroll(root: ComponentBase): () => void {
   const kept: [ComponentBase, ScrollPlace][] = [];
