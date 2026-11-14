@@ -1,6 +1,6 @@
 # Toolbar
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A command bar that holds buttons, toggle buttons, menus and fields, organized in groups with separators. The toolbar is a single Tab stop, and the arrow keys move between its controls. Items that do not fit move into an overflow menu at the end. You can define items as data, as JSX children, or both.
 

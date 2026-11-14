@@ -1,6 +1,6 @@
 # RibbonMenu: Programmatic changes
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 Tabs, groups and commands can be added, removed, moved and changed at any time, by their paths. The menu redraws only what changed: groups and commands that stay keep their buttons, their state and their place.
 

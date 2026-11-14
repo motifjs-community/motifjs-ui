@@ -1,6 +1,6 @@
 # Gauge: Linear
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 A linear gauge shows its value on a straight bar, across or upright. Bars fit in narrow places, line up in lists, and compare well side by side.
 

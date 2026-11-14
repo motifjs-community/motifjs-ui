@@ -1,6 +1,6 @@
 # Badge
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A short text, count or dot, shown inline or on the corner of a button, avatar or icon. A count above its maximum displays as “99+”, and a count of zero is hidden.
 

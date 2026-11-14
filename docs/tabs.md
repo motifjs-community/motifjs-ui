@@ -1,6 +1,6 @@
 # Tabs
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Tabs display one panel at a time below a tab strip. You can define them in JSX or programmatically, and they support closable tabs, icons and badges, scroll buttons when tabs overflow, four placements, and panels that are created on first display.
 

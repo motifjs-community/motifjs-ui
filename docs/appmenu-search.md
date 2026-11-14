@@ -1,6 +1,6 @@
 # AppMenu: Slots and search
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.10
+> AppMenu · @motifx-community/ui 0.1.0-beta.11
 
 The list can hold the app’s own content above and under its items, such as the user’s name or the version, and a search that narrows a long list as the user types.
 

@@ -1,6 +1,6 @@
 # RibbonMenu: Commands
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 A group holds commands of three sizes and eight types. Every field of a command is a value or a function the menu follows, so the commands change with the application’s state.
 

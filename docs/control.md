@@ -1,6 +1,6 @@
 # Control
 
-> Foundations · @motifx-community/ui 0.1.0-beta.10
+> Foundations · @motifx-community/ui 0.1.0-beta.11
 
 `Control` is the base class of every control in the package. It provides the same `text`, `enabled`, `visible` and `tabStop` properties and the same focus methods, whether a control is declared in JSX and bound to state or created with `new` and changed programmatically.
 

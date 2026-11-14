@@ -1,6 +1,6 @@
 # Navigation
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Navigation components move the reader around an application and lay out its screens: bars at the top and bottom, menus and toolbars, tabs, paths, steps and pages, panels that slide in, and the containers that arrange everything.
 

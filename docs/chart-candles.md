@@ -1,6 +1,6 @@
 # Chart: Candles
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Candles show the first, highest, lowest and last price for each position.
 

@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> UI components for MotifJS (@motifx/core) on the MotifJS design system. Version 0.1.0-beta.10: a preview, its API may still change before 1.0.
+> UI components for MotifJS (@motifx/core) on the MotifJS design system. Version 0.1.0-beta.11: a preview, its API may still change before 1.0.
 
 Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with `new`, whose every prop takes a value or a function (`Bind<T>`); `x-model` binds a value two-way. The look is the design system’s (`@motifx-community/design-system`): five design languages (`data-design-language`), light and dark themes, density.
 

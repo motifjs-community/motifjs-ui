@@ -1,6 +1,6 @@
 # MenuBar: Customization
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 With `customizable`, the user arranges the bar: hides and moves items, renames them, adds commands and menus, and changes keyboard shortcuts. The items you give stay as they are; what the user changed is one object for the app to save.
 

@@ -1,6 +1,6 @@
 # Lookup
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 Selects one row from a table-style list, typically from a data source searched on the server, such as a customer by company, contact and city. The field shows the text of the selected row, and everything else works as in DropDown.
 

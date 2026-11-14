@@ -1,6 +1,6 @@
 # ButtonGroup
 
-> Buttons · @motifx-community/ui 0.1.0-beta.10
+> Buttons · @motifx-community/ui 0.1.0-beta.11
 
 A set of related buttons, used as a segmented selection of one or more options or as a row of actions. The buttons are standard kit buttons and are attached by default.
 

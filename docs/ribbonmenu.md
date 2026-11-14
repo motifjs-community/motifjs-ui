@@ -1,6 +1,6 @@
 # RibbonMenu
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 The commands of an application in tabs, each tab in named groups of large, medium and small commands. It adapts to the room it has, can show only its tabs or hide itself, and lets users arrange it to their liking. The menu holds nothing of its own: the tabs, the groups and the commands are given by the application.
 

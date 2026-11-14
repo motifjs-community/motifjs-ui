@@ -1,6 +1,6 @@
 # Buttons
 
-> Buttons · @motifx-community/ui 0.1.0-beta.10
+> Buttons · @motifx-community/ui 0.1.0-beta.11
 
 Buttons start commands. The group covers single buttons, groups of them and a floating button for the main action of a screen. Toolbars and menus, which hold the many commands of an application, are in [Navigation](navigation.md).
 

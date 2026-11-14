@@ -1,6 +1,6 @@
 # MenuBar: Programmatic changes
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 The items of a bar can be changed while it runs: by path, without building the whole list again, or in place followed by `refresh()`. Items can also name app commands, which give them their text, keys, state and action.
 

@@ -1,6 +1,6 @@
 # Chart: References and selection
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Reference lines and bands give the values a target, a limit or a period, and the reader can choose values to act on.
 

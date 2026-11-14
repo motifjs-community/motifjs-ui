@@ -1,6 +1,6 @@
 # BarGauge: Labels and legend
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 Each value can be written at the end of its bar, named in a legend, and shown with its name under the pointer.
 

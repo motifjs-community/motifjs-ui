@@ -1,6 +1,6 @@
 # MenuBar: ContextMenu
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 The menu of an element: it opens on a right-click at the pointer, and with the Menu key or Shift+F10 at the focused element. Its items are the same as those of a menu bar.
 

@@ -1,6 +1,6 @@
 # Scheduler: Editing
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same programmatically. Every change raises its event first, can wait for a server, and is reverted if saving fails.
 

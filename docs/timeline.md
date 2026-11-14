@@ -1,6 +1,6 @@
 # Timeline
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 Displays events in chronological order. In the vertical layout, each event is a card next to a line with a marker. In the horizontal layout, events appear along a line of dates, and selecting a date shows that event's card below the line. Dates are formatted in the kit language. For scheduling by the hour, see [Scheduler](scheduler.md).
 

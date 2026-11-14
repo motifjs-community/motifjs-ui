@@ -1,6 +1,6 @@
 # Toast
 
-> Feedback · @motifx-community/ui 0.1.0-beta.10
+> Feedback · @motifx-community/ui 0.1.0-beta.11
 
 Brief notifications at the edge of the window, with four tones, an optional action such as Undo, a custom duration or none, six positions and a limit on how many appear at once. Show them programmatically, or place a custom region in JSX.
 

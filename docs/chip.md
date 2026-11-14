@@ -1,6 +1,6 @@
 # Chip and ChipGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A compact element with short text and an optional leading icon or avatar. Use it as a filter, as a choice among a few options, or to represent a selected item that can be removed. A group handles single or multiple selection and arrow key navigation.
 

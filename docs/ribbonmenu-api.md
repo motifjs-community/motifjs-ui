@@ -1,6 +1,6 @@
 # RibbonMenu: API reference
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 Everything `RibbonMenu` takes, offers and reports. Every prop is also a settable property, and a function is followed.
 

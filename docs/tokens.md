@@ -1,6 +1,6 @@
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.10
+> Get started · @motifx-community/ui 0.1.0-beta.11
 
 The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 

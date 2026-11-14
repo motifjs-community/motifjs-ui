@@ -1,6 +1,6 @@
 # ShortcutEditor
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A list of the app’s keyboard shortcuts in which the user assigns other keys. It shows the shortcuts of commands, of the app and of the kit’s components, and you can place it anywhere: a settings page, a dialog or a tab.
 

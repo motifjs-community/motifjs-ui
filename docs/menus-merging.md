@@ -1,6 +1,6 @@
 # MenuBar: Merging menus
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 A page can have several bars: the app’s bar, and the bars of documents, windows and tabs. The bar of the document in use shows its items in the app’s bar, so the user always finds the commands in one place.
 

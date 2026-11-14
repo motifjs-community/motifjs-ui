@@ -1,6 +1,6 @@
 # DataGrid: Row drag and drop
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Reorder rows
 

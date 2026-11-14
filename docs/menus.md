@@ -1,6 +1,6 @@
 # MenuBar and ContextMenu
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 An application menu bar (File, Edit, View) and a context menu that opens on right-click. Both use the same menu items, which support submenus, check and radio items, shortcuts and access keys. The bar can be customized by the user, changed by path and merged with the bars of documents and windows.
 

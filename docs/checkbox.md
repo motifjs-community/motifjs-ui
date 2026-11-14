@@ -1,6 +1,6 @@
 # CheckBox
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 A check box with a label that can be checked, unchecked or indeterminate. It supports an optional three-state cycle, read-only and required states, and validation with its group. It is a native check box styled with design tokens.
 

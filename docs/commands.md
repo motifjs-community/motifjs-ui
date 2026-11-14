@@ -1,6 +1,6 @@
 # Commands and shortcuts
 
-> Foundations · @motifx-community/ui 0.1.0-beta.10
+> Foundations · @motifx-community/ui 0.1.0-beta.11
 
 A command of the app is defined once: its text, icon, keys, state and action. Menus, toolbars and ribbons name it, its keys run it, and the user can give it other keys. Every shortcut of the app is in one list, so the ones that get in each other’s way are found.
 

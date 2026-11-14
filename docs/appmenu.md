@@ -1,6 +1,6 @@
 # AppMenu
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.10
+> AppMenu · @motifx-community/ui 0.1.0-beta.11
 
 The main menu of an application. It slides in from the start edge with a list of items, and each item shows its own page beside the list or runs a command. The menu holds nothing of its own: the items, the pages and the commands are given by the application.
 

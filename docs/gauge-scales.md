@@ -1,6 +1,6 @@
 # Gauge: Scales
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 The scale tells the reader how to read the value: its ends, ticks with their values, or nothing at all.
 

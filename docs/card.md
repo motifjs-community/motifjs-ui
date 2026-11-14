@@ -1,6 +1,6 @@
 # Card
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A surface for a single subject, with an optional image, a header with an avatar and titles, content and a row of actions. Empty parts are not rendered.
 

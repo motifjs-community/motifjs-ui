@@ -1,6 +1,6 @@
 # TreeView
 
-> Data · @motifx-community/ui 0.1.0-beta.10
+> Data · @motifx-community/ui 0.1.0-beta.11
 
 Displays items in a hierarchy. Rows can be expanded and collapsed, selected individually or in groups, and searched. Check boxes can roll up to parent rows, and children can load on demand when a row is first expanded. Large trees render only the visible rows.
 

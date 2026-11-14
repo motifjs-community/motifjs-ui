@@ -1,6 +1,6 @@
 # QRCode
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A QR code, drawn as vectors so that it stays sharp at any size. It has no dependencies, chooses the smallest version that holds the text, and can carry a logo.
 

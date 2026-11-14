@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> UI components for MotifJS (@motifx/core) on the MotifJS design system. Version 0.1.0-beta.10: a preview, its API may still change before 1.0.
+> UI components for MotifJS (@motifx/core) on the MotifJS design system. Version 0.1.0-beta.11: a preview, its API may still change before 1.0.
 
 Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with `new`, whose every prop takes a value or a function (`Bind<T>`); `x-model` binds a value two-way. The look is the design system’s (`@motifx-community/design-system`): five design languages (`data-design-language`), light and dark themes, density.
 
@@ -334,7 +334,7 @@ tokens, with examples.
 
 # @motifx-community/ui
 
-> Get started · @motifx-community/ui 0.1.0-beta.10
+> Get started · @motifx-community/ui 0.1.0-beta.11
 
 Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 
@@ -404,7 +404,7 @@ Loading issues…
 
 # Showcase: an order screen
 
-> Get started · @motifx-community/ui 0.1.0-beta.10
+> Get started · @motifx-community/ui 0.1.0-beta.11
 
 An order entry screen built with the kit, structured the way a MotifJS application is normally built: state and operations live in a model (`OrderModel`), and the page binds to it. The customer list is a data source of 5,000 rows that responds like a server.
 
@@ -417,7 +417,7 @@ Loading issues…
 
 # Showcase: a smart home
 
-> Get started · @motifx-community/ui 0.1.0-beta.10
+> Get started · @motifx-community/ui 0.1.0-beta.11
 
 A smart home panel for a tablet, built with the kit as a MotifJS application of its own: a rail of screens, the day and the home's state at the top, and tiles you can touch. The devices report new values every two seconds.
 
@@ -452,7 +452,7 @@ Loading issues…
 
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.10
+> Get started · @motifx-community/ui 0.1.0-beta.11
 
 The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 
@@ -5652,7 +5652,7 @@ Loading issues…
 
 # Foundations
 
-> Foundations · @motifx-community/ui 0.1.0-beta.10
+> Foundations · @motifx-community/ui 0.1.0-beta.11
 
 The foundations are what every control of the kit shares: the Control base with its properties, keyboard and focus, and the language of the texts and formats.
 
@@ -5735,7 +5735,7 @@ Loading issues…
 
 # Control
 
-> Foundations · @motifx-community/ui 0.1.0-beta.10
+> Foundations · @motifx-community/ui 0.1.0-beta.11
 
 `Control` is the base class of every control in the package. It provides the same `text`, `enabled`, `visible` and `tabStop` properties and the same focus methods, whether a control is declared in JSX and bound to state or created with `new` and changed programmatically.
 
@@ -5975,7 +5975,7 @@ Loading issues…
 
 # Keyboard and focus
 
-> Foundations · @motifx-community/ui 0.1.0-beta.10
+> Foundations · @motifx-community/ui 0.1.0-beta.11
 
 Every control follows the same rules for Tab order, the active control of a container, focus handling, `&File` access keys and application-wide shortcuts.
 
@@ -6171,7 +6171,7 @@ Loading issues…
 
 # Commands and shortcuts
 
-> Foundations · @motifx-community/ui 0.1.0-beta.10
+> Foundations · @motifx-community/ui 0.1.0-beta.11
 
 A command of the app is defined once: its text, icon, keys, state and action. Menus, toolbars and ribbons name it, its keys run it, and the user can give it other keys. Every shortcut of the app is in one list, so the ones that get in each other’s way are found.
 
@@ -6301,7 +6301,7 @@ Loading issues…
 
 # Language
 
-> Foundations · @motifx-community/ui 0.1.0-beta.10
+> Foundations · @motifx-community/ui 0.1.0-beta.11
 
 `uiLocale` controls the strings that controls display, the locale used for dates and numbers, and the text direction. The kit has one `uiLocale`, and each language pack is loaded on demand.
 
@@ -6538,7 +6538,7 @@ Loading issues…
 
 # Buttons
 
-> Buttons · @motifx-community/ui 0.1.0-beta.10
+> Buttons · @motifx-community/ui 0.1.0-beta.11
 
 Buttons start commands. The group covers single buttons, groups of them and a floating button for the main action of a screen. Toolbars and menus, which hold the many commands of an application, are in [Navigation](navigation.md).
 
@@ -6709,7 +6709,7 @@ Loading issues…
 
 # Button
 
-> Buttons · @motifx-community/ui 0.1.0-beta.10
+> Buttons · @motifx-community/ui 0.1.0-beta.11
 
 A native `<button>` styled with design tokens. It comes in three variants, three tones and three sizes, and supports an icon and an `&` access key. A button can act as a toggle, indicate that work is in progress, and open a menu or any other content, either from the whole button or from an arrow next to it with `split`, so the button keeps its own action.
 
@@ -7133,7 +7133,7 @@ Loading issues…
 
 # ButtonGroup
 
-> Buttons · @motifx-community/ui 0.1.0-beta.10
+> Buttons · @motifx-community/ui 0.1.0-beta.11
 
 A set of related buttons, used as a segmented selection of one or more options or as a row of actions. The buttons are standard kit buttons and are attached by default.
 
@@ -7282,7 +7282,7 @@ Loading issues…
 
 # SpeedDial
 
-> Buttons · @motifx-community/ui 0.1.0-beta.10
+> Buttons · @motifx-community/ui 0.1.0-beta.11
 
 A floating action button that opens a set of related actions. Place it in a corner, on an edge or inline. Actions appear in a line with labels, or on a full, half or quarter circle around the button with tooltips. If there is only one action, the main button performs it directly.
 
@@ -7580,7 +7580,7 @@ Loading issues…
 
 # Editors
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 Editors take values: text, numbers, dates and times, ranges, colors, ratings, codes, files and signatures. They share one field model, so a label, help text, validation and binding work the same in all of them.
 
@@ -7743,7 +7743,7 @@ Loading issues…
 
 # TextBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A single-line text input with a label, help text and error display. It supports a placeholder, a prefix and suffix, buttons inside the box, a clear button, a password reveal button, a character counter, an input mask and validation, either on its own, in a group, or across all fields in a panel.
 
@@ -8203,7 +8203,7 @@ Loading issues…
 
 # TextArea
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A multi-line text input. The box can grow with its content or be resized by the user, and it supports a character counter, a clear button and Ctrl+Enter to submit, along with the label, help text and validation common to all fields.
 
@@ -8516,7 +8516,7 @@ Loading issues…
 
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A numeric input with arrow key support, PageUp and PageDown, spin buttons that repeat while held, min and max limits, exact decimal stepping, display formats such as currency and percent, and locale-aware input.
 
@@ -8834,7 +8834,7 @@ Loading issues…
 
 # DateBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 An input for a date, a time or both. Users can type through a mask in the locale's order, or pick from a calendar and a list of times. `min`, `max` and `disabledDates` apply to both methods.
 
@@ -9043,7 +9043,7 @@ Loading issues…
 
 # DateRangeBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A single field for a start date and an end date. Users can type through two masks, or pick from two side-by-side months and a list of presets, within the allowed dates and range length. The value is a `[start, end]` pair.
 
@@ -9243,7 +9243,7 @@ Loading issues…
 
 # Signature
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A pad to sign on with a pen, a finger or a mouse. The value is the strokes themselves, so a signature can be stored as data, drawn again at any size and exported as an image.
 
@@ -9455,7 +9455,7 @@ Loading issues…
 
 # OtpInput
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A one-time code in a row of boxes. Typing, pasting a whole code, the code a phone offers from a message and screen readers work as in any text box, because the boxes are drawn over one real input.
 
@@ -9656,7 +9656,7 @@ Loading issues…
 
 # ColorBox and ColorPicker
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A color field with a popup picker, or the picker on its own. The picker has a saturation and brightness area, a hue slider, an opacity slider, channel inputs and preset colors.
 
@@ -9817,7 +9817,7 @@ Loading issues…
 
 # Calendar
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A month view for selecting a date, with year and decade views for quick navigation. It serves as the DateBox picker and can also be used on its own.
 
@@ -9961,7 +9961,7 @@ Loading issues…
 
 # Slider
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 Selects a value on a track by dragging a thumb or using the keyboard. It supports a single number or a range with two thumbs, steps, labeled tick marks, a value tooltip, a vertical orientation and number formatting, along with the label, help text and validation common to all fields.
 
@@ -10330,7 +10330,7 @@ Loading issues…
 
 # Rating
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A row of stars for entering or displaying a score, in whole or half steps. Rating is a field, so the label, help text, rules and `x-model` work the same way as on any other field.
 
@@ -10462,7 +10462,7 @@ Loading issues…
 
 # ValidationSummary
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 Lists the invalid fields of a `ValidationGroup` under a header, with each field's label and message on its own line. Clicking a line moves focus to the field. The summary updates whenever a field in the group is validated or reset, and it is hidden when there are no errors.
 
@@ -10585,7 +10585,7 @@ Loading issues…
 
 # FileUploader
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 Lets users select files with a button or drop them on the box. Files are listed with their size and status, and can upload automatically, on a button click or programmatically, with progress, cancel, retry and remove for each file. Files that exceed the limits are listed with the reason.
 
@@ -10794,7 +10794,7 @@ Loading issues…
 
 # ShortcutEditor
 
-> Editors · @motifx-community/ui 0.1.0-beta.10
+> Editors · @motifx-community/ui 0.1.0-beta.11
 
 A list of the app’s keyboard shortcuts in which the user assigns other keys. It shows the shortcuts of commands, of the app and of the kit’s components, and you can place it anywhere: a settings page, a dialog or a tab.
 
@@ -11046,7 +11046,7 @@ Loading issues…
 
 # Choice
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 Choice components let the reader pick: on or off, one of a few, several of a list, or one of many with search.
 
@@ -11201,7 +11201,7 @@ Loading issues…
 
 # CheckBox
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 A check box with a label that can be checked, unchecked or indeterminate. It supports an optional three-state cycle, read-only and required states, and validation with its group. It is a native check box styled with design tokens.
 
@@ -11545,7 +11545,7 @@ Loading issues…
 
 # Switch
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 An on/off switch with a label. It has a track with a sliding thumb, optional on/off text inside or next to the track, and read-only and required states. It is a native check box with the switch role.
 
@@ -11795,7 +11795,7 @@ Loading issues…
 
 # RadioGroup
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 A set of mutually exclusive options. Options can come from plain values, custom objects or a live list, and can be arranged vertically, horizontally or in columns. Individual options can be disabled, hidden or given help text. The group is a single Tab stop, and the arrow keys move between options.
 
@@ -12127,7 +12127,7 @@ Loading issues…
 
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 Selects one item from a list. The field shows the selected item, and the list opens below it on click or from the keyboard. The list can be searched, grouped and customized, and it stays fast with thousands of items.
 
@@ -12458,7 +12458,7 @@ export default function Validation() {
 
 # ComboBox and Autocomplete
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 A text input with a list that filters as the user types. Items can come from memory or from a data layer source that is searched on the server. `Autocomplete` is the free-text variant, where the value is the text itself.
 
@@ -12680,7 +12680,7 @@ export default function CustomValues() {
 
 # Lookup
 
-> Choice · @motifx-community/ui 0.1.0-beta.10
+> Choice · @motifx-community/ui 0.1.0-beta.11
 
 Selects one row from a table-style list, typically from a data source searched on the server, such as a customer by company, contact and city. The field shows the text of the selected row, and everything else works as in DropDown.
 
@@ -12900,7 +12900,7 @@ export default function ByKey() {
 
 # Feedback
 
-> Feedback · @motifx-community/ui 0.1.0-beta.10
+> Feedback · @motifx-community/ui 0.1.0-beta.11
 
 Feedback components tell the reader what is happening: how far a task has come, that something is loading, what a control does, and what has just happened.
 
@@ -13042,7 +13042,7 @@ Loading issues…
 
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.10
+> Feedback · @motifx-community/ui 0.1.0-beta.11
 
 ProgressBar shows how far an operation has progressed, as a line or a circle, or indicates activity when the progress is unknown. Spinner shows that the system is busy. It is a rotating ring that can stand alone or cover a panel while it loads, and it can wait for a delay so that quick operations do not cause a flash.
 
@@ -13451,7 +13451,7 @@ Loading issues…
 
 # Tooltip
 
-> Feedback · @motifx-community/ui 0.1.0-beta.10
+> Feedback · @motifx-community/ui 0.1.0-beta.11
 
 A short description shown next to an element when the pointer rests on it, when it receives keyboard focus, or programmatically. Users can hover over the tooltip, Escape dismisses it, and only one is open at a time on the page.
 
@@ -13798,7 +13798,7 @@ Loading issues…
 
 # Popover
 
-> Feedback · @motifx-community/ui 0.1.0-beta.10
+> Feedback · @motifx-community/ui 0.1.0-beta.11
 
 Displays content next to a related element, such as a title, a close button, a form or a card. It opens on click or on hover, follows its target, and points to it with an arrow where the design language includes one.
 
@@ -14028,7 +14028,7 @@ Loading issues…
 
 # LoadPanel
 
-> Feedback · @motifx-community/ui 0.1.0-beta.10
+> Feedback · @motifx-community/ui 0.1.0-beta.11
 
 A loading overlay for a container or the whole page. It includes a shade, a panel with the kit spinner and a message, and a Cancel button when the operation can be stopped. The content underneath is unavailable while it is shown, and focus returns afterward.
 
@@ -14220,7 +14220,7 @@ Loading issues…
 
 # Toast
 
-> Feedback · @motifx-community/ui 0.1.0-beta.10
+> Feedback · @motifx-community/ui 0.1.0-beta.11
 
 Brief notifications at the edge of the window, with four tones, an optional action such as Undo, a custom duration or none, six positions and a limit on how many appear at once. Show them programmatically, or place a custom region in JSX.
 
@@ -14541,7 +14541,7 @@ Loading issues…
 
 # Display
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 Display components present content: people, counts and labels, cards, pictures, tiles, events in time, codes to scan, and placeholders while content loads.
 
@@ -14693,7 +14693,7 @@ Loading issues…
 
 # QRCode
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A QR code, drawn as vectors so that it stays sharp at any size. It has no dependencies, chooses the smallest version that holds the text, and can carry a logo.
 
@@ -14876,7 +14876,7 @@ Loading issues…
 
 # Barcode
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A linear barcode, drawn as vectors: Code 128, Code 39, EAN-13, EAN-8, UPC-A or Interleaved 2 of 5. It has no dependencies, works out check digits and refuses a value the format cannot hold.
 
@@ -15073,7 +15073,7 @@ Loading issues…
 
 # Badge
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A short text, count or dot, shown inline or on the corner of a button, avatar or icon. A count above its maximum displays as “99+”, and a count of zero is hidden.
 
@@ -15274,7 +15274,7 @@ Loading issues…
 
 # Avatar and AvatarGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 Represents a person with a picture, initials or an icon, with an optional presence indicator on its corner. A group stacks or spreads avatars and counts the ones it does not show.
 
@@ -15520,7 +15520,7 @@ Loading issues…
 
 # Chip and ChipGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A compact element with short text and an optional leading icon or avatar. Use it as a filter, as a choice among a few options, or to represent a selected item that can be removed. A group handles single or multiple selection and arrow key navigation.
 
@@ -15805,7 +15805,7 @@ Loading issues…
 
 # Card
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A surface for a single subject, with an optional image, a header with an avatar and titles, content and a row of actions. Empty parts are not rendered.
 
@@ -16067,7 +16067,7 @@ Loading issues…
 
 # Gallery
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 Displays a horizontal set of slides, one or several at a time. Users navigate with the side buttons, the indicator dots, swipe gestures or the arrow keys, and it can run as an automatic slideshow. A slide can be an image with a caption or any other content.
 
@@ -16319,7 +16319,7 @@ Loading issues…
 
 # TileView
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 Arranges tiles of different sizes on a grid of base cells, where each tile spans a set number of cells. Tiles fill the height in columns and scroll horizontally, or fill the width in rows. They can be selected and reordered by dragging.
 
@@ -16533,7 +16533,7 @@ Loading issues…
 
 # Timeline
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 Displays events in chronological order. In the vertical layout, each event is a card next to a line with a marker. In the horizontal layout, events appear along a line of dates, and selecting a date shows that event's card below the line. Dates are formatted in the kit language. For scheduling by the hour, see [Scheduler](scheduler.md).
 
@@ -16715,7 +16715,7 @@ Loading issues…
 
 # Skeleton
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 A placeholder that matches the shape of content that is loading, so the page keeps its layout while data arrives. If you provide content, it replaces the placeholder in the same place when loading ends.
 
@@ -16854,7 +16854,7 @@ Loading issues…
 
 # Navigation
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Navigation components move the reader around an application and lay out its screens: bars at the top and bottom, menus and toolbars, tabs, paths, steps and pages, panels that slide in, and the containers that arrange everything.
 
@@ -17006,7 +17006,7 @@ Loading issues…
 
 # AppBar
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 The top bar of an application, with a navigation button, a logo, a title, a control and commands. The commands are a `Toolbar`, so those that do not fit move into a menu.
 
@@ -17204,7 +17204,7 @@ Loading issues…
 
 # Toolbar
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A command bar that holds buttons, toggle buttons, menus and fields, organized in groups with separators. The toolbar is a single Tab stop, and the arrow keys move between its controls. Items that do not fit move into an overflow menu at the end. You can define items as data, as JSX children, or both.
 
@@ -17674,7 +17674,7 @@ export default function SizeAndOrientation() {
 
 # BottomNavigation
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 The destinations of an application at the bottom of the screen, each an icon with a label. The bar is one Tab stop, marks the selected item for screen readers and keeps clear of the home indicator of a phone.
 
@@ -17936,7 +17936,7 @@ Loading issues…
 
 # Tabs
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Tabs display one panel at a time below a tab strip. You can define them in JSX or programmatically, and they support closable tabs, icons and badges, scroll buttons when tabs overflow, four placements, and panels that are created on first display.
 
@@ -18400,7 +18400,7 @@ Loading issues…
 
 # Breadcrumb
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Shows the path to the current page. Each step is a link or button, and the current page comes last. Steps that do not fit move into a menu after the first step.
 
@@ -18533,7 +18533,7 @@ Loading issues…
 
 # Pagination
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Navigates through pages of items, with page size options, the current position, navigation buttons and a button for each nearby page. It switches to a compact layout when it does not fit, and it looks and works like the DataGrid pager.
 
@@ -18656,7 +18656,7 @@ Loading issues…
 
 # Stepper
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Shows the steps of a longer task and the user's progress through them. Each step has an indicator and text, with a line between steps, and steps before the current one are marked complete. [Wizard](wizard.md) adds a page and navigation buttons to each step.
 
@@ -18900,7 +18900,7 @@ Loading issues…
 
 # Wizard
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Guides the user through a multi-step task. It combines a [Stepper](stepper.md) above or next to one page per step with Back and Next buttons below. Next validates the page first, and on the last step it finishes the wizard.
 
@@ -19148,7 +19148,7 @@ Loading issues…
 
 # Accordion
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 An accordion expands and collapses sections under their headers. It supports one or several open sections, sections that stay open, icons, three appearances and sections that are created when first opened.
 
@@ -19451,7 +19451,7 @@ Loading issues…
 
 # MultiView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Displays one page at a time from a horizontal set. Users move between pages with a swipe or drag, and you can navigate with `next()`, `previous()` and `goTo()`, or with [Tabs](tabs.md), a [Stepper](stepper.md) or buttons bound to the same value. It works like the panels of a tab control without the tab strip.
 
@@ -19661,7 +19661,7 @@ Loading issues…
 
 # Window and dialog
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A window or dialog built on the native `<dialog>` element. A single form can be shown as modeless or modal, depending on how you open it. It has a title bar, can be moved, resized, minimized and maximized, and Enter and Escape activate its buttons. Forms can open other forms, and `messageBox` and `confirm` cover common prompts.
 
@@ -20225,7 +20225,7 @@ export default function DefaultButtons() {
 
 # BottomSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A panel that slides up from the bottom of the page or a container and stops at set heights: peek, half, full, the height of its content, or custom values. Users can drag it by its handle and title, flick it, and swipe down to close it. It can be modal or non-modal, and the back button closes it on phones.
 
@@ -20549,7 +20549,7 @@ Loading issues…
 
 # Drawer
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A panel that slides in from an edge of the page or a container, either over the content or pushing it aside. Users can swipe it in from the edge and back out, and Escape, the scrim and the browser's back action close it.
 
@@ -20786,7 +20786,7 @@ Loading issues…
 
 # ActionSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A list of commands that slides up from the bottom of the screen, built from the kit's menu items and sized for touch. It supports a title, a message and a separate Cancel button. A context menu uses it on touch screens.
 
@@ -21004,7 +21004,7 @@ Loading issues…
 
 # Layout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Container controls for arranging other controls: `Stack` (a row or column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a titled frame), `DockPanel` (children docked to its edges) and `SplitContainer` (two panes with a splitter). All of them are controls, so they can disable and hide their content, and they lay out children added at any time.
 
@@ -21596,7 +21596,7 @@ Loading issues…
 
 # Splitter
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Divides space into any number of resizable panes, arranged side by side or stacked. A handle between each pair of panes can be dragged or moved with the keyboard, and it resizes the two panes next to it. Panes can be collapsed from their handle and can contain another splitter. For two panes where one has a fixed size, see [SplitContainer](layout.md).
 
@@ -21808,7 +21808,7 @@ Loading issues…
 
 # Resizable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A box that users can resize from its edges and corners with the pointer, or with the arrow keys on the grip in its end corner. It respects minimum and maximum sizes, can stay within an area, and can preserve its aspect ratio.
 
@@ -21955,7 +21955,7 @@ Loading issues…
 
 # Draggable and DropTarget
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Makes any content movable with the pointer, touch or the arrow keys, optionally along one axis, inside a boundary, by a handle or as a copy. `DropTarget` defines areas that accept it. To reorder items in a list, see [Sortable](sortable.md).
 
@@ -22157,7 +22157,7 @@ Loading issues…
 
 # ScrollView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 A scrollable container with configurable scrollbars, pull-to-refresh, and load-on-scroll near the end of the content. You can scroll it programmatically to a position or an element.
 
@@ -22351,7 +22351,7 @@ Loading issues…
 
 # Sortable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Lets users reorder items by dragging them with the pointer or a finger, or with the keyboard. Lists in the same group can exchange items. A drop moves the element and reports the indexes, while your data stays under your control.
 
@@ -22572,7 +22572,7 @@ Loading issues…
 
 # FormLayout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.10
+> Navigation · @motifx-community/ui 0.1.0-beta.11
 
 Arranges the fields of a data object on a grid. Each field gets an editor, chosen by name or by the type of its value, with two-way binding to the object. Groups, column spans and buttons organize the layout, and submitting the form validates every field first.
 
@@ -22698,7 +22698,7 @@ Loading issues…
 
 # Chart
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Displays lines, areas, bars, scatter points and bubbles on a shared value axis. The chart has no dependencies, takes its appearance from the design language, and makes every value available through the keyboard and a table view.
 
@@ -23129,7 +23129,7 @@ export default class Programmatic extends Component<HTMLDivElement> {
 
 # Chart: Lines and areas
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Lines and areas show how values change along an axis: over time, or from one category to the next.
 
@@ -23261,7 +23261,7 @@ Loading issues…
 
 # Chart: Bars
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Bars compare amounts. They stand on a common baseline, so lengths compare exactly, side by side, stacked, or on their side for long names.
 
@@ -23407,7 +23407,7 @@ export const SALES = [
 
 # Chart: Scatter and bubble
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Scatter and bubble charts place each row by two numbers, to show how they relate.
 
@@ -23550,7 +23550,7 @@ Loading issues…
 
 # Chart: Pie and donut
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 A pie or a donut splits one whole into its parts, for a share seen at a glance.
 
@@ -23679,7 +23679,7 @@ Loading issues…
 
 # Chart: Funnel
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 A funnel follows a quantity through stages in order, and shows how much of it is left at each one.
 
@@ -23798,7 +23798,7 @@ Loading issues…
 
 # Chart: Radar
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 A radar compares several measures at once, for one or more items.
 
@@ -23926,7 +23926,7 @@ Loading issues…
 
 # Chart: Heat map
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 A heat map shows a value for each pair of two categories as a color.
 
@@ -24023,7 +24023,7 @@ Loading issues…
 
 # Chart: Ranges
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Ranges show a low and a high value for each position, as a band or as floating bars.
 
@@ -24154,7 +24154,7 @@ Loading issues…
 
 # Chart: Candles
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Candles show the first, highest, lowest and last price for each position.
 
@@ -24322,7 +24322,7 @@ Loading issues…
 
 # Chart: Waterfall
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 A waterfall shows how a starting value becomes an end value through changes up and down.
 
@@ -24437,7 +24437,7 @@ Loading issues…
 
 # Chart: Zoom and large data
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Large data stays quick: long lines are thinned to the width with their peaks kept, and the reader zooms in for detail.
 
@@ -24536,7 +24536,7 @@ Loading issues…
 
 # Chart: Live data
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 A chart follows its data: reactive values redraw it, and live data moves along with the latest values.
 
@@ -24602,7 +24602,7 @@ Loading issues…
 
 # Chart: References and selection
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 Reference lines and bands give the values a target, a limit or a period, and the reader can choose values to act on.
 
@@ -24732,7 +24732,7 @@ export default function Selection() {
 
 # Sparkline
 
-> Charts · @motifx-community/ui 0.1.0-beta.10
+> Charts · @motifx-community/ui 0.1.0-beta.11
 
 A chart the size of a word, for a trend beside a number, in a sentence or in a row of a table. It draws a line, an area, bars, or wins and losses, and marks the values that matter.
 
@@ -24855,7 +24855,7 @@ Loading issues…
 
 # Gauge
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 Shows a value against its scale, as an arc, a circle or a straight bar. Ranges give stretches of the scale a meaning, markers and marks point at values, and every part takes its look from the design language.
 
@@ -25011,7 +25011,7 @@ Loading issues…
 
 # Gauge: Circular
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 A circular gauge shows its value on an arc or a whole circle, with the value written in the middle. It reads best for one value whose scale the reader knows, such as a speed or a share.
 
@@ -25116,7 +25116,7 @@ Loading issues…
 
 # Gauge: Linear
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 A linear gauge shows its value on a straight bar, across or upright. Bars fit in narrow places, line up in lists, and compare well side by side.
 
@@ -25204,7 +25204,7 @@ Loading issues…
 
 # Gauge: Scales
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 The scale tells the reader how to read the value: its ends, ticks with their values, or nothing at all.
 
@@ -25325,7 +25325,7 @@ Loading issues…
 
 # Gauge: Ranges
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 Ranges give stretches of the scale a meaning, such as normal, high and critical. They show as a band beside the track, and the fill takes the color of the range its value is in.
 
@@ -25462,7 +25462,7 @@ Loading issues…
 
 # Gauge: Markers
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 A marker points at the value: a needle from the middle of an arc, a shape on or beside the track, or a callout that writes the value.
 
@@ -25601,7 +25601,7 @@ Loading issues…
 
 # Gauge: Marks
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 Marks show other values on the scale besides the gauge's own, such as a target, a limit, or the lowest and highest expected.
 
@@ -25713,7 +25713,7 @@ Loading issues…
 
 # Gauge: Base value
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 The fill starts at the start of the scale, or at a base value inside it. A scale with values on both sides of a target then fills from the target, either way.
 
@@ -25795,7 +25795,7 @@ Loading issues…
 
 # Gauge: Dashboards
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 Gauges of different kinds put together, all following the same values. Each gauge keeps its own scale, so readers compare values by their meaning, not by size alone.
 
@@ -25933,7 +25933,7 @@ Loading issues…
 
 # BarGauge
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 Shows several values side by side as bars bent round one middle, each against the same scale. It compares a few values at a glance, in little room.
 
@@ -26035,7 +26035,7 @@ Loading issues…
 
 # BarGauge: Labels and legend
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 Each value can be written at the end of its bar, named in a legend, and shown with its name under the pointer.
 
@@ -26117,7 +26117,7 @@ Loading issues…
 
 # BarGauge: Data
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 A bar gauge reads numbers, or rows through their fields, and follows them as they change.
 
@@ -26243,7 +26243,7 @@ Loading issues…
 
 # BarGauge: Angles and size
 
-> Gauges · @motifx-community/ui 0.1.0-beta.10
+> Gauges · @motifx-community/ui 0.1.0-beta.11
 
 How far the bars go round and which way they face fit a bar gauge to the room it has.
 
@@ -26334,7 +26334,7 @@ Loading issues…
 
 # Data
 
-> Data · @motifx-community/ui 0.1.0-beta.10
+> Data · @motifx-community/ui 0.1.0-beta.11
 
 Data components show and pick from structured data: hierarchies, lists, sets of tags, and filters that the reader builds. Tables have their own group: see [DataGrid](datagrid.md).
 
@@ -26465,7 +26465,7 @@ Loading issues…
 
 # TreeView
 
-> Data · @motifx-community/ui 0.1.0-beta.10
+> Data · @motifx-community/ui 0.1.0-beta.11
 
 Displays items in a hierarchy. Rows can be expanded and collapsed, selected individually or in groups, and searched. Check boxes can roll up to parent rows, and children can load on demand when a row is first expanded. Large trees render only the visible rows.
 
@@ -27227,7 +27227,7 @@ export default function SizesAndLines() {
 
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.10
+> Data · @motifx-community/ui 0.1.0-beta.11
 
 A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be searched and grouped, and long lists render only the visible rows.
 
@@ -27609,7 +27609,7 @@ export default function Validation() {
 
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.10
+> Data · @motifx-community/ui 0.1.0-beta.11
 
 Selects multiple items. Selected items appear as tags in the field, followed by a text input that searches the list. Items can come from memory or from a data source, and typed text can become a custom tag.
 
@@ -27977,7 +27977,7 @@ export default function Localization() {
 
 # FilterBuilder
 
-> Data · @motifx-community/ui 0.1.0-beta.10
+> Data · @motifx-community/ui 0.1.0-beta.11
 
 Lets users build a filter visually, using groups joined by And, Or, Not And or Not Or, and conditions made of a field, an operation and a value. Its value is a data layer filter expression, so it works directly with in-memory rows and every adapter. DataGrid opens it from the filter panel, and you can also use it on its own for reports or saved searches.
 
@@ -28586,7 +28586,7 @@ export default function Localization() {
 
 # RibbonMenu
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 The commands of an application in tabs, each tab in named groups of large, medium and small commands. It adapts to the room it has, can show only its tabs or hide itself, and lets users arrange it to their liking. The menu holds nothing of its own: the tabs, the groups and the commands are given by the application.
 
@@ -28823,7 +28823,7 @@ Loading issues…
 
 # RibbonMenu: Commands
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 A group holds commands of three sizes and eight types. Every field of a command is a value or a function the menu follows, so the commands change with the application’s state.
 
@@ -28945,7 +28945,7 @@ Loading issues…
 
 # RibbonMenu: Layouts and room
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 The menu has two layouts, and gives way step by step when its room shrinks: commands become smaller, groups fold, and what is left scrolls. Narrow enough, it turns compact.
 
@@ -29008,7 +29008,7 @@ Loading issues…
 
 # RibbonMenu: Showing and keys
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 The menu can show only its tabs or hide itself to leave the page more room. A button before the tabs opens the app’s main menu, quick commands are at hand from every tab, and key hints let the keyboard reach any command in a few letters.
 
@@ -29108,7 +29108,7 @@ Loading issues…
 
 # RibbonMenu: Customization
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 Users arrange the menu from its context menu: they hide what they never use, move what they use most, and add commands to the quick commands. Everything they change is one plain object, to save and give back.
 
@@ -29205,7 +29205,7 @@ Loading issues…
 
 # RibbonMenu: Programmatic changes
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 Tabs, groups and commands can be added, removed, moved and changed at any time, by their paths. The menu redraws only what changed: groups and commands that stay keep their buttons, their state and their place.
 
@@ -29300,7 +29300,7 @@ Loading issues…
 
 # RibbonMenu: API reference
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 Everything `RibbonMenu` takes, offers and reports. Every prop is also a settable property, and a function is followed.
 
@@ -29434,7 +29434,7 @@ Loading issues…
 
 # MenuBar and ContextMenu
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 An application menu bar (File, Edit, View) and a context menu that opens on right-click. Both use the same menu items, which support submenus, check and radio items, shortcuts and access keys. The bar can be customized by the user, changed by path and merged with the bars of documents and windows.
 
@@ -29598,7 +29598,7 @@ Loading issues…
 
 # MenuBar: ContextMenu
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 The menu of an element: it opens on a right-click at the pointer, and with the Menu key or Shift+F10 at the focused element. Its items are the same as those of a menu bar.
 
@@ -29728,7 +29728,7 @@ Loading issues…
 
 # MenuBar: Customization
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 With `customizable`, the user arranges the bar: hides and moves items, renames them, adds commands and menus, and changes keyboard shortcuts. The items you give stay as they are; what the user changed is one object for the app to save.
 
@@ -29870,7 +29870,7 @@ Loading issues…
 
 # MenuBar: Programmatic changes
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 The items of a bar can be changed while it runs: by path, without building the whole list again, or in place followed by `refresh()`. Items can also name app commands, which give them their text, keys, state and action.
 
@@ -29948,7 +29948,7 @@ Loading issues…
 
 # MenuBar: Merging menus
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 A page can have several bars: the app’s bar, and the bars of documents, windows and tabs. The bar of the document in use shows its items in the app’s bar, so the user always finds the commands in one place.
 
@@ -30160,7 +30160,7 @@ Loading issues…
 
 # MenuBar: API reference
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 Every prop, property, method and event of `MenuBar` and `ContextMenu`, the fields of a menu item, and the styling hooks and tokens.
 
@@ -30306,7 +30306,7 @@ Loading issues…
 
 # AppMenu
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.10
+> AppMenu · @motifx-community/ui 0.1.0-beta.11
 
 The main menu of an application. It slides in from the start edge with a list of items, and each item shows its own page beside the list or runs a command. The menu holds nothing of its own: the items, the pages and the commands are given by the application.
 
@@ -30460,7 +30460,7 @@ Loading issues…
 
 # AppMenu: Slots and search
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.10
+> AppMenu · @motifx-community/ui 0.1.0-beta.11
 
 The list can hold the app’s own content above and under its items, such as the user’s name or the version, and a search that narrows a long list as the user types.
 
@@ -30530,7 +30530,7 @@ Loading issues…
 
 # AppMenu: Programmatic changes
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.10
+> AppMenu · @motifx-community/ui 0.1.0-beta.11
 
 Items can be added, removed, moved and changed at any time, by their keys. Items that stay keep their place, and pages that were opened keep their state.
 
@@ -30610,7 +30610,7 @@ Loading issues…
 
 # AppMenu: API reference
 
-> AppMenu · @motifx-community/ui 0.1.0-beta.10
+> AppMenu · @motifx-community/ui 0.1.0-beta.11
 
 Everything `AppMenu` takes, offers and reports. Every prop is also a settable property, and a function is followed.
 
@@ -30697,7 +30697,7 @@ Loading issues…
 
 # TabDocumentManager
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 A document manager that arranges content the way code editors arrange files: documents in tabs, tabs in groups, and groups split side by side or one above the other. A document's content can be any component, such as a form, a grid or plain text, and it is moved rather than recreated when its tab goes to another group. Every user action is also a method, with a cancelable event before it and a notification after it, and the whole layout can be saved to JSON and restored. Preview and pinned tabs, sizes and copies are covered in [Tabs](tabdocs-tabs.md), and context menus, lists and keyboard shortcuts in [Menus and keys](tabdocs-menus.md).
 
@@ -31593,7 +31593,7 @@ export default function SaveRestore() {
 
 # TabDocumentManager: Tabs
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 Tabs that behave as they do in code editors: preview tabs replaced by the next preview, pinned tabs that stay at the start, tabs that shrink, wrap or scroll, counts and colors, and the same document open in two groups.
 
@@ -32431,7 +32431,7 @@ export default function Duplicates() {
 
 # TabDocumentManager: Menus and keys
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 The commands around tabs: context menus on tabs and on the empty strip, a searchable list of a group's documents, application toolbar buttons, the recently used list, back and forward, reopening closed documents, locked groups, and keyboard shortcuts for all of them.
 
@@ -33128,7 +33128,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 # TabDocumentManager: Drag and drop
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 Drag tabs and whole groups as you would in a code editor: along a strip, to another group, beside a group, along an edge of the layout, or between two managers. The same moves are available from the keyboard, and every drop goes through the methods and events of the action it performs.
 
@@ -33690,7 +33690,7 @@ export default function MoveWithKeys() {
 
 # TabDocumentManager: Dock and floating windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 Documents and whole groups can float in their own windows within the page, and dock again into document groups or into dock areas around them, which can collapse to the edge of the manager. The mouse, the keyboard and the API all perform the same actions through the same events.
 
@@ -34575,7 +34575,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 # TabDocumentManager: New windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 A document, a group or a floating window can move into its own browser window and back. Its content moves with it without being recreated, and the new window is part of the same manager, so its tabs, menus, keys and dragging work the same way.
 
@@ -35239,7 +35239,7 @@ export default function WindowLayout() {
 
 # TabDocumentManager: Tablet and phone
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 On tablets and phones, a layout of groups, splits and dock areas does not fit as designed. The manager keeps the layout and changes how it is presented: the documents, groups, areas and saved JSON stay the same, and content is moved rather than recreated. The presentation depends on the manager's own width rather than the device, and on touch screens its tabs and buttons are larger.
 
@@ -35524,7 +35524,7 @@ Loading issues…
 
 # TabDocumentManager: A whole workspace
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.10
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.11
 
 A complete screen built from kit components: a menu bar, the manager, a DataGrid with every feature enabled, forms, and a tool docked at the bottom. Each part is the same component documented on its own page, and the manager simply hosts them.
 
@@ -35941,7 +35941,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 # Scheduler
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 A full-featured calendar for appointments across days and hours. It provides day, week, work week and month views, all-day and multi-day bars, side-by-side display of overlapping appointments, and a "+N more" link when a day is full. Appointments can come from an array or a data source, and every setting can change at runtime.
 
@@ -36541,7 +36541,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: Editing
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same programmatically. Every change raises its event first, can wait for a server, and is reverted if saving fails.
 
@@ -37094,7 +37094,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: Recurrence and time zones
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Recurring appointments based on RFC 5545 rules, with exceptions and individually edited occurrences, a prompt that asks what a change should apply to, a recurrence editor, and time zone support that handles daylight saving time.
 
@@ -37522,7 +37522,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: Resources and groups
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Resources such as rooms, people and equipment can color appointments, divide columns into groups (nested or under each date), and define when each resource is available and when time is blocked.
 
@@ -38232,7 +38232,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: The appointment form
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Configure the appointment form without handling events. You can choose its fields and their order, arrange them in groups and tabs, use custom editors, add validation per field, and show or lock fields for specific appointments. You can also replace the form with your own.
 
@@ -38871,7 +38871,7 @@ export default function OwnForm() {
 
 # Scheduler: Timeline
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Displays one row per resource, with time running along the row, for a day, a week, a work week or a month. Appointments at the same time stack within a row, and the row grows to fit them.
 
@@ -39511,7 +39511,7 @@ export default function TimelineTemplates() {
 
 # Scheduler: Agenda
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Displays upcoming days as a list, with each day's appointments in time order. Days without appointments are omitted.
 
@@ -40116,7 +40116,7 @@ export default function AgendaTemplates() {
 
 # Scheduler: Big data
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Handles thousands of resources and appointments. The scheduler renders only what is visible, and recalculates the layout only for what has changed.
 
@@ -40377,7 +40377,7 @@ export default function BigWeek() {
 
 # Scheduler: Tablet and phone
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 On tablets and phones, the scheduler keeps its appointments, views and date, and changes how it presents them. On a phone, it shows the agenda, a compact toolbar and bottom sheets. Touch gestures can lift and resize appointments, swipe between days, and pinch to zoom.
 
@@ -41049,7 +41049,7 @@ export default function Touch() {
 
 # Scheduler: iCalendar and print
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.10
+> Scheduler · @motifx-community/ui 0.1.0-beta.11
 
 Exports appointments to an iCalendar file (RFC 5545) and imports them back, for use with other calendar applications. The scheduler can also be printed.
 
@@ -41648,7 +41648,7 @@ export function sampleAppointments(): Meeting[] {
 
 # DataGrid
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 A grid for data entry and large data sets. Rows can be in memory or come from any data layer adapter, and can be displayed in a virtual list or in pages. It supports sorting, column layout, editing with kit editors, new rows with Tab navigation, three save modes, row actions, selection, filters, a search panel, grouping, summaries, a toolbar, lookup columns from other services, copy and paste, export, and a persistent layout. Every feature can be disabled for the grid or for a single column.
 
@@ -42018,7 +42018,7 @@ export default function Pager() {
 
 # DataGrid: Editing
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Editing and save modes
 
@@ -42669,7 +42669,7 @@ export default function BarActions() {
 
 # DataGrid: Edit forms and popups
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Edit forms and popups
 
@@ -43079,7 +43079,7 @@ export default function ValidationRules() {
 
 # DataGrid: Filtering and search
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Filters
 
@@ -43655,7 +43655,7 @@ export function makeCustomers(n: number): Customer[] {
 
 # DataGrid: Lookup columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Lookup columns
 
@@ -44026,7 +44026,7 @@ export default function TextFrom() {
 
 # DataGrid: Grouping and summaries
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Grouping
 
@@ -44513,7 +44513,7 @@ export default function SummariesServer() {
 
 # DataGrid: Master-detail
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Master-detail
 
@@ -44847,7 +44847,7 @@ export default function DetailTabs() {
 
 # DataGrid: Bands and adaptive columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Band headers
 
@@ -45172,7 +45172,7 @@ export default function AdaptiveColumns() {
 
 # DataGrid: Selection and export
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Selection
 
@@ -45779,7 +45779,7 @@ export default function PdfExport() {
 
 # DataGrid: Row drag and drop
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Reorder rows
 
@@ -46128,7 +46128,7 @@ export default function RowDragBetween() {
 
 # DataGrid: Selecting by dragging
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Rows
 
@@ -46462,7 +46462,7 @@ export default function CellRanges() {
 
 # DataGrid: Scrolling
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Scrolling modes
 
@@ -46818,7 +46818,7 @@ export default function InfiniteGroups() {
 
 # DataGrid: Layout and events
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Toolbar
 
@@ -47366,7 +47366,7 @@ export default function Events() {
 
 # DataGrid: API reference
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.10
+> DataGrid · @motifx-community/ui 0.1.0-beta.11
 
 ## Columns
 

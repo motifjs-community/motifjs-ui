@@ -1,6 +1,6 @@
 # MenuBar: API reference
 
-> MenuBar · @motifx-community/ui 0.1.0-beta.10
+> MenuBar · @motifx-community/ui 0.1.0-beta.11
 
 Every prop, property, method and event of `MenuBar` and `ContextMenu`, the fields of a menu item, and the styling hooks and tokens.
 

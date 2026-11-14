@@ -1,6 +1,6 @@
 # Avatar and AvatarGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.10
+> Display · @motifx-community/ui 0.1.0-beta.11
 
 Represents a person with a picture, initials or an icon, with an optional presence indicator on its corner. A group stacks or spreads avatars and counts the ones it does not show.
 

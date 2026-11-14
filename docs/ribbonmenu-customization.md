@@ -1,6 +1,6 @@
 # RibbonMenu: Customization
 
-> RibbonMenu · @motifx-community/ui 0.1.0-beta.10
+> RibbonMenu · @motifx-community/ui 0.1.0-beta.11
 
 Users arrange the menu from its context menu: they hide what they never use, move what they use most, and add commands to the quick commands. Everything they change is one plain object, to save and give back.
 
