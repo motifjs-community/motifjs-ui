@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.10] - 2026-11-14
+
+Needs `@motifx/core` 1.2.0-rc.29 and `@motifx-community/data` 0.1.0-beta.1.
+
 ### Added
 
 - `DataGrid` columns with several values: `multiple: true` makes a cell hold a list of values (an array) of the column's
