@@ -28,7 +28,6 @@ export class PhoneBar {
   private readonly unsaved: Component<HTMLSpanElement>;
   private readonly close: Button;
   private readonly count: Button;
-  private releaseIcon: () => void = () => {};
   private shown: TabDocument | null = null;
   private swipe: { id: number; x: number; y: number; decided: boolean; taken: boolean; tracker: SwipeTracker } | null = null;
 
@@ -97,8 +96,7 @@ export class PhoneBar {
   }
 
   dispose(): void {
-    this.releaseIcon();
-    // Its buttons go with it.
+    // Its buttons and its icon go with it.
     if (this.part.parent) this.part.parent.controls.remove(this.part);
     else if (!this.part.isDisposed) void this.part.dispose();
   }
@@ -132,12 +130,10 @@ export class PhoneBar {
   }
 
   private renderIcon(doc: TabDocument | null): void {
-    this.releaseIcon();
-    this.releaseIcon = () => {};
     const icon = doc?.icon;
     kept(this.icon, !!icon);
     clearParts(this.icon);
-    if (icon) this.releaseIcon = showIcon(icon, this.icon);
+    if (icon) showIcon(icon, this.icon);
   }
 
   private touchStart(e: TouchEvent): void {

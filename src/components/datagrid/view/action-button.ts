@@ -1,11 +1,10 @@
 import type { Component, ComponentBase } from '@motifx/core';
-import { loose, part, partBefore } from '../../../core/draw-parts';
+import { clearParts, loose, part, partBefore } from '../../../core/draw-parts';
 import { kept, put, text } from '../../../core/part-writes';
 import { showIcon } from '../../../core/show-icon';
 import type { ResolvedAction } from './resolved-action';
 import { readField } from '../model/read-field';
 
-const releases = new WeakMap<Component<HTMLButtonElement>, () => void>();
 /** The key each button was drawn for. */
 const keys = new WeakMap<Component<HTMLButtonElement>, string>();
 /** The parts of each button's face: made the first time they are needed, then written in place. */
@@ -50,14 +49,13 @@ export function fillActionButton<T>(button: Component<HTMLButtonElement>, a: Res
     // The icon is the action's: it is shown again only for another action (an icon given as a function makes a new one).
     const iconOf = a.hasIcon ? a.action.id : null;
     if (face.iconOf !== iconOf) {
-      releases.get(button)?.();
-      releases.delete(button);
+      if (face.holder) clearParts(face.holder);
       const icon = iconOf !== null ? readField(a.action, 'icon') : null;
       if (icon && !face.holder) {
         face.holder = partBefore<HTMLSpanElement>(button, face.text, 'span', 'mx-button__icon');
         face.holder.attr.add({ 'aria-hidden': 'true' });
       }
-      if (icon && face.holder) releases.set(button, showIcon(icon, face.holder));
+      if (icon && face.holder) showIcon(icon, face.holder);
       face.iconOf = iconOf;
       face.icon = !!icon;
     }

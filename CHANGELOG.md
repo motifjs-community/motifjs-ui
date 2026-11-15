@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- A template's cleanup runs with its host whole, when the item is drawn again and when its control goes (#3). The
+  cleanup an `itemTemplate` (`ListBox`, `ComboBox`, `DropDown`, `Lookup`, `TagBox`, `TreeView`), a `fieldTemplate`
+  (`DropDown`, `Lookup`) or a `tagTemplate` (`TagBox`) returns was kept by the control and called by hand: on a redraw
+  with the host alive, and when the control, its owner or the tab holding it went, after the host was already
+  disposed, so a cleanup that touched the host threw once per drawn row. Every drawing now has a host of its own, the
+  cleanup is given to that host, and it runs as the host goes, the same way in both cases. A template that only adds
+  components to its host needs no cleanup: they go with the host.
+
+### Changed
+
+- `OptionParts.text` is a new part each time an option's drawing changes, and `OptionList.bindText` returns nothing:
+  the binding goes with the text part it writes.
+
 ## [0.1.0-beta.12] - 2026-11-14
 
 Needs `@motifx/core` 1.2.0-rc.30.

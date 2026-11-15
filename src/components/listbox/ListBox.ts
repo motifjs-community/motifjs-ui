@@ -370,12 +370,12 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     // Without a template the texts are bound, written in place when the items are given again or refreshed.
     list.draw = (row, host, option) => {
       if (row === selectAllRow) {
-        const release = list.bindText(option, () => uiLocale.strings.selectAll);
+        list.bindText(option, () => uiLocale.strings.selectAll);
         this.keepSelectAllRow(option);
-        return release;
+        return;
       }
       if (template) return template(row as T, host);
-      return list.bindText(option, () => this.itemText(row as T));
+      list.bindText(option, () => this.itemText(row as T));
     };
   }
 

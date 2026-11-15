@@ -1,6 +1,6 @@
 import { onLookChanged } from '../../core/look-watch';
 import { Component, createSignal, Emitter, untracked, type ComponentBase, type Event as MotifEvent, type Signal } from '@motifx/core';
-import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
 import { boxOf, measure, onLayout, reveal } from '../../core/measure';
 import { css, flag, mark, put, text as writeText } from '../../core/part-writes';
 import { showIcon } from '../../core/show-icon';
@@ -52,7 +52,8 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   groupOf: ((item: T) => string | undefined) | null = null;
   /**
    * Draws an option's content instead of its text, into `host`. `option` holds the option's parts, for an owner that
-   * marks the option itself. It can return a cleanup function.
+   * marks the option itself. `host` (`option.text`) is made for each drawing and goes when the option is drawn again
+   * or goes; a cleanup function returned is given to it and runs then.
    */
   draw: ((item: T, host: ComponentBase<HTMLElement>, option: OptionParts) => (() => void) | void) | null = null;
   isSelected: (item: T) => boolean = () => false;
@@ -553,20 +554,16 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   private makeOption(entry: OptionEntry<T>): Component<HTMLDivElement> {
     const row = loose<HTMLDivElement>('div', 'mx-list__item');
     row.attr.add({ role: 'option' });
-    const text = part<HTMLSpanElement>(row, 'span', 'mx-list__text');
-    // Given to the owner as `OptionParts`; the check comes and goes with `multiple`.
+    let text = part<HTMLSpanElement>(row, 'span', 'mx-list__text');
+    // Given to the owner as `OptionParts`; the check comes and goes with `multiple`, the text with the drawing.
     const option: { -readonly [K in keyof OptionParts]: OptionParts[K] } = { row, text, check: null };
     this.partsOf.set(entry, option);
     let checkHost: ComponentBase | null = null;
     let iconHost: ComponentBase | null = null;
     let iconShown: IconSource | null = null;
-    let releaseIcon: (() => void) | null = null;
     let drawnWith: OptionList<T>['draw'] | undefined;
-    let releaseDrawn: (() => void) | null = null;
     let shownText: string | null = null;
     row.motif.setDisposable(() => {
-      releaseIcon?.();
-      releaseDrawn?.();
       // The list disposed first has let its fields go.
       if (this.partsOf?.get(entry) === option) this.partsOf.delete(entry);
     });
@@ -616,27 +613,29 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     this.bind(row, () => (this.state.value, this.iconOf?.(item) ?? null), (source) => {
       if (source === iconShown) return;
       iconShown = source;
-      releaseIcon?.();
-      releaseIcon = null;
+      // The icon goes with its part.
       removePart(iconHost);
       iconHost = null;
       if (source === null) return;
       iconHost = partBefore<HTMLSpanElement>(row, text, 'span', 'mx-list__icon');
       iconHost.attr.add({ 'aria-hidden': 'true' });
-      releaseIcon = showIcon(source, iconHost);
+      showIcon(source, iconHost);
     });
-    // The owner's drawing goes into the text's part once, and again only when the drawing itself changes; what it
-    // shows updates through its own bindings. The row and its other parts stay.
+    // The owner's drawing goes into a text part of its own, drawn again only when the drawing itself changes: the part
+    // drawn before goes with what it holds, and its cleanup, given to the part, runs as the core disposes it. What a
+    // drawing shows updates through its own bindings. The row and its other parts stay.
     this.bind(row, () => (this.state.value, { draw: this.draw, value: this.draw ? null : this.textOf(item) }), ({ draw, value }) => {
       if (draw !== drawnWith && (draw || drawnWith)) {
-        releaseDrawn?.();
-        releaseDrawn = null;
-        if (drawnWith) clearParts(text);
+        if (drawnWith) {
+          const drawn = text;
+          text = option.text = partBefore<HTMLSpanElement>(row, drawn, 'span', 'mx-list__text');
+          removePart(drawn);
+        }
         drawnWith = draw;
         shownText = null;
         if (draw) {
           const release = draw(item, text, option);
-          releaseDrawn = typeof release === 'function' ? release : null;
+          if (typeof release === 'function') text.motif.setDisposable(release);
         }
       }
       if (value !== null && value !== shownText) {
@@ -649,16 +648,11 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
 
   /**
    * Binds an option's text to `read`, read again when the items are given again or refreshed, and written in place.
-   * For a `draw` that writes the text itself; the release it gives back stops the binding.
+   * For a `draw` that writes the text itself; the binding goes with the text part it writes.
    */
-  bindText(option: OptionParts, read: () => string): () => void {
-    let live = true;
-    this.bind(option.text, () => (live ? (this.state.value, read()) : null), (value) => {
-      if (value !== null) writeText(option.text, value);
-    });
-    return () => {
-      live = false;
-    };
+  bindText(option: OptionParts, read: () => string): void {
+    const text = option.text;
+    this.bind(text, () => (this.state.value, read()), (value) => writeText(text, value));
   }
 
   /** The index of the option an event started in, asked of the options drawn; -1 for none. */

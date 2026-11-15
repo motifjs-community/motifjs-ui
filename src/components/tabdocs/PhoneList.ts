@@ -1,5 +1,5 @@
 import { untracked, type Component, type ComponentBase } from '@motifx/core';
-import { glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { clearParts, glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
 import { focusOn, isFocused } from '../../core/focus';
 import { nextId } from '../../core/next-id';
 import { orderControls } from '../../core/order-controls';
@@ -24,7 +24,6 @@ interface Row {
   part: Component<HTMLLIElement>;
   open: Component<HTMLButtonElement>;
   close: Component<HTMLButtonElement>;
-  release: () => void;
   /** What it was written from, to write it again only when that changes. */
   look: string;
   /** Whether the search shows it. */
@@ -182,7 +181,7 @@ export class PhoneList {
     this.endGesture();
     this.dragged?.boxes?.stop();
     this.dragged = null;
-    for (const row of this.rows.values()) row.release();
+    // The rows go with the sheet.
     this.rows.clear();
     if (!this.search.isDisposed) void this.search.dispose();
     if (!this.sheet.isDisposed) void this.sheet.dispose();
@@ -219,7 +218,6 @@ export class PhoneList {
     }
     for (const [doc, row] of this.rows) {
       if (seen.has(doc)) continue;
-      row.release();
       removePart(row.part);
       this.rows.delete(doc);
     }
@@ -254,13 +252,12 @@ export class PhoneList {
     mark(row.part, 'data-preview', doc.preview);
     // The icon is shown again only when it is another one.
     if (row.icon !== doc.icon) {
-      row.release();
-      row.release = () => {};
+      if (row.iconHolder) clearParts(row.iconHolder);
       if (doc.icon && !row.iconHolder) {
         row.iconHolder = partBefore<HTMLSpanElement>(row.open, row.text, 'span', 'mx-tabdocs__icon');
         row.iconHolder.attr.add({ 'aria-hidden': 'true' });
       }
-      if (doc.icon && row.iconHolder) row.release = showIcon(doc.icon, row.iconHolder);
+      if (doc.icon && row.iconHolder) showIcon(doc.icon, row.iconHolder);
       row.icon = doc.icon;
     }
     if (row.iconHolder) kept(row.iconHolder, !!doc.icon);
@@ -313,7 +310,6 @@ export class PhoneList {
       part: rowPart,
       open: openPart,
       close: closePart,
-      release: () => {},
       look: '',
       shown: true,
       text,

@@ -3,7 +3,7 @@ import { givenField, givenList, givenValue } from '../../core/given-field';
 import { commands } from '../../core/command-registry';
 import { fieldOf, namesCommands, shortcutOf } from '../../core/command-fields';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
-import { glyphPart, loose, part, partBefore, removePart, textPart } from '../../core/draw-parts';
+import { clearParts, glyphPart, loose, part, partBefore, removePart, textPart } from '../../core/draw-parts';
 import { focusOn, isFocused } from '../../core/focus';
 import { isRtl } from '../../core/measure';
 import { mark, put, text } from '../../core/part-writes';
@@ -255,7 +255,6 @@ export class MenuList extends Component<HTMLDivElement> {
     let description: Component | null = null;
     let shortcut: Component | null = null;
     let arrow: Component | null = null;
-    let release: (() => void) | null = null;
     let source: IconSource | null | undefined = null;
     let caption: string | null = null;
     const bind = <T>(read: () => T, write: (value: T) => void) =>
@@ -289,8 +288,8 @@ export class MenuList extends Component<HTMLDivElement> {
     bind(() => fieldOf<IconSource | null | undefined>(item, 'icon', this), (next) => {
       if (Object.is(next, source)) return;
       source = next;
-      release?.();
-      release = next ? showIcon(next, icon) : null;
+      clearParts(icon);
+      if (next) showIcon(next, icon);
     });
     bind(() => givenField<string | undefined>(item, 'description') ?? '', (value) => {
       if (!value) {
@@ -336,7 +335,6 @@ export class MenuList extends Component<HTMLDivElement> {
     });
 
     button.motif.setDisposable(() => {
-      release?.();
       // The menu going takes its fields with it.
       if (this.isDisposed || !this.built) return;
       if (this.built.get(item) === entry) this.built.delete(item);

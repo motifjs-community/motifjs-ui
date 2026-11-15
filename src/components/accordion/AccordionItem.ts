@@ -21,7 +21,6 @@ interface Parts {
   headerId: string;
   label: Component<HTMLSpanElement>;
   icon: Component<HTMLSpanElement> | null;
-  releaseIcon: () => void;
   region: Component<HTMLDivElement>;
   body: Component<HTMLDivElement>;
   owner: Accordion | null;
@@ -73,7 +72,6 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     parts.header.motif.on('keydown', (_sender, e: KeyboardEvent) => parts.owner?.headerKeyDown(this, e));
     this.motif.setDisposable(() => {
       clearTimeout(parts.releaseTimer);
-      parts.releaseIcon();
       parts.owner?.itemGone(this);
     });
   }
@@ -253,8 +251,6 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
   private renderIcon(): void {
     const parts = this.parts;
     const icon = this.peekProperty<IconSource | null>('icon');
-    parts.releaseIcon();
-    parts.releaseIcon = () => {};
     if (!icon) {
       if (parts.icon) removePart(parts.icon);
       parts.icon = null;
@@ -267,7 +263,7 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
       parts.icon = host;
     }
     clearParts(host);
-    parts.releaseIcon = showIcon(icon, host);
+    showIcon(icon, host);
   }
 
   private get parts(): Parts {
@@ -291,6 +287,6 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     region.attr.add({ id: regionId });
     header.attr.add({ 'aria-controls': regionId });
     const body = loose<HTMLDivElement>('div', 'mx-accordion__body');
-    return { heading, header, headerId, label, icon: null, releaseIcon: () => {}, region, body, owner: null, content: null, releaseTimer: undefined };
+    return { heading, header, headerId, label, icon: null, region, body, owner: null, content: null, releaseTimer: undefined };
   }
 }

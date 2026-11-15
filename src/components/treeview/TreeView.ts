@@ -90,8 +90,8 @@ interface RowLook<T> {
   text: Component<HTMLSpanElement>;
 }
 
-/** The rows drawn before the items were read again, by key, with what releases each. */
-type OldRows = Map<unknown, { drawn: TreeRowParts; release: (() => void) | undefined }>;
+/** The rows drawn before the items were read again, by key. */
+type OldRows = Map<unknown, TreeRowParts>;
 
 interface Parts<T> {
   model: TreeModel<T>;
@@ -105,7 +105,6 @@ interface Parts<T> {
   elements: Map<TreeNode<T>, TreeRowParts>;
   /** The empty blocks that stand for the rows out of view in a long tree. */
   spaces: Component<HTMLDivElement>[];
-  releases: Map<TreeNode<T>, () => void>;
   /** What each row was drawn with: a row whose look stays is kept when the items are read again. */
   looks: WeakMap<TreeRowParts, RowLook<T>>;
   /** The rows of each closed row's hidden group, kept for when it opens again. */
@@ -251,7 +250,6 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       stopTexts();
       for (const stop of parts.watchers.splice(0)) stop();
       parts.loads.clear();
-      this.releaseAll();
       for (const emitter of [parts.expanding, parts.collapsing, parts.expanded$, parts.collapsed$, parts.selectionChanged, parts.checkChanged, parts.itemClick]) {
         emitter.dispose();
       }
@@ -660,7 +658,6 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
         index: new Map(),
         elements: new Map(),
         spaces: [],
-        releases: new Map(),
         looks: new WeakMap(),
         stashes: new Map(),
         expanded: new Set(),
@@ -1096,7 +1093,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     // A long tree places its rows apart from a short one's: switching between them draws them anew.
     const old = windowed === parts.windowed ? this.takeRows() : null;
     if (!old) {
-      this.releaseAll();
+      this.forgetAll();
       clearParts(parts.bodyPart);
       parts.spaces = [];
     }
@@ -1146,9 +1143,8 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   private takeRows(): OldRows {
     const parts = this.parts;
     const old: OldRows = new Map();
-    for (const [node, drawn] of parts.elements) old.set(node.key, { drawn, release: parts.releases.get(node) });
+    for (const [node, drawn] of parts.elements) old.set(node.key, drawn);
     parts.elements.clear();
-    parts.releases.clear();
     return old;
   }
 
@@ -1156,9 +1152,9 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   private keepRow(old: OldRows, row: TreeRow<T>): TreeRowParts | null {
     const parts = this.parts;
     const node = row.node;
-    const entry = old.get(node.key);
-    const look = entry && (parts.looks.get(entry.drawn) as RowLook<T> | undefined);
-    if (!entry || !look) return null;
+    const drawn = old.get(node.key);
+    const look = drawn && (parts.looks.get(drawn) as RowLook<T> | undefined);
+    if (!drawn || !look) return null;
     const item = node.item;
     const template = this.peekProperty<TreeViewItemTemplate<T> | null>('itemTemplate') ?? null;
     const same =
@@ -1169,19 +1165,17 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       look.icon === this.iconOf(item);
     if (!same) return null;
     old.delete(node.key);
-    parts.elements.set(node, entry.drawn);
-    if (entry.release) parts.releases.set(node, entry.release);
+    parts.elements.set(node, drawn);
     look.item = item;
     if (!template) writeText(look.text, this.textOf(item));
-    css(entry.drawn.item, '--_level', String(node.level));
-    return entry.drawn;
+    css(drawn.item, '--_level', String(node.level));
+    return drawn;
   }
 
-  /** Lets go of the rows drawn before that were not kept. */
+  /** Lets go of the rows drawn before that were not kept: each goes with what it holds, its template's cleanup too. */
   private dropRows(old: OldRows): void {
     const parts = this.parts;
-    for (const { drawn, release } of old.values()) {
-      release?.();
+    for (const drawn of old.values()) {
       const stash = parts.stashes.get(drawn);
       if (stash) {
         parts.stashes.delete(drawn);
@@ -1207,18 +1201,17 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const parts = this.parts;
     const taken: OldRows = new Map();
     if (rows) {
-      for (const [key, entry] of rows) {
-        if (!isWithin(entry.drawn.item, group)) continue;
-        taken.set(key, entry);
+      for (const [key, drawn] of rows) {
+        if (!isWithin(drawn.item, group)) continue;
+        taken.set(key, drawn);
         rows.delete(key);
       }
       return taken;
     }
     for (const [node, drawn] of parts.elements) {
       if (!isWithin(drawn.item, group)) continue;
-      taken.set(node.key, { drawn, release: parts.releases.get(node) });
+      taken.set(node.key, drawn);
       parts.elements.delete(node);
-      parts.releases.delete(node);
     }
     return taken;
   }
@@ -1350,28 +1343,27 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const row = parts.rows[0];
     if (!row) return 32;
     // Not kept by the tree: the row drawn for the same node stays the one it knows.
-    const releases: (() => void)[] = [];
-    const probe = this.rowParts(row, releases);
+    const probe = this.rowParts(row);
     this.renderItem(probe, row);
     parts.bodyPart.controls.add(probe.item);
     const height = rectOf(probe.item).height;
-    for (const release of releases) release();
     removePart(probe.item);
     return height || 32;
   }
 
   private itemPart(row: TreeRow<T>): TreeRowParts {
     const parts = this.parts;
-    const releases: (() => void)[] = [];
-    const drawn = this.rowParts(row, releases);
-    if (releases.length) parts.releases.set(row.node, () => releases.forEach((r) => r()));
+    const drawn = this.rowParts(row);
     parts.elements.set(row.node, drawn);
     this.renderItem(drawn, row);
     return drawn;
   }
 
-  /** The parts of a row, not kept by the tree yet; what takes its icon and template away again goes to `releases`. */
-  private rowParts(row: TreeRow<T>, releases: (() => void)[]): TreeRowParts {
+  /**
+   * The parts of a row, not kept by the tree yet. The icon and what the template drew go with the row; the template's
+   * cleanup, given to the text part it drew in, runs as the core disposes the row.
+   */
+  private rowParts(row: TreeRow<T>): TreeRowParts {
     const node = row.node;
     const item = node.item;
     const itemPart = loose<HTMLDivElement>('div', 'mx-tree-view__item');
@@ -1391,12 +1383,12 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     if (icon !== undefined && icon !== null) {
       const host = part<HTMLSpanElement>(line, 'span', 'mx-tree-view__icon');
       host.attr.add({ 'aria-hidden': 'true' });
-      releases.push(showIcon(icon, host));
+      showIcon(icon, host);
     }
     const text = part<HTMLSpanElement>(line, 'span', 'mx-tree-view__text');
     const template = this.peekProperty<TreeViewItemTemplate<T> | null>('itemTemplate');
     const release = template ? template(item, text) : undefined;
-    if (release) releases.push(release);
+    if (typeof release === 'function') text.motif.setDisposable(release);
     if (!template) writeText(text, this.textOf(item));
     const drawn: TreeRowParts = { item: itemPart, line, expander, check, group: null, error: null, retry: null };
     this.parts.looks.set(drawn, { key: node.key, parentKey: node.parent?.key, item, icon, template: template ?? null, checks: !!check, text });
@@ -1554,20 +1546,15 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     parts.search = search;
   }
 
-  /** Lets go of the row drawn for `node`: what its icon and template hold is released, and the tree keeps it no longer. */
+  /** The tree keeps the row drawn for `node` no longer; the row goes with what it holds when it is taken out. */
   private forget(node: TreeNode<T>): void {
-    const parts = this.parts;
-    parts.releases.get(node)?.();
-    parts.releases.delete(node);
-    parts.elements.delete(node);
+    this.parts.elements.delete(node);
   }
 
-  private releaseAll(): void {
+  /** The tree keeps no row drawn so far, the hidden ones included; they go when the rows are taken out. */
+  private forgetAll(): void {
     const parts = this.parts;
-    for (const release of parts.releases.values()) release();
-    parts.releases.clear();
     parts.elements.clear();
-    for (const stash of parts.stashes.values()) for (const { release } of stash.values()) release?.();
     parts.stashes.clear();
   }
 

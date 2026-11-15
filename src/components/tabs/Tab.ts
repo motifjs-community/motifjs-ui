@@ -22,7 +22,6 @@ interface Parts {
   headerPart: Component<HTMLButtonElement>;
   label: Component<HTMLSpanElement>;
   icon: Component<HTMLSpanElement> | null;
-  releaseIcon: () => void;
   badge: Component<HTMLSpanElement> | null;
   close: Component<HTMLSpanElement> | null;
   stopCloseHint: (() => void) | null;
@@ -69,7 +68,6 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     this.observeProperty('lazy', () => parts.owner?.tabChanged(this));
 
     this.motif.setDisposable(() => {
-      parts.releaseIcon();
       parts.stopCloseHint?.();
       removePart(parts.headerPart);
       parts.owner?.tabGone(this);
@@ -286,7 +284,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     const panelId = nextId('tab-panel');
     this.class.add('mx-tabs__panel');
     this.attr.add({ id: panelId, role: 'tabpanel', 'aria-labelledby': headerId });
-    return { headerPart, label, icon: null, releaseIcon: () => {}, badge: null, close: null, stopCloseHint: null, owner: null, content: null, shown: false, restoreScroll: null };
+    return { headerPart, label, icon: null, badge: null, close: null, stopCloseHint: null, owner: null, content: null, shown: false, restoreScroll: null };
   }
 
   private renderTitle(text: string): void {
@@ -299,8 +297,6 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
   private renderIcon(): void {
     const parts = this.parts;
     const icon = this.peekProperty<IconSource | null>('icon');
-    parts.releaseIcon();
-    parts.releaseIcon = () => {};
     if (!icon) {
       removePart(parts.icon);
       parts.icon = null;
@@ -311,7 +307,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
         parts.icon.attr.add({ 'aria-hidden': 'true' });
       }
       clearParts(parts.icon);
-      parts.releaseIcon = showIcon(icon, parts.icon);
+      showIcon(icon, parts.icon);
     }
     parts.owner?.tabResized();
   }

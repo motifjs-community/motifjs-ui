@@ -31,7 +31,7 @@ const PROPS = [
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`, from the density tokens.'],
   ['label', '`Bind<string>`', "`''`", 'The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work.'],
   ['virtualFrom', '`Bind<number>`', '`500`', 'When more rows than this are on screen, only the visible rows are rendered.'],
-  ['itemTemplate', '`Bind<(item, host: ComponentBase) => cleanup | void>`', '—', 'Customizes the content of a row.'],
+  ['itemTemplate', '`Bind<(item, host: ComponentBase) => cleanup | void>`', '—', 'Customizes the content of a row. What it adds to `host` goes with the row; a cleanup it returns runs as the row goes.'],
   ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
@@ -166,7 +166,7 @@ import { TreeView } from '@motifx-community/ui';
 
       <Section anchor="data" title="Flat data, fields and templates">
         <p>
-          <Rich text="Flat rows reference their parent through `parentField`, which defaults to `parentId`. Any field can be a property name or a function. `itemTemplate` customizes a row's content, and `enabledField` and `expandedField` apply per row." />
+          <Rich text="Flat rows reference their parent through `parentField`, which defaults to `parentId`. Any field can be a property name or a function. `itemTemplate` customizes a row's content: what it adds to its `host` goes with the row, and a cleanup it returns, for what lives outside the row, runs as the row goes (drawn again or the tree gone; a closed row's rows stay drawn). `enabledField` and `enabledField` and `expandedField` apply per row." />
         </p>
         <Example files={code('FlatData.tsx', 'entry.ts')} stack>
           <FlatData />

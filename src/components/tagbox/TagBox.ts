@@ -71,7 +71,6 @@ interface TagSlot {
   /** The item and template the label is drawn with. */
   item: unknown;
   template: unknown;
-  release?: () => void;
 }
 
 interface Parts<T> {
@@ -185,7 +184,6 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.motif.setDisposable(() => {
       stopLocale();
       clearTimeout(parts.timer);
-      for (const slot of [...parts.slots.values()].flat()) slot.release?.();
       parts.items.dispose();
       parts.opened.dispose();
       parts.closed.dispose();
@@ -595,7 +593,6 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       parts.shownTags.push({ tag: slot.tag, remove: slot.remove });
       list.push(slot.tag);
     }
-    for (const slot of [...old.values()].flat()) slot.release?.();
     parts.slots = slots;
     parts.more = null;
     if (shown < values.length && !parts.moreTag) {
@@ -661,7 +658,9 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       this.freshLabel(slot);
       slot.item = item;
       slot.template = template;
-      slot.release = template(item as T, slot.label) || undefined;
+      // The label goes with what the template drew, and the core runs its cleanup then.
+      const release = template(item as T, slot.label);
+      if (typeof release === 'function') slot.label.motif.setDisposable(release);
       return;
     }
     if (slot.text === null && slot.template) this.freshLabel(slot);
@@ -673,8 +672,6 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
 
   /** A new label for a template to draw in, the one drawn before taken out. */
   private freshLabel(slot: TagSlot): void {
-    slot.release?.();
-    slot.release = undefined;
     removePart(slot.label);
     slot.label = partBefore<HTMLSpanElement>(slot.tag, slot.remove, 'span', 'mx-tag-box__tag-text');
     slot.text = null;
@@ -762,12 +759,12 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const list = this.tagParts.list!;
     if (row === selectAllRow) {
       // Bound, written in place when the items are given again or the language changes.
-      const release = list.bindText(option, () => uiLocale.strings.selectAll);
+      list.bindText(option, () => uiLocale.strings.selectAll);
       this.keepSelectAllRow(option);
-      return release;
+      return;
     }
     if (template) return template(row as T, host);
-    return list.bindText(option, () => this.itemText(row as T));
+    list.bindText(option, () => this.itemText(row as T));
   }
 
   private listChanged(): void {

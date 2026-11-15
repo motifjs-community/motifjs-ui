@@ -1,4 +1,4 @@
-import { Component, reactive } from '@motifx/core';
+import { Component, reactive, type ComponentBase } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
@@ -52,6 +52,37 @@ interface Row {
 const ROWS: Row[] = Array.from({ length: 5000 }, (_, i) => ({ id: i + 1, name: `Row ${String(i + 1).padStart(4, '0')}` }));
 
 describe('TagBox', () => {
+  it("runs the tag template's cleanup with its host whole, on a new template, a value taken out and when the box goes", async () => {
+    const drawn: string[] = [];
+    const released: string[] = [];
+    const template = (tag: string) => (item: string, host: ComponentBase) => {
+      const mark = new Component('span');
+      mark.setText(tag + item);
+      host.controls.add(mark);
+      drawn.push(tag + item);
+      return () => {
+        host.controls.remove(mark);
+        released.push(tag + item);
+      };
+    };
+    let c!: TagBox<string, string>;
+    const host = page(<TagBox ref={(x: TagBox<string, string>) => (c = x)} items={['a', 'b', 'c']} value={['a', 'b']} tagTemplate={template('1-')} />);
+    await settle();
+    // Each tag is drawn once as the box is built.
+    expect(drawn).toEqual(['1-a', '1-b']);
+    expect(tagTexts(c)).toEqual(['1-a', '1-b']);
+    c.tagTemplate = template('2-');
+    await settle();
+    expect(tagTexts(c)).toEqual(['2-a', '2-b']);
+    c.value = ['b'];
+    await settle();
+    expect(tagTexts(c)).toEqual(['2-b']);
+    // Every drawing but the one shown has been cleaned up.
+    expect(released).toEqual(drawn.filter((x) => x !== '2-b'));
+    await host.dispose();
+    expect([...released].sort()).toEqual([...drawn].sort());
+  });
+
   it('searches while typing, toggles items with Enter and keeps the list open', async () => {
     const s = reactive({ skills: ['CSS'] as string[] });
     let c!: TagBox<string, string>;

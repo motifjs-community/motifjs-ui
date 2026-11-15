@@ -4,7 +4,7 @@ import type { ComponentBase } from '@motifx/core';
 export interface OptionParts {
   /** The option (`role="option"`). */
   readonly row: ComponentBase<HTMLElement>;
-  /** Where the option's text or the owner's template goes. */
+  /** Where the option's text or the owner's template goes: a new part each time the drawing changes. */
   readonly text: ComponentBase<HTMLElement>;
   /** In a list of several choices the check mark's glyph (`data-icon="check"`), else `null`. */
   readonly check: ComponentBase<HTMLElement> | null;

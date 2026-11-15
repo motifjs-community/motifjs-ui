@@ -48,7 +48,6 @@ interface Parts {
   stopArrowLabel: (() => void) | null;
   caption: Component<HTMLSpanElement> | null;
   icon: Component<HTMLSpanElement> | null;
-  releaseIcon: () => void;
   spinner: Component<HTMLSpanElement> | null;
   chevron: Component<HTMLSpanElement> | null;
   popup: Popup | null;
@@ -109,7 +108,6 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     this.placeChildren();
     this.motif.setDisposable(() => {
       const parts = this.parts;
-      parts.releaseIcon();
       parts.stopArrowLabel?.();
       // The drop-down content goes with the button: until its popup first opens it is in no tree.
       const content = this.peekProperty<ComponentBase | null>('dropDown');
@@ -332,7 +330,6 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       stopArrowLabel: null,
       caption: null,
       icon: null,
-      releaseIcon: () => {},
       spinner: null,
       chevron: null,
       popup: null,
@@ -434,8 +431,6 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   private renderIcon(): void {
     const parts = this.parts;
     const icon = this.peekProperty<IconSource | null>('icon');
-    parts.releaseIcon();
-    parts.releaseIcon = () => {};
     mark(this, 'data-icon', !!icon);
     this.renderIconOnly();
     if (!icon) {
@@ -450,7 +445,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       parts.icon.attr.add({ 'aria-hidden': 'true' });
     }
     clearParts(parts.icon);
-    parts.releaseIcon = showIcon(icon, parts.icon);
+    showIcon(icon, parts.icon);
   }
 
   private renderBusy(busy: boolean): void {

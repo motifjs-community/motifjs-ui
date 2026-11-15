@@ -40,9 +40,12 @@ export interface DropDownProps<T, V> extends FieldProps<V | null> {
   /** The default is `'contains'`. */
   searchMode?: Bind<'contains' | 'startswith'>;
   clearButton?: Bind<boolean>;
-  /** Customizes how an option is drawn. It can return a cleanup function. */
+  /** Customizes how an option is drawn. It can return a cleanup function, run as `host` goes (see `ItemTemplate`). */
   itemTemplate?: Bind<((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null>;
-  /** Customizes how the selected item is drawn in the field. It can return a cleanup function. */
+  /**
+   * Customizes how the selected item is drawn in the field, into a `host` made for each drawing. It can return a
+   * cleanup function, run as `host` goes: the value drawn again or the box gone (see `ItemTemplate`).
+   */
   fieldTemplate?: Bind<((item: T, host: ComponentBase<HTMLElement>) => (() => void) | void) | null>;
   /** The list is at least as wide as the field. The default is `true`. */
   matchWidth?: Bind<boolean>;

@@ -1,4 +1,4 @@
-import { Component, reactive } from '@motifx/core';
+import { Component, reactive, type ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { data } from '@motifx-community/data';
 import { dataKinds } from '../../../tests/data-kinds';
@@ -63,6 +63,33 @@ describe('DropDown', () => {
     await settle();
     expect(d.element.querySelector('.mx-drop-down__value')).toBe(value);
     expect(shownText(d)).toBe('İzmir');
+  });
+
+  it("runs the field template's cleanup with its host whole, on a new value and when the box goes", async () => {
+    const drawn: string[] = [];
+    const released: string[] = [];
+    const template = (item: string, host: ComponentBase) => {
+      const mark = new Component('span');
+      mark.setText(`*${item}`);
+      host.controls.add(mark);
+      drawn.push(item);
+      return () => {
+        host.controls.remove(mark);
+        released.push(item);
+      };
+    };
+    let d!: DropDown<string, string>;
+    const host = page(<DropDown ref={(x: DropDown<string, string>) => (d = x)} label="City" items={CITIES} value="Bursa" fieldTemplate={template} />);
+    await settle();
+    expect(shownText(d)).toBe('*Bursa');
+    d.value = 'Konya';
+    await settle();
+    expect(shownText(d)).toBe('*Konya');
+    // Every drawing but the one shown has been cleaned up.
+    expect(drawn.at(-1)).toBe('Konya');
+    expect(released).toEqual(drawn.slice(0, -1));
+    await host.dispose();
+    expect(released).toEqual(drawn);
   });
 
   it('is a labelled combobox showing the chosen item, the same in JSX and programmatically', async () => {

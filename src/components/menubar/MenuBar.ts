@@ -1,6 +1,6 @@
 import { Component, Emitter, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute, type ParsedAccessKey } from '../../core/access-key';
-import { loose, part, partBefore, removePart } from '../../core/draw-parts';
+import { clearParts, loose, part, partBefore, removePart } from '../../core/draw-parts';
 import { kept, put } from '../../core/part-writes';
 import { onDocument, onWindow } from '../../core/window-events';
 import { windowOf } from '../../core/page-documents';
@@ -80,7 +80,6 @@ interface Slot {
   label: Component<HTMLSpanElement>;
   icon: ComponentBase | null;
   iconSource: IconSource | null;
-  releaseIcon: (() => void) | null;
   /** The label as drawn (`index:text`), and the access key it declares. */
   drawnLabel: string | null;
   token: string | null;
@@ -201,7 +200,6 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     this.motif.setDisposable(() => {
       parts.stopDrawing?.();
       parts.removeF10?.();
-      for (const slot of parts.slots.values()) slot.releaseIcon?.();
       parts.slots.clear();
       parts.itemClick.dispose();
       parts.itemsChanged.dispose();
@@ -820,7 +818,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         stashed.push(slot);
         continue;
       }
-      slot.releaseIcon?.();
+      // The list takes its button out, the icon with it.
       parts.slots.delete(slot.key);
     }
     parts.shownSlots = stashed.length ? [...shownSlots, ...stashed] : shownSlots;
@@ -843,7 +841,6 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     if (left.length === parts.shownSlots.length) return;
     for (const slot of parts.shownSlots) {
       if (left.includes(slot)) continue;
-      slot.releaseIcon?.();
       parts.slots.delete(slot.key);
     }
     parts.shownSlots = left;
@@ -859,7 +856,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     button.attr.add({ type: 'button', role: 'menuitem' });
     put(button, 'tabindex', '-1');
     const label = part<HTMLSpanElement>(button, 'span', 'mx-menubar__label');
-    slot = { key, button, label, icon: null, iconSource: null, releaseIcon: null, drawnLabel: null, token: null, entry: null, from: null, stashed: false };
+    slot = { key, button, label, icon: null, iconSource: null, drawnLabel: null, token: null, entry: null, from: null, stashed: false };
     slots.set(key, slot);
     return slot;
   }
@@ -867,8 +864,6 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   /** The item's icon, drawn again only when its source changes. */
   private drawIcon(slot: Slot, source: IconSource | null): void {
     if (slot.iconSource === source) return;
-    slot.releaseIcon?.();
-    slot.releaseIcon = null;
     slot.iconSource = source;
     if (!source) {
       removePart(slot.icon);
@@ -879,7 +874,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       slot.icon = partBefore<HTMLSpanElement>(slot.button, slot.label, 'span', 'mx-menubar__icon');
       slot.icon.attr.add({ 'aria-hidden': 'true' });
     }
-    slot.releaseIcon = showIcon(source, slot.icon);
+    clearParts(slot.icon);
+    showIcon(source, slot.icon);
   }
 
   /** The item Tab reaches: the last one focused, else the first. */

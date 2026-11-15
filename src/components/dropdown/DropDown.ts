@@ -1,6 +1,6 @@
 import { Emitter, untracked, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
-import { clearParts, glyphPart, loose, part } from '../../core/draw-parts';
+import { glyphPart, loose, part, partBefore, removePart } from '../../core/draw-parts';
 import { flag, kept, mark, put, text as writeText } from '../../core/part-writes';
 import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
@@ -43,9 +43,8 @@ interface Parts<T> {
   valuePart: Component<HTMLSpanElement>;
   /** The wait's text for screen readers, made the first time the field waits. */
   waitPart: Component<HTMLSpanElement> | null;
-  /** Where the app's template draws the value's item, made the first time it does. */
+  /** Where the app's template drew the value's item: a new one for every drawing, none without a drawing. */
   drawnPart: Component<HTMLSpanElement> | null;
-  releaseField: () => void;
   popup: Popup | null;
   list: OptionList<T> | null;
   search: TextBox | null;
@@ -132,7 +131,6 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       parts.source.dispose();
       parts.stopList?.();
       parts.stopLanguage?.();
-      parts.releaseField();
       parts.opened.dispose();
       parts.closed.dispose();
     });
@@ -361,7 +359,6 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
         valuePart: part<HTMLSpanElement>(textPart, 'span', 'mx-drop-down__value'),
         waitPart: null,
         drawnPart: null,
-        releaseField: () => {},
         popup: null,
         list: null,
         search: null,
@@ -696,8 +693,6 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     const same = parts.fieldShown?.length === shown.length && shown.every((v, i) => Object.is(v, parts.fieldShown![i]));
     parts.fieldShown = shown;
     if (same) return;
-    parts.releaseField();
-    parts.releaseField = () => {};
     parts.state = state;
     const loading = state === 'loading';
     const empty = item === undefined && !text && !loading;
@@ -706,7 +701,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     mark(this, 'data-loading', loading);
     flag(this.controlPart, 'aria-busy', loading);
     if (state !== 'shown') this.followLanguage();
-    // The kit's parts stay and are written in place; only what the app's template drew goes, drawn for the new item.
+    // The kit's parts stay and are written in place; what the app's template drew goes with a part of its own, and its
+    // cleanup, given to that part, runs as the core disposes it. The new item is drawn in a new part.
     const drawn = !loading && item !== undefined && !!template;
     if (loading && !parts.waitPart) parts.waitPart = part<HTMLSpanElement>(parts.textPart, 'span', 'mx-sr-only');
     if (parts.waitPart) {
@@ -714,12 +710,12 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       kept(parts.waitPart, loading);
     }
     if (loading) this.addSpinner();
-    if (drawn && !parts.drawnPart) parts.drawnPart = part<HTMLSpanElement>(parts.textPart, 'span', 'mx-drop-down__drawn');
+    const before = parts.drawnPart;
+    parts.drawnPart = drawn ? partBefore<HTMLSpanElement>(parts.textPart, before, 'span', 'mx-drop-down__drawn') : null;
+    removePart(before);
     if (parts.drawnPart) {
-      clearParts(parts.drawnPart);
-      parts.drawnPart.setText('');
-      if (drawn) parts.releaseField = template!(item as T, parts.drawnPart) ?? (() => {});
-      kept(parts.drawnPart, drawn);
+      const release = template!(item as T, parts.drawnPart);
+      if (typeof release === 'function') parts.drawnPart.motif.setDisposable(release);
     }
     writeText(parts.valuePart, loading || drawn ? '' : empty ? placeholder : text);
     kept(parts.valuePart, !loading && !drawn);

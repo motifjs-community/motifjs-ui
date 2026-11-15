@@ -90,7 +90,6 @@ interface Parts {
   /** The size of its window's page when last told: the form keeps in view when it changes. */
   page: Page | null;
   iconPart: Component<HTMLSpanElement>;
-  releaseIcon: () => void;
   titlePart: Component<HTMLDivElement>;
   /** The title's id, for `aria-labelledby`. */
   titleId: string;
@@ -210,7 +209,6 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       if (parts.open) this.closeWith(undefined, 'owner');
       parts.pending = null;
       for (const resolve of parts.waiters.splice(0)) resolve('cancel');
-      parts.releaseIcon();
       parts.stopLabels?.();
       this.removeChip();
       for (const emitter of [parts.load, parts.shown, parts.activate, parts.deactivate, parts.closingEmitter, parts.closed]) emitter.dispose();
@@ -547,7 +545,6 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const self = this;
     const parts: Parts = {
       iconPart,
-      releaseIcon: () => {},
       titlePart,
       titleId,
       minimize: null,
@@ -692,11 +689,9 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   private renderIcon(): void {
     const parts = this.parts;
     const icon = this.peekProperty<IconSource | null>('icon');
-    parts.releaseIcon();
-    parts.releaseIcon = () => {};
     kept(parts.iconPart, !!icon);
     clearParts(parts.iconPart);
-    if (icon) parts.releaseIcon = showIcon(icon, parts.iconPart);
+    if (icon) showIcon(icon, parts.iconPart);
   }
 
   /** The title bar buttons: minimize (modeless only), maximize, close. */

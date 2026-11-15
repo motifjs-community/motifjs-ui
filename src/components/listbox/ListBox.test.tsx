@@ -372,5 +372,28 @@ describe('ListBox', () => {
       // Only the new row is drawn.
       expect(drawn).toHaveBeenCalledTimes(3);
     });
+
+    it("runs a template's cleanup with its host whole, when the rows are drawn again and when the list goes", async () => {
+      const released: string[] = [];
+      const template = (tag: string) => (item: string, host: ComponentBase) => {
+        const mark = new Component('span');
+        mark.setText(tag + item);
+        host.controls.add(mark);
+        return () => {
+          host.controls.remove(mark);
+          released.push(tag + item);
+        };
+      };
+      let c!: ListBox<string>;
+      const host = page(<ListBox ref={(x: ListBox<string>) => (c = x)} items={['a', 'b']} itemTemplate={template('1-')} />);
+      await settle();
+      expect(texts(c)).toEqual(['1-a', '1-b']);
+      c.itemTemplate = template('2-');
+      await settle();
+      expect(released).toEqual(['1-a', '1-b']);
+      expect(texts(c)).toEqual(['2-a', '2-b']);
+      await host.dispose();
+      expect(released).toEqual(['1-a', '1-b', '2-a', '2-b']);
+    });
   });
 });

@@ -141,7 +141,7 @@ export class AutoHideStrip {
       (icon: IconSource) => {
         const holder = loose<HTMLSpanElement>('span', 'mx-tabdocs__icon');
         holder.attr.add({ 'aria-hidden': 'true' });
-        holder.motif.setDisposable(showIcon(icon, holder));
+        showIcon(icon, holder);
         return holder;
       },
     );

@@ -29,7 +29,6 @@ const GLYPHS: Record<ToastTone, string> = {
 /** The parts of a toast. On one object made on first use: the base constructor already renders. */
 interface Parts {
   icon: Component<HTMLSpanElement>;
-  releaseIcon: () => void;
   body: Component<HTMLDivElement>;
   title: Component<HTMLDivElement> | null;
   titleId: string;
@@ -79,7 +78,6 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     if (own.onClosed) this.onClosed(own.onClosed);
     this.motif.setDisposable(() => {
       clearTimeout(this.parts.timer);
-      this.parts.releaseIcon();
       this.parts.resolve('code');
       this.parts.closedEmitter.dispose();
     });
@@ -237,7 +235,6 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     const closed = new Promise<ToastCloseReason>((r) => (resolve = r));
     return {
       icon,
-      releaseIcon: () => {},
       body,
       title: null,
       titleId: '',
@@ -276,8 +273,6 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     const tone = this.peekProperty<ToastTone>('tone') ?? 'info';
     put(this, 'data-tone', tone);
     const icon = this.peekProperty<IconSource | null | undefined>('icon');
-    parts.releaseIcon();
-    parts.releaseIcon = () => {};
     kept(parts.icon, icon !== null);
     clearParts(parts.icon);
     if (icon === null) return;
@@ -286,7 +281,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       glyphPart(parts.icon, GLYPHS[tone] ?? 'info', 'mx-toast__mark');
       return;
     }
-    parts.releaseIcon = showIcon(icon, parts.icon);
+    showIcon(icon, parts.icon);
   }
 
   private renderAction(): void {

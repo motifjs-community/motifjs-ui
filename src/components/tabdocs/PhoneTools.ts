@@ -1,5 +1,5 @@
 import { untracked, type Component } from '@motifx/core';
-import { loose, part, removePart } from '../../core/draw-parts';
+import { clearParts, loose, part, removePart } from '../../core/draw-parts';
 import { focusOn } from '../../core/focus';
 import { isRtl } from '../../core/measure';
 import { orderControls } from '../../core/order-controls';
@@ -15,7 +15,6 @@ interface Entry {
   /** The icon, or the title's first letter without one. */
   mark: Component<HTMLSpanElement>;
   label: Component<HTMLSpanElement>;
-  release: () => void;
   icon: unknown;
   title: string;
 }
@@ -54,7 +53,6 @@ export class PhoneTools {
     put(this.part, 'aria-label', m.textOf('tabDocsPhoneTools'));
     for (const [doc, entry] of this.buttons) {
       if (tools.includes(doc)) continue;
-      entry.release();
       removePart(entry.button);
       this.buttons.delete(doc);
     }
@@ -73,8 +71,8 @@ export class PhoneTools {
   }
 
   dispose(): void {
-    for (const entry of this.buttons.values()) entry.release();
     this.buttons.clear();
+    // The buttons go with it, their icons too.
     removePart(this.part);
   }
 
@@ -89,15 +87,14 @@ export class PhoneTools {
       const mark = part<HTMLSpanElement>(button, 'span', 'mx-tabdocs__phone-tool-icon');
       mark.attr.add({ 'aria-hidden': 'true' });
       const label = part<HTMLSpanElement>(button, 'span', 'mx-tabdocs__phone-tool-label');
-      entry = { button, mark, label, release: () => {}, icon: undefined, title: '' };
+      entry = { button, mark, label, icon: undefined, title: '' };
       this.buttons.set(doc, entry);
     } else if (entry.icon === icon && entry.title === title) return entry;
     // The icon is shown again only when it is another one; without one, the mark is the title's first letter.
     if (entry.icon !== icon) {
-      entry.release();
-      entry.release = () => {};
+      clearParts(entry.mark);
       entry.mark.setText('');
-      if (icon) entry.release = showIcon(icon, entry.mark);
+      if (icon) showIcon(icon, entry.mark);
     }
     if (!icon && (entry.icon !== icon || entry.title !== title)) entry.mark.setText(Array.from(title.trim())[0]?.toLocaleUpperCase(uiLocale.locale) ?? '');
     writeText(entry.label, title);

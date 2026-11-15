@@ -85,7 +85,6 @@ interface Parts {
   counterText: string;
   clear: Component<HTMLButtonElement> | null;
   stopClearLabel: (() => void) | null;
-  releaseIcon: () => void;
   /** The buttons given, as they are now (see `renderButtons`). */
   buttons: Signal<readonly FieldButton[]>;
   /** The parts of the buttons given, while they are shown. */
@@ -169,7 +168,6 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       parts.stopClearLabel?.();
       parts.leaveGroup?.();
       parts.stopLanding?.();
-      parts.releaseIcon();
       parts.valueChanged.dispose();
       parts.validated.dispose();
     });
@@ -607,7 +605,6 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       counterText: '',
       clear: null,
       stopClearLabel: null,
-      releaseIcon: () => {},
       buttons: createSignal<readonly FieldButton[]>([]),
       buttonParts: new Map(),
       buttonAreas: new WeakSet(),
@@ -749,8 +746,6 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   private renderIcon(): void {
     const parts = this.parts;
     const icon = this.peekProperty<IconSource | null>('icon');
-    parts.releaseIcon();
-    parts.releaseIcon = () => {};
     mark(this, 'data-icon', !!icon);
     if (!icon) {
       this.removeArea('icon');
@@ -759,7 +754,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const area = this.area('icon');
     put(area, 'aria-hidden', 'true');
     clearParts(area);
-    parts.releaseIcon = showIcon(icon, area);
+    showIcon(icon, area);
   }
 
   /**
@@ -806,8 +801,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     let caption: ComponentBase | null = null;
     let captionText = '';
     let source: IconSource | undefined;
-    let release: (() => void) | null = null;
-    const bind = <T>(read: () => T, write: (value: T) => void) =>
+    const bind =<T>(read: () => T, write: (value: T) => void) =>
       buttonPart.bindings.watch(() => {
         const value = read();
         untracked(() => write(value));
@@ -827,14 +821,13 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     );
     bind(() => givenField<IconSource | undefined>(button, 'icon'), (next) => {
       kept(icon, next !== undefined);
-      if (Object.is(next, source) && (release || next === undefined)) return;
+      if (Object.is(next, source)) return;
       source = next;
-      release?.();
-      release = next !== undefined ? showIcon(next, icon) : null;
+      clearParts(icon);
+      if (next !== undefined) showIcon(next, icon);
     });
     buttonPart.motif.on('click', (_, event) => givenValue<FieldButton['click']>(button, 'click')?.({ button, source: this, event }));
     buttonPart.motif.setDisposable(() => {
-      release?.();
       if (parts.buttonParts.get(button) === buttonPart) parts.buttonParts.delete(button);
     });
     return buttonPart;

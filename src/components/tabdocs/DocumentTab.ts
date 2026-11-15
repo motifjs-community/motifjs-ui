@@ -37,7 +37,6 @@ export class DocumentTab {
   private readonly status: Component<HTMLSpanElement>;
   private description: Component<HTMLSpanElement> | null = null;
   private icon: Component<HTMLSpanElement> | null = null;
-  private releaseIcon: () => void = () => {};
   private badge: Component<HTMLSpanElement> | null = null;
   private tooltip: Tooltip | null = null;
   private tipHolder: Component<HTMLDivElement> | null = null;
@@ -159,7 +158,6 @@ export class DocumentTab {
 
   dispose(): void {
     for (const stop of this.stops.splice(0)) stop();
-    this.releaseIcon();
     this.attachTooltip(null);
     removePart(this.headerPart);
     if (!this.panel.isDisposed) void this.panel.dispose();
@@ -315,8 +313,6 @@ export class DocumentTab {
   }
 
   private renderIcon(icon: IconSource | null): void {
-    this.releaseIcon();
-    this.releaseIcon = () => {};
     if (!icon) {
       removePart(this.icon);
       this.icon = null;
@@ -328,7 +324,7 @@ export class DocumentTab {
         this.icon = host;
       }
       clearParts(host);
-      this.releaseIcon = showIcon(icon, host);
+      showIcon(icon, host);
     }
     mark(this.headerPart, 'data-icon', !!icon);
     this.manager.tabChanged(this);

@@ -580,6 +580,36 @@ describe('TreeView', () => {
     expect(row(t, '[A]').hasAttribute('aria-selected')).toBe(false);
   });
 
+  it("runs a template's cleanup with its host whole, when a row is drawn again and when the tree goes, closed rows too", async () => {
+    const drawn: string[] = [];
+    const released: string[] = [];
+    const template = (tag: string) => (item: Folder, host: ComponentBase<HTMLElement>) => {
+      const mark = new Component('span');
+      mark.setText(tag + item.text);
+      host.controls.add(mark);
+      drawn.push(tag + item.text);
+      return () => {
+        host.controls.remove(mark);
+        released.push(tag + item.text);
+      };
+    };
+    let t!: TreeView<Folder>;
+    const host = page(<TreeView ref={(x: TreeView<Folder>) => (t = x)} items={files()} expandedKeys={['src']} itemTemplate={template('1-')} />);
+    await settle();
+    expect(texts(t)).toEqual(['1-src', '1-app.ts', '1-lib', '1-docs', '1-package.json']);
+    t.itemTemplate = template('2-');
+    await settle();
+    expect(texts(t)).toEqual(['2-src', '2-app.ts', '2-lib', '2-docs', '2-package.json']);
+    expect([...released].sort()).toEqual(drawn.filter((x) => x.startsWith('1-')).sort());
+    // A closed row's rows are kept hidden, drawn as they are.
+    t.collapse('src');
+    await settle();
+    expect(texts(t)).toEqual(['2-src', '2-docs', '2-package.json']);
+    expect(released.filter((x) => x.startsWith('2-'))).toEqual([]);
+    await host.dispose();
+    expect([...released].sort()).toEqual([...drawn].sort());
+  });
+
   it('scrolls to and focuses a row deep inside, opening its parents', () => {
     const t = new TreeView<Folder>({ items: files() });
     page(t);
