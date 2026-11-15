@@ -100,6 +100,10 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
 
     const parts = this.dropParts;
     glyphPart(this.area('actions'), 'chevron-down', 'mx-drop-down__chevron');
+    // The source comes first: the field is drawn once as it is built, from the items it reads its value's item from.
+    this.observeProperty('dataSource', () => this.renderSource());
+    // A value field by name lets a value on no loaded page be asked for by that field.
+    this.observeProperty<ItemField<T> | undefined>('valueField', (field) => (parts.source.valueField = typeof field === 'string' ? field : undefined));
     // The field follows the items given, the value and its own props; the items' fields are read as they are.
     const stopField = follow(
       this,
@@ -120,9 +124,6 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       },
       ({ tick, items, value, valueText, placeholder, template }) => this.renderField(tick, items, value, valueText, placeholder, template),
     );
-    this.observeProperty('dataSource', () => this.renderSource());
-    // A value field by name lets a value on no loaded page be asked for by that field.
-    this.observeProperty<ItemField<T> | undefined>('valueField', (field) => (parts.source.valueField = typeof field === 'string' ? field : undefined));
     parts.source.onChanged(() => this.sourceChanged());
     this.listen();
     this.motif.setDisposable(() => {

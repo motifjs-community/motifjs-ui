@@ -15,6 +15,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   disposed, so a cleanup that touched the host threw once per drawn row. Every drawing now has a host of its own, the
   cleanup is given to that host, and it runs as the host goes, the same way in both cases. A template that only adds
   components to its host needs no cleanup: they go with the host.
+- `DropDown` and `Lookup` draw the value once as they are built: the field was drawn, then drawn again for the data
+  source given (none included), so a `fieldTemplate` ran twice and its cleanup once in between. With a data source,
+  the first drawing wrote the key itself before the source was there.
 
 ### Changed
 

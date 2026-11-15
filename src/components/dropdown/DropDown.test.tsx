@@ -92,6 +92,29 @@ describe('DropDown', () => {
     expect(released).toEqual(drawn);
   });
 
+  it('draws the value once as it is built: from its items, and from a data source once the item is known', async () => {
+    type Item = { id: string; name: string };
+    const drawn: string[] = [];
+    const template = (item: string | Item, host: ComponentBase) => {
+      const name = typeof item === 'string' ? item : item.name;
+      drawn.push(name);
+      host.setText(`*${name}`);
+    };
+    let fromItems!: DropDown<string, string>;
+    page(<DropDown ref={(x: DropDown<string, string>) => (fromItems = x)} label="City" items={CITIES} value="Bursa" fieldTemplate={template} />);
+    await settle();
+    expect(shownText(fromItems)).toBe('*Bursa');
+    expect(drawn).toEqual(['Bursa']);
+
+    drawn.length = 0;
+    const source = new data.DataSource<Item, unknown>({ adapter: new data.ArrayAdapter<Item>({ data: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }], key: 'id' }) });
+    const fromSource = new DropDown<Item, string>({ label: 'Item', dataSource: source, textField: 'name', valueField: 'id', value: 'b', fieldTemplate: template });
+    page(fromSource);
+    await settle();
+    expect(shownText(fromSource)).toBe('*Beta');
+    expect(drawn).toEqual(['Beta']);
+  });
+
   it('is a labelled combobox showing the chosen item, the same in JSX and programmatically', async () => {
     const s = reactive({ city: 'Bursa' as string | null });
     let jsx!: DropDown<string, string>;
