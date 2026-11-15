@@ -21,4 +21,18 @@
     forced-color-adjust: none;
     mask: var(--_icon) center / contain no-repeat;
   }
+
+  /* The copy command's text area (core/clipboard.ts, in the app's layer for a moment): out of sight, still focusable
+     and selectable. */
+  .mx-copy-area {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
 }

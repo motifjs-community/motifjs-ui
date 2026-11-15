@@ -95,6 +95,13 @@ export const GROUPS = [
     ],
   },
   {
+    title: 'AI chat',
+    section: 'Components',
+    pages: [
+      { id: 'markdown', label: 'Markdown', title: 'Markdown', path: '/markdown', related: ['card', 'skeleton', 'scrollview'] },
+    ],
+  },
+  {
     title: 'Navigation',
     section: 'Components',
     pages: [

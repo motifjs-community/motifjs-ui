@@ -1,0 +1,302 @@
+{
+  "markdown": {
+    "flow-gap": {
+      "$value": "{space.3}"
+    },
+    "item-gap": {
+      "$value": "{space.1}"
+    },
+    "copy": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "h1": {
+      "font-size": {
+        "$value": "{font.size.title}"
+      },
+      "line-height": {
+        "$value": "{font.line.title}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      }
+    },
+    "h2": {
+      "font-size": {
+        "$value": "{font.size.subtitle}"
+      },
+      "line-height": {
+        "$value": "{font.line.subtitle}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      }
+    },
+    "h3": {
+      "font-size": {
+        "$value": "{font.size.body-large}"
+      },
+      "line-height": {
+        "$value": "{font.line.body-large}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      }
+    },
+    "h4": {
+      "font-size": {
+        "$value": "{font.size.body}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      }
+    },
+    "h5": {
+      "font-size": {
+        "$value": "{font.size.body}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      }
+    },
+    "h6": {
+      "font-size": {
+        "$value": "{font.size.body}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "strong": {
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "link": {
+      "color": {
+        "$value": "{color.accent.fg}"
+      },
+      "text-decoration": {
+        "$value": "underline"
+      },
+      "hover": {
+        "text-decoration": {
+          "$value": "none"
+        }
+      }
+    },
+    "inline-code": {
+      "bg": {
+        "$value": "{color.fill.subtle.secondary}"
+      },
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "font-size": {
+        "$value": {
+          "value": 0.9,
+          "unit": "em"
+        }
+      }
+    },
+    "quote": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-start-width": {
+        "$value": "{border.width.2}"
+      },
+      "border-start-color": {
+        "$value": "{color.stroke.divider}"
+      },
+      "padding-start": {
+        "$value": "{space.3}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "list": {
+      "padding-start": {
+        "$value": "{space.6}"
+      }
+    },
+    "task": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.control.strong}"
+      },
+      "size": {
+        "$value": {
+          "value": 1,
+          "unit": "em"
+        }
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "margin-end": {
+        "$value": "{space.1}"
+      },
+      "done": {
+        "bg": {
+          "$value": "{color.accent.solid}"
+        },
+        "border-color": {
+          "$value": "{color.accent.solid}"
+        },
+        "color": {
+          "$value": "{color.accent.on-solid}"
+        }
+      }
+    },
+    "rule": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{space.0}"
+      },
+      "border-top-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-top-color": {
+        "$value": "{color.stroke.divider}"
+      }
+    },
+    "code-block": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.card}"
+      },
+      "bg": {
+        "$value": "{color.fill.subtle.secondary}"
+      },
+      "radius": {
+        "$value": "{radius.lg}"
+      }
+    },
+    "code-header": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-bottom-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-bottom-color": {
+        "$value": "{color.stroke.divider}"
+      },
+      "padding-start": {
+        "$value": "{space.3}"
+      },
+      "padding-end": {
+        "$value": "{space.1}"
+      },
+      "padding-block": {
+        "$value": "{space.1}"
+      },
+      "gap": {
+        "$value": "{space.2}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "code-text": {
+      "padding-inline": {
+        "$value": "{space.3}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      },
+      "white-space": {
+        "$value": "pre-wrap"
+      }
+    },
+    "table": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.divider}"
+      }
+    },
+    "cell": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.divider}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "padding-block": {
+        "$value": "{space.1}"
+      },
+      "head": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        },
+        "font-weight": {
+          "$value": "{font.weight.semibold}"
+        }
+      }
+    },
+    "image": {
+      "radius": {
+        "$value": "{radius.lg}"
+      }
+    }
+  }
+}

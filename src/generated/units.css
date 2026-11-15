@@ -5333,6 +5333,203 @@
     font-weight: var(--_lookup-header-font-weight, inherit);
   }
 
+  .mx-markdown__h1 {
+    font-size: var(--_markdown-h1-font-size, inherit);
+    font-weight: var(--_markdown-h1-font-weight, inherit);
+    line-height: var(--_markdown-h1-line-height, inherit);
+  }
+
+  .mx-markdown__h2 {
+    font-size: var(--_markdown-h2-font-size, inherit);
+    font-weight: var(--_markdown-h2-font-weight, inherit);
+    line-height: var(--_markdown-h2-line-height, inherit);
+  }
+
+  .mx-markdown__h3 {
+    font-size: var(--_markdown-h3-font-size, inherit);
+    font-weight: var(--_markdown-h3-font-weight, inherit);
+    line-height: var(--_markdown-h3-line-height, inherit);
+  }
+
+  .mx-markdown__h4 {
+    font-size: var(--_markdown-h4-font-size, inherit);
+    font-weight: var(--_markdown-h4-font-weight, inherit);
+    line-height: var(--_markdown-h4-line-height, inherit);
+  }
+
+  .mx-markdown__h5 {
+    font-size: var(--_markdown-h5-font-size, inherit);
+    font-weight: var(--_markdown-h5-font-weight, inherit);
+    line-height: var(--_markdown-h5-line-height, inherit);
+  }
+
+  .mx-markdown__h6 {
+    color: var(--_markdown-h6-color, inherit);
+    font-size: var(--_markdown-h6-font-size, inherit);
+    font-weight: var(--_markdown-h6-font-weight, inherit);
+    line-height: var(--_markdown-h6-line-height, inherit);
+  }
+
+  .mx-markdown__strong {
+    font-weight: var(--_markdown-strong-font-weight, inherit);
+  }
+
+  .mx-markdown__link {
+    color: var(--_markdown-link-color, inherit);
+    text-decoration-line: var(--_markdown-link-text-decoration, none);
+  }
+
+  .mx-markdown__link:hover {
+    text-decoration-line: var(--_markdown-link-hover-text-decoration, var(--_markdown-link-text-decoration, none));
+  }
+
+  .mx-markdown__code {
+    padding-inline-end: var(--_markdown-inline-code-padding-inline, 0px);
+    padding-inline-start: var(--_markdown-inline-code-padding-inline, 0px);
+    background-color: var(--_markdown-inline-code-bg, transparent);
+    border-start-start-radius: var(--_markdown-inline-code-radius, 0px);
+    border-start-end-radius: var(--_markdown-inline-code-radius, 0px);
+    border-end-start-radius: var(--_markdown-inline-code-radius, 0px);
+    border-end-end-radius: var(--_markdown-inline-code-radius, 0px);
+    font-size: var(--_markdown-inline-code-font-size, inherit);
+  }
+
+  .mx-markdown__quote {
+    padding-inline-start: var(--_markdown-quote-padding-start, 0px);
+    border-style: var(--_markdown-quote-border-style, solid);
+    border-block-start-width: 0px;
+    border-inline-end-width: 0px;
+    border-block-end-width: 0px;
+    border-inline-start-width: var(--_markdown-quote-border-start-width, 0px);
+    border-inline-start-color: var(--_markdown-quote-border-start-color, currentcolor);
+    color: var(--_markdown-quote-color, inherit);
+  }
+
+  .mx-markdown__list {
+    padding-inline-start: var(--_markdown-list-padding-start, 0px);
+  }
+
+  .mx-markdown__task {
+    inline-size: var(--_markdown-task-size, auto);
+    block-size: var(--_markdown-task-size, auto);
+    margin-inline-end: var(--_markdown-task-margin-end, 0px);
+    border-style: var(--_markdown-task-border-style, solid);
+    border-block-start-width: var(--_markdown-task-border-width, 0px);
+    border-inline-end-width: var(--_markdown-task-border-width, 0px);
+    border-block-end-width: var(--_markdown-task-border-width, 0px);
+    border-inline-start-width: var(--_markdown-task-border-width, 0px);
+    border-block-start-color: var(--_markdown-task-border-color, currentcolor);
+    border-inline-end-color: var(--_markdown-task-border-color, currentcolor);
+    border-block-end-color: var(--_markdown-task-border-color, currentcolor);
+    border-inline-start-color: var(--_markdown-task-border-color, currentcolor);
+    border-start-start-radius: var(--_markdown-task-radius, 0px);
+    border-start-end-radius: var(--_markdown-task-radius, 0px);
+    border-end-start-radius: var(--_markdown-task-radius, 0px);
+    border-end-end-radius: var(--_markdown-task-radius, 0px);
+  }
+
+  .mx-markdown__task[data-done] {
+    background-color: var(--_markdown-task-done-bg, transparent);
+    border-block-start-color: var(--_markdown-task-done-border-color, var(--_markdown-task-border-color, currentcolor));
+    border-inline-end-color: var(--_markdown-task-done-border-color, var(--_markdown-task-border-color, currentcolor));
+    border-block-end-color: var(--_markdown-task-done-border-color, var(--_markdown-task-border-color, currentcolor));
+    border-inline-start-color: var(--_markdown-task-done-border-color, var(--_markdown-task-border-color, currentcolor));
+    color: var(--_markdown-task-done-color, inherit);
+  }
+
+  .mx-markdown__rule {
+    border-style: var(--_markdown-rule-border-style, solid);
+    border-block-start-width: var(--_markdown-rule-border-top-width, var(--_markdown-rule-border-width, 0px));
+    border-inline-end-width: var(--_markdown-rule-border-width, 0px);
+    border-block-end-width: var(--_markdown-rule-border-width, 0px);
+    border-inline-start-width: var(--_markdown-rule-border-width, 0px);
+    border-block-start-color: var(--_markdown-rule-border-top-color, currentcolor);
+  }
+
+  .mx-markdown__block {
+    background-color: var(--_markdown-code-block-bg, transparent);
+    border-style: var(--_markdown-code-block-border-style, solid);
+    border-block-start-width: var(--_markdown-code-block-border-width, 0px);
+    border-inline-end-width: var(--_markdown-code-block-border-width, 0px);
+    border-block-end-width: var(--_markdown-code-block-border-width, 0px);
+    border-inline-start-width: var(--_markdown-code-block-border-width, 0px);
+    border-block-start-color: var(--_markdown-code-block-border-color, currentcolor);
+    border-inline-end-color: var(--_markdown-code-block-border-color, currentcolor);
+    border-block-end-color: var(--_markdown-code-block-border-color, currentcolor);
+    border-inline-start-color: var(--_markdown-code-block-border-color, currentcolor);
+    border-start-start-radius: var(--_markdown-code-block-radius, 0px);
+    border-start-end-radius: var(--_markdown-code-block-radius, 0px);
+    border-end-start-radius: var(--_markdown-code-block-radius, 0px);
+    border-end-end-radius: var(--_markdown-code-block-radius, 0px);
+  }
+
+  .mx-markdown__code-header {
+    padding-block-start: var(--_markdown-code-header-padding-block, 0px);
+    padding-inline-end: var(--_markdown-code-header-padding-end, 0px);
+    padding-block-end: var(--_markdown-code-header-padding-block, 0px);
+    padding-inline-start: var(--_markdown-code-header-padding-start, 0px);
+    gap: var(--_markdown-code-header-gap, normal);
+    border-style: var(--_markdown-code-header-border-style, solid);
+    border-block-start-width: 0px;
+    border-inline-end-width: 0px;
+    border-block-end-width: var(--_markdown-code-header-border-bottom-width, 0px);
+    border-inline-start-width: 0px;
+    border-block-end-color: var(--_markdown-code-header-border-bottom-color, currentcolor);
+    color: var(--_markdown-code-header-color, inherit);
+    font-size: var(--_markdown-code-header-font-size, inherit);
+    line-height: var(--_markdown-code-header-line-height, inherit);
+  }
+
+  .mx-markdown__pre {
+    padding-block-start: var(--_markdown-code-text-padding-block, 0px);
+    padding-inline-end: var(--_markdown-code-text-padding-inline, 0px);
+    padding-block-end: var(--_markdown-code-text-padding-block, 0px);
+    padding-inline-start: var(--_markdown-code-text-padding-inline, 0px);
+    font-size: var(--_markdown-code-text-font-size, inherit);
+    line-height: var(--_markdown-code-text-line-height, inherit);
+    white-space: var(--_markdown-code-text-white-space, inherit);
+  }
+
+  .mx-markdown__table {
+    border-style: var(--_markdown-table-border-style, solid);
+    border-block-start-width: var(--_markdown-table-border-width, 0px);
+    border-inline-end-width: var(--_markdown-table-border-width, 0px);
+    border-block-end-width: var(--_markdown-table-border-width, 0px);
+    border-inline-start-width: var(--_markdown-table-border-width, 0px);
+    border-block-start-color: var(--_markdown-table-border-color, currentcolor);
+    border-inline-end-color: var(--_markdown-table-border-color, currentcolor);
+    border-block-end-color: var(--_markdown-table-border-color, currentcolor);
+    border-inline-start-color: var(--_markdown-table-border-color, currentcolor);
+  }
+
+  .mx-markdown__cell {
+    padding-block-start: var(--_markdown-cell-padding-block, 0px);
+    padding-inline-end: var(--_markdown-cell-padding-inline, 0px);
+    padding-block-end: var(--_markdown-cell-padding-block, 0px);
+    padding-inline-start: var(--_markdown-cell-padding-inline, 0px);
+    border-style: var(--_markdown-cell-border-style, solid);
+    border-block-start-width: var(--_markdown-cell-border-width, 0px);
+    border-inline-end-width: var(--_markdown-cell-border-width, 0px);
+    border-block-end-width: var(--_markdown-cell-border-width, 0px);
+    border-inline-start-width: var(--_markdown-cell-border-width, 0px);
+    border-block-start-color: var(--_markdown-cell-border-color, currentcolor);
+    border-inline-end-color: var(--_markdown-cell-border-color, currentcolor);
+    border-block-end-color: var(--_markdown-cell-border-color, currentcolor);
+    border-inline-start-color: var(--_markdown-cell-border-color, currentcolor);
+  }
+
+  .mx-markdown__head > .mx-markdown__row > .mx-markdown__cell {
+    background-color: var(--_markdown-cell-head-bg, transparent);
+    font-weight: var(--_markdown-cell-head-font-weight, inherit);
+  }
+
+  .mx-markdown__img {
+    border-start-start-radius: var(--_markdown-image-radius, 0px);
+    border-start-end-radius: var(--_markdown-image-radius, 0px);
+    border-end-start-radius: var(--_markdown-image-radius, 0px);
+    border-end-end-radius: var(--_markdown-image-radius, 0px);
+  }
+
   .mx-menu {
     gap: var(--_menu-panel-gap, normal);
     outline-style: none;

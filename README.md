@@ -45,6 +45,7 @@ component (`npm run dev`).
 | Charts | `Chart` (lines, areas, bars, dots, bubbles, pie, donut, funnel, radar, heat map, ranges, candles, waterfall; zoom, live data, references, selection; keyboard, table view, images), `Sparkline` |
 | Gauges | `Gauge` (arc, circle, half, quarter, bar across or upright; ticks, ranges, needles and markers, marks), `BarGauge` |
 | Display | `QRCode`, `Barcode` (Code 128, Code 39, EAN, UPC, Interleaved 2 of 5), `Badge`, `Avatar`, `AvatarGroup`, `Chip`, `ChipGroup`, `Card`, `Skeleton`, `Gallery` (slides, dots, slideshow), `TileView` (selectable, reorderable tiles on a grid), `Timeline` (vertical, or horizontal along a line of dates) |
+| AI chat | `Markdown` (drawn as it streams, never drawn again; code blocks with a highlighter door and a copy button) |
 | Navigation | `AppBar`, `BottomNavigation`, `Tabs`, `Accordion`, `Breadcrumb`, `Pagination`, `Stepper`, `Wizard`, `MultiView` (swipeable pages), `TabDocumentManager` |
 | More editors | `OtpInput` (one-time codes), `Signature` (strokes, image export), `Rating`, `ColorBox`, `ColorPicker` |
 | Scheduling | `Scheduler` (day, week, month, timeline, agenda; recurrence, resources, iCalendar) |

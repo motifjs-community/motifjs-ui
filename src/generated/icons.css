@@ -59,6 +59,7 @@
     --mx-icon-file: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M4%201.75h5.5L13%205.25v9H4zM9.25%201.75v3.75H13%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-play: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M5%203.2v9.6l7.4-4.8z%27%20fill%3D%27black%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-pause: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M5.5%203.5v9M10.5%203.5v9%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-copy: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M5.75%205.25h7v8.5h-7zM3.25%2010.75v-8.5h7%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
   }
 
   .mx-glyph[data-icon='arrow-start'] {
@@ -111,6 +112,10 @@
 
   .mx-glyph[data-icon='columns'] {
     --_icon: var(--mx-icon-columns);
+  }
+
+  .mx-glyph[data-icon='copy'] {
+    --_icon: var(--mx-icon-copy);
   }
 
   .mx-glyph[data-icon='danger'] {

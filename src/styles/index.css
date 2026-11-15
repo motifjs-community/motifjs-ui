@@ -35,6 +35,7 @@
 @import '../components/chip/chip.css';
 @import '../components/card/card.css';
 @import '../components/skeleton/skeleton.css';
+@import '../components/markdown/markdown.css';
 @import '../components/buttongroup/buttongroup.css';
 @import '../components/rating/rating.css';
 @import '../components/colorpicker/colorpicker.css';

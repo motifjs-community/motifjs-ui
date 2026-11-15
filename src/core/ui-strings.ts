@@ -805,4 +805,9 @@ export interface UiStrings {
   scrollPullDown: string;
   scrollRelease: string;
   scrollRefreshing: string;
+  /** The markdown view. */
+  markdownCopy: string;
+  markdownCopied: string;
+  markdownTaskDone: string;
+  markdownTaskOpen: string;
 }

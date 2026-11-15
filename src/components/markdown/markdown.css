@@ -1,0 +1,111 @@
+/* Markdown: only the layout is here. Every block is a unit of its schema (headings, paragraphs, lists, quotes, code
+   blocks, tables, links), painted by units.css from the design language. Blocks of a container (the root, a quote, an
+   item) follow one another `flow-gap` apart; the browser's own margins of these elements are taken off first, at no
+   specificity, so the gap is the only space between them. */
+@layer mx.components {
+  .mx-markdown {
+    display: flow-root;
+    min-inline-size: 0;
+    overflow-wrap: break-word;
+  }
+
+  :where(
+      .mx-markdown__paragraph,
+      .mx-markdown__h1,
+      .mx-markdown__h2,
+      .mx-markdown__h3,
+      .mx-markdown__h4,
+      .mx-markdown__h5,
+      .mx-markdown__h6,
+      .mx-markdown__list,
+      .mx-markdown__quote,
+      .mx-markdown__block,
+      .mx-markdown__pre,
+      .mx-markdown__rule,
+      .mx-markdown__table
+    ) {
+    margin: 0;
+  }
+
+  .mx-markdown > * + *,
+  .mx-markdown__quote > * + *,
+  .mx-markdown__item > * + * {
+    margin-block-start: var(--_markdown-flow-gap);
+  }
+
+  .mx-markdown__item + .mx-markdown__item {
+    margin-block-start: var(--_markdown-item-gap);
+  }
+
+  /* A task item shows its box instead of a bullet. */
+  .mx-markdown__item[data-task] {
+    list-style: none;
+  }
+
+  .mx-markdown__task {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+  }
+
+  .mx-markdown__task > .mx-glyph {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  /* A code block: the header (the language, then the copy button at the end) over the code. Long lines wrap or not
+     as code-text's white-space says; a word longer than the line breaks anywhere, so nothing scrolls sideways. */
+  .mx-markdown__block {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    overflow: clip;
+  }
+
+  .mx-markdown__code-header {
+    display: flex;
+    align-items: center;
+  }
+
+  .mx-markdown__language {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-markdown__copy {
+    flex: none;
+  }
+
+  .mx-markdown__pre {
+    overflow-wrap: anywhere;
+    tab-size: 4;
+  }
+
+  .mx-markdown__table {
+    border-collapse: collapse;
+    max-inline-size: 100%;
+  }
+
+  .mx-markdown__cell {
+    text-align: start;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  .mx-markdown__cell[data-align='center'] {
+    text-align: center;
+  }
+
+  .mx-markdown__cell[data-align='end'] {
+    text-align: end;
+  }
+
+  .mx-markdown__img {
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+}

@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- `Markdown`: shows markdown given at once or as it arrives from a model (`append`, `end`, or `text` with
+  `streaming`). Every character is on screen the moment it is written; a mark not understood yet shows as text at
+  the end until it is, then its element is made and the text goes on into it. Nothing drawn is drawn again, and the
+  result is the same whatever the pieces the text arrives in. Headings, emphasis, inline and fenced code, nested and
+  task lists, quotes, tables with alignment, links and bare addresses, rules, escapes and entities; HTML is shown as
+  text, links take only safe addresses, images are off until `images` and `allowImage` allow them. Code blocks show
+  their language and a copy button, and any highlighter colours them through `highlighter` (`CodeHighlighter`).
+- The kit glyph `copy`, and the kit strings `markdownCopy`, `markdownCopied`, `markdownTaskDone`, `markdownTaskOpen`.
+
+### Changed
+
+- The clipboard writing of `DataGrid` is shared (`core/clipboard.ts`): the Clipboard API where the page may use it,
+  else the copy command. Its hidden text area is `.mx-copy-area`.
+
 ## [0.1.0-beta.13] - 2026-11-17
 
 Needs `@motifx/core` 1.2.0-rc.31.

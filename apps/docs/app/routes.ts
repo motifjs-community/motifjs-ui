@@ -94,6 +94,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   chip: () => import('../pages/chip/ChipPage'),
   card: () => import('../pages/card/CardPage'),
   skeleton: () => import('../pages/skeleton/SkeletonPage'),
+  markdown: () => import('../pages/markdown/MarkdownPage'),
   radiogroup: () => import('../pages/radiogroup/RadioGroupPage'),
   dropdown: () => import('../pages/dropdown/DropDownPage'),
   combobox: () => import('../pages/combobox/ComboBoxPage'),

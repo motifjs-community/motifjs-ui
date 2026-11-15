@@ -20,6 +20,7 @@ export * from './components/avatar';
 export * from './components/chip';
 export * from './components/card';
 export * from './components/skeleton';
+export * from './components/markdown';
 export * from './components/buttongroup';
 export * from './components/rating';
 export * from './components/colorpicker';

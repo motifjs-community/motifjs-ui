@@ -445,6 +445,13 @@
     --_button-variant: var(--mx-load-panel-cancel-variant);
   }
 
+  /* markdown: copy — The copy button in a code block's header: its variant, tone and size. */
+  .mx-markdown__code-header > .mx-markdown__copy {
+    --_button-variant: var(--mx-markdown-copy-variant);
+    --_button-tone: var(--mx-markdown-copy-tone);
+    --_button-size: var(--mx-markdown-copy-size);
+  }
+
   /* otp-input: field — The field under the boxes: no text-field box. */
   .mx-otp-input {
     --_field-variant: var(--mx-otp-input-field-variant);

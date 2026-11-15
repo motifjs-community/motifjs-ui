@@ -7,9 +7,8 @@ import { Control } from '../../core/control';
 import { follow } from '../../core/follow';
 import { uiLocale } from '../../core/ui-locale';
 import { onReState } from '../../core/on-re-state';
-import { focusAndSelect, focusFirstIn, focusGoesInto, focusOn, focusPast, focusStopIn, holdsFocus, isFocused, releaseFocus, rememberFocus, windowHasFocus } from '../../core/focus';
-import { windowOf } from '../../core/page-documents';
-import { placeOnPage } from '../../core/page-layer';
+import { focusFirstIn, focusGoesInto, focusOn, focusPast, focusStopIn, holdsFocus, isFocused, releaseFocus, windowHasFocus } from '../../core/focus';
+import { writeClipboard } from '../../core/clipboard';
 import { boxOf, isRendered, isRtl, measure, measureNow, onLayout, rectOf, reveal, scrollOf, styleOf, textWidths } from '../../core/measure';
 import { checkMark, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
 import { fillTemplate } from '../../core/fill-template';
@@ -2642,7 +2641,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       content.text = e.text;
       content.html = e.html;
     }
-    this.writeClipboard(content);
+    writeClipboard(this, content);
     const count = content.cells || content.rows;
     model.announce(content.cells ? model.text('gridCopiedCells', { count }) : content.rows ? model.text('gridCopiedRows', { count }) : model.text('gridCopiedCell'));
     return content.text;
@@ -6113,68 +6112,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   // Copy, paste, export.
-
-  /**
-   * Puts copied cells on the clipboard. Where the window has the clipboard API (a secure page), through it: both forms
-   * where it takes them (`ClipboardItem`), else the text. Elsewhere (a page over http, an older browser), or when the
-   * API refuses, through the copy command.
-   */
-  private writeClipboard(content: ClipboardContent) {
-    const view = windowOf(this);
-    const clipboard = view?.navigator.clipboard;
-    if (!view || typeof clipboard?.writeText !== 'function') {
-      this.copyByCommand(content);
-      return;
-    }
-    // The window's own constructors: a window the app opened has its own.
-    const { ClipboardItem: Item, Blob: Data } = view as Window & { ClipboardItem?: typeof ClipboardItem; Blob: typeof Blob };
-    let job: Promise<void>;
-    try {
-      job =
-        typeof Item === 'function' && typeof clipboard.write === 'function'
-          ? clipboard.write([new Item({ 'text/plain': new Data([content.text], { type: 'text/plain' }), 'text/html': new Data([content.html], { type: 'text/html' }) })])
-          : clipboard.writeText(content.text);
-    } catch (error) {
-      job = Promise.reject(error);
-    }
-    void job.catch(() => {
-      if (!this.isDisposed) this.copyByCommand(content);
-    });
-  }
-
-  /**
-   * The copy command: a hidden text area holding the text goes into the app's layer above the page, is selected, and
-   * the command copies; the copy event it raises takes both forms. Focus goes back where it was, and the area goes.
-   * Returns whether the command copied.
-   */
-  private copyByCommand(content: ClipboardContent): boolean {
-    const doc = windowOf(this)?.document;
-    if (typeof doc?.execCommand !== 'function') return false;
-    const fill = (e: ClipboardEvent) => {
-      if (!e.clipboardData) return;
-      e.clipboardData.setData('text/plain', content.text);
-      e.clipboardData.setData('text/html', content.html);
-      e.preventDefault();
-    };
-    const area = new Component<HTMLTextAreaElement>('textarea');
-    area.class.add('mx-data-grid__copy-area');
-    area.attr.add({ readonly: '', tabindex: '-1', 'aria-hidden': 'true' });
-    text(area, content.text);
-    placeOnPage(this, area);
-    const back = rememberFocus();
-    const stop = onDocument(this, 'copy', fill, true);
-    try {
-      focusAndSelect(area);
-      return doc.execCommand('copy');
-    } catch {
-      // Not allowed here.
-      return false;
-    } finally {
-      stop();
-      back?.restore({ preventScroll: true });
-      void area.dispose();
-    }
-  }
 
   /** Ctrl+V on a cell: the browser raises `paste` next, at the page when no field has focus; take that one event. */
   private armPaste() {

@@ -1,0 +1,51 @@
+{
+  "markdown": {
+    "$description": "Markdown: headings, paragraphs, lists, quotes, code, tables and links, drawn as the text arrives.",
+    "$selector": ".mx-markdown",
+    "flow-gap": { "$type": "dimension", "$description": "The space between blocks: paragraphs, headings, lists, quotes, code blocks, tables." },
+    "item-gap": { "$type": "dimension", "$description": "The space between the items of a list." },
+    "$places": {
+      "copy": {
+        "$description": "The copy button in a code block's header: its variant, tone and size.",
+        "selector": ".mx-markdown__code-header > .mx-markdown__copy",
+        "part": "button",
+        "tokens": ["variant", "tone", "size"]
+      }
+    },
+    "$units": {
+      "h1": { "$description": "A level 1 heading.", "selector": ".mx-markdown__h1" },
+      "h2": { "$description": "A level 2 heading.", "selector": ".mx-markdown__h2" },
+      "h3": { "$description": "A level 3 heading.", "selector": ".mx-markdown__h3" },
+      "h4": { "$description": "A level 4 heading.", "selector": ".mx-markdown__h4" },
+      "h5": { "$description": "A level 5 heading.", "selector": ".mx-markdown__h5" },
+      "h6": { "$description": "A level 6 heading.", "selector": ".mx-markdown__h6" },
+      "paragraph": { "$description": "A paragraph.", "selector": ".mx-markdown__paragraph" },
+      "strong": { "$description": "Strong text (`**…**`).", "selector": ".mx-markdown__strong" },
+      "link": {
+        "$description": "A link, written or bare.",
+        "selector": ".mx-markdown__link",
+        "states": { "hover": ".mx-markdown__link:hover" }
+      },
+      "inline-code": { "$description": "Code in a line (`` `…` ``).", "selector": ".mx-markdown__code" },
+      "quote": { "$description": "A quote (`> …`): its bar is a side of its frame.", "selector": ".mx-markdown__quote" },
+      "list": { "$description": "A list: its indent is its padding at the start.", "selector": ".mx-markdown__list" },
+      "task": {
+        "$description": "The box of a task item (`- [ ]`), and its check when done.",
+        "selector": ".mx-markdown__task",
+        "states": { "done": ".mx-markdown__task[data-done]" }
+      },
+      "rule": { "$description": "A horizontal rule (`---`): a side of its frame.", "selector": ".mx-markdown__rule" },
+      "code-block": { "$description": "A fenced code block: its frame and fill.", "selector": ".mx-markdown__block" },
+      "code-header": { "$description": "The header of a code block: the language and the copy button.", "selector": ".mx-markdown__code-header" },
+      "code-language": { "$description": "The language name in a code block's header.", "selector": ".mx-markdown__language" },
+      "code-text": { "$description": "The code of a code block; its `white-space` decides whether long lines wrap.", "selector": ".mx-markdown__pre" },
+      "table": { "$description": "A table: its outer frame.", "selector": ".mx-markdown__table" },
+      "cell": {
+        "$description": "A table cell, and a heading cell (`head`).",
+        "selector": ".mx-markdown__cell",
+        "states": { "head": ".mx-markdown__head > .mx-markdown__row > .mx-markdown__cell" }
+      },
+      "image": { "$description": "An image, when images are allowed.", "selector": ".mx-markdown__img" }
+    }
+  }
+}
