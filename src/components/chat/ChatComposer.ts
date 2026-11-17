@@ -3,6 +3,7 @@ import { Control } from '../../core/control';
 import { clearParts, loose, part, removePart } from '../../core/draw-parts';
 import { glyph } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
+import { mediaOf, onMedia } from '../../core/measure';
 import { onLanguage } from '../../core/on-language';
 import { css, kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
@@ -34,6 +35,8 @@ interface Suggestion {
 
 /** From this much of the context used, the meter says the context is nearly full. */
 const USAGE_HIGH = 0.8;
+/** A touch screen with no pointer that hovers: a phone, a tablet without a mouse. */
+const TOUCH = '(hover: none) and (pointer: coarse)';
 
 /**
  * The box a message is written in, in one frame with its tools under it: files to attach (`attachments`: the button,
@@ -42,7 +45,7 @@ const USAGE_HIGH = 0.8;
  * after `@` (`onMention`), in a menu the arrow keys move in and Enter or Tab takes from, the way the model works (`modes`; Shift+Tab in the box goes to the
  * next), the model and its thinking (`models`, `thinking`), how full the context is (`usage`), and the send button.
  * Enter sends, Shift+Enter starts a new line, and an input method's Enter only ends its
- * composition. Arrow Up at the start of the box brings back what was sent before, and Arrow Down goes forward again.
+ * composition. On a touch screen Enter starts a new line, as in a phone's messages, and the button sends. Arrow Up at the start of the box brings back what was sent before, and Arrow Down goes forward again.
  * While a reply is written (`busy`), the button stops it, as Escape does, and Enter still sends: the chat queues what
  * is sent then.
  *
@@ -175,6 +178,8 @@ export class ChatComposer extends Control<HTMLDivElement, ChatComposerProps> {
     this.motif.on('keydown', (_, e: KeyboardEvent) => this.key(e));
     this.box.motif.on('input', () => this.suggest());
     this.listenForFiles();
+    this.drawEnter(mediaOf(this, TOUCH));
+    this.motif.setDisposable(onMedia(this, TOUCH, (touch) => this.drawEnter(touch)));
     this.motif.setDisposable(() => {
       this.sent.dispose();
       this.contextChanged.dispose();
@@ -644,6 +649,12 @@ export class ChatComposer extends Control<HTMLDivElement, ChatComposerProps> {
     const value = !this.thinking;
     this.changeProperty('thinking', value);
     this.thinkingChanged.fire({ value, source: this });
+  }
+
+  /** Enter sends, and its key says so; on a touch screen it starts a new line. */
+  private drawEnter(touch: boolean): void {
+    this.box.submitOnEnter = !touch;
+    this.box.enterKeyHint = touch ? 'enter' : 'send';
   }
 
   private drawButton(): void {

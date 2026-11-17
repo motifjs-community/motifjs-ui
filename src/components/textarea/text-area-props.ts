@@ -1,4 +1,5 @@
 import type { Bind } from '@motifx/core';
+import type { EnterKeyHint } from '../../core/enter-key-hint';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import type { FieldProps } from '../../parts/field/field-props';
 import type { TextAreaResize } from './text-area-resize';
@@ -38,6 +39,8 @@ export interface TextAreaProps extends FieldProps<string> {
   /** The name submitted with the form. */
   name?: Bind<string>;
   autocomplete?: Bind<string>;
+  /** What the Enter key of an on-screen keyboard says (`send`, `enter` …); it does not change what Enter does. */
+  enterKeyHint?: Bind<EnterKeyHint>;
   /**
    * `true` makes Enter raise `onEnter` and Shift+Enter start a new line, as a chat's message box does. The default is
    * `false`: Ctrl+Enter (Cmd+Enter) raises it and Enter starts a new line.

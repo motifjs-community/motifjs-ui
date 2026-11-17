@@ -1,6 +1,8 @@
 import type { Bind } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { CodeHighlighter } from './code-highlighter';
+import type { DiagramRenderer } from './diagram-renderer';
+import type { MathRenderer } from './math-renderer';
 import type { MarkdownLinkClickEventArgs } from './markdown-link-click-event-args';
 
 /**
@@ -15,6 +17,10 @@ export interface MarkdownProps extends ControlProps {
   streaming?: Bind<boolean>;
   /** Colours code blocks; any highlighter fits through this door. The default is none: code stays plain. */
   highlighter?: Bind<CodeHighlighter | null>;
+  /** Draws math (`$…$`, `$$…$$`, ```` ```math ````) once its TeX is complete. The default is none: `$` is text. */
+  mathRenderer?: Bind<MathRenderer | null>;
+  /** Draws a fenced block in a language it draws (`mermaid`) once its code is complete. The default is none. */
+  diagramRenderer?: Bind<DiagramRenderer | null>;
   /**
    * Shows images. The default is `false`: an image address in a model's answer can carry data away, so an image is
    * shown as a link to it until images are allowed.

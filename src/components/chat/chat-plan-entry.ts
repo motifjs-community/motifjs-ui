@@ -1,4 +1,4 @@
-import type { Component } from '@motifx/core';
+import type { Component, ComponentBase } from '@motifx/core';
 import { part, removePart } from '../../core/draw-parts';
 import { kept, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
@@ -17,6 +17,7 @@ export class ChatPlanEntry implements ChatEntry {
   private readonly title: Component<HTMLDivElement>;
   private readonly request: Component<HTMLDivElement>;
   private readonly answer: Component<HTMLDivElement>;
+  private readonly markdown: Markdown;
   private choices: ChatChoices | null = null;
 
   constructor(private readonly plan: ChatPlanPart, private readonly look: ChatLook, private readonly live: () => boolean) {
@@ -24,15 +25,19 @@ export class ChatPlanEntry implements ChatEntry {
     this.row = row;
     const box = part<HTMLDivElement>(main, 'div', 'mx-chat__plan');
     this.title = part<HTMLDivElement>(box, 'div', 'mx-chat__plan-title');
-    const markdown = new Markdown({ text: plan.text, highlighter: look.highlighter, linkTarget: look.linkTarget });
-    markdown.class.add('mx-chat__plan-text');
-    box.controls.add(markdown);
+    this.markdown = new Markdown({ text: plan.text, highlighter: look.highlighter, mathRenderer: look.mathRenderer, diagramRenderer: look.diagramRenderer, linkTarget: look.linkTarget });
+    this.markdown.class.add('mx-chat__plan-text');
+    box.controls.add(this.markdown);
     this.request = part<HTMLDivElement>(main, 'div', 'mx-chat__request');
     this.answer = part<HTMLDivElement>(this.request, 'div', 'mx-chat__answer');
     this.update();
   }
 
   append(): void {}
+
+  found(index: number): ComponentBase | null {
+    return this.markdown.blockAt(index);
+  }
 
   update(): void {
     const waiting = !this.plan.answer && this.live();

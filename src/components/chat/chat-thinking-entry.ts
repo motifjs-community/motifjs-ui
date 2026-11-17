@@ -95,7 +95,7 @@ export class ChatThinkingEntry implements ChatEntry {
 
   private writer(): Markdown {
     if (!this.markdown) {
-      this.markdown = new Markdown({ streaming: true, highlighter: this.look.highlighter, linkTarget: this.look.linkTarget });
+      this.markdown = new Markdown({ streaming: true, highlighter: this.look.highlighter, mathRenderer: this.look.mathRenderer, linkTarget: this.look.linkTarget });
       this.markdown.class.add('mx-chat__thinking-text');
       this.body.controls.insert(0, this.markdown);
     }

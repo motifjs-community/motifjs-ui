@@ -156,6 +156,7 @@ export { parseAccessKey, renderAccessKey, type ParsedAccessKey } from './core/ac
 export type { IconSource } from './core/icon-source';
 export type { ControlSize } from './core/control-size';
 export type { InputMode } from './core/input-mode';
+export type { EnterKeyHint } from './core/enter-key-hint';
 export { connectDocument, disconnectDocument, pageDocuments } from './core/page-documents';
 export { mirrorPage } from './core/mirror-page';
 export { datePatternOf } from './parts/dates/date-pattern-of';

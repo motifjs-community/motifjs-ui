@@ -54,7 +54,9 @@ return () => {
 | runs once after the wait | ✓ | ✓ |
 | runs once for many calls | × | ✓ |
 
-The two other callers (\`search.ts\`, \`resize.ts\`) need no change.`;
+The two other callers (\`search.ts\`, \`resize.ts\`) need no change.[^1]`;
+
+const NOTE = '[^1]: Both already wait for the last call: `search.ts` through its own timer, `resize.ts` through `requestAnimationFrame`.';
 
 /** The to-do list with `done` tasks done and the next one under way. */
 function tasks(done: number): ChatTodoItem[] {
@@ -137,7 +139,7 @@ export class FakeModel implements Model {
         yield* this.call('todo', { items: tasks(3) }, signal);
         return;
       default:
-        yield* this.say('text', `${ANSWER}\n\nIt now runs ${timing}.`, signal);
+        yield* this.say('text', `${ANSWER}\n\nIt now runs ${timing}.\n\n${NOTE}`, signal);
     }
   }
 

@@ -19,16 +19,16 @@ const URL_CHAR = /^[A-Za-z0-9:/.-]$/;
 /** What ends an address written bare but is not part of it. */
 const TRAILING = /[?!.,:;*_~'"]+$/;
 
-type FrameKind = 'root' | 'strong' | 'em' | 'del' | 'code' | 'autolink';
+type FrameKind = 'root' | 'strong' | 'em' | 'del' | 'code' | 'autolink' | 'math';
 
 interface Frame {
   kind: FrameKind;
   host: ComponentBase;
-  /** The delimiter that opened it (`*`, `_`, `~`, `` ` ``). */
+  /** The delimiter that opened it (`*`, `_`, `~`, `` ` ``, `$`). */
   mark: string;
   /** How many backticks opened a code span. */
   count: number;
-  /** The address of a link written bare, as it grows. */
+  /** The address of a link written bare, or the TeX of math, as it grows. */
   url: string;
 }
 
@@ -47,7 +47,8 @@ type Pending =
   | { kind: 'ticks'; count: number }
   | { kind: 'escape' }
   | { kind: 'entity'; text: string }
-  | { kind: 'close'; bracket: Bracket };
+  | { kind: 'close'; bracket: Bracket }
+  | { kind: 'dollar' };
 
 /** A link made at `](`: its address and title come next, and are not text. */
 interface LinkTail {
@@ -66,14 +67,17 @@ const TAGS: Record<Exclude<FrameKind, 'root'>, [string, string]> = {
   em: ['em', 'mx-markdown__em'],
   del: ['del', 'mx-markdown__del'],
   code: ['code', 'mx-markdown__code'],
-  autolink: ['a', 'mx-markdown__link']
+  autolink: ['a', 'mx-markdown__link'],
+  math: ['span', 'mx-markdown__math']
 };
 
 /**
  * Writes the inline content of one block (a paragraph, a heading, a table cell) as it arrives. Every character is on
  * screen when it is taken. A character whose meaning is not known yet (`*`, `` ` ``, `[`, `\`, `&`) stays as text at
  * the end of the run; once the next one decides, the marker leaves the run and the element is made, or it simply
- * stays text. An element, once made, is never made again: what follows goes into it until it closes.
+ * stays text. An element, once made, is never made again: what follows goes into it until it closes. With a math
+ * door, `$` followed by text opens math: its TeX shows as it is written, and the closing `$` has the door draw it in
+ * its place; math still open at the line's end stays text. `[^label]` refers to a footnote.
  */
 export class InlineWriter {
   private readonly frames: Frame[];
@@ -135,6 +139,7 @@ export class InlineWriter {
       this.resolve(p, LINE);
     }
     if (this.top.kind === 'autolink') this.endAutolink();
+    if (this.top.kind === 'math') this.pop();
     if (this.top.kind === 'code') {
       this.append(' ');
       this.prev = ' ';
@@ -239,6 +244,10 @@ export class InlineWriter {
           return true;
         }
         this.brackets = this.brackets.filter((b) => b !== p.bracket);
+        this.footnoteRef(p.bracket);
+        return false;
+      case 'dollar':
+        this.dollar(after);
         return false;
     }
   }
@@ -248,6 +257,14 @@ export class InlineWriter {
     if (top.kind === 'code') {
       this.append(c);
       if (c === '`') this.pending = { kind: 'ticks', count: 1 };
+      this.prev = c;
+      return;
+    }
+    if (top.kind === 'math') {
+      this.append(c);
+      // A `$` after the TeX's last letter may close it; one after a space or a `\` is TeX.
+      if (c === '$' && top.url && !SPACE.test(this.prev) && this.prev !== '\\') this.pending = { kind: 'dollar' };
+      else top.url += c;
       this.prev = c;
       return;
     }
@@ -282,6 +299,12 @@ export class InlineWriter {
       case '&':
         this.append(c);
         this.pending = { kind: 'entity', text: '&' };
+        this.word = '';
+        return;
+      case '$':
+        if (!this.context.settings.mathRenderer) break;
+        this.append(c);
+        this.pending = { kind: 'dollar' };
         this.word = '';
         return;
       case '[':
@@ -354,6 +377,52 @@ export class InlineWriter {
     }
     // What a closing run did not use is text after the element it closed.
     if (closed && rest > 0) this.append(ch.repeat(rest));
+  }
+
+  /**
+   * A `$` opens math when text follows it; the math keeps the `$` on screen until it is drawn. In math, a `$` closes it
+   * unless a digit follows (`$5`), and the door draws the TeX in its place; with nothing drawn the text stays as written.
+   */
+  private dollar(after: string): void {
+    const top = this.top;
+    this.prev = '$';
+    if (top.kind === 'math') {
+      if (after >= '0' && after <= '9') {
+        top.url += '$';
+        return;
+      }
+      this.pop();
+      const drawn = this.context.math(top.url, false);
+      if (!drawn) return;
+      for (const node of [...top.host.controls.items]) removePart(node);
+      top.host.controls.add(drawn);
+      put(top.host, 'data-drawn', '');
+      return;
+    }
+    if (after === END || SPACE.test(after) || after === '$') return;
+    this.trim(1);
+    this.push('math', '$');
+    this.append('$');
+  }
+
+  /**
+   * `[^label]` with no `(` after it refers to a footnote: it leaves the text and the footnote's number takes its place,
+   * raised, a link to the note.
+   */
+  private footnoteRef(bracket: Bracket): void {
+    const run = bracket.run;
+    if (bracket.image || run !== this.run) return;
+    const label = run.value.slice(bracket.at + 1, -1);
+    if (!/^\^[^\s\]]+$/.test(label)) return;
+    const host = this.frames[bracket.frame].host;
+    const items = host.controls.items;
+    if (items[items.length - 1] !== run.node) return;
+    this.trim(run.value.length - bracket.at);
+    const note = this.context.footnote(label.slice(1));
+    const link = part<HTMLAnchorElement>(part(host, 'sup', 'mx-markdown__footnote-ref'), 'a', 'mx-markdown__footnote-link');
+    textPart(link, String(note.number));
+    this.context.footnoteLink(link, note, false);
+    this.run = null;
   }
 
   /** Backticks open a code span when something follows them, and close the one they match in length. */

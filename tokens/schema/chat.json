@@ -1,6 +1,6 @@
 {
   "chat": {
-    "$description": "Chat: a conversation drawn by turn (the user's question, then what the model did, each part with a dot), the line under it while a reply is written, the queue above the box, the button to older messages and the one back to the latest.",
+    "$description": "Chat: a conversation drawn by turn (the user's question, then what the model did, each part with a dot), the line under it while a reply is written, the queue above the box, the button to older messages and the one back to the latest, and the search at the top.",
     "$selector": ".mx-chat",
     "turns-gap": {
       "$type": "dimension",
@@ -148,6 +148,36 @@
           "tone",
           "size"
         ]
+      },
+      "search-previous": {
+        "$description": "The search's button to the result above.",
+        "selector": ".mx-chat__search > .mx-chat__search-previous",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "search-next": {
+        "$description": "The search's button to the result below.",
+        "selector": ".mx-chat__search > .mx-chat__search-next",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "search-close": {
+        "$description": "The button that closes the search.",
+        "selector": ".mx-chat__search > .mx-chat__search-close",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
       }
     },
     "$units": {
@@ -156,8 +186,23 @@
         "selector": ".mx-chat__list"
       },
       "turn": {
-        "$description": "A turn: the space between the question and the flow.",
-        "selector": ".mx-chat__turn"
+        "$description": "A turn, an article of the feed: the space between the question and the flow; `focus` (Page Down and Page Up go from turn to turn).",
+        "selector": ".mx-chat__turn",
+        "states": {
+          "focus": ".mx-chat__turn:focus-visible"
+        }
+      },
+      "search": {
+        "$description": "The search at the top: its box, the count and the buttons in a row.",
+        "selector": ".mx-chat__search"
+      },
+      "search-count": {
+        "$description": "Which result shows of how many.",
+        "selector": ".mx-chat__search-count"
+      },
+      "found": {
+        "$description": "What shows the result of the search shown: a paragraph, a heading, a code block, a table row, a question's box.",
+        "selector": ".mx-chat [data-found]"
       },
       "question": {
         "$description": "The user's question: its time and actions, its box, the button for the rest.",

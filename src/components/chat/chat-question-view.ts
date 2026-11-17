@@ -2,6 +2,7 @@ import type { Component } from '@motifx/core';
 import { loose, part, removePart } from '../../core/draw-parts';
 import { glyph } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
+import { nextId } from '../../core/next-id';
 import { kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
@@ -23,6 +24,8 @@ const LONG_LENGTH = 400;
  */
 export class ChatQuestionView {
   readonly row: Component<HTMLDivElement>;
+  /** The id of the box with its text, which names the turn; `''` when it has no text. */
+  readonly bubbleId: string = '';
   private readonly time: Component<HTMLDivElement>;
   private readonly bubble: Component<HTMLDivElement>;
   private readonly files: Component<HTMLDivElement> | null = null;
@@ -54,6 +57,10 @@ export class ChatQuestionView {
     this.bubble = part<HTMLDivElement>(this.row, 'div', 'mx-chat__bubble');
     text(this.bubble, said);
     kept(this.bubble, !!said);
+    if (said) {
+      this.bubbleId = nextId('chat-question');
+      put(this.bubble, 'id', this.bubbleId);
+    }
     const files = message.parts.filter((p) => p.kind === 'attachment');
     if (files.length) {
       this.files = part<HTMLDivElement>(this.row, 'div', 'mx-chat__files');
@@ -73,6 +80,15 @@ export class ChatQuestionView {
       this.row.controls.add(this.more);
     }
     this.drawTexts();
+  }
+
+  /** The box with its text, for a search: a long one opens, to show what was found. */
+  found(): Component<HTMLDivElement> {
+    if (this.more && !this.expanded) {
+      this.expanded = true;
+      this.drawTexts();
+    }
+    return this.bubble;
   }
 
   drawTexts(): void {

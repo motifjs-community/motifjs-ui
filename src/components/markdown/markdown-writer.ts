@@ -1,11 +1,12 @@
 import type { ComponentBase } from '@motifx/core';
-import { glyphPart, part, removePart } from '../../core/draw-parts';
+import { glyphPart, part, removePart, textPart } from '../../core/draw-parts';
 import { onLanguage } from '../../core/on-language';
 import { flag, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { CodeBlock } from './code-block';
 import { InlineWriter } from './inline-writer';
 import type { MarkdownContext } from './markdown-context';
+import { MathBlock } from './math-block';
 import type { TextRun } from './text-run';
 
 /** A block that holds blocks: the root, a quote, a list, an item. */
@@ -23,11 +24,12 @@ interface Container {
 
 /** The block that takes the line's text. */
 interface Leaf {
-  kind: 'paragraph' | 'heading' | 'code' | 'table';
+  kind: 'paragraph' | 'heading' | 'code' | 'table' | 'math';
   depth: number;
   inline: InlineWriter | null;
   code: CodeBlock | null;
   table: Table | null;
+  math?: MathBlock;
 }
 
 interface Table {
@@ -48,7 +50,7 @@ interface Shown {
 
 /** The start of a line whose block the next characters decide (`#`, `-`, `1.`, ```` ``` ````, `|`, `[ ]`). */
 interface Tail {
-  kind: 'heading' | 'fence' | 'marker' | 'ordered' | 'row' | 'delimiter' | 'task';
+  kind: 'heading' | 'fence' | 'marker' | 'ordered' | 'row' | 'delimiter' | 'task' | 'footnote' | 'dollars';
   text: string;
   ch: string;
   count: number;
@@ -64,9 +66,17 @@ interface Header {
   text: string;
   depth: number;
   shown: Shown;
+  /** Where its line starts in the text. */
+  at: number;
 }
 
-type Phase = 'prefix' | 'tail' | 'item' | 'content' | 'info' | 'code' | 'cell';
+/** A block drawn, and where its first line starts in the text. */
+interface Block {
+  at: number;
+  part: ComponentBase;
+}
+
+type Phase = 'prefix' | 'tail' | 'item' | 'content' | 'info' | 'code' | 'cell' | 'math';
 
 /**
  * Writes markdown into `root` as it arrives, one character at a time, and never draws a part again. A line's
@@ -91,6 +101,12 @@ export class MarkdownWriter {
   private fence = { ch: '', count: 0, indent: 0 };
   private itemIndent = 0;
   private itemSpaces = 0;
+  /** Where the text written so far ends, and where the line being written starts. */
+  private at = 0;
+  private lineAt = 0;
+  private readonly blocks: Block[] = [];
+  /** The list of the footnotes written last: a note right after it goes on in it. */
+  private notes: ComponentBase | null = null;
 
   constructor(private readonly context: MarkdownContext, root: ComponentBase) {
     this.containers = [{ kind: 'root', host: root, ordered: false, marker: '', indent: 0, fresh: false }];
@@ -98,8 +114,30 @@ export class MarkdownWriter {
 
   /** Writes `text`; the text nodes it grew are written once, at the end. */
   write(text: string): void {
-    for (const c of text) if (c !== '\r') this.char(c);
+    for (const c of text) {
+      if (c !== '\r') this.char(c);
+      this.at += c.length;
+      if (c === '\n') this.lineAt = this.at;
+    }
     this.context.flush();
+  }
+
+  /** The block drawn for the character at `index` of the text: the last one that starts at or before it. */
+  blockAt(index: number): ComponentBase | null {
+    const blocks = this.blocks;
+    let low = 0;
+    let high = blocks.length - 1;
+    let found: Block | null = null;
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (blocks[mid].at <= index) {
+        found = blocks[mid];
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return found && !found.part.isDisposed ? found.part : null;
   }
 
   /** The text is complete: the last line ends, and what waits is decided as at any line's end. */
@@ -127,6 +165,9 @@ export class MarkdownWriter {
         return;
       case 'code':
         this.leaf!.code!.write(c);
+        return;
+      case 'math':
+        this.leaf!.math!.write(c);
         return;
       case 'info':
         if (c === this.fence.ch && !this.leaf!.code!.info) this.fence.count++;
@@ -172,6 +213,12 @@ export class MarkdownWriter {
       case 'info':
         this.leaf!.code!.infoEnd();
         break;
+      case 'math': {
+        const math = this.leaf!.math!;
+        if (math.ends()) this.closeLeaf();
+        else math.lineEnd();
+        break;
+      }
       case 'cell': {
         const table = this.leaf!.table!;
         table.cell?.close();
@@ -232,6 +279,14 @@ export class MarkdownWriter {
   /** The first character of the line after its containers: it goes on in the open block, or starts one. */
   private blockStart(c: string): void {
     const leaf = this.leaf;
+    if (leaf?.math) {
+      if (leaf.depth === this.matched && this.matched === this.containers.length - 1) {
+        this.phase = 'math';
+        leaf.math.write(c);
+        return;
+      }
+      this.closeLeaf();
+    }
     if (leaf?.code) {
       if (leaf.depth === this.matched && this.matched === this.containers.length - 1) {
         this.phase = 'code';
@@ -279,6 +334,13 @@ export class MarkdownWriter {
           return;
         case '|':
           this.startTail('row', c);
+          return;
+        case '[':
+          this.startTail('footnote', c);
+          return;
+        case '$':
+          if (!this.context.settings.mathRenderer) break;
+          this.startTail('dollars', c);
           return;
         default:
           if (c >= '0' && c <= '9') {
@@ -363,6 +425,33 @@ export class MarkdownWriter {
         }
         this.delimiterFailed(c);
         return;
+      case 'footnote':
+        // `[^label]:` defines a footnote; anything else is a paragraph's text (a link, a reference).
+        if (tail.text.length === 1) {
+          if (c === '^') {
+            this.grow(c);
+            return;
+          }
+          break;
+        }
+        if (!tail.delim) {
+          if (c === ']' && tail.text.length > 2) tail.delim = c;
+          else if (c === ']' || c === '[' || space) break;
+          this.grow(c);
+          return;
+        }
+        if (c === ':') {
+          this.openFootnote(tail.text.slice(2, -1));
+          return;
+        }
+        break;
+      case 'dollars':
+        if (c === '$') {
+          this.grow(c);
+          this.openMath();
+          return;
+        }
+        break;
       case 'task':
         if (tail.text.length === 1 && (c === ' ' || c === 'x' || c === 'X')) {
           this.grow(c);
@@ -404,7 +493,7 @@ export class MarkdownWriter {
       case 'row':
         this.tail = null;
         this.reveal(tail.shown, '\n');
-        this.header = { text: tail.text, depth: this.matched, shown: tail.shown };
+        this.header = { text: tail.text, depth: this.matched, shown: tail.shown, at: this.lineAt };
         return;
       case 'delimiter':
         this.delimiterEnd();
@@ -464,7 +553,9 @@ export class MarkdownWriter {
     if (leaf?.kind !== 'paragraph') {
       this.closeLeaf();
       this.popTo(this.matched);
-      leaf = this.leaf = { kind: 'paragraph', depth: this.matched, inline: new InlineWriter(this.context, part(this.place(), 'p', 'mx-markdown__paragraph')), code: null, table: null };
+      const paragraph = part(this.place(), 'p', 'mx-markdown__paragraph');
+      this.blocks.push({ at: this.lineAt, part: paragraph });
+      leaf = this.leaf = { kind: 'paragraph', depth: this.matched, inline: new InlineWriter(this.context, paragraph), code: null, table: null };
     }
     this.phase = 'content';
     this.skipSpaces = false;
@@ -476,6 +567,7 @@ export class MarkdownWriter {
     this.closeLeaf();
     this.popTo(this.matched);
     const heading = part(this.place(), `h${level}`, `mx-markdown__h${level}`);
+    this.blocks.push({ at: this.lineAt, part: heading });
     this.leaf = { kind: 'heading', depth: this.matched, inline: new InlineWriter(this.context, heading), code: null, table: null };
     this.phase = 'content';
     this.skipSpaces = true;
@@ -486,15 +578,55 @@ export class MarkdownWriter {
     this.closeLeaf();
     this.popTo(this.matched);
     this.fence = { ch: tail.ch, count: 3, indent: tail.indent };
-    this.leaf = { kind: 'code', depth: this.matched, inline: null, code: new CodeBlock(this.context, this.place()), table: null };
+    const code = new CodeBlock(this.context, this.place());
+    this.blocks.push({ at: this.lineAt, part: code.frame });
+    this.leaf = { kind: 'code', depth: this.matched, inline: null, code, table: null };
     this.phase = 'info';
+  }
+
+  /** `$$` at a line's start opens display math, up to a line that ends with `$$`. */
+  private openMath(): void {
+    this.takeTail();
+    this.closeLeaf();
+    this.popTo(this.matched);
+    const math = new MathBlock(this.context, this.place());
+    this.blocks.push({ at: this.lineAt, part: math.frame });
+    this.leaf = { kind: 'math', depth: this.matched, inline: null, code: null, table: null, math };
+    this.phase = 'math';
+  }
+
+  /**
+   * `[^label]:` writes a footnote's note: an item of the list of footnotes (the one right before it, or a new one) that
+   * opens with a link back to the first reference; its paragraph goes on in lines indented under it.
+   */
+  private openFootnote(label: string): void {
+    this.takeTail();
+    this.closeLeaf();
+    this.popTo(this.matched);
+    const host = this.place();
+    const items = host.controls.items;
+    if (!this.notes || items[items.length - 1] !== this.notes) this.notes = part(host, 'ol', 'mx-markdown__footnotes');
+    const list = this.notes;
+    const note = this.context.footnote(label);
+    const item = part(list, 'li', 'mx-markdown__footnote');
+    this.context.footnoteNote(note, item);
+    this.blocks.push({ at: this.lineAt, part: item });
+    this.containers.push({ kind: 'list', host: list, ordered: true, marker: '^', indent: 0, fresh: false });
+    this.containers.push({ kind: 'item', host: item, ordered: true, marker: '^', indent: 4, fresh: false });
+    this.matched = this.containers.length - 1;
+    this.indent = 0;
+    this.toParagraph('');
+    const back = part<HTMLAnchorElement>(this.leaf!.inline!.host, 'a', 'mx-markdown__footnote-back');
+    textPart(back, '\u21a9');
+    this.context.footnoteLink(back, note, true);
+    this.skipSpaces = true;
   }
 
   private openRule(): void {
     this.takeTail();
     this.closeLeaf();
     this.popTo(this.matched);
-    part(this.place(), 'hr', 'mx-markdown__rule');
+    this.blocks.push({ at: this.lineAt, part: part(this.place(), 'hr', 'mx-markdown__rule') });
   }
 
   private openQuote(): void {
@@ -585,6 +717,7 @@ export class MarkdownWriter {
     const aligns = marks.map((m) => (m.startsWith(':') && m.endsWith(':') ? 'center' : m.endsWith(':') ? 'end' : m.startsWith(':') ? 'start' : ''));
     const host = part(this.place(), 'table', 'mx-markdown__table');
     const row = part(part(host, 'thead', 'mx-markdown__head'), 'tr', 'mx-markdown__row');
+    this.blocks.push({ at: header.at, part: row });
     heads.forEach((text, i) => {
       const cell = part(row, 'th', 'mx-markdown__cell');
       if (aligns[i]) put(cell, 'data-align', aligns[i]);
@@ -622,6 +755,7 @@ export class MarkdownWriter {
   private rowStart(table: Table): void {
     table.body ??= part(table.host, 'tbody', 'mx-markdown__body');
     table.row = part(table.body, 'tr', 'mx-markdown__row');
+    this.blocks.push({ at: this.lineAt, part: table.row });
     table.cell = null;
     table.column = 0;
     this.phase = 'cell';
@@ -677,8 +811,8 @@ export class MarkdownWriter {
     let depth = this.matched;
     if (this.matching) while (this.containers[depth + 1]?.kind === 'list') depth += 2;
     const leaf = this.leaf;
-    if (leaf?.code && leaf.depth === depth && depth === this.containers.length - 1) {
-      leaf.code.lineEnd();
+    if ((leaf?.code || leaf?.math) && leaf.depth === depth && depth === this.containers.length - 1) {
+      (leaf.code ?? leaf.math)!.lineEnd();
       return;
     }
     this.closeLeaf();
@@ -691,6 +825,7 @@ export class MarkdownWriter {
     this.leaf = null;
     leaf.inline?.close();
     leaf.code?.close();
+    leaf.math?.close();
     if (leaf.table?.cell) {
       leaf.table.cell.close();
       leaf.table.cell = null;

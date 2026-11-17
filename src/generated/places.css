@@ -243,6 +243,27 @@
     --_button-size: var(--mx-chat-ask-submit-size);
   }
 
+  /* chat: search-previous — The search's button to the result above. */
+  .mx-chat__search > .mx-chat__search-previous {
+    --_button-variant: var(--mx-chat-search-previous-variant);
+    --_button-tone: var(--mx-chat-search-previous-tone);
+    --_button-size: var(--mx-chat-search-previous-size);
+  }
+
+  /* chat: search-next — The search's button to the result below. */
+  .mx-chat__search > .mx-chat__search-next {
+    --_button-variant: var(--mx-chat-search-next-variant);
+    --_button-tone: var(--mx-chat-search-next-tone);
+    --_button-size: var(--mx-chat-search-next-size);
+  }
+
+  /* chat: search-close — The button that closes the search. */
+  .mx-chat__search > .mx-chat__search-close {
+    --_button-variant: var(--mx-chat-search-close-variant);
+    --_button-tone: var(--mx-chat-search-close-tone);
+    --_button-size: var(--mx-chat-search-close-size);
+  }
+
   /* checkbox: field — The field under a check box or a switch: the box and its caption side by side, no text-field frame. */
   .mx-toggle-field {
     --_field-variant: var(--mx-checkbox-field-variant);

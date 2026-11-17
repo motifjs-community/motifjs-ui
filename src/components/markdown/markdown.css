@@ -22,14 +22,17 @@
       .mx-markdown__block,
       .mx-markdown__pre,
       .mx-markdown__rule,
-      .mx-markdown__table
+      .mx-markdown__table,
+      .mx-markdown__math-block,
+      .mx-markdown__footnotes
     ) {
     margin: 0;
   }
 
   .mx-markdown > * + *,
   .mx-markdown__quote > * + *,
-  .mx-markdown__item > * + * {
+  .mx-markdown__item > * + *,
+  .mx-markdown__footnote > * + * {
     margin-block-start: var(--_markdown-flow-gap);
   }
 
@@ -107,5 +110,29 @@
   .mx-markdown__img {
     max-inline-size: 100%;
     block-size: auto;
+  }
+
+  /* Display math, and math drawn in a code block's place: centred, scrolling sideways when wider than the text. The
+     TeX not drawn yet reads as written, from the start. */
+  .mx-markdown__math-block,
+  .mx-markdown__block[data-drawn='math'] {
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .mx-markdown__math-text {
+    display: block;
+    text-align: start;
+  }
+
+  /* A diagram drawn in the code's place fits the width, and scrolls sideways when it cannot. */
+  .mx-markdown__block[data-drawn='diagram'] > :not(.mx-markdown__code-header) {
+    max-inline-size: 100%;
+    overflow-x: auto;
+  }
+
+  /* A footnote's number is raised without making its line taller. */
+  .mx-markdown__footnote-ref {
+    vertical-align: super;
   }
 }

@@ -46,6 +46,7 @@ const PROPS = [
   ['validateOn', '`Bind<ValidateOn>`', "`'blur'`", '`blur`, `input`, `manual`.'],
   ['validationGroup', '`Bind<ValidationGroup | null>`', '—', 'The group the field is validated with.'],
   ['inputMode, autocomplete, spellcheck, name', '`Bind<…>`', '—', 'Passed to the `<input>`.'],
+  ['enterKeyHint', '`Bind<EnterKeyHint>`', '—', 'What the Enter key of an on-screen keyboard says: `enter`, `done`, `go`, `next`, `previous`, `search` or `send`. It does not change what Enter does.'],
   ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 

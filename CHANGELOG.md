@@ -36,6 +36,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   back to before it (`rewind`; `onRewind` can keep it); with `onFork` it opens another conversation from there. A
   reply is copied as markdown, and a failed or stopped last reply is tried again with `onRetry`. With a pointer the
   buttons show on hover or focus.
+- `Chat`: Ctrl+F opens a search over every message, the turns off the page too (`openSearch`, `closeSearch`, `find`,
+  `findNext`, `findPrevious`). The result nearest the end shows first; going to a result draws its turn and marks the
+  block that holds it (`data-found`).
+- `Chat` for keyboards and screen readers: the turns are a feed, each an article named by its question with its place
+  in the whole conversation and busy while its reply is written; Page Down and Page Up go from turn to turn, Ctrl+End
+  to the box. Screen readers hear when a reply ends, stops, fails or waits.
+- `Chat` on phones: an on-screen keyboard over the chat's end gives it room there, and it keeps clear of the home
+  indicator and the notch. On a touch screen Enter starts a new line in the composer and the button sends.
+- `Chat`: `mathRenderer` and `diagramRenderer`, passed to the markdown of its messages.
 - `ChatComposer`: the message box and its tools in one field, used by `Chat` (`composer`) or alone. Files are picked,
   pasted or dropped, shown as chips (images as small pictures) and sent with the message (`attachments`, `accept`);
   context chips turn on and off (`contextItems`, `onContextChanged`); `/` opens the commands (`commands`) and `@` the
@@ -51,7 +60,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   it.
 - `TextArea`: `submitOnEnter`, where Enter raises `onEnter` and Shift+Enter starts a new line; an input method's Enter
   never raises it. `selectionStart`, `selectionEnd` and `setSelectionRange()`.
-- The kit glyphs `send` and `stop`, and the kit strings of the chat (`chatLabel` … `chatCompacted`).
+- `TextArea` and `TextBox`: `enterKeyHint` (`EnterKeyHint`), what the Enter key of an on-screen keyboard says.
+- `Markdown`: footnotes. `[^1]` is the note's number, raised, a link to its note (`[^1]: text`, drawn where it is
+  written), and the note links back. `mathRenderer` (`MathRenderer`) draws `$…$`, `$$…$$` and `math` blocks, and
+  `diagramRenderer` (`DiagramRenderer`) draws fenced blocks in its languages (`mermaid`), at once or by a promise: their
+  text shows as it arrives and what the door draws takes its place once it is complete. Without a door, `$` is text.
+  `blockAt(index)` gives the block drawn for a character of the text.
+- `WindowList.reveal(item, then?, align?)`: brings an item into view, making its part when it has none.
+- The kit glyphs `send` and `stop`, the kit strings of the chat (`chatLabel` … `chatSearchNext`) and
+  `markdownFootnote`, `markdownFootnoteBack`.
 
 ### Changed
 

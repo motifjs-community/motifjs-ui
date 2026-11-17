@@ -1,20 +1,24 @@
-import { Emitter, errorHandler, type Bind, type Component, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, errorHandler, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import { clearParts } from '../../core/draw-parts';
 import { functionValue } from '../../core/function-value';
 import { put } from '../../core/part-writes';
 import type { CodeHighlighter } from './code-highlighter';
+import type { DiagramRenderer } from './diagram-renderer';
 import { MarkdownContext, type MarkdownSettings } from './markdown-context';
 import type { MarkdownLinkClickEventArgs } from './markdown-link-click-event-args';
 import type { MarkdownProps } from './markdown-props';
 import { MarkdownWriter } from './markdown-writer';
+import type { MathRenderer } from './math-renderer';
 
-const OWN = ['streaming', 'highlighter', 'images', 'linkTarget', 'copyButton'] as const;
+const OWN = ['streaming', 'highlighter', 'mathRenderer', 'diagramRenderer', 'images', 'linkTarget', 'copyButton'] as const;
 
 /**
  * Draws markdown, all of it at once or as it arrives. Every character is on screen the moment it is written: a mark
  * whose meaning is not known yet (`**`, `#`, `|`) shows as text at the end until it is, then its element is made and
- * the text goes on into it. Nothing drawn is ever drawn again, neither while the text grows nor when it ends.
+ * the text goes on into it. Nothing drawn is ever drawn again, neither while the text grows nor when it ends; what a
+ * door draws (math, a diagram) takes the place of its text once the text is complete. Footnotes (`[^1]`) are numbered
+ * links to their notes, and back.
  *
  * @example
  * <Markdown text={() => this.answer.text} streaming={() => this.answer.busy} />
@@ -63,6 +67,18 @@ export class Markdown extends Control<HTMLDivElement, MarkdownProps> implements 
   }
   set highlighter(value: Bind<CodeHighlighter | null>) {
     this.assignProperty('highlighter', value);
+  }
+  get mathRenderer(): MathRenderer | null {
+    return this.getProperty<MathRenderer | null | undefined>('mathRenderer') ?? null;
+  }
+  set mathRenderer(value: Bind<MathRenderer | null>) {
+    this.assignProperty('mathRenderer', value);
+  }
+  get diagramRenderer(): DiagramRenderer | null {
+    return this.getProperty<DiagramRenderer | null | undefined>('diagramRenderer') ?? null;
+  }
+  set diagramRenderer(value: Bind<DiagramRenderer | null>) {
+    this.assignProperty('diagramRenderer', value);
   }
   get images(): boolean {
     return this.getProperty<boolean | undefined>('images') === true;
@@ -125,6 +141,14 @@ export class Markdown extends Control<HTMLDivElement, MarkdownProps> implements 
     this.writer.end();
   }
 
+  /**
+   * The block drawn for the character at `index` of the text (a paragraph, heading, code block, rule or table row): the
+   * last one that starts at or before it. `null` before the first, or while the text has not reached it.
+   */
+  blockAt(index: number): ComponentBase | null {
+    return index < this.written.length ? this.writer.blockAt(index) : null;
+  }
+
   /** Removes everything, to start a new text. */
   clear(): void {
     this.restart();
@@ -174,6 +198,7 @@ export class Markdown extends Control<HTMLDivElement, MarkdownProps> implements 
 
   private restart(): void {
     clearParts(this);
+    this.drawing.reset();
     this.writer = new MarkdownWriter(this.drawing, this);
     this.written = '';
     this.ended = false;

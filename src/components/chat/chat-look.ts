@@ -1,4 +1,6 @@
 import type { CodeHighlighter } from '../markdown/code-highlighter';
+import type { DiagramRenderer } from '../markdown/diagram-renderer';
+import type { MathRenderer } from '../markdown/math-renderer';
 import type { ChatMessage } from './chat-message';
 import type { ChatAnswer, ChatQuestionsPart, ChatRequestPart } from './chat-request';
 import type { ChatTurn } from './chat-turn';
@@ -6,6 +8,8 @@ import type { ChatTurn } from './chat-turn';
 /** What the parts of a turn take from the chat when they are made, and where the user's answers go. */
 export interface ChatLook {
   highlighter: CodeHighlighter | null;
+  mathRenderer: MathRenderer | null;
+  diagramRenderer: DiagramRenderer | null;
   linkTarget: string;
   /** A time of day, as the chat writes it in the kit language. */
   time(date: Date): string;

@@ -1,4 +1,4 @@
-import type { Component } from '@motifx/core';
+import type { Component, ComponentBase } from '@motifx/core';
 import { part } from '../../core/draw-parts';
 import { text } from '../../core/part-writes';
 import { Markdown } from '../markdown/Markdown';
@@ -16,7 +16,14 @@ export class ChatTextEntry implements ChatEntry {
     const { row, main } = entryFrame('text');
     this.row = row;
     if (date) this.time = part<HTMLDivElement>(main, 'div', 'mx-chat__time');
-    this.markdown = new Markdown({ text: textPart.text, streaming: open, highlighter: look.highlighter, linkTarget: look.linkTarget });
+    this.markdown = new Markdown({
+      text: textPart.text,
+      streaming: open,
+      highlighter: look.highlighter,
+      mathRenderer: look.mathRenderer,
+      diagramRenderer: look.diagramRenderer,
+      linkTarget: look.linkTarget
+    });
     this.markdown.class.add('mx-chat__text');
     main.controls.add(this.markdown);
     this.drawTexts();
@@ -27,6 +34,10 @@ export class ChatTextEntry implements ChatEntry {
   }
 
   update(): void {}
+
+  found(index: number): ComponentBase | null {
+    return this.markdown.blockAt(index);
+  }
 
   /** The text is complete: what is still pending takes its form. */
   end(): void {

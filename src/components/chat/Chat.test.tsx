@@ -35,6 +35,8 @@ const kinds = (chat: Component) => $$(chat, '.mx-chat__flow > .mx-chat__entry').
 const area = (chat: Chat) => $(chat, 'textarea') as HTMLTextAreaElement;
 const look: ChatLook = {
   highlighter: null,
+  mathRenderer: null,
+  diagramRenderer: null,
   linkTarget: '_blank',
   time: () => '10:00',
   answer: () => {},
@@ -891,5 +893,161 @@ describe('Chat: the view', () => {
     expect(area(chat).placeholder).toBe(enStrings.chatPlaceholder);
     await uiLocale.use('tr');
     expect(area(chat).placeholder).toBe('Mesaj yazın');
+  });
+});
+
+describe('Chat: feed, search and keys', () => {
+  const talk = (): ChatMessage[] => [
+    say('user', 'Fix the bug'),
+    say('assistant', 'The **bug** was here.\n\nAnother paragraph about bugs.'),
+    say('user', 'Thanks'),
+    say('assistant', 'No bug left.')
+  ];
+  const key = (el: HTMLElement, name: string, init: KeyboardEventInit = {}) =>
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init }));
+  const live = (chat: Chat) => $(chat, '.mx-chat__live')!.textContent;
+
+  it('is a feed of turns, each an article named by its question, with its place in it', async () => {
+    const chat = chatOf({ messages: talk() });
+    await settled();
+    expect($(chat, '.mx-chat__list')!.getAttribute('role')).toBe('feed');
+    const turns = $$(chat, '.mx-chat__turn');
+    expect(turns.map((t) => [t.getAttribute('role'), t.getAttribute('aria-posinset'), t.getAttribute('aria-setsize')])).toEqual([
+      ['article', '1', '2'],
+      ['article', '2', '2']
+    ]);
+    expect(turns[0].getAttribute('aria-labelledby')).toBe(turns[0].querySelector('.mx-chat__bubble')!.id);
+    chat.hasOlder = true;
+    expect(turns[1].getAttribute('aria-setsize')).toBe('-1');
+    chat.hasOlder = false;
+    chat.add(say('user', 'More'));
+    expect($$(chat, '.mx-chat__turn').map((t) => t.getAttribute('aria-setsize'))).toEqual(['3', '3', '3']);
+  });
+
+  it('is busy while its reply is written, and says when a reply ends, stops or waits', async () => {
+    const chat = chatOf({ messages: [say('user', 'Hi')] });
+    await settled();
+    const reply = chat.reply();
+    const turn = $$(chat, '.mx-chat__turn')[0];
+    expect(turn.getAttribute('aria-busy')).toBe('true');
+    reply.text('Hello');
+    reply.done();
+    await tick();
+    expect(turn.hasAttribute('aria-busy')).toBe(false);
+    expect(live(chat)).toBe(enStrings.chatReplied);
+    chat.reply().stop();
+    await tick();
+    expect(live(chat)).toBe(enStrings.chatStopped);
+    const third = chat.reply();
+    void third.tool({ name: 'Bash', input: 'ls' }).permission();
+    await tick();
+    expect(live(chat)).toBe(enStrings.chatWaitingYou);
+    third.done();
+  });
+
+  it('goes from turn to turn with Page Down and Page Up, and to the box with Ctrl+End', async () => {
+    const chat = chatOf({ messages: talk() });
+    await settled();
+    const turns = $$(chat, '.mx-chat__turn');
+    turns[0].focus();
+    key(turns[0], 'PageDown');
+    await settled();
+    expect(document.activeElement).toBe(turns[1]);
+    key(turns[1], 'PageUp');
+    await settled();
+    expect(document.activeElement).toBe(turns[0]);
+    key(turns[0], 'End', { ctrlKey: true });
+    expect(document.activeElement).toBe(area(chat));
+  });
+
+  it('finds a text in every message and goes through the results, marking the block that shows each', async () => {
+    const chat = chatOf({ messages: talk() });
+    await settled();
+    const found = () => $$(chat, '[data-found]').map((e) => e.textContent);
+    expect(chat.find('BUG')).toBe(4);
+    await settled();
+    expect(found()).toEqual(['No bug left.']);
+    chat.findPrevious();
+    await settled();
+    expect(found()).toEqual(['Another paragraph about bugs.']);
+    chat.findPrevious();
+    await settled();
+    expect(found()).toEqual(['The bug was here.']);
+    chat.findPrevious();
+    await settled();
+    expect(found()).toEqual(['Fix the bug']);
+    expect($(chat, '[data-found]')!.classList.contains('mx-chat__bubble')).toBe(true);
+    chat.findPrevious();
+    await settled();
+    expect(found()).toEqual(['No bug left.']);
+    chat.findNext();
+    await settled();
+    expect(found()).toEqual(['Fix the bug']);
+  });
+
+  it('opens the search with Ctrl+F and searches as the user types: Enter goes up, Shift+Enter down, Escape closes it', async () => {
+    const chat = chatOf({ messages: talk() });
+    await settled();
+    press(chat, 'f', { ctrlKey: true });
+    const bar = $(chat, '.mx-chat__search')!;
+    const box = bar.querySelector('input')!;
+    const count = () => bar.querySelector('.mx-chat__search-count')!.textContent;
+    expect(shown(bar)).toBe(true);
+    expect(document.activeElement).toBe(box);
+    box.value = 'bug';
+    box.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    await settled();
+    expect(count()).toBe('4 of 4');
+    key(box, 'Enter');
+    expect(count()).toBe('3 of 4');
+    key(box, 'Enter', { shiftKey: true });
+    expect(count()).toBe('4 of 4');
+    box.value = 'nothing';
+    box.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    expect(count()).toBe(enStrings.chatSearchNone);
+    key(box, 'Escape');
+    expect(shown(bar)).toBe(false);
+    expect($$(chat, '[data-found]')).toEqual([]);
+    expect(document.activeElement).toBe(area(chat));
+  });
+
+  it('makes room at its end for an on-screen keyboard while the user writes in it', async () => {
+    const visual = Object.assign(new EventTarget(), { offsetLeft: 0, offsetTop: 0, width: 400, height: window.innerHeight });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: visual });
+    try {
+      const chat = chatOf({ messages: [say('user', 'Hi')] });
+      await settled();
+      chat.element.getBoundingClientRect = () => ({ top: 0, bottom: 760, left: 0, right: 400, width: 400, height: 760, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect;
+      area(chat).focus();
+      visual.height = 500;
+      visual.dispatchEvent(new Event('resize'));
+      await settled();
+      expect(chat.element.style.getPropertyValue('--_keyboard')).toBe('260px');
+      area(chat).blur();
+      visual.height = window.innerHeight;
+      visual.dispatchEvent(new Event('resize'));
+      await settled();
+      expect(chat.element.style.getPropertyValue('--_keyboard')).toBe('');
+    } finally {
+      delete (window as { visualViewport?: unknown }).visualViewport;
+    }
+  });
+
+  it('on a touch screen, Enter starts a new line and the button sends', () => {
+    const was = window.matchMedia;
+    const touch = '(hover: none) and (pointer: coarse)';
+    window.matchMedia = ((query: string) => ({ matches: query === touch, media: query, addEventListener: () => {}, removeEventListener: () => {} })) as unknown as typeof window.matchMedia;
+    try {
+      const sent = vi.fn();
+      const chat = chatOf({ onSend: (e) => sent(e.text) });
+      expect(area(chat).getAttribute('enterkeyhint')).toBe('enter');
+      type(chat, 'Hello');
+      press(chat, 'Enter');
+      expect(sent).not.toHaveBeenCalled();
+      $(chat, '.mx-chat-composer__button')!.click();
+      expect(sent).toHaveBeenCalledWith('Hello');
+    } finally {
+      window.matchMedia = was;
+    }
   });
 });

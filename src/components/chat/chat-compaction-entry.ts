@@ -27,7 +27,7 @@ export class ChatCompactionEntry implements ChatEntry {
     part<HTMLSpanElement>(line, 'span', 'mx-chat__compaction-line');
     if (compaction.text) {
       this.body = part<HTMLDivElement>(main, 'div', 'mx-chat__compaction-text');
-      this.body.controls.add(new Markdown({ text: compaction.text, highlighter: look.highlighter, linkTarget: look.linkTarget }));
+      this.body.controls.add(new Markdown({ text: compaction.text, highlighter: look.highlighter, mathRenderer: look.mathRenderer, linkTarget: look.linkTarget }));
       this.head.motif.on('click', () => {
         this.expanded = !this.expanded;
         this.drawOpen();

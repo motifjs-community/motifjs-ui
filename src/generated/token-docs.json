@@ -6650,6 +6650,188 @@
     "value": "0.75rem"
   },
   {
+    "name": "chat.turn.radius",
+    "cssVar": "--mx-chat-turn-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "chat.turn.focus.outline-style",
+    "cssVar": "--mx-chat-turn-focus-outline-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "chat.turn.focus.outline-width",
+    "cssVar": "--mx-chat-turn-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "chat.turn.focus.outline-color",
+    "cssVar": "--mx-chat-turn-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chat.turn.focus.outline-offset",
+    "cssVar": "--mx-chat-turn-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "chat.search.gap",
+    "cssVar": "--mx-chat-search-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "chat.search.padding-inline",
+    "cssVar": "--mx-chat-search-padding-inline",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "chat.search.padding-block",
+    "cssVar": "--mx-chat-search-padding-block",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "chat.search.border-style",
+    "cssVar": "--mx-chat-search-border-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "chat.search.border-bottom-width",
+    "cssVar": "--mx-chat-search-border-bottom-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "chat.search.border-bottom-color",
+    "cssVar": "--mx-chat-search-border-bottom-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "chat.search-count.font-size",
+    "cssVar": "--mx-chat-search-count-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "chat.search-count.line-height",
+    "cssVar": "--mx-chat-search-count-line-height",
+    "type": "dimension",
+    "ref": "font.line.caption",
+    "value": "1rem"
+  },
+  {
+    "name": "chat.search-count.color",
+    "cssVar": "--mx-chat-search-count-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "chat.found.bg",
+    "cssVar": "--mx-chat-found-bg",
+    "type": "color",
+    "ref": "color.caution.subtle",
+    "value": "#fff4ce"
+  },
+  {
+    "name": "chat.found.color",
+    "cssVar": "--mx-chat-found-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chat.found.radius",
+    "cssVar": "--mx-chat-found-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "chat.search-previous.variant",
+    "cssVar": "--mx-chat-search-previous-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "ghost"
+  },
+  {
+    "name": "chat.search-previous.tone",
+    "cssVar": "--mx-chat-search-previous-tone",
+    "type": "keyword",
+    "ref": null,
+    "value": "standard"
+  },
+  {
+    "name": "chat.search-previous.size",
+    "cssVar": "--mx-chat-search-previous-size",
+    "type": "keyword",
+    "ref": null,
+    "value": "sm"
+  },
+  {
+    "name": "chat.search-next.variant",
+    "cssVar": "--mx-chat-search-next-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "ghost"
+  },
+  {
+    "name": "chat.search-next.tone",
+    "cssVar": "--mx-chat-search-next-tone",
+    "type": "keyword",
+    "ref": null,
+    "value": "standard"
+  },
+  {
+    "name": "chat.search-next.size",
+    "cssVar": "--mx-chat-search-next-size",
+    "type": "keyword",
+    "ref": null,
+    "value": "sm"
+  },
+  {
+    "name": "chat.search-close.variant",
+    "cssVar": "--mx-chat-search-close-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "ghost"
+  },
+  {
+    "name": "chat.search-close.tone",
+    "cssVar": "--mx-chat-search-close-tone",
+    "type": "keyword",
+    "ref": null,
+    "value": "standard"
+  },
+  {
+    "name": "chat.search-close.size",
+    "cssVar": "--mx-chat-search-close-size",
+    "type": "keyword",
+    "ref": null,
+    "value": "sm"
+  },
+  {
     "name": "chat.question.gap",
     "cssVar": "--mx-chat-question-gap",
     "type": "dimension",
@@ -18861,6 +19043,20 @@
     "value": "0.375rem"
   },
   {
+    "name": "markdown.code-block.drawn.bg",
+    "cssVar": "--mx-markdown-code-block-drawn-bg",
+    "type": "color",
+    "ref": null,
+    "value": "transparent"
+  },
+  {
+    "name": "markdown.code-block.drawn.border-width",
+    "cssVar": "--mx-markdown-code-block-drawn-border-width",
+    "type": "dimension",
+    "ref": "space.0",
+    "value": "0px"
+  },
+  {
     "name": "markdown.code-header.border-style",
     "cssVar": "--mx-markdown-code-header-border-style",
     "type": "keyword",
@@ -19041,6 +19237,174 @@
     "type": "dimension",
     "ref": "radius.md",
     "value": "0.375rem"
+  },
+  {
+    "name": "markdown.math-block.padding-block",
+    "cssVar": "--mx-markdown-math-block-padding-block",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "markdown.math-text.font-size",
+    "cssVar": "--mx-markdown-math-text-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "markdown.math-text.line-height",
+    "cssVar": "--mx-markdown-math-text-line-height",
+    "type": "dimension",
+    "ref": "font.line.body",
+    "value": "1.25rem"
+  },
+  {
+    "name": "markdown.math-text.white-space",
+    "cssVar": "--mx-markdown-math-text-white-space",
+    "type": "keyword",
+    "ref": null,
+    "value": "pre-wrap"
+  },
+  {
+    "name": "markdown.math-text.color",
+    "cssVar": "--mx-markdown-math-text-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "markdown.footnote-ref.font-size",
+    "cssVar": "--mx-markdown-footnote-ref-font-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.75em"
+  },
+  {
+    "name": "markdown.footnote-ref.line-height",
+    "cssVar": "--mx-markdown-footnote-ref-line-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "0"
+  },
+  {
+    "name": "markdown.footnotes.font-size",
+    "cssVar": "--mx-markdown-footnotes-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "markdown.footnotes.line-height",
+    "cssVar": "--mx-markdown-footnotes-line-height",
+    "type": "dimension",
+    "ref": "font.line.caption",
+    "value": "1rem"
+  },
+  {
+    "name": "markdown.footnotes.color",
+    "cssVar": "--mx-markdown-footnotes-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "markdown.footnotes.padding-start",
+    "cssVar": "--mx-markdown-footnotes-padding-start",
+    "type": "dimension",
+    "ref": "space.6",
+    "value": "1.5rem"
+  },
+  {
+    "name": "markdown.footnotes.padding-top",
+    "cssVar": "--mx-markdown-footnotes-padding-top",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "markdown.footnotes.border-style",
+    "cssVar": "--mx-markdown-footnotes-border-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "markdown.footnotes.border-width",
+    "cssVar": "--mx-markdown-footnotes-border-width",
+    "type": "dimension",
+    "ref": "space.0",
+    "value": "0px"
+  },
+  {
+    "name": "markdown.footnotes.border-top-width",
+    "cssVar": "--mx-markdown-footnotes-border-top-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "markdown.footnotes.border-top-color",
+    "cssVar": "--mx-markdown-footnotes-border-top-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "markdown.footnote.radius",
+    "cssVar": "--mx-markdown-footnote-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "markdown.footnote.focus.outline-style",
+    "cssVar": "--mx-markdown-footnote-focus-outline-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "markdown.footnote.focus.outline-width",
+    "cssVar": "--mx-markdown-footnote-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "markdown.footnote.focus.outline-color",
+    "cssVar": "--mx-markdown-footnote-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "markdown.footnote.focus.outline-offset",
+    "cssVar": "--mx-markdown-footnote-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "markdown.footnote-back.color",
+    "cssVar": "--mx-markdown-footnote-back-color",
+    "type": "color",
+    "ref": "color.accent.fg",
+    "value": "#983318"
+  },
+  {
+    "name": "markdown.footnote-back.text-decoration",
+    "cssVar": "--mx-markdown-footnote-back-text-decoration",
+    "type": "keyword",
+    "ref": null,
+    "value": "none"
+  },
+  {
+    "name": "markdown.footnote-back.margin-end",
+    "cssVar": "--mx-markdown-footnote-back-margin-end",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
   },
   {
     "name": "menu.item-height",

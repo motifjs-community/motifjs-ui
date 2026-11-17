@@ -2005,6 +2005,48 @@
 
   .mx-chat__turn {
     gap: var(--_chat-turn-gap, normal);
+    border-start-start-radius: var(--_chat-turn-radius, 0px);
+    border-start-end-radius: var(--_chat-turn-radius, 0px);
+    border-end-start-radius: var(--_chat-turn-radius, 0px);
+    border-end-end-radius: var(--_chat-turn-radius, 0px);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-chat__turn:focus-visible {
+    outline-style: var(--_chat-turn-focus-outline-style, solid);
+    outline-width: var(--_chat-turn-focus-outline-width, 0px);
+    outline-color: var(--_chat-turn-focus-outline-color, currentcolor);
+    outline-offset: var(--_chat-turn-focus-outline-offset, 0px);
+  }
+
+  .mx-chat__search {
+    padding-block-start: var(--_chat-search-padding-block, 0px);
+    padding-inline-end: var(--_chat-search-padding-inline, 0px);
+    padding-block-end: var(--_chat-search-padding-block, 0px);
+    padding-inline-start: var(--_chat-search-padding-inline, 0px);
+    gap: var(--_chat-search-gap, normal);
+    border-style: var(--_chat-search-border-style, solid);
+    border-block-start-width: 0px;
+    border-inline-end-width: 0px;
+    border-block-end-width: var(--_chat-search-border-bottom-width, 0px);
+    border-inline-start-width: 0px;
+    border-block-end-color: var(--_chat-search-border-bottom-color, currentcolor);
+  }
+
+  .mx-chat__search-count {
+    color: var(--_chat-search-count-color, inherit);
+    font-size: var(--_chat-search-count-font-size, inherit);
+    line-height: var(--_chat-search-count-line-height, inherit);
+  }
+
+  .mx-chat [data-found] {
+    background-color: var(--_chat-found-bg, transparent);
+    border-start-start-radius: var(--_chat-found-radius, 0px);
+    border-start-end-radius: var(--_chat-found-radius, 0px);
+    border-end-start-radius: var(--_chat-found-radius, 0px);
+    border-end-end-radius: var(--_chat-found-radius, 0px);
+    color: var(--_chat-found-color, inherit);
   }
 
   .mx-chat__question {
@@ -6309,6 +6351,14 @@
     border-end-end-radius: var(--_markdown-code-block-radius, 0px);
   }
 
+  .mx-markdown__block[data-drawn='math'] {
+    background-color: var(--_markdown-code-block-drawn-bg, var(--_markdown-code-block-bg, transparent));
+    border-block-start-width: var(--_markdown-code-block-drawn-border-width, var(--_markdown-code-block-border-width, 0px));
+    border-inline-end-width: var(--_markdown-code-block-drawn-border-width, var(--_markdown-code-block-border-width, 0px));
+    border-block-end-width: var(--_markdown-code-block-drawn-border-width, var(--_markdown-code-block-border-width, 0px));
+    border-inline-start-width: var(--_markdown-code-block-drawn-border-width, var(--_markdown-code-block-border-width, 0px));
+  }
+
   .mx-markdown__code-header {
     padding-block-start: var(--_markdown-code-header-padding-block, 0px);
     padding-inline-end: var(--_markdown-code-header-padding-end, 0px);
@@ -6374,6 +6424,59 @@
     border-start-end-radius: var(--_markdown-image-radius, 0px);
     border-end-start-radius: var(--_markdown-image-radius, 0px);
     border-end-end-radius: var(--_markdown-image-radius, 0px);
+  }
+
+  .mx-markdown__math-block {
+    padding-block-start: var(--_markdown-math-block-padding-block, 0px);
+    padding-block-end: var(--_markdown-math-block-padding-block, 0px);
+  }
+
+  .mx-markdown__math-text {
+    color: var(--_markdown-math-text-color, inherit);
+    font-size: var(--_markdown-math-text-font-size, inherit);
+    line-height: var(--_markdown-math-text-line-height, inherit);
+    white-space: var(--_markdown-math-text-white-space, inherit);
+  }
+
+  .mx-markdown__footnote-ref {
+    font-size: var(--_markdown-footnote-ref-font-size, inherit);
+    line-height: var(--_markdown-footnote-ref-line-height, inherit);
+  }
+
+  .mx-markdown__footnotes {
+    padding-block-start: var(--_markdown-footnotes-padding-top, 0px);
+    padding-inline-start: var(--_markdown-footnotes-padding-start, 0px);
+    border-style: var(--_markdown-footnotes-border-style, solid);
+    border-block-start-width: var(--_markdown-footnotes-border-top-width, var(--_markdown-footnotes-border-width, 0px));
+    border-inline-end-width: var(--_markdown-footnotes-border-width, 0px);
+    border-block-end-width: var(--_markdown-footnotes-border-width, 0px);
+    border-inline-start-width: var(--_markdown-footnotes-border-width, 0px);
+    border-block-start-color: var(--_markdown-footnotes-border-top-color, currentcolor);
+    color: var(--_markdown-footnotes-color, inherit);
+    font-size: var(--_markdown-footnotes-font-size, inherit);
+    line-height: var(--_markdown-footnotes-line-height, inherit);
+  }
+
+  .mx-markdown__footnote {
+    border-start-start-radius: var(--_markdown-footnote-radius, 0px);
+    border-start-end-radius: var(--_markdown-footnote-radius, 0px);
+    border-end-start-radius: var(--_markdown-footnote-radius, 0px);
+    border-end-end-radius: var(--_markdown-footnote-radius, 0px);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-markdown__footnote:focus-visible {
+    outline-style: var(--_markdown-footnote-focus-outline-style, solid);
+    outline-width: var(--_markdown-footnote-focus-outline-width, 0px);
+    outline-color: var(--_markdown-footnote-focus-outline-color, currentcolor);
+    outline-offset: var(--_markdown-footnote-focus-outline-offset, 0px);
+  }
+
+  .mx-markdown__footnote-back {
+    margin-inline-end: var(--_markdown-footnote-back-margin-end, 0px);
+    color: var(--_markdown-footnote-back-color, inherit);
+    text-decoration-line: var(--_markdown-footnote-back-text-decoration, none);
   }
 
   .mx-menu {

@@ -909,6 +909,23 @@
     --_chat-list-padding-inline: var(--mx-chat-list-padding-inline);
     --_chat-list-padding-block: var(--mx-chat-list-padding-block);
     --_chat-turn-gap: var(--mx-chat-turn-gap);
+    --_chat-turn-radius: var(--mx-chat-turn-radius);
+    --_chat-turn-focus-outline-style: var(--mx-chat-turn-focus-outline-style);
+    --_chat-turn-focus-outline-width: var(--mx-chat-turn-focus-outline-width);
+    --_chat-turn-focus-outline-color: var(--mx-chat-turn-focus-outline-color);
+    --_chat-turn-focus-outline-offset: var(--mx-chat-turn-focus-outline-offset);
+    --_chat-search-gap: var(--mx-chat-search-gap);
+    --_chat-search-padding-inline: var(--mx-chat-search-padding-inline);
+    --_chat-search-padding-block: var(--mx-chat-search-padding-block);
+    --_chat-search-border-style: var(--mx-chat-search-border-style);
+    --_chat-search-border-bottom-width: var(--mx-chat-search-border-bottom-width);
+    --_chat-search-border-bottom-color: var(--mx-chat-search-border-bottom-color);
+    --_chat-search-count-font-size: var(--mx-chat-search-count-font-size);
+    --_chat-search-count-line-height: var(--mx-chat-search-count-line-height);
+    --_chat-search-count-color: var(--mx-chat-search-count-color);
+    --_chat-found-bg: var(--mx-chat-found-bg);
+    --_chat-found-color: var(--mx-chat-found-color);
+    --_chat-found-radius: var(--mx-chat-found-radius);
     --_chat-question-gap: var(--mx-chat-question-gap);
     --_chat-question-head-gap: var(--mx-chat-question-head-gap);
     --_chat-question-actions-gap: var(--mx-chat-question-actions-gap);
@@ -2493,6 +2510,8 @@
     --_markdown-code-block-border-color: var(--mx-markdown-code-block-border-color);
     --_markdown-code-block-bg: var(--mx-markdown-code-block-bg);
     --_markdown-code-block-radius: var(--mx-markdown-code-block-radius);
+    --_markdown-code-block-drawn-bg: var(--mx-markdown-code-block-drawn-bg);
+    --_markdown-code-block-drawn-border-width: var(--mx-markdown-code-block-drawn-border-width);
     --_markdown-code-header-border-style: var(--mx-markdown-code-header-border-style);
     --_markdown-code-header-border-bottom-width: var(--mx-markdown-code-header-border-bottom-width);
     --_markdown-code-header-border-bottom-color: var(--mx-markdown-code-header-border-bottom-color);
@@ -2519,6 +2538,30 @@
     --_markdown-cell-head-bg: var(--mx-markdown-cell-head-bg);
     --_markdown-cell-head-font-weight: var(--mx-markdown-cell-head-font-weight);
     --_markdown-image-radius: var(--mx-markdown-image-radius);
+    --_markdown-math-block-padding-block: var(--mx-markdown-math-block-padding-block);
+    --_markdown-math-text-font-size: var(--mx-markdown-math-text-font-size);
+    --_markdown-math-text-line-height: var(--mx-markdown-math-text-line-height);
+    --_markdown-math-text-white-space: var(--mx-markdown-math-text-white-space);
+    --_markdown-math-text-color: var(--mx-markdown-math-text-color);
+    --_markdown-footnote-ref-font-size: var(--mx-markdown-footnote-ref-font-size);
+    --_markdown-footnote-ref-line-height: var(--mx-markdown-footnote-ref-line-height);
+    --_markdown-footnotes-font-size: var(--mx-markdown-footnotes-font-size);
+    --_markdown-footnotes-line-height: var(--mx-markdown-footnotes-line-height);
+    --_markdown-footnotes-color: var(--mx-markdown-footnotes-color);
+    --_markdown-footnotes-padding-start: var(--mx-markdown-footnotes-padding-start);
+    --_markdown-footnotes-padding-top: var(--mx-markdown-footnotes-padding-top);
+    --_markdown-footnotes-border-style: var(--mx-markdown-footnotes-border-style);
+    --_markdown-footnotes-border-width: var(--mx-markdown-footnotes-border-width);
+    --_markdown-footnotes-border-top-width: var(--mx-markdown-footnotes-border-top-width);
+    --_markdown-footnotes-border-top-color: var(--mx-markdown-footnotes-border-top-color);
+    --_markdown-footnote-radius: var(--mx-markdown-footnote-radius);
+    --_markdown-footnote-focus-outline-style: var(--mx-markdown-footnote-focus-outline-style);
+    --_markdown-footnote-focus-outline-width: var(--mx-markdown-footnote-focus-outline-width);
+    --_markdown-footnote-focus-outline-color: var(--mx-markdown-footnote-focus-outline-color);
+    --_markdown-footnote-focus-outline-offset: var(--mx-markdown-footnote-focus-outline-offset);
+    --_markdown-footnote-back-color: var(--mx-markdown-footnote-back-color);
+    --_markdown-footnote-back-text-decoration: var(--mx-markdown-footnote-back-text-decoration);
+    --_markdown-footnote-back-margin-end: var(--mx-markdown-footnote-back-margin-end);
   }
 
   .mx-menu {

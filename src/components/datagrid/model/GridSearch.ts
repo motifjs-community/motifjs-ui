@@ -4,7 +4,7 @@ import type { GridColumn } from '../grid-column';
 import { dayCondition, minuteCondition, minuteStart } from './day-condition';
 import type { GridModel } from './GridModel';
 import { parseDateText } from './parse-date-text';
-import { textRanges } from './text-ranges';
+import { textRanges } from '../../../core/text-ranges';
 
 type Filter = data.FilterExpression | null;
 /** How a column's cells are marked: the text found inside them, or the whole cell when its value is the one searched for. */

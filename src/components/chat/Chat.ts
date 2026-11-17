@@ -1,16 +1,18 @@
-import { Emitter, type Bind, type Component, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Component, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import { glyphPart, loose, part } from '../../core/draw-parts';
-import { holdsFocus } from '../../core/focus';
+import { focusInTextField, focusOn, holdsFocus } from '../../core/focus';
 import { glyph } from '../../core/glyphs';
-import { boxOf, measure, whenMeasured, type Box } from '../../core/measure';
+import { boxOf, measure, onLayout, rectOf, reveal, viewportOf, whenMeasured, type Box } from '../../core/measure';
 import { nextId } from '../../core/next-id';
 import { onLanguage } from '../../core/on-language';
-import { kept, mark, put, text } from '../../core/part-writes';
+import { css, kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { WindowList } from '../../parts/window-list/WindowList';
 import { Button } from '../button/Button';
 import type { CodeHighlighter } from '../markdown/code-highlighter';
+import type { DiagramRenderer } from '../markdown/diagram-renderer';
+import type { MathRenderer } from '../markdown/math-renderer';
 import { ScrollView } from '../scrollview/ScrollView';
 import { ChatComposer } from './ChatComposer';
 import { ChatReply, type ChatReplyHost } from './ChatReply';
@@ -24,11 +26,13 @@ import type { ChatMessage } from './chat-message';
 import type { ChatPart } from './chat-part';
 import type { ChatProps } from './chat-props';
 import type { ChatAnswer, ChatQuestionsPart, ChatRequestPart, ChatWaiting } from './chat-request';
+import { ChatSearch } from './chat-search';
+import { ChatSearchBar } from './chat-search-bar';
 import type { ChatSendEventArgs } from './chat-send-event-args';
 import type { ChatTurn } from './chat-turn';
 import { ChatTurnView } from './chat-turn-view';
 
-const OWN = ['hasOlder', 'placeholder', 'highlighter', 'linkTarget', 'label'] as const;
+const OWN = ['hasOlder', 'placeholder', 'highlighter', 'mathRenderer', 'diagramRenderer', 'linkTarget', 'label'] as const;
 
 /** How near the top, in pixels, asks for older messages. */
 const OLDER_OFFSET = 200;
@@ -56,8 +60,10 @@ interface Queued {
  * Near the top, older messages are asked for (`hasOlder`, `onLoadOlder`) and the view keeps its place. While a reply is
  * written a line under the conversation says what the model does and for how long, and what the user sends meanwhile
  * waits above the box until the reply ends. A reply can wait for the user: a tool call asks before it runs and a plan
- * asks to go on, their choices in the flow; questions take the composer's place until they are answered. The chat
- * draws; the app talks to its model and writes through `reply()`.
+ * asks to go on, their choices in the flow; questions take the composer's place until they are answered. Ctrl+F opens
+ * a search over every message, the turns off the page too. The turns are the articles of a feed: Page Down and Page Up
+ * go from one to the next, and screen readers hear when a reply ends or waits. The chat draws; the app talks to its
+ * model and writes through `reply()`.
  *
  * @example
  * <Chat onSend={async e => {
@@ -83,6 +89,13 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   private readonly queued: Queued[] = [];
   /** The questions waiting for the user, in the composer's place. */
   private readonly form: ChatAskForm;
+  /** Tells screen readers what happened: a reply ended, or waits for the user. */
+  private readonly live: Component<HTMLDivElement>;
+  /** The search at the top, made the first time it opens. */
+  private searchBar: ChatSearchBar | null = null;
+  private readonly search = new ChatSearch();
+  /** The part that shows the result of the search shown, marked. */
+  private foundPart: ComponentBase | null = null;
   /** The requests of open replies waiting for the user. */
   private readonly waiting = new Map<ChatRequestPart, { reply: ChatReply; item: ChatWaiting }>();
   /** The turns on the page and their parts; a turn off the page has none. */
@@ -144,6 +157,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       { make: (turn) => this.makeTurn(turn).row, estimate: (turn) => this.estimate(turn), settled: () => this.opened() },
       'mx-chat__list'
     );
+    put(this.window.host, 'role', 'feed');
     this.status = loose<HTMLDivElement>('div', 'mx-chat__status');
     glyphPart(this.status, 'star', 'mx-chat__status-glyph');
     this.statusText = part<HTMLSpanElement>(this.status, 'span', 'mx-chat__status-text');
@@ -163,6 +177,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.composer = new ChatComposer({ ...own.composer, onSend: (e) => this.sendFromBox(e), onStop: () => this.stop() });
     this.composer.class.add('mx-chat__composer');
     this.controls.add(this.composer);
+    this.live = part<HTMLDivElement>(this, 'div', 'mx-chat__live');
+    put(this.live, 'aria-live', 'polite');
 
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.messages !== undefined) this.bindProperty('messages', own.messages);
@@ -177,7 +193,10 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
 
     this.observeProperty<ChatMessage[] | undefined>('messages', (messages) => this.reconcile(messages ?? []));
     // Older messages come when the user goes up, not when the chat opens.
-    this.observeProperty('hasOlder', () => this.drawOlder());
+    this.observeProperty('hasOlder', () => {
+      this.drawOlder();
+      this.drawPlaces();
+    });
     this.observeProperty<string | undefined>('placeholder', (said) => (this.composer.placeholder = said ?? ''));
     this.observeProperty('label', () => this.drawLabel());
     this.scroller.onAtEndChanged((e) => {
@@ -189,6 +208,9 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       this.lastTop = e.top;
       if (up && !this.opening && e.top <= OLDER_OFFSET) this.askOlder(true);
     });
+    this.scroller.motif.on('keydown', (_sender, e) => this.feedKey(e));
+    this.motif.on('keydown', (_sender, e) => this.searchKey(e));
+    onLayout(this, 'viewport', () => measure(this, this.readKeyboard, this.writeKeyboard));
     onLanguage(this, () => this.drawTexts());
     this.motif.setDisposable(() => {
       // The requests of open replies end with the chat, and what waited for the user goes unanswered.
@@ -231,6 +253,18 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   }
   set highlighter(value: Bind<CodeHighlighter | null>) {
     this.assignProperty('highlighter', value);
+  }
+  get mathRenderer(): MathRenderer | null {
+    return this.getProperty<MathRenderer | null | undefined>('mathRenderer') ?? null;
+  }
+  set mathRenderer(value: Bind<MathRenderer | null>) {
+    this.assignProperty('mathRenderer', value);
+  }
+  get diagramRenderer(): DiagramRenderer | null {
+    return this.getProperty<DiagramRenderer | null | undefined>('diagramRenderer') ?? null;
+  }
+  set diagramRenderer(value: Bind<DiagramRenderer | null>) {
+    this.assignProperty('diagramRenderer', value);
   }
   get linkTarget(): string {
     return this.getProperty<string | undefined>('linkTarget') ?? '_blank';
@@ -297,6 +331,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       this.window.append(turn);
       // The turn before is not the latest any more: its reply cannot be tried again.
       if (last) this.views.get(last)?.drawActions();
+      this.drawPlaces();
     } else {
       last.messages.push(message);
       this.turnOf.set(message, last);
@@ -304,6 +339,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       if (view) view.add(message);
       else this.window.stale(last);
     }
+    this.search.stale = true;
     if (message.role === 'user') {
       this.scrollToEnd();
     } else if (this.scroller.isAtEnd) {
@@ -328,15 +364,18 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       for (const m of tail.messages) this.turnOf.set(m, first);
       this.window.refresh(first);
     }
+    this.search.stale = true;
     if (!older.length) return;
     this.turns.unshift(...older);
     this.window.insert(0, older);
+    this.drawPlaces();
   }
 
   /** Removes a message; its turn is drawn again from what is left. */
   remove(message: ChatMessage): void {
     const turn = this.turnOf.get(message);
     if (!turn) return;
+    this.search.stale = true;
     this.items.splice(this.items.indexOf(message), 1);
     this.turnOf.delete(message);
     const at = this.turns.indexOf(turn);
@@ -349,6 +388,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     // A turn left with no question is the end of the one before it.
     this.turns.splice(at, 1);
     this.window.remove(turn);
+    this.drawPlaces();
     if (!turn.messages.length) return;
     before.messages.push(...turn.messages);
     for (const m of turn.messages) this.turnOf.set(m, before);
@@ -385,6 +425,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.turns = [];
     this.turnOf.clear();
     this.window.set([]);
+    this.searchAgain();
   }
 
   /** Sends `text`, and the files and context items given, as the user, as the box does when no reply is written. Returns whether it was added. */
@@ -440,14 +481,62 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.drawJump();
   }
 
+  /** Gives the focus to where the user writes: the questions waiting, or the composer. */
   override focus(): boolean {
-    return this.composer.focus();
+    return this.form.part ? this.form.focus() : this.composer.focus();
+  }
+
+  /** Opens the search at the top, with `query` when given, and gives it the focus. Ctrl+F in the chat opens it too. */
+  openSearch(query?: string): void {
+    const bar = (this.searchBar ??= this.makeSearchBar());
+    kept(bar.row, true);
+    mark(this, 'data-searching', true);
+    if (query !== undefined) {
+      bar.query = query;
+      this.find(query);
+    }
+    bar.focus();
+  }
+
+  /** Closes the search; its mark goes, and the focus goes back to where the user writes when it was in the search. */
+  closeSearch(): void {
+    const bar = this.searchBar;
+    if (!bar?.row.isVisible) return;
+    const inside = holdsFocus(bar.row);
+    kept(bar.row, false);
+    mark(this, 'data-searching', false);
+    this.unmarkFound();
+    this.search.clear();
+    bar.drawCount(-1, 0, '');
+    if (inside) this.focus();
+  }
+
+  /**
+   * Searches every message for `query`, the turns off the page too (what the user wrote, the model's texts and plans,
+   * without case), and goes to the result nearest the end. Returns how many it found.
+   */
+  find(query: string): number {
+    this.search.run(this.turns, query);
+    this.showFound();
+    return this.search.found.length;
+  }
+
+  /** Goes to the next result of the search, down towards the end, and from the last around to the first. */
+  findNext(): boolean {
+    return this.moveFound(1);
+  }
+
+  /** Goes to the result before, up towards the start, and from the first around to the last. */
+  findPrevious(): boolean {
+    return this.moveFound(-1);
   }
 
   /** The part of a turn coming near the view, drawn from its messages; it forgets itself when the list disposes it. */
   private makeTurn(turn: ChatTurn): ChatTurnView {
     const look: ChatLook = {
       highlighter: this.highlighter,
+      mathRenderer: this.mathRenderer,
+      diagramRenderer: this.diagramRenderer,
       linkTarget: this.linkTarget,
       time: this.formatTime,
       answer: (asked, answer) => this.answer(asked, answer),
@@ -462,9 +551,12 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     };
     const view = new ChatTurnView(turn, look);
     this.views.set(turn, view);
+    view.drawPlace(this.turns.indexOf(turn), this.feedSize());
     view.row.motif.setDisposable(() => {
       if (this.views.get(turn) === view) this.views.delete(turn);
     });
+    // The result shown is in this turn: drawn again, it is marked again.
+    if (this.search.found[this.search.at]?.turn === turn) this.markFound(false);
     return view;
   }
 
@@ -477,6 +569,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   private messageChanged(message: ChatMessage): void {
     const turn = this.turnOf.get(message);
     if (!turn) return;
+    this.search.stale = true;
     if (this.views.has(turn)) this.scroller.stick();
     else this.window.stale(turn);
   }
@@ -509,6 +602,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.opening = true;
     mark(this, 'data-opening', true);
     this.window.set(this.turns);
+    this.searchAgain();
   }
 
   /** A height for a turn not drawn yet: its texts in lines at a usual width, two lines a question, a frame each part. */
@@ -577,6 +671,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
    */
   private wait(reply: ChatReply, item: ChatWaiting): boolean {
     this.waiting.set(item.part, { reply, item });
+    if (this.waiting.size === 1) this.announce(uiLocale.strings.chatWaitingYou);
     this.drawStatus();
     const inside = holdsFocus(this);
     if (item.part.kind !== 'questions') return inside && !this.composer.value.trim();
@@ -636,9 +731,11 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     const turn = first && this.turnOf.get(first);
     for (const m of removed) this.turnOf.delete(m);
     if (!turn) return;
+    this.search.stale = true;
     const t = this.turns.indexOf(turn);
     const whole = turn.messages[0] === first;
     for (const gone of this.turns.splice(whole ? t : t + 1).reverse()) this.window.remove(gone);
+    this.drawPlaces();
     if (whole) return;
     turn.messages.splice(turn.messages.indexOf(first));
     this.window.refresh(turn);
@@ -670,6 +767,9 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.replies.delete(reply);
     const turn = this.turnOf.get(reply.message);
     if (turn) this.views.get(turn)?.drawActions();
+    const strings = uiLocale.strings;
+    const status = reply.message.status;
+    this.announce(status === 'error' ? strings.chatFailed : status === 'stopped' ? strings.chatStopped : strings.chatReplied);
     if (this.replies.size) {
       this.drawStatus();
       return;
@@ -748,6 +848,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     for (const view of this.views.values()) view.drawTexts();
     for (const q of this.queued) q.remove.text = uiLocale.strings.chatRemove;
     this.form.drawTexts();
+    this.searchBar?.drawTexts();
     this.drawOlder();
     this.drawJump();
     this.drawLabel();
@@ -766,6 +867,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       this.olderButton.text = said;
       kept(this.older, shown);
     });
+    put(this.window.host, 'aria-busy', busy ? 'true' : null);
   }
 
   private drawJump(): void {
@@ -775,6 +877,122 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     const said = this.unseen ? uiLocale.text('chatNewMessages', { count: this.unseen }) : uiLocale.strings.chatJumpToLatest;
     this.jump.text = said;
   }
+
+  /** How many turns the feed has; `-1` while older ones may still come. */
+  private feedSize(): number {
+    return this.peekProperty('hasOlder') ? -1 : this.turns.length;
+  }
+
+  /** The turns on the page take their places in the feed again: turns came before them, or went. */
+  private drawPlaces(): void {
+    const count = this.feedSize();
+    for (const [turn, view] of this.views) view.drawPlace(this.turns.indexOf(turn), count);
+  }
+
+  /**
+   * Keys in the conversation, as a feed takes them: in a turn, Page Down and Page Up go to the next and the one before
+   * (older messages are asked for above the first), Ctrl+End to where the user writes and Ctrl+Home to the view itself.
+   */
+  private feedKey(e: KeyboardEvent): void {
+    if (e.defaultPrevented || e.altKey || e.shiftKey || e.metaKey || focusInTextField(e)) return;
+    const page = !e.ctrlKey && (e.key === 'PageDown' || e.key === 'PageUp');
+    const leave = e.ctrlKey && (e.key === 'End' || e.key === 'Home');
+    if (!page && !leave) return;
+    const at = this.focusedTurn(e);
+    if (at < 0) return;
+    e.preventDefault();
+    if (e.key === 'End') {
+      this.focus();
+    } else if (e.key === 'Home') {
+      focusOn(this.scroller);
+    } else {
+      const next = this.turns[at + (e.key === 'PageDown' ? 1 : -1)];
+      if (next) this.window.reveal(next, (row) => focusOn(row, { preventScroll: true }));
+      else if (e.key === 'PageUp') this.loadOlder();
+    }
+  }
+
+  /** The turn the focus is in, by its index; `-1` in none. */
+  private focusedTurn(e: Event): number {
+    for (const [turn, view] of this.views) if (holdsFocus(view.row, e)) return this.turns.indexOf(turn);
+    return -1;
+  }
+
+  private searchKey(e: KeyboardEvent): void {
+    if (e.defaultPrevented || e.altKey || e.shiftKey || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'f') return;
+    e.preventDefault();
+    this.openSearch();
+  }
+
+  private makeSearchBar(): ChatSearchBar {
+    const bar = new ChatSearchBar((query) => this.find(query), (step) => this.moveFound(step), () => this.closeSearch());
+    this.controls.insert(0, bar.row);
+    return bar;
+  }
+
+  private moveFound(step: number): boolean {
+    if (this.search.stale) this.search.again(this.turns);
+    const moved = this.search.move(step);
+    this.showFound();
+    return moved;
+  }
+
+  /** Another conversation, or none: an open search counts again, and shows nothing until it moves. */
+  private searchAgain(): void {
+    this.unmarkFound();
+    if (!this.search.query) return;
+    this.search.again(this.turns);
+    this.searchBar?.drawCount(this.search.at, this.search.found.length, this.search.query);
+  }
+
+  /** The result shown: its count is written, its turn comes into view (made when it is off the page), and its part. */
+  private showFound(): void {
+    this.unmarkFound();
+    const search = this.search;
+    this.searchBar?.drawCount(search.at, search.found.length, search.query);
+    const found = search.found[search.at];
+    if (found) this.window.reveal(found.turn, () => this.markFound(true));
+  }
+
+  /** The turn of the result shown is on the page: the part that shows it is marked, and brought into view. */
+  private markFound(bring: boolean): void {
+    const found = this.search.found[this.search.at];
+    const view = found && this.views.get(found.turn);
+    const at = found && view ? view.found(found.message, found.part, found.start) : null;
+    if (!at) return;
+    this.unmarkFound();
+    this.foundPart = at;
+    mark(at, 'data-found', true);
+    if (bring) reveal(this.scroller, at, { axis: 'y', align: 'center' });
+  }
+
+  private unmarkFound(): void {
+    if (this.foundPart && !this.foundPart.isDisposed) mark(this.foundPart, 'data-found', false);
+    this.foundPart = null;
+  }
+
+  /** Says `said` to screen readers; the same words twice are said twice. */
+  private announce(said: string): void {
+    text(this.live, '');
+    queueMicrotask(() => {
+      if (!this.isDisposed) text(this.live, said);
+    });
+  }
+
+  /**
+   * How much of the chat an on-screen keyboard covers while the user writes in it: the part of the window in sight is
+   * smaller than the window, and the chat goes on under it.
+   */
+  private readonly readKeyboard = (): number => {
+    const sight = viewportOf(this);
+    if (!focusInTextField() || !holdsFocus(this) || sight.height >= sight.windowHeight - 1) return 0;
+    return Math.max(0, Math.round(rectOf(this).bottom - sight.bottom));
+  };
+
+  /** The chat makes room for the keyboard at its end: the composer stands on it, the conversation above. */
+  private readonly writeKeyboard = (covered: number): void => {
+    css(this, '--_keyboard', covered ? `${covered}px` : '');
+  };
 
   private drawLabel(): void {
     put(this.scroller, 'role', 'region');

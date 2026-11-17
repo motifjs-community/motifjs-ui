@@ -1,4 +1,4 @@
-import type { Component } from '@motifx/core';
+import type { Component, ComponentBase } from '@motifx/core';
 import { loose, part } from '../../core/draw-parts';
 import { put } from '../../core/part-writes';
 
@@ -13,6 +13,8 @@ export interface ChatEntry {
   drawTexts(): void;
   /** A request of the part waits: its choices take the focus. */
   focus?(): boolean;
+  /** What shows the character at `index` of the part's text, for a search: the block of its markdown. */
+  found?(index: number): ComponentBase | null;
 }
 
 /** The frame every entry shares: the row (`data-kind`), its dot and the column beside it. */

@@ -206,6 +206,14 @@
       },
       "radius": {
         "$value": "{radius.lg}"
+      },
+      "drawn": {
+        "bg": {
+          "$value": "transparent"
+        },
+        "border-width": {
+          "$value": "{space.0}"
+        }
       }
     },
     "code-header": {
@@ -296,6 +304,95 @@
     "image": {
       "radius": {
         "$value": "{radius.lg}"
+      }
+    },
+    "math-block": {
+      "padding-block": {
+        "$value": "{space.1}"
+      }
+    },
+    "math-text": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      },
+      "white-space": {
+        "$value": "pre-wrap"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "footnote-ref": {
+      "font-size": {
+        "$value": {
+          "value": 0.75,
+          "unit": "em"
+        }
+      },
+      "line-height": {
+        "$value": 0
+      }
+    },
+    "footnotes": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "padding-start": {
+        "$value": "{space.6}"
+      },
+      "padding-top": {
+        "$value": "{space.2}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{space.0}"
+      },
+      "border-top-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-top-color": {
+        "$value": "{color.stroke.divider}"
+      }
+    },
+    "footnote": {
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        }
+      }
+    },
+    "footnote-back": {
+      "color": {
+        "$value": "{color.accent.fg}"
+      },
+      "text-decoration": {
+        "$value": "none"
+      },
+      "margin-end": {
+        "$value": "{space.1}"
       }
     }
   }

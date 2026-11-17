@@ -1,4 +1,4 @@
-import type { Component } from '@motifx/core';
+import type { Component, ComponentBase } from '@motifx/core';
 import { loose } from '../../core/draw-parts';
 import { ChatAskedEntry } from './chat-asked-entry';
 import { ChatAttachmentEntry } from './chat-attachment-entry';
@@ -42,6 +42,12 @@ export class ChatFlowView {
 
   update(part: ChatPart): void {
     this.entries.get(part)?.update();
+  }
+
+  /** What shows the character at `index` of `part`'s text, for a search; the part's row when nothing smaller does. */
+  found(part: ChatPart, index: number): ComponentBase | null {
+    const entry = this.entries.get(part);
+    return entry ? (entry.found?.(index) ?? entry.row) : null;
   }
 
   /** The flow of the sub-agent a tool call runs. */

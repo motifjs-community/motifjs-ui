@@ -35,7 +35,11 @@
         "states": { "done": ".mx-markdown__task[data-done]" }
       },
       "rule": { "$description": "A horizontal rule (`---`): a side of its frame.", "selector": ".mx-markdown__rule" },
-      "code-block": { "$description": "A fenced code block: its frame and fill.", "selector": ".mx-markdown__block" },
+      "code-block": {
+        "$description": "A fenced code block: its frame and fill; `drawn` once the math door drew it in its place.",
+        "selector": ".mx-markdown__block",
+        "states": { "drawn": ".mx-markdown__block[data-drawn='math']" }
+      },
       "code-header": { "$description": "The header of a code block: the language and the copy button.", "selector": ".mx-markdown__code-header" },
       "code-language": { "$description": "The language name in a code block's header.", "selector": ".mx-markdown__language" },
       "code-text": { "$description": "The code of a code block; its `white-space` decides whether long lines wrap.", "selector": ".mx-markdown__pre" },
@@ -45,7 +49,17 @@
         "selector": ".mx-markdown__cell",
         "states": { "head": ".mx-markdown__head > .mx-markdown__row > .mx-markdown__cell" }
       },
-      "image": { "$description": "An image, when images are allowed.", "selector": ".mx-markdown__img" }
+      "image": { "$description": "An image, when images are allowed.", "selector": ".mx-markdown__img" },
+      "math-block": { "$description": "Display math (`$$`): its TeX as it arrives, then what the math door drew.", "selector": ".mx-markdown__math-block" },
+      "math-text": { "$description": "The TeX of math not drawn yet.", "selector": ".mx-markdown__math-text" },
+      "footnote-ref": { "$description": "A footnote's reference: its number, raised, a link to the note.", "selector": ".mx-markdown__footnote-ref" },
+      "footnotes": { "$description": "The notes of the footnotes, numbered.", "selector": ".mx-markdown__footnotes" },
+      "footnote": {
+        "$description": "A footnote's note: `focus` when its reference took the reader there.",
+        "selector": ".mx-markdown__footnote",
+        "states": { "focus": ".mx-markdown__footnote:focus-visible" }
+      },
+      "footnote-back": { "$description": "The link at the start of a note back to its reference.", "selector": ".mx-markdown__footnote-back" }
     }
   }
 }

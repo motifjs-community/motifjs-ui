@@ -1,4 +1,5 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp, type ComponentBase, type Component } from '@motifx/core';
+import type { EnterKeyHint } from '../../core/enter-key-hint';
 import type { InputMode } from '../../core/input-mode';
 import { uiLocale } from '../../core/ui-locale';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
@@ -24,6 +25,7 @@ const OWN = [
   'selectOnFocus',
   'align',
   'inputMode',
+  'enterKeyHint',
   'autocomplete',
   'spellcheck',
   'name',
@@ -78,6 +80,7 @@ export class TextBox extends Field<string, TextBoxProps> {
     this.observeProperty('clearButton', () => this.renderClear());
     this.observeProperty<string>('align', (align) => put(this, 'data-align', align ?? 'start'));
     this.observeProperty<string>('inputMode', (mode) => this.setAttribute('inputmode', mode));
+    this.observeProperty<string>('enterKeyHint', (hint) => this.setAttribute('enterkeyhint', hint));
     this.observeProperty<string>('autocomplete', (value) => this.setAttribute('autocomplete', value));
     this.observeProperty<boolean>('spellcheck', (on) => this.setAttribute('spellcheck', on === undefined ? undefined : String(on)));
     this.observeProperty<string>('name', (name) => this.setAttribute('name', name));
@@ -161,6 +164,12 @@ export class TextBox extends Field<string, TextBoxProps> {
   }
   set inputMode(value: Bind<InputMode | null>) {
     this.assignProperty('inputMode', value);
+  }
+  get enterKeyHint(): EnterKeyHint | null {
+    return this.getProperty<EnterKeyHint | undefined>('enterKeyHint') ?? null;
+  }
+  set enterKeyHint(value: Bind<EnterKeyHint | null>) {
+    this.assignProperty('enterKeyHint', value);
   }
   get autocomplete(): string {
     return this.getProperty<string | undefined>('autocomplete') ?? '';

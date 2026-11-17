@@ -3,13 +3,44 @@
    queue, the composer) is a unit of its schema. The conversation
    scrolls in its view (a ScrollView that stays at the end while it is there), and the button back to the latest message
    stands over its end. While it opens (the turns at the end placed, the view brought to the end) the view is laid out
-   but not shown, so the first frame it shows is at the end. */
+   but not shown, so the first frame it shows is at the end. An on-screen keyboard over its end gives it room at its
+   end (`--_keyboard`, written by the chat), and at a phone's edges it keeps clear of the home indicator and the notch. */
 @layer mx.components {
   .mx-chat {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     min-block-size: 0;
     width: 100%;
+    padding-block-end: max(var(--_keyboard, 0px), env(safe-area-inset-bottom, 0px));
+    padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+  }
+
+  /* The search at the top: the box takes the room, the count and the buttons stand beside it. */
+  .mx-chat__search {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .mx-chat__search > .mx-chat__search-box {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__search-count {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* What is said to screen readers (a reply ended, a reply waits) is not shown. */
+  .mx-chat__live {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .mx-chat[data-opening] > .mx-chat__view {
@@ -347,6 +378,11 @@
 
   .mx-chat-composer__space {
     flex: 1 1 auto;
+  }
+
+  /* On a narrow screen the tools wrap: the send button, on a line of its own, stays at its end. */
+  .mx-chat-composer__tools > .mx-chat-composer__button {
+    margin-inline-start: auto;
   }
 
   .mx-chat-composer__usage {

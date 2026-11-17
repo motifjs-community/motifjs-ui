@@ -1,20 +1,22 @@
-import type { Component } from '@motifx/core';
+import type { Component, ComponentBase } from '@motifx/core';
 import { loose, part } from '../../core/draw-parts';
 import { glyph } from '../../core/glyphs';
-import { kept, mark } from '../../core/part-writes';
+import { kept, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import { ChatCopyButton } from './chat-copy-button';
 import { ChatFlowView } from './chat-flow-view';
 import type { ChatLook } from './chat-look';
 import type { ChatMessage } from './chat-message';
+import type { ChatPart } from './chat-part';
 import { ChatQuestionView } from './chat-question-view';
 import type { ChatTurn } from './chat-turn';
 
 /**
  * The part of a turn: the user's question, then what the model did, then its actions once the reply ended (copy it;
  * try again when it failed or stopped). It is made from the turn's messages when the turn comes near the view and
- * disposed when it goes far; a reply streaming into it writes into its flow.
+ * disposed when it goes far; a reply streaming into it writes into its flow. It is an article of the conversation's
+ * feed, named by its question, busy while its reply is written.
  */
 export class ChatTurnView {
   readonly row: Component<HTMLDivElement>;
@@ -26,9 +28,12 @@ export class ChatTurnView {
 
   constructor(readonly turn: ChatTurn, private readonly look: ChatLook) {
     this.row = loose<HTMLDivElement>('div', 'mx-chat__turn');
+    put(this.row, 'role', 'article');
+    put(this.row, 'tabindex', '-1');
     const first = turn.messages[0];
     this.question = first?.role === 'user' ? new ChatQuestionView(first, look) : null;
     if (this.question) this.row.controls.add(this.question.row);
+    if (this.question?.bubbleId) put(this.row, 'aria-labelledby', this.question.bubbleId);
     this.flow = new ChatFlowView(look, () => turn.messages[turn.messages.length - 1]?.status === 'streaming');
     this.row.controls.add(this.flow.row);
     for (const message of turn.messages) if (message !== first || !this.question) this.add(message);
@@ -36,6 +41,13 @@ export class ChatTurnView {
     this.copy = new ChatCopyButton(() => this.replyText());
     this.actions.controls.add(this.copy.button);
     this.drawActions();
+    this.drawLabel();
+  }
+
+  /** Its place in the feed: `at` from 0, of `count` turns (`-1` while older ones may still come). */
+  drawPlace(at: number, count: number): void {
+    put(this.row, 'aria-posinset', String(at + 1));
+    put(this.row, 'aria-setsize', String(count));
   }
 
   /**
@@ -64,6 +76,13 @@ export class ChatTurnView {
     kept(this.retryButton, failed);
     mark(this.actions, 'data-failed', failed && !!retry);
     kept(this.actions, !live && (!!said || (failed && !!retry)));
+    put(this.row, 'aria-busy', live ? 'true' : null);
+  }
+
+  /** What shows the character at `index` of `part`'s text in `message`, for a search. */
+  found(message: ChatMessage, part: ChatPart, index: number): ComponentBase | null {
+    if (this.question && message === this.turn.messages[0]) return this.question.found();
+    return this.flow.found(part, index);
   }
 
   /** The row of the turn's question; the first turn may have none. */
@@ -82,6 +101,7 @@ export class ChatTurnView {
       this.flow.add(p, streaming && i === parts.length - 1, time);
     });
     if (!streaming) this.flow.close();
+    put(this.row, 'aria-busy', streaming ? 'true' : null);
   }
 
   drawTexts(): void {
@@ -89,6 +109,14 @@ export class ChatTurnView {
     this.flow.drawTexts();
     this.copy.drawTexts();
     if (this.retryButton) this.retryButton.text = uiLocale.strings.chatRetry;
+    this.drawLabel();
+  }
+
+  /** A turn with no question text is named by who speaks in it. */
+  private drawLabel(): void {
+    if (this.question?.bubbleId) return;
+    const strings = uiLocale.strings;
+    put(this.row, 'aria-label', this.question ? strings.chatYou : strings.chatAssistant);
   }
 
   /** What the model wrote in the turn, as markdown: its texts, a blank line between them. */

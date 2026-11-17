@@ -31,6 +31,7 @@ const PROPS = [
   ['readOnly, required, size, variant, stretch', 'see TextBox', '', 'States and appearance common to all fields.'],
   ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation works the same way as for all fields.'],
   ['spellcheck, name, autocomplete', '`Bind<…>`', '—', 'Passed to the `<textarea>`.'],
+  ['enterKeyHint', '`Bind<EnterKeyHint>`', '—', 'What the Enter key of an on-screen keyboard says: `enter`, `done`, `go`, `next`, `previous`, `search` or `send`. It does not change what Enter does.'],
   ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 

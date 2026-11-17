@@ -1,6 +1,8 @@
 import type { Bind } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { CodeHighlighter } from '../markdown/code-highlighter';
+import type { DiagramRenderer } from '../markdown/diagram-renderer';
+import type { MathRenderer } from '../markdown/math-renderer';
 import type { ChatComposerProps } from './chat-composer-props';
 import type { ChatForkEventArgs, ChatRetryEventArgs, ChatRewindEventArgs } from './chat-history-event-args';
 import type { ChatLoadOlderEventArgs } from './chat-load-older-event-args';
@@ -22,6 +24,10 @@ export interface ChatProps extends ControlProps {
   placeholder?: Bind<string>;
   /** Colours the code blocks of messages drawn after it is set. */
   highlighter?: Bind<CodeHighlighter | null>;
+  /** Draws the math of messages drawn after it is set (`$…$`, `$$…$$`). The default is none: `$` is text. */
+  mathRenderer?: Bind<MathRenderer | null>;
+  /** Draws the diagrams of messages drawn after it is set (a fenced `mermaid` block). The default is none. */
+  diagramRenderer?: Bind<DiagramRenderer | null>;
   /** Where links in messages open. The default is `'_blank'`. */
   linkTarget?: Bind<string>;
   /** The accessible name of the conversation. The default is the kit's "Conversation". */

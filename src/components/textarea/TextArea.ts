@@ -2,6 +2,7 @@ import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp, type Comp
 
 import { boxOf, isInPage, measure, onLayout, onLookChange, readAgain, styleOf } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
+import type { EnterKeyHint } from '../../core/enter-key-hint';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import { Field } from '../../parts/field/Field';
 import type { ValidationRule } from '../../parts/validation/validation-rule';
@@ -27,6 +28,7 @@ const OWN = [
   'wrap',
   'name',
   'autocomplete',
+  'enterKeyHint',
   'submitOnEnter',
 ] as const;
 
@@ -79,6 +81,7 @@ export class TextArea extends Field<string, TextAreaProps> {
     this.observeProperty<string>('wrap', (wrap) => this.setAttribute('wrap', wrap));
     this.observeProperty<string>('name', (name) => this.setAttribute('name', name));
     this.observeProperty<string>('autocomplete', (value) => this.setAttribute('autocomplete', value));
+    this.observeProperty<string>('enterKeyHint', (hint) => this.setAttribute('enterkeyhint', hint));
 
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onEnter) this.onEnter(own.onEnter);
@@ -192,6 +195,12 @@ export class TextArea extends Field<string, TextAreaProps> {
   }
   set autocomplete(value: Bind<string>) {
     this.assignProperty('autocomplete', value);
+  }
+  get enterKeyHint(): EnterKeyHint | null {
+    return this.getProperty<EnterKeyHint | undefined>('enterKeyHint') ?? null;
+  }
+  set enterKeyHint(value: Bind<EnterKeyHint | null>) {
+    this.assignProperty('enterKeyHint', value);
   }
 
   /** The `<textarea>` as a component: write its attributes with `put` and call its methods through `attr`. */

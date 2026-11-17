@@ -256,4 +256,14 @@ describe('TextArea', () => {
     expect(press(area(t), 'Enter')).toBe(false);
     expect(press(area(t), 'Enter', { ctrlKey: true })).toBe(true);
   });
+
+  it('labels the Enter key of an on-screen keyboard', () => {
+    const t = new TextArea({ enterKeyHint: 'send' });
+    page(t);
+    expect(area(t).getAttribute('enterkeyhint')).toBe('send');
+    t.enterKeyHint = 'enter';
+    expect(area(t).getAttribute('enterkeyhint')).toBe('enter');
+    t.enterKeyHint = null;
+    expect(area(t).hasAttribute('enterkeyhint')).toBe(false);
+  });
 });

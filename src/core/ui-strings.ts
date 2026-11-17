@@ -882,4 +882,15 @@ export interface UiStrings {
   chatRetryingIn: string;
   chatRetried: string;
   chatCompacted: string;
+  /** A footnote's reference, and the link from its note back to it (`{number}` is the footnote's). */
+  markdownFootnote: string;
+  markdownFootnoteBack: string;
+  /** Said to screen readers when a reply ends. */
+  chatReplied: string;
+  /** The search over the conversation: its box, which result of how many (`{index}`, `{count}`), none, its buttons. */
+  chatSearch: string;
+  chatSearchCount: string;
+  chatSearchNone: string;
+  chatSearchPrevious: string;
+  chatSearchNext: string;
 }

@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import type { CodeHighlighter } from './code-highlighter';
+import type { DiagramRenderer } from './diagram-renderer';
+import type { MathRenderer } from './math-renderer';
 import { Markdown } from './Markdown';
 import type { MarkdownProps } from './markdown-props';
 
@@ -305,6 +307,22 @@ describe('Markdown: streaming', () => {
     expect(text(md, 'p')).toBe('again');
     expect(md.text).toBe('again');
   });
+
+  it('tells the block drawn for a character of the text, whatever pieces it came in', () => {
+    const source = '# Title\r\n\npara one\nmore\n\n```js\ncode\n```\n\n- item\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n---\n';
+    for (const md of [whole(source), streamed(source, 3)]) {
+      const at = (s: string) => md.blockAt(source.indexOf(s))?.element ?? null;
+      expect(at('Title')).toBe($(md, 'h1'));
+      expect(at('more')).toBe($(md, 'p'));
+      expect(at('code')).toBe($(md, '.mx-markdown__block'));
+      expect(at('item')).toBe($(md, 'li > p') ?? $(md, 'li'));
+      expect(at('| a')).toBe($(md, 'thead tr'));
+      expect(at('| 1')).toBe($(md, 'tbody tr'));
+      expect(at('|---')).toBe($(md, 'thead tr'));
+      expect(md.blockAt(source.length - 2)?.element).toBe($(md, 'hr'));
+      expect(md.blockAt(source.length + 5)).toBeNull();
+    }
+  });
 });
 
 describe('Markdown: code blocks, links and language', () => {
@@ -364,5 +382,101 @@ describe('Markdown: code blocks, links and language', () => {
     link.dispatchEvent(event);
     expect(clicks).toEqual(['https://x.y/']);
     expect(event.defaultPrevented).toBe(true);
+  });
+});
+
+describe('Markdown: footnotes, math and diagrams', () => {
+  const visible = (el: Element | null) => !!el && el.isConnected && (el as HTMLElement).style.display !== 'none';
+
+  it('numbers footnotes by their first reference and links them to their notes and back, as they stream', () => {
+    const source = 'One[^a] and two[^b], one again[^a].\n\n[^b]: Bee note\n[^a]: Ay note\n  more of it\n';
+    for (const md of [whole(source), streamed(source, 2)]) {
+      const refs = $$(md, '.mx-markdown__footnote-ref > a') as HTMLAnchorElement[];
+      expect(refs.map((r) => r.textContent)).toEqual(['1', '2', '1']);
+      expect($$(md, '.mx-markdown__footnotes').length).toBe(1);
+      const notes = $$(md, '.mx-markdown__footnote') as HTMLLIElement[];
+      expect(notes.map((n) => [n.getAttribute('value'), n.textContent])).toEqual([
+        ['2', '↩Bee note'],
+        ['1', '↩Ay note\nmore of it']
+      ]);
+      expect(refs[0].getAttribute('href')).toBe(`#${notes[1].id}`);
+      expect(refs[0].id).not.toBe('');
+      expect(refs[2].id).toBe('');
+      expect(refs[0].getAttribute('aria-label')).toBe('Footnote 1');
+      const back = notes[1].querySelector('.mx-markdown__footnote-back') as HTMLAnchorElement;
+      expect(back.getAttribute('href')).toBe(`#${refs[0].id}`);
+      refs[0].click();
+      expect(document.activeElement).toBe(notes[1]);
+      back.click();
+      expect(document.activeElement).toBe(refs[0]);
+    }
+  });
+
+  it('leaves a bracket that opens a link, or holds a space, as it was', () => {
+    const md = whole('See [^x](https://a.example) and [^ y] here.');
+    expect(text(md, '.mx-markdown__link')).toBe('^x');
+    expect($(md, '.mx-markdown__footnote-ref')).toBeNull();
+    expect(text(md, 'p')).toBe('See ^x and [^ y] here.');
+  });
+
+  it('draws math through its door once its TeX is complete, in a line and in a block; money stays text', () => {
+    const drawn: [string, boolean][] = [];
+    const mathRenderer: MathRenderer = {
+      render(tex, display) {
+        drawn.push([tex, display]);
+        const el = document.createElement('span');
+        el.className = 'tex';
+        el.textContent = tex;
+        return el;
+      }
+    };
+    const source = 'Area $\\pi r^2$ costs $5 and $10.\n\n$$\nE = mc^2\n$$\n\n```math\na_1\n```\n';
+    for (const md of [whole(source, { mathRenderer }), streamed(source, 2, { mathRenderer })]) {
+      expect($$(md, '.tex').map((e) => e.textContent)).toEqual(['\\pi r^2', 'E = mc^2', 'a_1']);
+      expect(text(md, 'p')).toBe('Area \\pi r^2 costs $5 and $10.');
+      expect(($(md, '.mx-markdown__block') as HTMLElement).dataset.drawn).toBe('math');
+      expect(visible($(md, '.mx-markdown__code-header'))).toBe(false);
+    }
+    expect(drawn.slice(0, 3)).toEqual([
+      ['\\pi r^2', false],
+      ['E = mc^2', true],
+      ['a_1', true]
+    ]);
+    const plain = whole('Costs $5 and $x$.');
+    expect($(plain, '.mx-markdown__math')).toBeNull();
+    expect(text(plain, 'p')).toBe('Costs $5 and $x$.');
+  });
+
+  it('keeps the TeX as written when the door draws nothing', () => {
+    const md = whole('Here $x^2$ stays.\n\n$$\ny\n$$', { mathRenderer: { render: () => null } });
+    expect(text(md, 'p')).toBe('Here $x^2$ stays.');
+    expect(text(md, '.mx-markdown__math-text')).toBe('y\n');
+  });
+
+  it('draws a diagram through its door in the code’s place, at once or when its promise gives it', async () => {
+    let give!: () => void;
+    const diagramRenderer: DiagramRenderer = {
+      draws: (language) => language === 'mermaid' || language === 'later',
+      render(code, language) {
+        const el = document.createElement('div');
+        el.className = 'diagram';
+        el.textContent = code.trim();
+        if (language !== 'later') return el;
+        return new Promise<Element | null>((done) => (give = () => done(el)));
+      }
+    };
+    const md = whole('```mermaid\ngraph TD\n```\n\n```later\nA-->B\n```\n\n```js\nx\n```\n', { diagramRenderer });
+    const blocks = $$(md, '.mx-markdown__block') as HTMLElement[];
+    expect(blocks[0].dataset.drawn).toBe('diagram');
+    expect(blocks[0].querySelector('.diagram')!.textContent).toBe('graph TD');
+    expect(visible(blocks[0].querySelector('.mx-markdown__pre'))).toBe(false);
+    expect(blocks[0].querySelector('.mx-markdown__language')!.textContent).toBe('mermaid');
+    expect(blocks[1].dataset.drawn).toBeUndefined();
+    give();
+    await tick();
+    await tick();
+    expect(blocks[1].dataset.drawn).toBe('diagram');
+    expect(blocks[1].querySelector('.diagram')!.textContent).toBe('A-->B');
+    expect(blocks[2].dataset.drawn).toBeUndefined();
   });
 });

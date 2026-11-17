@@ -1,9 +1,9 @@
-import { errorHandler, type Component, type ComponentBase } from '@motifx/core';
+import { Component, errorHandler, type ComponentBase } from '@motifx/core';
 import { writeClipboard } from '../../core/clipboard';
 import { loose, part, removePart, textPart } from '../../core/draw-parts';
 import { glyph } from '../../core/glyphs';
 import { onLanguage } from '../../core/on-language';
-import { css, put } from '../../core/part-writes';
+import { css, kept, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import type { CodeColorer } from './code-colorer';
@@ -16,9 +16,15 @@ const COPIED_FOR = 1500;
 
 /**
  * A fenced code block: a header with the language and a copy button, and the code. Its lines are written as they
- * arrive; a line that ends takes the colours of the highlighter, when there is one, and is not written again.
+ * arrive; a line that ends takes the colours of the highlighter, when there is one, and is not written again. Once it
+ * is complete, `math` is drawn by the math door in the block's place, and a language the diagram door draws by that
+ * door in the code's place.
  */
 export class CodeBlock {
+  /** The block's frame: its header and its code. */
+  readonly frame: Component<HTMLDivElement>;
+  private readonly header: Component<HTMLDivElement>;
+  private readonly pre: Component<HTMLPreElement>;
   private readonly label: TextRun;
   private readonly code: Component<HTMLElement>;
   private readonly copyButton: Button | null = null;
@@ -33,7 +39,9 @@ export class CodeBlock {
 
   constructor(private readonly context: MarkdownContext, host: ComponentBase) {
     const frame = part<HTMLDivElement>(host, 'div', 'mx-markdown__block');
+    this.frame = frame;
     const header = part<HTMLDivElement>(frame, 'div', 'mx-markdown__code-header');
+    this.header = header;
     this.label = context.run(part(header, 'span', 'mx-markdown__language'));
     if (context.settings.copyButton) {
       // Its variant and size come from its place.
@@ -53,7 +61,8 @@ export class CodeBlock {
         }, COPIED_FOR);
       };
     }
-    this.code = part<HTMLElement>(part(frame, 'pre', 'mx-markdown__pre'), 'code', 'mx-markdown__code-text');
+    this.pre = part<HTMLPreElement>(frame, 'pre', 'mx-markdown__pre');
+    this.code = part<HTMLElement>(this.pre, 'code', 'mx-markdown__code-text');
   }
 
   /** The info string written so far: the language is its first word. */
@@ -145,6 +154,45 @@ export class CodeBlock {
       errorHandler.reportSuppressed('Markdown', error);
     }
     this.colorer = null;
+    this.draw();
+  }
+
+  /** The code is complete: math, or a language the diagram door draws, is drawn by its door. */
+  private draw(): void {
+    const language = this.label.value;
+    if (language === 'math') {
+      const drawn = this.context.math(this.text.trim(), true);
+      if (drawn) this.show(drawn, 'math');
+      return;
+    }
+    const diagrams = this.context.settings.diagramRenderer;
+    if (!diagrams || !language) return;
+    let drawn: Element | Promise<Element | null> | null = null;
+    try {
+      if (diagrams.draws(language)) drawn = diagrams.render(this.text, language);
+    } catch (error) {
+      errorHandler.reportSuppressed('Markdown', error);
+    }
+    if (!drawn) return;
+    if (!('then' in drawn)) {
+      this.show(new Component(drawn as HTMLElement), 'diagram');
+      return;
+    }
+    // A door that loads or lays out first: what it gives later takes the code's place, while the block is still there.
+    drawn.then(
+      (element) => {
+        if (element && !this.frame.isDisposed) this.show(new Component(element as HTMLElement), 'diagram');
+      },
+      (error: unknown) => errorHandler.reportSuppressed('Markdown', error)
+    );
+  }
+
+  /** What a door drew takes the code's place; math takes the whole block's, its header too. */
+  private show(drawn: ComponentBase, kind: 'math' | 'diagram'): void {
+    kept(this.pre, false);
+    if (kind === 'math') kept(this.header, false);
+    this.frame.controls.add(drawn);
+    put(this.frame, 'data-drawn', kind);
   }
 
   private colors(text: string): readonly CodeRun[] | null {

@@ -40,6 +40,8 @@ const PROPS = [
   ['hasOlder', '`Bind<boolean>`', '`false`', 'There are older messages. They load near the top or from the button above the first message.'],
   ['placeholder', '`Bind<string>`', 'The kit string “Message”', 'The hint in the empty message box.'],
   ['highlighter', '`Bind<CodeHighlighter | null>`', 'None', 'Colours the code blocks of messages drawn after it is set.'],
+  ['mathRenderer', '`Bind<MathRenderer | null>`', 'None', 'Draws the math of messages drawn after it is set (see Markdown). Without it, `$` is text.'],
+  ['diagramRenderer', '`Bind<DiagramRenderer | null>`', 'None', 'Draws the diagrams of messages drawn after it is set, such as a fenced `mermaid` block (see Markdown).'],
   ['linkTarget', '`Bind<string>`', "`'_blank'`", 'Where links in messages open.'],
   ['label', '`Bind<string>`', 'The kit string “Conversation”', 'The accessible name of the conversation.'],
   ['composer', '`ChatComposerProps`', '', 'Props of the composer, given to it as they are (see “The composer”): `attachments`, `accept`, `contextItems`, `commands`, `onMention`, `modes`, `mode`, `models`, `model`, `thinking`, `usage`, `history` and their events. `onSend` and `onStop` are the chat’s.'],
@@ -62,7 +64,10 @@ const METHODS = [
   ['stop()', 'Stops every open reply, the same as the stop button.'],
   ['loadOlder()', 'Requests older messages now, the same as the button.'],
   ['scrollToEnd(smooth?)', 'Goes to the end. From there, new messages keep the view at the end.'],
-  ['focus()', 'Focuses the message box.'],
+  ['openSearch(query?), closeSearch()', 'Opens the search at the top (with `query` when given) and focuses it; closes it, and its mark goes.'],
+  ['find(query)', 'Searches every message for `query`, the turns off the page too, and goes to the result nearest the end. Returns how many it found.'],
+  ['findNext(), findPrevious()', 'Goes to the next result, down towards the end, or the one before, up; around the ends.'],
+  ['focus()', 'Focuses where the user writes: the questions waiting, or the message box.'],
 ];
 
 const PROPERTIES = [
@@ -74,20 +79,26 @@ const PROPERTIES = [
 ];
 
 const KEYBOARD = [
-  ['Enter', 'Sends the message; while a reply is written, queues it. Pressing Enter to finish an input method’s composition never sends.'],
+  ['Enter', 'Sends the message; while a reply is written, queues it. Pressing Enter to finish an input method’s composition never sends. On a touch screen with no pointer that hovers (a phone, a tablet without a mouse), Enter starts a new line and the send button sends, as in a phone’s messages; the keyboard’s Enter key says so.'],
   ['Shift+Enter', 'Starts a new line.'],
   ['Escape', 'Closes the menu of commands or mentions; otherwise stops the reply while one is being written, from the box or the form of questions. In the box under a choice, goes back to the choice.'],
   ['/ at the start of the box, @', 'Lists the commands, or what the app suggests for the word after `@`. Arrow Up and Down move in the list, Enter or Tab puts the active one in the text.'],
   ['Enter, Escape while a question is edited', 'Sends it in place of the old one; goes back to it as it was.'],
   ['Arrow Up, Arrow Down in the box', 'At the start of the box, brings back what was sent before; on a text brought back, goes back or forward, down to what was being written.'],
   ['Shift+Tab in the box', 'Goes to the next mode, when there are modes.'],
+  ['Ctrl+F (Cmd+F)', 'Opens the search, while the focus is in the chat.'],
+  ['Enter, Shift+Enter, Escape in the search', 'Goes up to the older result, down to the newer one; closes the search, and the focus goes back to the box.'],
+  ['Page Down, Page Up in a turn', 'Moves the focus to the next turn, or the one before; above the first, older messages are asked for.'],
+  ['Ctrl+End, Ctrl+Home in a turn', 'Moves the focus to the box (or the questions waiting), or to the conversation itself.'],
   ['1–9', 'Takes the choice or the option with that number, while the focus is among them.'],
   ['Arrow Up / Arrow Down', 'Moves between the choices of a request, or the options of a question.'],
   ['Tab', 'Moves through the button for older messages, the conversation (it scrolls with the arrow keys), the line of each thinking and tool call (Enter or Space opens it), the button back to the latest message, the box and the send button.'],
 ];
 
 const A11Y = [
-  ['Conversation', 'A focusable region named “Conversation” in the kit language.'],
+  ['Conversation', 'A focusable region named “Conversation” in the kit language. Its turns are a feed (`role="feed"`, `aria-busy` while older messages load): each turn is an `article` named by its question, with `aria-posinset` and `aria-setsize` (`-1` while older messages may still come) whether it is on the page or not, and `aria-busy` while its reply is written.'],
+  ['Announcements', 'Screen readers hear when a reply ends, stops or fails, and when it waits for the user, from a polite live region that is not shown.'],
+  ['Search', 'The search is a `search` landmark; its box is named “Search in conversation”, and the count of results is a polite live region. The result shown is marked (`data-found`) on the block that holds it.'],
   ['Thinking and tool calls', 'Their lines are buttons with `aria-expanded` when they open something.'],
   ['Errors', 'The notice of a failed reply has the role `alert`, so it is announced.'],
   ['Requests', 'The choices are a group named by their question. The options of a question are `radio` or `checkbox` items with `aria-checked` in a group named by the question; with several questions the tabs have the role `tab` and `aria-selected`. When a request appears while the focus is in the chat and nothing is being written, its first choice takes the focus; after the answer the focus goes back to the box.'],
@@ -115,10 +126,14 @@ const LOCALE = [
   ['chatModeHint, chatModel, chatThinkingToggle, chatUsage', 'The mode and model buttons, the thinking check box, and the context meter’s name.'],
   ['chatCopy, chatCopied, chatEdit, chatRewind, chatFork, chatCancel, chatRetry', 'The actions of questions and replies, and editing a question.'],
   ['chatRetryingIn, chatRetried, chatCompacted', 'A retry’s countdown, and the line where the conversation was summed up.'],
+  ['chatReplied', 'What screen readers hear when a reply ends.'],
+  ['chatSearch, chatSearchCount, chatSearchNone, chatSearchPrevious, chatSearchNext', 'The search: its box, “3 of 12”, no results, and its buttons. Its close button says the kit’s `close`.'],
 ];
 
 const HOOKS = [
-  ['.mx-chat', 'The component.'],
+  ['.mx-chat', 'The component (`data-searching` while the search is open). An on-screen keyboard over its end gives it room there through `--_keyboard`, and it keeps clear of a phone’s edges (`env(safe-area-inset-*)`).'],
+  ['.mx-chat__search, __search-box, __search-count, __search-previous, __search-next, __search-close', 'The search at the top.'],
+  ['[data-found], .mx-chat__live', 'The block that holds the result shown; what is said to screen readers.'],
   ['.mx-chat__view, .mx-chat__scroller', 'The part that scrolls (a `ScrollView`).'],
   ['.mx-chat__older, .mx-chat__older-button', 'The button for older messages.'],
   ['.mx-chat__list, .mx-chat__turn', 'The turns: only those in and near the view are on the page.'],
@@ -153,6 +168,8 @@ const TOKENS = [
   ['chat.ask, ask-header, ask-tabs, ask-tab, ask-tab-check, ask-count, ask-body, ask-text, ask-choice, ask-options, ask-option, ask-key, ask-label, ask-description, ask-check, ask-preview, ask-missing, ask-actions', 'Units of the form of questions; `ask-tab` has `selected`, `ask-option` has `checked`, both `hover` and `focus`.'],
   ['chat.question-head, question-actions, turn-actions, edit, edit-actions, compaction, compaction-line, compaction-head, compaction-text', 'Units of the actions, of editing a question and of a summary; `compaction-head` has `hover` and `focus`.'],
   ['chat.question-action, chat.turn-action, chat.edit-cancel, chat.edit-send (places)', 'The variant, tone and size of the action buttons and of the edit buttons.'],
+  ['chat.search, search-count, found', 'Units of the search, and of the block that holds the result shown. `turn` has `focus`, for Page Down and Page Up.'],
+  ['chat.search-previous, chat.search-next, chat.search-close (places)', 'The variant, tone and size of the search’s buttons.'],
   ['chat.older-button, chat.jump, chat.more, chat.queued-remove, chat.asked-button, chat.ask-previous, chat.ask-next, chat.ask-decline, chat.ask-submit (places)', 'The variant, tone and size of those buttons.'],
   ['chat-composer.usage-fill, usage-high, usage-track', 'The context meter’s ring: the part used, the part used once nearly full, and the rest.'],
   ['chat-composer.frame, field, files, tools, context, usage, usage-ring, menu-label, menu-description', 'Units of the composer; `field` has `focus` and `dragover`.'],
@@ -243,6 +260,24 @@ import { Chat } from '@motifx-community/ui';
         />
       </Section>
 
+      <Section anchor="search" title="Search">
+        <p>
+          <Rich text="Ctrl+F in the chat opens a search over every message, the turns that are not on the page too: what the user wrote, the model’s texts and its plans, without case. The result nearest the end shows first, as in a terminal; Enter goes up to older ones and Shift+Enter down. Going to a result draws its turn when it is off the page and marks the block that holds it: a paragraph, a heading, a code block, a table row or the question’s box. From code, `find()`, `findNext()` and `findPrevious()` do the same." />
+        </p>
+        <Code
+          code={`
+const count = chat.find('timeout');
+chat.findPrevious();
+`}
+        />
+      </Section>
+
+      <Section anchor="mobile" title="Phones and tablets">
+        <p>
+          <Rich text="On a touch screen Enter starts a new line and the send button sends, and the keyboard’s Enter key says so. While the user writes, an on-screen keyboard that covers the chat’s end gives the chat that much room at its end, so the box stands on the keyboard and the conversation, at its end, above it. The chat also keeps clear of the home indicator and the notch where the page lays out to the edges (`viewport-fit=cover`)." />
+        </p>
+      </Section>
+
       <Section anchor="connect" title="Connecting a model">
         <p>
           <Rich text="The chat has no provider. Your server, or the provider’s SDK, reads the model’s stream and gives five things, which most providers send in their own words: thinking, text, the start of a tool call, its arguments as they arrive, and its end (`model.ts`). The loop below is the code to copy (`connect.ts`): it writes the stream into the reply as it comes, runs the calls the model made, asking first where a tool says so and remembering “always”, gives the model what they returned, and asks again until the model answers without calling anything. Asking the user, the plan and the to-do list are tools of your model too: their `run` calls `reply.questions()`, `reply.plan()` and `reply.todo()`, and what the user said goes back to the model as the tool’s result. The demo above runs this code against a model that stands in for yours (`fake-model.ts`, `demo-tools.ts`)." />
@@ -281,7 +316,7 @@ const answer = await reply.questions([
 
       <Section anchor="large" title="Large conversations">
         <p>
-          <Rich text="Only the turns in and near the view are on the page. A turn is drawn from its messages when it comes near the view and disposed when it moves far away: only its messages and its measured height are kept, and it is drawn again when it comes back. A reply written into a turn far from the view writes its message, and the turn shows all of it when it comes back. Heights are estimated until measured, and the turn on screen stays in place while estimates become measurements. A turn that holds focus stays on the page. The chat opens at its end in one frame: until the turns at the end are placed it is laid out but not shown. Browser find (Ctrl+F) only sees the turns on the page." />
+          <Rich text="Only the turns in and near the view are on the page. A turn is drawn from its messages when it comes near the view and disposed when it moves far away: only its messages and its measured height are kept, and it is drawn again when it comes back. A reply written into a turn far from the view writes its message, and the turn shows all of it when it comes back. Heights are estimated until measured, and the turn on screen stays in place while estimates become measurements. A turn that holds focus stays on the page. The chat opens at its end in one frame: until the turns at the end are placed it is laid out but not shown. The browser’s own find sees only the turns on the page; Ctrl+F in the chat searches them all (see Search)." />
         </p>
       </Section>
 

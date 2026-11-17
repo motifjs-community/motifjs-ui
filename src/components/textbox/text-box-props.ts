@@ -1,4 +1,5 @@
 import type { Bind } from '@motifx/core';
+import type { EnterKeyHint } from '../../core/enter-key-hint';
 import type { InputMode } from '../../core/input-mode';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import type { FieldProps } from '../../parts/field/field-props';
@@ -28,6 +29,8 @@ export interface TextBoxProps extends FieldProps<string> {
   /** The text alignment. The default is `'start'`. */
   align?: Bind<'start' | 'center' | 'end'>;
   inputMode?: Bind<InputMode>;
+  /** What the Enter key of an on-screen keyboard says (`send`, `search`, `next` …); it does not change what Enter does. */
+  enterKeyHint?: Bind<EnterKeyHint>;
   autocomplete?: Bind<string>;
   spellcheck?: Bind<boolean>;
   /** The name submitted with the form. */

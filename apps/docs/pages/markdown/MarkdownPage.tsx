@@ -15,6 +15,8 @@ const SUPPORTED = [
   ['Tables', 'Lines starting with `|`, a delimiter line with `:` for the alignment, and `\\|` for a pipe in a cell.'],
   ['Links', '`[text](address "title")`, and bare addresses that start with `https://`, `http://` or `www.`.'],
   ['Images', '`![alt](address)`: shown only when `images` is on (see Links and images).'],
+  ['Footnotes', '`[^label]` refers to a note written as `[^label]: text` at a line’s start; lines indented under it go on in it. References are numbered by the order they first appear.'],
+  ['Math, diagrams', '`$…$`, `$$…$$` and ```` ```math ````, and fenced blocks in a diagram language, with a door (see Footnotes, math and diagrams). Without one, `$` is text and a diagram stays code.'],
   ['Other', 'Horizontal rules (`---`, `***`, `___`), hard line breaks (two spaces or `\\` at the end of a line), escapes and entities (`&amp;`, `&#39;`). HTML is shown as text.'],
 ];
 
@@ -22,6 +24,8 @@ const PROPS = [
   ['text', '`Bind<string>`', "`''`", 'The markdown. A new value that goes on from the last one adds only what is new; any other value is a new text.'],
   ['streaming', '`Bind<boolean>`', '`false`', 'While `true`, `text` is still arriving. When it turns `false`, the text ends. Without it, a given text ends at once.'],
   ['highlighter', '`Bind<CodeHighlighter | null>`', 'None', 'The door for any highlighter. Code stays plain without one.'],
+  ['mathRenderer', '`Bind<MathRenderer | null>`', 'None', 'The door for math: draws TeX once it is complete. Without one, `$` is text.'],
+  ['diagramRenderer', '`Bind<DiagramRenderer | null>`', 'None', 'The door for diagrams: draws a fenced block in a language it draws once its code is complete.'],
   ['images', '`Bind<boolean>`', '`false`', 'Shows images. While off, an image is a link to its address.'],
   ['allowImage', '`Bind<((src: string) => boolean) | null>`', 'Every safe address', 'With `images`, decides which addresses are shown. The others stay text.'],
   ['linkTarget', '`Bind<string>`', "`'_blank'`", 'Where links open. `rel="noopener noreferrer"` comes with a target. Use `\'\'` for the same tab.'],
@@ -39,6 +43,13 @@ const METHODS = [
   ['append(delta)', 'Adds `delta`. What it completes takes its form, and the rest is on screen as text at once.'],
   ['end()', 'The text is complete. What waits at the end is decided as at the end of a line. Nothing drawn is drawn again.'],
   ['clear()', 'Removes everything, to start a new text.'],
+  ['blockAt(index)', 'The block drawn for the character at `index` of the text: a paragraph, heading, code block, rule, table row or footnote. `null` before the first block, or past what is written. A search uses it to show where it found a text.'],
+];
+
+const DOORS = [
+  ['MathRenderer.render(tex, display)', 'Draws `tex`, a block of its own when `display` (`$$…$$`, ```` ```math ````), in the line otherwise. Return an element, which is placed as it is, or `null` to keep the TeX as written.'],
+  ['DiagramRenderer.draws(language)', 'Whether it draws code fenced as `language` (`mermaid`).'],
+  ['DiagramRenderer.render(code, language)', 'Draws the code once it is complete. Return an element, a promise of one, or `null` to keep the code.'],
 ];
 
 const HIGHLIGHTER = [
@@ -51,12 +62,14 @@ const A11Y = [
   ['Structure', 'Real headings, lists, quotes, tables and links, so screen readers navigate them as usual.'],
   ['Task items', 'The box has the role `img` and a name in the kit language: “Done” or “Not done”.'],
   ['Copy button', 'A button named “Copy”, which says “Copied” for a moment after copying.'],
+  ['Footnotes', 'A reference is a link named “Footnote 1”; it moves the focus to its note, and the note’s first link, “Back to reference 1”, moves it back. The page’s address does not change.'],
   ['Motion', 'Nothing moves. Text appears where it belongs.'],
 ];
 
 const LOCALE = [
   ['markdownCopy, markdownCopied', 'The copy button and what it says after copying.'],
   ['markdownTaskDone, markdownTaskOpen', 'The names of the task boxes.'],
+  ['markdownFootnote, markdownFootnoteBack', 'The names of a footnote’s reference and of the link back to it.'],
 ];
 
 const HOOKS = [
@@ -68,6 +81,8 @@ const HOOKS = [
   ['.mx-markdown__block, __code-header, __language, __copy, __pre, __code-text', 'A code block, its header, language, copy button, and code (`data-language`).'],
   ['.mx-markdown__table, __head, __body, __row, __cell', 'Tables. Cells carry `data-align` (`start`, `center`, `end`).'],
   ['.mx-markdown__image, __img', 'An image and its alternative text.'],
+  ['.mx-markdown__footnote-ref, __footnote-link, __footnotes, __footnote, __footnote-back', 'A footnote’s reference, the list of notes, a note and its link back.'],
+  ['.mx-markdown__math, __math-block, __math-text', 'Math in a line and in a block, and its TeX until it is drawn; `data-drawn` once the door drew it. A code block drawn by a door has `data-drawn` (`math`, `diagram`).'],
 ];
 
 const TOKENS = [
@@ -76,6 +91,8 @@ const TOKENS = [
   ['markdown.inline-code, markdown.quote, markdown.list, markdown.task, markdown.rule', 'Units: inline code, the quote bar, the list indent, the task box (`done`) and rules.'],
   ['markdown.code-block, markdown.code-header, markdown.code-language, markdown.code-text', 'Units: a code block’s frame, header, language and code. Use `white-space` on `code-text` to decide whether long lines wrap.'],
   ['markdown.table, markdown.cell, markdown.image', 'Units: the table frame, cells (`head`) and images.'],
+  ['markdown.footnote-ref, markdown.footnotes, markdown.footnote, markdown.footnote-back', 'Units: a reference’s number, the list of notes, a note (`focus`) and its link back.'],
+  ['markdown.math-block, markdown.math-text', 'Units: display math, and TeX not drawn yet. `code-block` has `drawn` for math drawn in its place.'],
   ['markdown.copy (place)', 'The variant, tone and size of the copy button.'],
 ];
 
@@ -138,6 +155,40 @@ view.end();
           <Highlighting />
         </Example>
         <ApiTable head={['Member', 'Description']} rows={HIGHLIGHTER} />
+      </Section>
+
+      <Section anchor="doors" title="Footnotes, math and diagrams">
+        <p>
+          <Rich text="A footnote’s reference becomes its number, raised, as soon as its `]` is followed by anything but `(`; its note, `[^1]: text`, is drawn where it is written, in a numbered list with the notes written right after it, and opens with a link back to the first reference. Math and diagrams come through doors, as code colours do: the kit draws no TeX and no diagram itself. Their text shows as it arrives; once it is complete (the closing `$`, the closing `$$` or fence, or the end of the text) the door draws it, and what it gives takes the text’s place. A `$` opens math only when text follows it, and a `$` closes it unless a digit follows, so prices stay text; math left open at the end of its line stays as written." />
+        </p>
+        <Code
+          code={`
+import katex from 'katex';
+import mermaid from 'mermaid';
+
+const mathRenderer: MathRenderer = {
+  render(tex, display) {
+    const host = document.createElement('span');
+    katex.render(tex, host, { displayMode: display, throwOnError: false });
+    return host;
+  },
+};
+
+let count = 0;
+const diagramRenderer: DiagramRenderer = {
+  draws: (language) => language === 'mermaid',
+  async render(code) {
+    const { svg } = await mermaid.render(\`diagram-\${++count}\`, code);
+    const host = document.createElement('div');
+    host.innerHTML = svg;
+    return host;
+  },
+};
+
+<Markdown text={() => this.answer.text} mathRenderer={mathRenderer} diagramRenderer={diagramRenderer} />
+`}
+        />
+        <ApiTable head={['Member', 'Description']} rows={DOORS} />
       </Section>
 
       <Section anchor="links" title="Links and images">

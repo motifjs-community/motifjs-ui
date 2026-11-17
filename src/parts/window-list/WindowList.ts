@@ -1,7 +1,7 @@
 import type { Component, ComponentBase } from '@motifx/core';
 import { loose, part } from '../../core/draw-parts';
 import { holdsFocus } from '../../core/focus';
-import { boxOf, measure as ask, onLayout, onLookChange, rectOf, scrollBy, styleOf, whenMeasured } from '../../core/measure';
+import { boxOf, measure as ask, onLayout, onLookChange, rectOf, reveal, scrollBy, scrollTo, styleOf, whenMeasured, type Box, type RevealOptions } from '../../core/measure';
 import { css, kept } from '../../core/part-writes';
 import type { ScrollView } from '../../components/scrollview/ScrollView';
 import type { WindowListSource } from './window-list-source';
@@ -23,6 +23,13 @@ interface Slot<T> {
   measured: boolean;
   /** The item changed while it had no part: its height is estimated again. */
   stale: boolean;
+}
+
+/** An item to bring into view once its part is on the page. */
+interface Revealing<T> {
+  slot: Slot<T>;
+  align: RevealOptions['align'];
+  then?: (part: ComponentBase) => void;
 }
 
 /**
@@ -48,6 +55,7 @@ export class WindowList<T> {
   private noticing = false;
   private passes = 0;
   private sized = false;
+  private revealing: Revealing<T> | null = null;
   /** The browser keeps the view where it is as parts above it change size (scroll anchoring): nothing to make up for. */
   private readonly anchored = typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('overflow-anchor', 'auto');
 
@@ -94,6 +102,7 @@ export class WindowList<T> {
 
   /** Another list: every part goes, and those in and near the view are made from the new items. */
   set(items: readonly T[]): void {
+    this.revealing = null;
     const keep = new Set(items);
     for (const slot of this.slots) {
       if (keep.has(slot.item)) this.takeOff(slot);
@@ -206,6 +215,28 @@ export class WindowList<T> {
     else change();
   }
 
+  /**
+   * Brings `item` into view: with no part, the view goes where its height says it starts and the part is made there.
+   * `then` gets the part once it is placed and shows. The view leaves the end for it, and is at the end again when the
+   * part is there.
+   */
+  reveal(item: T, then?: (part: ComponentBase) => void, align: RevealOptions['align'] = 'nearest'): void {
+    const slot = this.bySlot.get(item);
+    if (!slot) return;
+    // A view stuck to the end would go back there before the scroll is heard.
+    this.scroller.setAtEnd(false);
+    this.revealing = { slot, align, then };
+    if (slot.part?.parent === this.host) {
+      this.revealNow();
+      return;
+    }
+    ask(this.host, () => this.topOf(slot), (top) => {
+      scrollTo(this.scroller, { top });
+      this.passes = 0;
+      this.later();
+    });
+  }
+
   /** Places on the page the parts in and near the view, takes off the others, and keeps the view where it is. */
   update(): void {
     this.passes = 0;
@@ -242,9 +273,43 @@ export class WindowList<T> {
     } finally {
       this.updating = false;
     }
-    if (changed && ++this.passes < MOST_PASSES) this.later();
-    else if (this.sized) this.source.settled?.();
+    if (changed && ++this.passes < MOST_PASSES) {
+      this.later();
+      return;
+    }
+    if (this.sized) this.source.settled?.();
+    this.revealNow();
   }
+
+  /** The item to bring into view has its part on the page: the view goes to it. */
+  private revealNow(): void {
+    const revealing = this.revealing;
+    const part = revealing?.slot.part;
+    if (!revealing || !part || part.parent !== this.host) return;
+    this.revealing = null;
+    reveal(this.scroller, part, {
+      axis: 'y',
+      align: revealing.align,
+      then: () => {
+        ask(this.host, this.readView, (box) => this.scroller.noteEnd(box));
+        revealing.then?.(part);
+      }
+    });
+  }
+
+  /** Where a slot starts in the scroller's content: the list's place in it, and the slots before it. */
+  private topOf(slot: Slot<T>): number {
+    const box = boxOf(this.scroller);
+    const gap = this.gap();
+    let y = rectOf(this.host).top - box.top - box.clientTop + box.scrollTop;
+    for (const s of this.slots) {
+      if (s === slot) break;
+      y += s.height + gap;
+    }
+    return y;
+  }
+
+  private readonly readView = (): Box => boxOf(this.scroller);
 
   private later(): void {
     if (this.queued) return;
@@ -346,6 +411,7 @@ export class WindowList<T> {
 
   private drop(slot: Slot<T>): void {
     this.bySlot.delete(slot.item);
+    if (this.revealing?.slot === slot) this.revealing = null;
     if (slot.part && !slot.part.isDisposed) {
       if (slot.part.parent) slot.part.parent.controls.remove(slot.part);
       else void slot.part.dispose();

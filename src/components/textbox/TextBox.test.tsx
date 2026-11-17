@@ -497,3 +497,13 @@ describe('TextBox', () => {
     });
   });
 });
+
+describe('TextBox: on-screen keyboard', () => {
+  it('labels the Enter key of an on-screen keyboard', () => {
+    const b = new TextBox({ enterKeyHint: 'search' });
+    page(b);
+    expect(input(b).getAttribute('enterkeyhint')).toBe('search');
+    b.enterKeyHint = 'next';
+    expect(input(b).getAttribute('enterkeyhint')).toBe('next');
+  });
+});
