@@ -142,4 +142,45 @@ describe('ScrollView', () => {
         await uiLocale.use('tr');
         expect(view.pullText.element.textContent).not.toBe(enStrings.scrollPullDown);
     });
+
+    it('says when it comes to the end and leaves it, and scrollToEnd takes it back', async () => {
+        const view = new ScrollView({ stickToEnd: true });
+        page(view);
+        await settle();
+        const changes: boolean[] = [];
+        view.onAtEndChanged(e => changes.push(e.atEnd));
+        let top = 0;
+        sized(view, 1000, 300);
+        Object.defineProperty(view.element, 'scrollTop', { configurable: true, get: () => top, set: v => (top = v) });
+        view.element.dispatchEvent(new Event('scroll'));
+        expect([view.isAtEnd, view.element.hasAttribute('data-at-end')]).toEqual([false, false]);
+        top = 690;
+        view.element.dispatchEvent(new Event('scroll'));
+        expect(view.isAtEnd).toBe(true);
+        top = 0;
+        view.element.dispatchEvent(new Event('scroll'));
+        view.scrollToEnd();
+        expect(changes).toEqual([false, true, false, true]);
+    });
+
+    it('keeps a part where it was on screen while parts are added above it', async () => {
+        const first = new Component<HTMLDivElement>('div');
+        const view = new ScrollView();
+        view.content.controls.insert(1, first);
+        page(view);
+        await settle();
+        const by = vi.fn();
+        Object.defineProperty(view.element, 'scrollBy', { configurable: true, value: by });
+        let partTop = 40;
+        vi.spyOn(first.element, 'getBoundingClientRect').mockImplementation(() => new DOMRect(0, partTop, 100, 20));
+        vi.spyOn(view.element, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 100, 300));
+        const added = new Component<HTMLDivElement>('div');
+        view.holdPosition(first, () => {
+            view.content.controls.insert(1, added);
+            partTop = 160;
+        });
+        await settle();
+        expect(view.content.controls.items.indexOf(added)).toBeLessThan(view.content.controls.items.indexOf(first));
+        expect(by).toHaveBeenCalledWith(expect.objectContaining({ top: 120 }));
+    });
 });

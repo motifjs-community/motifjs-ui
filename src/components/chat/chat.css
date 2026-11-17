@@ -1,0 +1,365 @@
+/* Chat: only the layout is here; every piece (the question's box, the dots, a tool call's line and box, the thinking,
+   the to-do list, a request's choices, a plan, the questions and their form, the line under the conversation, the
+   queue, the composer) is a unit of its schema. The conversation
+   scrolls in its view (a ScrollView that stays at the end while it is there), and the button back to the latest message
+   stands over its end. While it opens (the turns at the end placed, the view brought to the end) the view is laid out
+   but not shown, so the first frame it shows is at the end. */
+@layer mx.components {
+  .mx-chat {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 0;
+    width: 100%;
+  }
+
+  .mx-chat[data-opening] > .mx-chat__view {
+    visibility: hidden;
+  }
+
+  .mx-chat__view {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  .mx-chat__view > .mx-chat__scroller {
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  .mx-chat__older {
+    display: flex;
+    justify-content: center;
+  }
+
+  .mx-chat__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--_chat-turns-gap);
+  }
+
+  .mx-chat__turn,
+  .mx-chat__question,
+  .mx-chat__flow,
+  .mx-chat__entry-main,
+  .mx-chat__tool-box,
+  .mx-chat__thinking-body,
+  .mx-chat__todo-list,
+  .mx-chat__queue {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  /* The question: its time at the end of the line, the box across the conversation. */
+  .mx-chat__question-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  /* The actions of a question and of a reply; where a pointer can hover they show on hover or focus, and a reply that
+     failed shows its own always. */
+  .mx-chat__question-actions,
+  .mx-chat__turn-actions,
+  .mx-chat__edit-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  @media (hover: hover) {
+    .mx-chat__question:not(:hover, :focus-within) .mx-chat__question-actions,
+    .mx-chat__turn:not(:hover, :focus-within) > .mx-chat__turn-actions:not([data-failed]) {
+      opacity: 0;
+    }
+  }
+
+  .mx-chat__edit {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__edit-actions {
+    justify-content: flex-end;
+  }
+
+  /* Where the conversation was summed up: a line, its label, a line; no dot. */
+  .mx-chat__entry[data-kind='compaction'] > .mx-chat__dot {
+    visibility: hidden;
+  }
+
+  .mx-chat__compaction {
+    display: flex;
+    align-items: center;
+  }
+
+  .mx-chat__compaction-line {
+    flex: 1 1 auto;
+  }
+
+  .mx-chat__compaction-head {
+    appearance: none;
+    flex: none;
+    font: inherit;
+  }
+
+  .mx-chat__bubble {
+    overflow-wrap: anywhere;
+  }
+
+  .mx-chat__question[data-long]:not([data-expanded]) > .mx-chat__bubble,
+  .mx-chat__entry:not([data-full]) .mx-chat__tool-code {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--_chat-clamp-lines);
+  }
+
+  .mx-chat__question > .mx-chat__more {
+    align-self: flex-start;
+  }
+
+  /* An entry: the dot on the first line, the column beside it. */
+  .mx-chat__entry {
+    display: flex;
+    align-items: flex-start;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__dot {
+    flex: none;
+  }
+
+  .mx-chat__entry-main {
+    flex: 1 1 auto;
+  }
+
+  .mx-chat__tool-head,
+  .mx-chat__thinking-head {
+    appearance: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    align-self: flex-start;
+    max-inline-size: 100%;
+    font: inherit;
+    text-align: start;
+  }
+
+  .mx-chat__tool-side {
+    display: flex;
+    align-items: baseline;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__tool-label {
+    flex: none;
+  }
+
+  .mx-chat__tool-code {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .mx-chat__diff-line {
+    display: block;
+  }
+
+  .mx-chat__todo-item {
+    display: flex;
+    align-items: baseline;
+  }
+
+  .mx-chat__todo-glyph {
+    flex: none;
+  }
+
+  /* The line under the conversation: a glyph that turns, what the model does, its seconds. */
+  .mx-chat__status {
+    display: flex;
+    align-items: baseline;
+  }
+
+  .mx-chat__status-glyph {
+    flex: none;
+    animation: mx-chat-spin var(--_chat-status-spin) linear infinite;
+  }
+
+  /* While a reply waits for the user, nothing turns. */
+  .mx-chat__status[data-waiting] > .mx-chat__status-glyph {
+    animation: none;
+  }
+
+  @keyframes mx-chat-spin {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  .mx-chat__jump {
+    position: absolute;
+    inset-block-end: var(--_chat-jump-offset);
+    inset-inline: 0;
+    inline-size: fit-content;
+    margin-inline: auto;
+  }
+
+  .mx-chat__queued {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__queued-text {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mx-chat__queued-remove {
+    flex: none;
+  }
+
+  /* A request in the flow: its question and numbered choices (a box under the one that asks for a text), then the
+     answer. Questions in the flow: their head, then each question over its answer. */
+  .mx-chat__request,
+  .mx-chat__choices,
+  .mx-chat__plan,
+  .mx-chat__asked-list,
+  .mx-chat__asked-pair,
+  .mx-chat__ask,
+  .mx-chat__ask-body,
+  .mx-chat__ask-options {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__choice,
+  .mx-chat__ask-option,
+  .mx-chat__ask-tab {
+    appearance: none;
+    display: flex;
+    align-items: baseline;
+    font: inherit;
+    text-align: start;
+  }
+
+  .mx-chat__choice-key,
+  .mx-chat__ask-key,
+  .mx-chat__ask-check {
+    flex: none;
+  }
+
+  .mx-chat__choice-label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__asked-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .mx-chat__asked-answer {
+    overflow-wrap: anywhere;
+  }
+
+  /* The form of the questions: the tabs and where it is, the question (its options, a preview beside them), the
+     buttons with "Decide for me" and sending at the end. */
+  .mx-chat__ask-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .mx-chat__ask-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__ask-tab {
+    align-items: center;
+  }
+
+  .mx-chat__ask-tab:not([data-answered]) > .mx-chat__ask-tab-check,
+  .mx-chat__ask-option:not([data-checked]) > .mx-chat__ask-check {
+    visibility: hidden;
+  }
+
+  .mx-chat__ask-choice {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__ask-choice[data-preview] {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .mx-chat__ask-choice[data-preview] > * {
+    flex: 1 1 0;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__ask-option-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .mx-chat__ask-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .mx-chat__ask-actions > .mx-chat__ask-decline {
+    margin-inline-start: auto;
+  }
+
+  /* The composer: the box and the tools under it in one field. The tools: the mode and the model at the start; the
+     context meter and the send button at the end. The meter's ring is an arc as long as the context used. */
+  .mx-chat-composer,
+  .mx-chat-composer__field {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .mx-chat-composer__tools,
+  .mx-chat-composer__files,
+  .mx-chat-composer__context,
+  .mx-chat__files {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .mx-chat-composer__space {
+    flex: 1 1 auto;
+  }
+
+  .mx-chat-composer__usage {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .mx-chat-composer__usage-ring {
+    flex: none;
+    background: conic-gradient(var(--_chat-composer-usage-fill) var(--_usage), var(--_chat-composer-usage-track) 0);
+  }
+
+  .mx-chat-composer__usage[data-high] > .mx-chat-composer__usage-ring {
+    background: conic-gradient(var(--_chat-composer-usage-high) var(--_usage), var(--_chat-composer-usage-track) 0);
+  }
+}

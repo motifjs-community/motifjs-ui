@@ -1,0 +1,145 @@
+{
+  "chat-composer": {
+    "$description": "ChatComposer: the box a message is written in, framed with its tools under it: the mode, the model, how full the context is, the send button.",
+    "$selector": ".mx-chat-composer",
+    "usage-fill": {
+      "$type": "color",
+      "$description": "The part of the context meter's ring that is used."
+    },
+    "usage-high": {
+      "$type": "color",
+      "$description": "The used part once the context is nearly full (`data-high`)."
+    },
+    "usage-track": {
+      "$type": "color",
+      "$description": "The rest of the ring."
+    },
+    "$places": {
+      "box": {
+        "$description": "The text box: no frame of its own, the field around it is its frame.",
+        "selector": ".mx-chat-composer__field > .mx-chat-composer__box",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "frame.display",
+          "indicator.display",
+          "foot.display",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.disabled.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      },
+      "attach": {
+        "$description": "The button that picks files to attach.",
+        "selector": ".mx-chat-composer__tools > .mx-chat-composer__attach",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "commands": {
+        "$description": "The button that lists the commands.",
+        "selector": ".mx-chat-composer__tools > .mx-chat-composer__commands",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "mode": {
+        "$description": "The button that shows and changes the way the model works.",
+        "selector": ".mx-chat-composer__tools > .mx-chat-composer__mode",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "model": {
+        "$description": "The button that shows and changes the model and its thinking.",
+        "selector": ".mx-chat-composer__tools > .mx-chat-composer__model",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "send": {
+        "$description": "The send button, which stops the reply while one is written.",
+        "selector": ".mx-chat-composer__tools > .mx-chat-composer__button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      }
+    },
+    "$units": {
+      "frame": {
+        "$description": "The composer: its fill, frame and the space around the field.",
+        "selector": ".mx-chat-composer"
+      },
+      "field": {
+        "$description": "The box and its tools, in one frame: `focus` while the box has the focus, `dragover` while files are dragged over it.",
+        "selector": ".mx-chat-composer__field",
+        "states": {
+          "focus": ".mx-chat-composer__field:focus-within",
+          "dragover": ".mx-chat-composer__field[data-dragover]"
+        }
+      },
+      "files": {
+        "$description": "The files attached, as chips above the box.",
+        "selector": ".mx-chat-composer__files"
+      },
+      "context": {
+        "$description": "What the app adds by itself, as chips among the tools.",
+        "selector": ".mx-chat-composer__context"
+      },
+      "menu-label": {
+        "$description": "A line of the menu of commands or mentions: its label.",
+        "selector": ".mx-chat-composer__menu-label"
+      },
+      "menu-description": {
+        "$description": "What a command does, or where a mention is, after its label.",
+        "selector": ".mx-chat-composer__menu-description"
+      },
+      "tools": {
+        "$description": "The tools under the box.",
+        "selector": ".mx-chat-composer__tools"
+      },
+      "usage": {
+        "$description": "How full the context is: the ring and the percent.",
+        "selector": ".mx-chat-composer__usage"
+      },
+      "usage-ring": {
+        "$description": "The ring.",
+        "selector": ".mx-chat-composer__usage-ring"
+      }
+    }
+  }
+}

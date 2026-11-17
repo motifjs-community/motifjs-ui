@@ -1,0 +1,563 @@
+{
+  "chat": {
+    "$description": "Chat: a conversation drawn by turn (the user's question, then what the model did, each part with a dot), the line under it while a reply is written, the queue above the box, the button to older messages and the one back to the latest.",
+    "$selector": ".mx-chat",
+    "turns-gap": {
+      "$type": "dimension",
+      "$description": "The space between turns."
+    },
+    "jump-offset": {
+      "$type": "dimension",
+      "$description": "How far above the box the button back to the latest message stands."
+    },
+    "clamp-lines": {
+      "$type": "number",
+      "$description": "How many lines a long question, and each side of a tool call in summary, show until opened."
+    },
+    "status-spin": {
+      "$type": "duration",
+      "$description": "One turn of the glyph on the line under the conversation."
+    },
+    "$places": {
+      "older-button": {
+        "$description": "The button above the first message that loads older ones.",
+        "selector": ".mx-chat__older > .mx-chat__older-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "jump": {
+        "$description": "The button back to the latest message, over the conversation.",
+        "selector": ".mx-chat__view > .mx-chat__jump",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "more": {
+        "$description": "The button that opens the rest of a long question.",
+        "selector": ".mx-chat__question > .mx-chat__more",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "queued-remove": {
+        "$description": "The button that removes a queued message.",
+        "selector": ".mx-chat__queued > .mx-chat__queued-remove",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "question-action": {
+        "$description": "A question's action: copy, edit, go back, fork.",
+        "selector": ".mx-chat__question-actions > .mx-chat__action",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "turn-action": {
+        "$description": "A reply's action at the end of its turn: copy, try again.",
+        "selector": ".mx-chat__turn-actions > .mx-chat__action",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "edit-cancel": {
+        "$description": "The button that leaves editing a question.",
+        "selector": ".mx-chat__edit-actions > .mx-chat__edit-cancel",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "edit-send": {
+        "$description": "The button that sends an edited question.",
+        "selector": ".mx-chat__edit-actions > .mx-chat__edit-send",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "asked-button": {
+        "$description": "The button by waiting questions in the flow that goes to the form.",
+        "selector": ".mx-chat__asked-head > .mx-chat__asked-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "ask-previous": {
+        "$description": "The form's button to the question before.",
+        "selector": ".mx-chat__ask-actions > .mx-chat__ask-previous",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "ask-next": {
+        "$description": "The form's button to the next question.",
+        "selector": ".mx-chat__ask-actions > .mx-chat__ask-next",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "ask-decline": {
+        "$description": "The form's \"Decide for me\".",
+        "selector": ".mx-chat__ask-actions > .mx-chat__ask-decline",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "ask-submit": {
+        "$description": "The form's button that sends the answers.",
+        "selector": ".mx-chat__ask-actions > .mx-chat__ask-submit",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      }
+    },
+    "$units": {
+      "list": {
+        "$description": "The turns: the space around them.",
+        "selector": ".mx-chat__list"
+      },
+      "turn": {
+        "$description": "A turn: the space between the question and the flow.",
+        "selector": ".mx-chat__turn"
+      },
+      "question": {
+        "$description": "The user's question: its time and actions, its box, the button for the rest.",
+        "selector": ".mx-chat__question"
+      },
+      "question-head": {
+        "$description": "The question's actions and time, over its box.",
+        "selector": ".mx-chat__question-head"
+      },
+      "question-actions": {
+        "$description": "The question's actions; where a pointer can hover, they show on hover or focus.",
+        "selector": ".mx-chat__question-actions"
+      },
+      "edit": {
+        "$description": "A question being edited: its box and buttons, in place of its bubble.",
+        "selector": ".mx-chat__edit"
+      },
+      "edit-actions": {
+        "$description": "Cancel and send.",
+        "selector": ".mx-chat__edit-actions"
+      },
+      "turn-actions": {
+        "$description": "A reply's actions at the end of its turn.",
+        "selector": ".mx-chat__turn-actions"
+      },
+      "compaction": {
+        "$description": "Where the conversation was summed up: a line across the flow, its label on it.",
+        "selector": ".mx-chat__compaction"
+      },
+      "compaction-line": {
+        "$description": "The line on each side of the label.",
+        "selector": ".mx-chat__compaction-line"
+      },
+      "compaction-head": {
+        "$description": "The label, which opens the summary: `hover`, `focus` (the keys).",
+        "selector": ".mx-chat__compaction-head",
+        "defaults": {
+          "padding": "0px",
+          "margin": "0px",
+          "border-width": "0px",
+          "bg": "transparent"
+        },
+        "states": {
+          "hover": ".mx-chat__compaction-head:hover",
+          "focus": ".mx-chat__compaction-head:focus-visible"
+        }
+      },
+      "compaction-text": {
+        "$description": "The summary.",
+        "selector": ".mx-chat__compaction-text"
+      },
+      "time": {
+        "$description": "The time above a question or a reply.",
+        "selector": ".mx-chat__time"
+      },
+      "bubble": {
+        "$description": "The box of the user's question; the text as it was typed.",
+        "selector": ".mx-chat__bubble"
+      },
+      "files": {
+        "$description": "The files of the user's question, as chips under its box.",
+        "selector": ".mx-chat__files"
+      },
+      "flow": {
+        "$description": "What the model did in a turn: the space between its entries.",
+        "selector": ".mx-chat__flow"
+      },
+      "entry": {
+        "$description": "One part in the flow: its dot and the column beside it.",
+        "selector": ".mx-chat__entry"
+      },
+      "dot": {
+        "$description": "The dot at the start of an entry, by what it is: `text`, `thinking`, a tool call `running` (or assembling), `waiting` for approval, `done`, `error` (or denied), `todo`, `notice`, a notice of an `alert` (an error).",
+        "selector": ".mx-chat__entry > .mx-chat__dot",
+        "states": {
+          "text": ".mx-chat__entry[data-kind='text'] > .mx-chat__dot",
+          "thinking": ".mx-chat__entry[data-kind='thinking'] > .mx-chat__dot",
+          "running": ".mx-chat__entry:is([data-status='running'], [data-status='assembling']) > .mx-chat__dot",
+          "waiting": ".mx-chat__entry[data-status='waiting'] > .mx-chat__dot",
+          "done": ".mx-chat__entry[data-kind='tool'][data-status='done'] > .mx-chat__dot",
+          "error": ".mx-chat__entry:is([data-status='error'], [data-status='denied']) > .mx-chat__dot",
+          "todo": ".mx-chat__entry[data-kind='todo'] > .mx-chat__dot",
+          "notice": ".mx-chat__entry[data-kind='notice'] > .mx-chat__dot",
+          "alert": ".mx-chat__entry[data-kind='notice'][data-tone='error'] > .mx-chat__dot"
+        }
+      },
+      "main": {
+        "$description": "The column beside the dot.",
+        "selector": ".mx-chat__entry-main"
+      },
+      "tool-head": {
+        "$description": "A tool call's line, which opens it: `hover`, `focus` (the keys).",
+        "selector": ".mx-chat__tool-head",
+        "defaults": {
+          "padding": "0px",
+          "margin": "0px",
+          "border-width": "0px",
+          "bg": "transparent"
+        },
+        "states": {
+          "hover": ".mx-chat__tool-head:hover",
+          "focus": ".mx-chat__tool-head:focus-visible"
+        }
+      },
+      "tool-name": {
+        "$description": "The tool's name.",
+        "selector": ".mx-chat__tool-name"
+      },
+      "tool-title": {
+        "$description": "What the call does, in a line.",
+        "selector": ".mx-chat__tool-title"
+      },
+      "tool-wait": {
+        "$description": "What the call waits on: the file, the kilobytes, the seconds, a diff's count.",
+        "selector": ".mx-chat__tool-wait"
+      },
+      "tool-box": {
+        "$description": "What went in and came out.",
+        "selector": ".mx-chat__tool-box"
+      },
+      "tool-side": {
+        "$description": "One side of it: its label and its text.",
+        "selector": ".mx-chat__tool-side"
+      },
+      "tool-label": {
+        "$description": "`IN` or `OUT`.",
+        "selector": ".mx-chat__tool-label"
+      },
+      "tool-code": {
+        "$description": "The text of a side: no box of its own, the call's box holds it.",
+        "selector": ".mx-chat__tool-code",
+        "defaults": {
+          "margin": "0px",
+          "padding": "0px",
+          "border-width": "0px",
+          "radius": "0px",
+          "bg": "transparent"
+        }
+      },
+      "diff-line": {
+        "$description": "A line of a diff: `added`, `removed`.",
+        "selector": ".mx-chat__diff-line",
+        "states": {
+          "added": ".mx-chat__diff-line[data-line='added']",
+          "removed": ".mx-chat__diff-line[data-line='removed']"
+        }
+      },
+      "thinking-head": {
+        "$description": "The thinking's line, which opens it: `hover`, `focus` (the keys).",
+        "selector": ".mx-chat__thinking-head",
+        "defaults": {
+          "padding": "0px",
+          "margin": "0px",
+          "border-width": "0px",
+          "bg": "transparent"
+        },
+        "states": {
+          "hover": ".mx-chat__thinking-head:hover",
+          "focus": ".mx-chat__thinking-head:focus-visible"
+        }
+      },
+      "thinking-note": {
+        "$description": "The newest note, beside the thinking's line while it runs.",
+        "selector": ".mx-chat__thinking-note"
+      },
+      "thinking-body": {
+        "$description": "What the thinking wrote, and its notes.",
+        "selector": ".mx-chat__thinking-body"
+      },
+      "thinking-item": {
+        "$description": "A note.",
+        "selector": ".mx-chat__thinking-item"
+      },
+      "todo-title": {
+        "$description": "The title of the to-do list.",
+        "selector": ".mx-chat__todo-title"
+      },
+      "todo-list": {
+        "$description": "The tasks.",
+        "selector": ".mx-chat__todo-list"
+      },
+      "todo-item": {
+        "$description": "A task: `active`, `done`.",
+        "selector": ".mx-chat__todo-item",
+        "states": {
+          "active": ".mx-chat__todo-item[data-status='active']",
+          "done": ".mx-chat__todo-item[data-status='done']"
+        }
+      },
+      "todo-glyph": {
+        "$description": "A task's glyph.",
+        "selector": ".mx-chat__todo-glyph"
+      },
+      "notice": {
+        "$description": "A notice's text: `error`.",
+        "selector": ".mx-chat__notice",
+        "states": {
+          "error": ".mx-chat__entry[data-tone='error'] .mx-chat__notice"
+        }
+      },
+      "status": {
+        "$description": "The line under the conversation while a reply is written.",
+        "selector": ".mx-chat__status"
+      },
+      "status-glyph": {
+        "$description": "Its turning glyph.",
+        "selector": ".mx-chat__status-glyph"
+      },
+      "status-detail": {
+        "$description": "Its seconds and how to stop.",
+        "selector": ".mx-chat__status-detail"
+      },
+      "queue": {
+        "$description": "The messages waiting above the box.",
+        "selector": ".mx-chat__queue"
+      },
+      "queued": {
+        "$description": "A waiting message.",
+        "selector": ".mx-chat__queued"
+      },
+      "queued-text": {
+        "$description": "Its text, on one line.",
+        "selector": ".mx-chat__queued-text"
+      },
+      "older": {
+        "$description": "The place of the button to older messages.",
+        "selector": ".mx-chat__older"
+      },
+      "request": {
+        "$description": "What a tool call or a plan asks of the user: its choices, then the answer.",
+        "selector": ".mx-chat__request"
+      },
+      "choices": {
+        "$description": "The choices of a request while it waits: its question and the numbered choices.",
+        "selector": ".mx-chat__choices"
+      },
+      "choices-title": {
+        "$description": "The question of the choices.",
+        "selector": ".mx-chat__choices-title"
+      },
+      "choice": {
+        "$description": "A choice: `hover`, `focus` (the keys).",
+        "selector": ".mx-chat__choice",
+        "defaults": {
+          "padding": "0px",
+          "margin": "0px",
+          "border-width": "0px",
+          "bg": "transparent"
+        },
+        "states": {
+          "hover": ".mx-chat__choice:hover",
+          "focus": ".mx-chat__choice:focus-visible"
+        }
+      },
+      "choice-key": {
+        "$description": "A choice's number, its key.",
+        "selector": ".mx-chat__choice-key"
+      },
+      "choice-label": {
+        "$description": "A choice's text.",
+        "selector": ".mx-chat__choice-label"
+      },
+      "answer": {
+        "$description": "What the user said to a request: `yes` (allowed, approved), `no` (denied, keep planning); unanswered as it is.",
+        "selector": ".mx-chat__answer",
+        "states": {
+          "yes": ".mx-chat__answer:is([data-answer='yes'], [data-answer='always'])",
+          "no": ".mx-chat__answer[data-answer='no']"
+        }
+      },
+      "plan": {
+        "$description": "The box of a plan.",
+        "selector": ".mx-chat__plan"
+      },
+      "plan-title": {
+        "$description": "Its title.",
+        "selector": ".mx-chat__plan-title"
+      },
+      "asked-head": {
+        "$description": "Questions in the flow: how many, where they stand, the button to the form.",
+        "selector": ".mx-chat__asked-head"
+      },
+      "asked-count": {
+        "$description": "How many questions.",
+        "selector": ".mx-chat__asked-count"
+      },
+      "asked-state": {
+        "$description": "Where they stand.",
+        "selector": ".mx-chat__asked-state"
+      },
+      "asked-list": {
+        "$description": "The questions and their answers.",
+        "selector": ".mx-chat__asked-list"
+      },
+      "asked-pair": {
+        "$description": "A question and its answer.",
+        "selector": ".mx-chat__asked-pair"
+      },
+      "asked-question": {
+        "$description": "The question.",
+        "selector": ".mx-chat__asked-question"
+      },
+      "asked-answer": {
+        "$description": "Its answer.",
+        "selector": ".mx-chat__asked-answer"
+      },
+      "ask": {
+        "$description": "The form of the questions, in the composer's place.",
+        "selector": ".mx-chat__ask"
+      },
+      "ask-header": {
+        "$description": "Its tabs and where it is.",
+        "selector": ".mx-chat__ask-header"
+      },
+      "ask-tabs": {
+        "$description": "A tab for each question.",
+        "selector": ".mx-chat__ask-tabs"
+      },
+      "ask-tab": {
+        "$description": "A question's tab: `hover`, `focus` (the keys), `selected`.",
+        "selector": ".mx-chat__ask-tab",
+        "defaults": {
+          "padding": "0px",
+          "margin": "0px",
+          "border-width": "0px",
+          "bg": "transparent"
+        },
+        "states": {
+          "hover": ".mx-chat__ask-tab:hover",
+          "focus": ".mx-chat__ask-tab:focus-visible",
+          "selected": ".mx-chat__ask-tab[data-selected]"
+        }
+      },
+      "ask-tab-check": {
+        "$description": "The mark of an answered question's tab.",
+        "selector": ".mx-chat__ask-tab-check"
+      },
+      "ask-count": {
+        "$description": "Where it is: `2 / 3`.",
+        "selector": ".mx-chat__ask-count"
+      },
+      "ask-body": {
+        "$description": "The question shown.",
+        "selector": ".mx-chat__ask-body"
+      },
+      "ask-text": {
+        "$description": "Its text.",
+        "selector": ".mx-chat__ask-text"
+      },
+      "ask-choice": {
+        "$description": "The options, and the preview beside them.",
+        "selector": ".mx-chat__ask-choice"
+      },
+      "ask-options": {
+        "$description": "The options.",
+        "selector": ".mx-chat__ask-options"
+      },
+      "ask-option": {
+        "$description": "An option: `hover`, `focus` (the keys), `checked`.",
+        "selector": ".mx-chat__ask-option",
+        "defaults": {
+          "padding": "0px",
+          "margin": "0px",
+          "border-width": "0px",
+          "bg": "transparent"
+        },
+        "states": {
+          "hover": ".mx-chat__ask-option:hover",
+          "focus": ".mx-chat__ask-option:focus-visible",
+          "checked": ".mx-chat__ask-option[data-checked]"
+        }
+      },
+      "ask-key": {
+        "$description": "An option's number, its key.",
+        "selector": ".mx-chat__ask-key"
+      },
+      "ask-label": {
+        "$description": "An option's label.",
+        "selector": ".mx-chat__ask-label"
+      },
+      "ask-description": {
+        "$description": "The line under it.",
+        "selector": ".mx-chat__ask-description"
+      },
+      "ask-check": {
+        "$description": "The mark of an option taken.",
+        "selector": ".mx-chat__ask-check"
+      },
+      "ask-preview": {
+        "$description": "The preview of the focused option.",
+        "selector": ".mx-chat__ask-preview"
+      },
+      "ask-missing": {
+        "$description": "What a required question left empty says.",
+        "selector": ".mx-chat__ask-missing"
+      },
+      "ask-actions": {
+        "$description": "The form's buttons.",
+        "selector": ".mx-chat__ask-actions"
+      }
+    }
+  }
+}

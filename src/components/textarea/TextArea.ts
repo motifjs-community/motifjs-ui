@@ -27,6 +27,7 @@ const OWN = [
   'wrap',
   'name',
   'autocomplete',
+  'submitOnEnter',
 ] as const;
 
 const SIZING = ['rows', 'autoGrow', 'minRows', 'maxRows', 'resize'] as const;
@@ -168,6 +169,12 @@ export class TextArea extends Field<string, TextAreaProps> {
   set spellcheck(value: Bind<boolean>) {
     this.assignProperty('spellcheck', value, Boolean);
   }
+  get submitOnEnter(): boolean {
+    return this.getProperty<boolean | undefined>('submitOnEnter') === true;
+  }
+  set submitOnEnter(value: Bind<boolean>) {
+    this.assignProperty('submitOnEnter', value, Boolean);
+  }
   get wrap(): 'soft' | 'hard' | 'off' {
     return this.getProperty<'soft' | 'hard' | 'off' | undefined>('wrap') ?? 'soft';
   }
@@ -199,6 +206,21 @@ export class TextArea extends Field<string, TextAreaProps> {
   /** Selects all text. The selection is made a moment later, not before the call returns. */
   select(): void {
     this.controlPart.attr.add({ select: true });
+  }
+
+  /** Where the selection starts in the text; the caret when nothing is selected. */
+  get selectionStart(): number {
+    return this.textAreaPart.element.selectionStart;
+  }
+
+  /** Where the selection ends in the text; the caret when nothing is selected. */
+  get selectionEnd(): number {
+    return this.textAreaPart.element.selectionEnd;
+  }
+
+  /** Selects from `start` to `end`, or puts the caret at `start` alone. */
+  setSelectionRange(start: number, end = start): void {
+    this.controlPart.attr.add({ setSelectionRange: [start, end] });
   }
 
   /** Clears the field, as the clear button does. */
@@ -273,7 +295,10 @@ export class TextArea extends Field<string, TextAreaProps> {
 
   private keyDown(e: KeyboardEvent): void {
     this.areaParts.keepSelection = false;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && !e.isComposing) {
+    // An Enter that ends an input method's composition is not a submit (Safari reports it with key code 229).
+    const composing = e.isComposing || e.keyCode === 229;
+    const submit = this.peekProperty('submitOnEnter') ? !e.ctrlKey && !e.metaKey && !e.shiftKey : e.ctrlKey || e.metaKey;
+    if (e.key === 'Enter' && submit && !e.altKey && !e.shiftKey && !composing) {
       e.preventDefault();
       this.commit(this.textAreaPart.element.value, e);
       this.areaParts.enter.fire({ value: this.peekValue(), source: this, event: e });

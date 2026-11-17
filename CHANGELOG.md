@@ -16,6 +16,42 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   text, links take only safe addresses, images are off until `images` and `allowImage` allow them. Code blocks show
   their language and a copy button, and any highlighter colours them through `highlighter` (`CodeHighlighter`).
 - The kit glyph `copy`, and the kit strings `markdownCopy`, `markdownCopied`, `markdownTaskDone`, `markdownTaskOpen`.
+- `Chat`: a conversation with a model, its reply written as it streams through `reply()` (`ChatReply`). A reply is a
+  line of parts in the order they came: text drawn as markdown, thinking with a note on what it is about, tool calls
+  (`tool()` returns a `ChatToolCall`: `progress`, `start`, `output`, `done`, `fail`; drawn as text, a terminal or a
+  diff), a sub-agent's work drawn inside its call, the to-do list (`todo`), notices (`retrying` counts down to the next
+  try), and the place the conversation was summed up (`compaction`). The line under the conversation says what the
+  reply does, for how long, and how to stop it; a message sent meanwhile waits above the box. `signal` is aborted when
+  the user stops the reply or the chat goes, and tool calls still open when a reply ends are closed as failed.
+- `Chat` asks the user and waits: `ChatToolCall.permission()` asks whether a tool may run ("Yes", "always", "No" with
+  what to do instead), `reply.plan()` asks to approve a plan, and `reply.questions()` asks questions in a form that
+  takes the message box's place (tabs, one or many choices, previews, "Other", free text, "Decide for me"). Each returns
+  a Promise and is answered with the keys too; a reply that ends first answers it as declined. The answers are written
+  into the message, and a turn drawn again shows them.
+- `Chat` keeps on the page only the turns in and near the view, and makes a turn again from its message when it comes
+  back (`WindowList`). The view stays at the end while it is there, written before the frame is drawn; scrolled away,
+  it stays put and a button counts the messages that came. `hasOlder` and `onLoadOlder` load older messages near the
+  top or from a button, and `prepend` keeps the messages on screen in place; a failed load offers to try again.
+- `Chat`: a message of the user can be copied, edited in place and sent again (`resend`), or the conversation taken
+  back to before it (`rewind`; `onRewind` can keep it); with `onFork` it opens another conversation from there. A
+  reply is copied as markdown, and a failed or stopped last reply is tried again with `onRetry`. With a pointer the
+  buttons show on hover or focus.
+- `ChatComposer`: the message box and its tools in one field, used by `Chat` (`composer`) or alone. Files are picked,
+  pasted or dropped, shown as chips (images as small pictures) and sent with the message (`attachments`, `accept`);
+  context chips turn on and off (`contextItems`, `onContextChanged`); `/` opens the commands (`commands`) and `@` the
+  suggestions (`onMention`, at once or by a Promise) while the focus stays in the box; menus choose the mode (`modes`,
+  Shift+Tab for the next), the model and thinking; a ring shows how much of the context is used (`usage`); ↑ and ↓ go
+  through the messages sent (`history`).
+- `WindowList` (a part): a list of items of any height in a `ScrollView` that has only the parts in and near the view.
+  A part is made from its item when the item comes near and disposed when it goes far: only the item and the part's
+  measured height are kept. Heights are estimated until measured, and the part on screen stays where it is while
+  estimates turn into measures or items are added above. A part holding focus is not disposed.
+- `ScrollView`: `stickToEnd` (with `endOffset`, `isAtEnd`, `onAtEndChanged`, `scrollToEnd()`, `stick()` and
+  `stickNow()`), and `holdPosition(part, change)`, which keeps a part where it was on screen while parts are added above
+  it.
+- `TextArea`: `submitOnEnter`, where Enter raises `onEnter` and Shift+Enter starts a new line; an input method's Enter
+  never raises it. `selectionStart`, `selectionEnd` and `setSelectionRange()`.
+- The kit glyphs `send` and `stop`, and the kit strings of the chat (`chatLabel` … `chatCompacted`).
 
 ### Changed
 

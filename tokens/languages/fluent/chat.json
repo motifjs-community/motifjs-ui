@@ -1,0 +1,1134 @@
+{
+  "chat": {
+    "turns-gap": {
+      "$value": "{space.6}"
+    },
+    "jump-offset": {
+      "$value": "{space.3}"
+    },
+    "clamp-lines": {
+      "$value": 3
+    },
+    "status-spin": {
+      "$value": {
+        "value": 2000,
+        "unit": "ms"
+      }
+    },
+    "older-button": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "jump": {
+      "variant": {
+        "$value": "outline"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "more": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "queued-remove": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "list": {
+      "padding-inline": {
+        "$value": "{space.4}"
+      },
+      "padding-block": {
+        "$value": "{space.4}"
+      }
+    },
+    "turn": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "question": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "question-head": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "question-actions": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "edit": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "edit-actions": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "turn-actions": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "compaction": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "compaction-line": {
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-top-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-top-color": {
+        "$value": "{color.stroke.divider}"
+      }
+    },
+    "compaction-head": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "cursor": {
+        "$value": "pointer"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "hover": {
+        "color": {
+          "$value": "{color.fg.primary}"
+        }
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        }
+      }
+    },
+    "compaction-text": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "padding-start": {
+        "$value": "{space.3}"
+      },
+      "padding-top": {
+        "$value": "{space.2}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-start-width": {
+        "$value": "{border.width.2}"
+      },
+      "border-start-color": {
+        "$value": "{color.stroke.divider}"
+      }
+    },
+    "time": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "files": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "bubble": {
+      "bg": {
+        "$value": "{color.fill.subtle.secondary}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.card}"
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-inline": {
+        "$value": "{space.3}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      },
+      "white-space": {
+        "$value": "pre-wrap"
+      }
+    },
+    "flow": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "entry": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "dot": {
+      "size": {
+        "$value": "{space.2}"
+      },
+      "radius": {
+        "$value": "{radius.full}"
+      },
+      "bg": {
+        "$value": "{color.fg.secondary}"
+      },
+      "margin-top": {
+        "$value": "{space.2}"
+      },
+      "running": {
+        "bg": {
+          "$value": "{color.accent.fg}"
+        }
+      },
+      "waiting": {
+        "bg": {
+          "$value": "{color.accent.fg}"
+        }
+      },
+      "done": {
+        "bg": {
+          "$value": "{color.success.fg}"
+        }
+      },
+      "error": {
+        "bg": {
+          "$value": "{color.danger.fg}"
+        }
+      },
+      "alert": {
+        "bg": {
+          "$value": "{color.danger.fg}"
+        }
+      }
+    },
+    "main": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "tool-head": {
+      "gap": {
+        "$value": "{space.2}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "cursor": {
+        "$value": "pointer"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        }
+      }
+    },
+    "tool-name": {
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "tool-title": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "tool-wait": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "tool-box": {
+      "bg": {
+        "$value": "{color.bg.card}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.card}"
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-inline": {
+        "$value": "{space.3}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      },
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "tool-side": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "tool-label": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "tool-code": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "white-space": {
+        "$value": "pre-wrap"
+      }
+    },
+    "diff-line": {
+      "added": {
+        "bg": {
+          "$value": "{color.success.subtle}"
+        },
+        "color": {
+          "$value": "{color.success.fg}"
+        }
+      },
+      "removed": {
+        "bg": {
+          "$value": "{color.danger.subtle}"
+        },
+        "color": {
+          "$value": "{color.danger.fg}"
+        }
+      }
+    },
+    "thinking-head": {
+      "gap": {
+        "$value": "{space.2}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "cursor": {
+        "$value": "pointer"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "hover": {
+        "color": {
+          "$value": "{color.fg.primary}"
+        }
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        }
+      }
+    },
+    "thinking-note": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "thinking-body": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "gap": {
+        "$value": "{space.2}"
+      },
+      "padding-start": {
+        "$value": "{space.3}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-start-width": {
+        "$value": "{border.width.2}"
+      },
+      "border-start-color": {
+        "$value": "{color.stroke.divider}"
+      }
+    },
+    "thinking-item": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      }
+    },
+    "todo-title": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "todo-list": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "todo-item": {
+      "gap": {
+        "$value": "{space.2}"
+      },
+      "active": {
+        "font-weight": {
+          "$value": "{font.weight.semibold}"
+        }
+      },
+      "done": {
+        "color": {
+          "$value": "{color.fg.secondary}"
+        },
+        "text-decoration": {
+          "$value": "line-through"
+        }
+      }
+    },
+    "todo-glyph": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "notice": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "error": {
+        "color": {
+          "$value": "{color.danger.fg}"
+        }
+      }
+    },
+    "status": {
+      "gap": {
+        "$value": "{space.2}"
+      },
+      "color": {
+        "$value": "{color.accent.fg}"
+      },
+      "padding-inline": {
+        "$value": "{space.4}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      }
+    },
+    "status-detail": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "queue": {
+      "gap": {
+        "$value": "{space.1}"
+      },
+      "padding-inline": {
+        "$value": "{space.3}"
+      },
+      "padding-top": {
+        "$value": "{space.2}"
+      }
+    },
+    "queued": {
+      "bg": {
+        "$value": "{color.fill.subtle.secondary}"
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-start": {
+        "$value": "{space.3}"
+      },
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "queued-text": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "white-space": {
+        "$value": "nowrap"
+      }
+    },
+    "older": {
+      "padding-block": {
+        "$value": "{space.2}"
+      }
+    },
+    "question-action": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "turn-action": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "edit-cancel": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "edit-send": {
+      "variant": {
+        "$value": "solid"
+      },
+      "tone": {
+        "$value": "accent"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "asked-button": {
+      "variant": {
+        "$value": "outline"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "ask-previous": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "ask-next": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "ask-decline": {
+      "variant": {
+        "$value": "outline"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "ask-submit": {
+      "variant": {
+        "$value": "solid"
+      },
+      "tone": {
+        "$value": "accent"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "request": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "choices": {
+      "gap": {
+        "$value": "{space.1}"
+      },
+      "bg": {
+        "$value": "{color.bg.card}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.card}"
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      }
+    },
+    "choices-title": {
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "padding-bottom": {
+        "$value": "{space.1}"
+      }
+    },
+    "choice": {
+      "gap": {
+        "$value": "{space.3}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "cursor": {
+        "$value": "pointer"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "padding-block": {
+        "$value": "{space.1}"
+      },
+      "hover": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        }
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        },
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        }
+      }
+    },
+    "choice-key": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "answer": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "yes": {
+        "color": {
+          "$value": "{color.success.fg}"
+        }
+      },
+      "no": {
+        "color": {
+          "$value": "{color.danger.fg}"
+        }
+      }
+    },
+    "plan": {
+      "bg": {
+        "$value": "{color.bg.card}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.card}"
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-inline": {
+        "$value": "{space.3}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      },
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "plan-title": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "asked-head": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "asked-count": {
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "asked-state": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "asked-list": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "asked-pair": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "asked-question": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "ask": {
+      "bg": {
+        "$value": "{color.bg.surface}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-top-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-top-color": {
+        "$value": "{color.stroke.divider}"
+      },
+      "padding-inline": {
+        "$value": "{space.3}"
+      },
+      "padding-block": {
+        "$value": "{space.3}"
+      },
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "ask-header": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "ask-tabs": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "ask-tab": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "gap": {
+        "$value": "{space.1}"
+      },
+      "cursor": {
+        "$value": "pointer"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "padding-block": {
+        "$value": "{space.1}"
+      },
+      "hover": {
+        "color": {
+          "$value": "{color.fg.primary}"
+        }
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        }
+      },
+      "selected": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        },
+        "color": {
+          "$value": "{color.fg.primary}"
+        },
+        "font-weight": {
+          "$value": "{font.weight.semibold}"
+        }
+      }
+    },
+    "ask-tab-check": {
+      "color": {
+        "$value": "{color.success.fg}"
+      }
+    },
+    "ask-count": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "ask-body": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "ask-text": {
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "ask-choice": {
+      "gap": {
+        "$value": "{space.3}"
+      }
+    },
+    "ask-options": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "ask-option": {
+      "gap": {
+        "$value": "{space.3}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "cursor": {
+        "$value": "pointer"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      },
+      "hover": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        }
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        },
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        }
+      },
+      "checked": {
+        "bg": {
+          "$value": "{color.accent.subtle}"
+        }
+      }
+    },
+    "ask-key": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "ask-description": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "ask-check": {
+      "color": {
+        "$value": "{color.accent.fg}"
+      }
+    },
+    "ask-preview": {
+      "bg": {
+        "$value": "{color.bg.card}"
+      },
+      "border-style": {
+        "$value": "solid"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.card}"
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-inline": {
+        "$value": "{space.3}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      }
+    },
+    "ask-missing": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.danger.fg}"
+      }
+    },
+    "ask-actions": {
+      "gap": {
+        "$value": "{space.2}"
+      }
+    }
+  }
+}

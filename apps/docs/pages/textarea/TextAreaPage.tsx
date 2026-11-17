@@ -38,6 +38,7 @@ const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['isValid, validationMessage, validating', 'read-only, reactive', 'The validation result.'],
   ['textAreaPart', 'read-only', 'The native `<textarea>`.'],
+  ['selectionStart, selectionEnd', 'read-only', 'Where the selection starts and ends in the text; the caret when nothing is selected.'],
 ];
 
 const METHODS = [
@@ -45,6 +46,7 @@ const METHODS = [
   ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
   ['focus()', '`boolean`', 'Sets focus on the textarea.'],
   ['select()', '`void`', 'Selects all text.'],
+  ['setSelectionRange(start, end?)', '`void`', 'Selects from `start` to `end`, or puts the caret at `start` alone.'],
   ['clear()', '`void`', 'Clears the field, as the clear button does.'],
 ];
 

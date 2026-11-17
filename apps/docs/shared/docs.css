@@ -786,7 +786,8 @@
   font-size: var(--mx-font-size-subtitle);
 }
 
-.docs-main pre {
+/* The docs' own code samples; code a kit component draws (a chat, markdown) keeps the component's look. */
+.docs-main pre:not(.mx-chat pre, .mx-markdown pre) {
   padding: var(--mx-space-4);
   overflow-x: auto;
   direction: ltr;
@@ -800,7 +801,7 @@
   border-radius: var(--mx-radius-lg);
 }
 
-.docs-main code {
+.docs-main code:not(.mx-chat code, .mx-markdown code) {
   font-family: var(--mx-font-family-mono);
   font-size: var(--mx-font-size-body);
 }
@@ -819,9 +820,7 @@
   --shiki-token-link: var(--mx-color-accent-fg);
 }
 
-.docs-main p>code,
-.docs-main li>code,
-.docs-main td>code {
+.docs-main :is(p, li, td):not(.mx-chat *, .mx-markdown *)>code {
   padding-inline: var(--mx-space-1);
   background: var(--mx-color-bg-layer);
   border-radius: var(--mx-radius-sm);

@@ -111,6 +111,21 @@ describe('TextArea', () => {
     expect(s.note).toBe('');
   });
 
+  it('reads where the selection is, and puts it where it is asked', async () => {
+    let t!: TextArea;
+    page(<TextArea ref={(x: TextArea) => (t = x)} />);
+    await settle();
+    type(t, 'hello world');
+    area(t).setSelectionRange(2, 5);
+    expect([t.selectionStart, t.selectionEnd]).toEqual([2, 5]);
+    t.setSelectionRange(6);
+    await settle();
+    expect([area(t).selectionStart, area(t).selectionEnd]).toEqual([6, 6]);
+    t.setSelectionRange(0, 5);
+    await settle();
+    expect([t.selectionStart, t.selectionEnd]).toEqual([0, 5]);
+  });
+
   it('reports Ctrl+Enter and Cmd+Enter; Enter alone is a new line', async () => {
     const onEnter = vi.fn();
     const s = reactive({ text: '' });
@@ -223,5 +238,22 @@ describe('TextArea', () => {
     t.select();
     await settle();
     expect([area(t).selectionStart, area(t).selectionEnd]).toEqual([0, 5]);
+  });
+
+  it('with submitOnEnter, Enter raises onEnter and Shift+Enter, an input method or Ctrl+Enter does not', () => {
+    const entered = vi.fn();
+    const t = new TextArea({ submitOnEnter: true, onEnter: (e) => entered(e.value) });
+    page(t);
+    type(t, 'hello');
+    const composing = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    Object.defineProperty(composing, 'keyCode', { value: 229 });
+    area(t).dispatchEvent(composing);
+    expect([press(area(t), 'Enter', { shiftKey: true }), press(area(t), 'Enter', { isComposing: true }), press(area(t), 'Enter', { ctrlKey: true })]).toEqual([false, false, false]);
+    expect(entered).not.toHaveBeenCalled();
+    expect(press(area(t), 'Enter')).toBe(true);
+    expect(entered).toHaveBeenCalledWith('hello');
+    t.submitOnEnter = false;
+    expect(press(area(t), 'Enter')).toBe(false);
+    expect(press(area(t), 'Enter', { ctrlKey: true })).toBe(true);
   });
 });

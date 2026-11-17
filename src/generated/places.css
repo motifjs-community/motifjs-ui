@@ -87,6 +87,162 @@
     --_button-face-radius-end: var(--mx-button-group-inner-end-face-radius-end);
   }
 
+  /* chat-composer: box — The text box: no frame of its own, the field around it is its frame. */
+  .mx-chat-composer__field > .mx-chat-composer__box {
+    --_field-variant: var(--mx-chat-composer-box-variant);
+    --_field-padding-sm: var(--mx-chat-composer-box-padding-sm);
+    --_field-padding-md: var(--mx-chat-composer-box-padding-md);
+    --_field-padding-lg: var(--mx-chat-composer-box-padding-lg);
+    --_field-box-bg: var(--mx-chat-composer-box-box-bg);
+    --_field-box-hover-bg: var(--mx-chat-composer-box-box-hover-bg);
+    --_field-box-focus-bg: var(--mx-chat-composer-box-box-focus-bg);
+    --_field-border-width: var(--mx-chat-composer-box-border-width);
+    --_field-box-radius: var(--mx-chat-composer-box-box-radius);
+    --_field-box-shadow: var(--mx-chat-composer-box-box-shadow);
+    --_field-box-focus-shadow: var(--mx-chat-composer-box-box-focus-shadow);
+    --_field-frame-display: var(--mx-chat-composer-box-frame-display);
+    --_field-indicator-display: var(--mx-chat-composer-box-indicator-display);
+    --_field-foot-display: var(--mx-chat-composer-box-foot-display);
+    --_field-padding-start-sm: var(--mx-chat-composer-box-padding-start-sm);
+    --_field-padding-start-md: var(--mx-chat-composer-box-padding-start-md);
+    --_field-padding-start-lg: var(--mx-chat-composer-box-padding-start-lg);
+    --_field-padding-end-sm: var(--mx-chat-composer-box-padding-end-sm);
+    --_field-padding-end-md: var(--mx-chat-composer-box-padding-end-md);
+    --_field-padding-end-lg: var(--mx-chat-composer-box-padding-end-lg);
+    --_field-box-invalid-hover-bg: var(--mx-chat-composer-box-box-invalid-hover-bg);
+    --_field-box-invalid-focus-bg: var(--mx-chat-composer-box-box-invalid-focus-bg);
+    --_field-box-invalid-focus-shadow: var(--mx-chat-composer-box-box-invalid-focus-shadow);
+    --_field-box-readonly-focus-shadow: var(--mx-chat-composer-box-box-readonly-focus-shadow);
+    --_field-box-disabled-shadow: var(--mx-chat-composer-box-box-disabled-shadow);
+    --_field-box-readonly-invalid-focus-shadow: var(--mx-chat-composer-box-box-readonly-invalid-focus-shadow);
+  }
+
+  /* chat-composer: attach — The button that picks files to attach. */
+  .mx-chat-composer__tools > .mx-chat-composer__attach {
+    --_button-variant: var(--mx-chat-composer-attach-variant);
+    --_button-tone: var(--mx-chat-composer-attach-tone);
+    --_button-size: var(--mx-chat-composer-attach-size);
+  }
+
+  /* chat-composer: commands — The button that lists the commands. */
+  .mx-chat-composer__tools > .mx-chat-composer__commands {
+    --_button-variant: var(--mx-chat-composer-commands-variant);
+    --_button-tone: var(--mx-chat-composer-commands-tone);
+    --_button-size: var(--mx-chat-composer-commands-size);
+  }
+
+  /* chat-composer: mode — The button that shows and changes the way the model works. */
+  .mx-chat-composer__tools > .mx-chat-composer__mode {
+    --_button-variant: var(--mx-chat-composer-mode-variant);
+    --_button-tone: var(--mx-chat-composer-mode-tone);
+    --_button-size: var(--mx-chat-composer-mode-size);
+  }
+
+  /* chat-composer: model — The button that shows and changes the model and its thinking. */
+  .mx-chat-composer__tools > .mx-chat-composer__model {
+    --_button-variant: var(--mx-chat-composer-model-variant);
+    --_button-tone: var(--mx-chat-composer-model-tone);
+    --_button-size: var(--mx-chat-composer-model-size);
+  }
+
+  /* chat-composer: send — The send button, which stops the reply while one is written. */
+  .mx-chat-composer__tools > .mx-chat-composer__button {
+    --_button-variant: var(--mx-chat-composer-send-variant);
+    --_button-tone: var(--mx-chat-composer-send-tone);
+    --_button-size: var(--mx-chat-composer-send-size);
+  }
+
+  /* chat: older-button — The button above the first message that loads older ones. */
+  .mx-chat__older > .mx-chat__older-button {
+    --_button-variant: var(--mx-chat-older-button-variant);
+    --_button-tone: var(--mx-chat-older-button-tone);
+    --_button-size: var(--mx-chat-older-button-size);
+  }
+
+  /* chat: jump — The button back to the latest message, over the conversation. */
+  .mx-chat__view > .mx-chat__jump {
+    --_button-variant: var(--mx-chat-jump-variant);
+    --_button-tone: var(--mx-chat-jump-tone);
+    --_button-size: var(--mx-chat-jump-size);
+  }
+
+  /* chat: more — The button that opens the rest of a long question. */
+  .mx-chat__question > .mx-chat__more {
+    --_button-variant: var(--mx-chat-more-variant);
+    --_button-tone: var(--mx-chat-more-tone);
+    --_button-size: var(--mx-chat-more-size);
+  }
+
+  /* chat: queued-remove — The button that removes a queued message. */
+  .mx-chat__queued > .mx-chat__queued-remove {
+    --_button-variant: var(--mx-chat-queued-remove-variant);
+    --_button-tone: var(--mx-chat-queued-remove-tone);
+    --_button-size: var(--mx-chat-queued-remove-size);
+  }
+
+  /* chat: question-action — A question's action: copy, edit, go back, fork. */
+  .mx-chat__question-actions > .mx-chat__action {
+    --_button-variant: var(--mx-chat-question-action-variant);
+    --_button-tone: var(--mx-chat-question-action-tone);
+    --_button-size: var(--mx-chat-question-action-size);
+  }
+
+  /* chat: turn-action — A reply's action at the end of its turn: copy, try again. */
+  .mx-chat__turn-actions > .mx-chat__action {
+    --_button-variant: var(--mx-chat-turn-action-variant);
+    --_button-tone: var(--mx-chat-turn-action-tone);
+    --_button-size: var(--mx-chat-turn-action-size);
+  }
+
+  /* chat: edit-cancel — The button that leaves editing a question. */
+  .mx-chat__edit-actions > .mx-chat__edit-cancel {
+    --_button-variant: var(--mx-chat-edit-cancel-variant);
+    --_button-tone: var(--mx-chat-edit-cancel-tone);
+    --_button-size: var(--mx-chat-edit-cancel-size);
+  }
+
+  /* chat: edit-send — The button that sends an edited question. */
+  .mx-chat__edit-actions > .mx-chat__edit-send {
+    --_button-variant: var(--mx-chat-edit-send-variant);
+    --_button-tone: var(--mx-chat-edit-send-tone);
+    --_button-size: var(--mx-chat-edit-send-size);
+  }
+
+  /* chat: asked-button — The button by waiting questions in the flow that goes to the form. */
+  .mx-chat__asked-head > .mx-chat__asked-button {
+    --_button-variant: var(--mx-chat-asked-button-variant);
+    --_button-tone: var(--mx-chat-asked-button-tone);
+    --_button-size: var(--mx-chat-asked-button-size);
+  }
+
+  /* chat: ask-previous — The form's button to the question before. */
+  .mx-chat__ask-actions > .mx-chat__ask-previous {
+    --_button-variant: var(--mx-chat-ask-previous-variant);
+    --_button-tone: var(--mx-chat-ask-previous-tone);
+    --_button-size: var(--mx-chat-ask-previous-size);
+  }
+
+  /* chat: ask-next — The form's button to the next question. */
+  .mx-chat__ask-actions > .mx-chat__ask-next {
+    --_button-variant: var(--mx-chat-ask-next-variant);
+    --_button-tone: var(--mx-chat-ask-next-tone);
+    --_button-size: var(--mx-chat-ask-next-size);
+  }
+
+  /* chat: ask-decline — The form's "Decide for me". */
+  .mx-chat__ask-actions > .mx-chat__ask-decline {
+    --_button-variant: var(--mx-chat-ask-decline-variant);
+    --_button-tone: var(--mx-chat-ask-decline-tone);
+    --_button-size: var(--mx-chat-ask-decline-size);
+  }
+
+  /* chat: ask-submit — The form's button that sends the answers. */
+  .mx-chat__ask-actions > .mx-chat__ask-submit {
+    --_button-variant: var(--mx-chat-ask-submit-variant);
+    --_button-tone: var(--mx-chat-ask-submit-tone);
+    --_button-size: var(--mx-chat-ask-submit-size);
+  }
+
   /* checkbox: field — The field under a check box or a switch: the box and its caption side by side, no text-field frame. */
   .mx-toggle-field {
     --_field-variant: var(--mx-checkbox-field-variant);

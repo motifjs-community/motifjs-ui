@@ -19,6 +19,7 @@
 @import '../parts/customizer/customizer.css';
 @import '../parts/field/field.css';
 @import '../parts/list/list.css';
+@import '../parts/window-list/window-list.css';
 @import '../components/button/button.css';
 @import '../components/textbox/textbox.css';
 @import '../components/textarea/textarea.css';
@@ -36,6 +37,7 @@
 @import '../components/card/card.css';
 @import '../components/skeleton/skeleton.css';
 @import '../components/markdown/markdown.css';
+@import '../components/chat/chat.css';
 @import '../components/buttongroup/buttongroup.css';
 @import '../components/rating/rating.css';
 @import '../components/colorpicker/colorpicker.css';

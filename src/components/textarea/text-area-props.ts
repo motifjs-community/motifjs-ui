@@ -38,6 +38,14 @@ export interface TextAreaProps extends FieldProps<string> {
   /** The name submitted with the form. */
   name?: Bind<string>;
   autocomplete?: Bind<string>;
-  /** Occurs when the user presses Ctrl+Enter (Cmd+Enter on Apple platforms). Enter alone starts a new line. */
+  /**
+   * `true` makes Enter raise `onEnter` and Shift+Enter start a new line, as a chat's message box does. The default is
+   * `false`: Ctrl+Enter (Cmd+Enter) raises it and Enter starts a new line.
+   */
+  submitOnEnter?: Bind<boolean>;
+  /**
+   * Occurs when the user presses Ctrl+Enter (Cmd+Enter on Apple platforms), or Enter with `submitOnEnter`. Never while
+   * an input method is composing.
+   */
   onEnter?: (e: EnterKeyEventArgs<string>) => void;
 }

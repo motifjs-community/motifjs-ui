@@ -5,3 +5,4 @@ export type { ScrollViewBars } from './scroll-view-bars';
 export type { PullDownEventArgs } from './pull-down-event-args';
 export type { ReachBottomEventArgs } from './reach-bottom-event-args';
 export type { ScrollEventArgs } from './scroll-event-args';
+export type { ScrollEndChangedEventArgs } from './scroll-end-changed-event-args';

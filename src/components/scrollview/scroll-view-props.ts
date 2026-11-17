@@ -2,6 +2,7 @@ import type { Bind } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { PullDownEventArgs } from './pull-down-event-args';
 import type { ReachBottomEventArgs } from './reach-bottom-event-args';
+import type { ScrollEndChangedEventArgs } from './scroll-end-changed-event-args';
 import type { ScrollEventArgs } from './scroll-event-args';
 import type { ScrollViewBars } from './scroll-view-bars';
 import type { ScrollViewDirection } from './scroll-view-direction';
@@ -26,7 +27,15 @@ export interface ScrollViewProps extends ControlProps {
     reachBottomText?: Bind<string>;
     /** The accessible name of the scrolling region. */
     label?: Bind<string>;
+    /**
+     * While the view stands at the end, content that grows keeps it at the end (a log, a chat); scrolled away, it stays
+     * where it is until it comes back to the end. The default is `false`.
+     */
+    stickToEnd?: Bind<boolean>;
+    /** How near the end, in pixels, counts as at the end. The default is `24`. */
+    endOffset?: Bind<number>;
     onPullDown?: (e: PullDownEventArgs) => void;
     onReachBottom?: (e: ReachBottomEventArgs) => void;
     onScrolled?: (e: ScrollEventArgs) => void;
+    onAtEndChanged?: (e: ScrollEndChangedEventArgs) => void;
 }

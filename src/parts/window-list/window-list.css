@@ -1,0 +1,6 @@
+/* WindowList: a spacer before and after the parts on the page stands for the parts off it; it keeps its height. */
+@layer mx.components {
+  .mx-window-list__spacer {
+    flex: none;
+  }
+}

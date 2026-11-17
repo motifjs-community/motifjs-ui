@@ -1,7 +1,7 @@
 import { Component, ComponentBase, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
 import { part } from "../../core/draw-parts";
-import { boxOf, isRtl, measure, onLayout, scrollBy as scrollBoxBy, scrollIntoView as scrollPartIntoView, scrollTo as scrollBoxTo, type Box } from "../../core/measure";
+import { boxOf, isRtl, measure, measureNow, onLayout, rectOf, scrollBy as scrollBoxBy, scrollIntoView as scrollPartIntoView, scrollTo as scrollBoxTo, type Box } from "../../core/measure";
 import { onWindow } from "../../core/window-events";
 import { onLanguage } from "../../core/on-language";
 import { css, kept, mark, put, text } from "../../core/part-writes";
@@ -9,12 +9,13 @@ import { uiLocale } from "../../core/ui-locale";
 import { Spinner } from "../progress/Spinner";
 import type { PullDownEventArgs } from "./pull-down-event-args";
 import type { ReachBottomEventArgs } from "./reach-bottom-event-args";
+import type { ScrollEndChangedEventArgs } from "./scroll-end-changed-event-args";
 import type { ScrollEventArgs } from "./scroll-event-args";
 import type { ScrollViewBars } from "./scroll-view-bars";
 import type { ScrollViewDirection } from "./scroll-view-direction";
 import type { ScrollViewProps } from "./scroll-view-props";
 
-const OWN = ['direction', 'showScrollbar', 'pullToRefresh', 'loadOnReachBottom', 'reachBottomOffset', 'pullDownText', 'releaseText', 'refreshingText', 'reachBottomText', 'label'] as const;
+const OWN = ['direction', 'showScrollbar', 'pullToRefresh', 'loadOnReachBottom', 'reachBottomOffset', 'pullDownText', 'releaseText', 'refreshingText', 'reachBottomText', 'label', 'stickToEnd', 'endOffset'] as const;
 
 interface Pull {
     pointerId: number;
@@ -58,7 +59,14 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     pulled = new Emitter<PullDownEventArgs>();
     reached = new Emitter<ReachBottomEventArgs>();
     scrolled = new Emitter<ScrollEventArgs>();
+    endChanged = new Emitter<ScrollEndChangedEventArgs>();
     stops: (() => void)[] = [];
+    /** The view stands at the end of its content (within `endOffset`). */
+    atEnd = true;
+    /** The content's height as its last size notice told it: where the end is, without a read. */
+    contentHeight = 0;
+    /** A `stick` waits for the end of the task. */
+    stickQueued = false;
 
     constructor(props?: IBaseProp<ScrollViewProps>) {
         super('div', props);
@@ -87,6 +95,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         if (own.onPullDown) this.pulled.event(own.onPullDown);
         if (own.onReachBottom) this.reached.event(own.onReachBottom);
         if (own.onScrolled) this.scrolled.event(own.onScrolled);
+        if (own.onAtEndChanged) this.endChanged.event(own.onAtEndChanged);
 
         this.observeProperty<ScrollViewDirection>('direction', d => put(this, 'data-direction', d ?? 'vertical'));
         this.observeProperty<ScrollViewBars>('showScrollbar', bars => put(this, 'data-bars', bars ?? 'onScroll'));
@@ -107,14 +116,25 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         this.motif.on('pointerdown', (_, e) => this.pointerDown(e));
         // The browser decides at the first touch whether the page scrolls: a listener there, before the finger moves.
         this.motif.on('touchmove', (_, e: TouchEvent | undefined) => e && this.touchMove(e));
-        // Content that grows or shrinks ends nearer or farther: looked at again.
-        onLayout(this.content, 'size', () => this.check());
+        // Content that grows or shrinks ends nearer or farther: looked at again. A view stuck to the end goes with it,
+        // from the size the notice gives, without a read.
+        onLayout(this.content, 'size', size => {
+            this.contentHeight = size.height;
+            this.stickTo(size.height);
+            this.check();
+        });
+        // A view that gets shorter (an on-screen keyboard) keeps its end in sight too.
+        onLayout(this, 'size', () => this.stickTo(this.contentHeight));
+        this.observeProperty<boolean>('stickToEnd', on => {
+            if (on) this.stickTo(this.contentHeight);
+        });
         this.motif.setDisposable(() => {
             for (const stop of this.stops.splice(0)) stop();
             if (this.scrollTimer) clearTimeout(this.scrollTimer);
             this.pulled.dispose();
             this.reached.dispose();
             this.scrolled.dispose();
+            this.endChanged.dispose();
         });
         this.drawTexts();
     }
@@ -190,6 +210,47 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     }
     get onScrolled(): MotifEvent<ScrollEventArgs> {
         return this.scrolled.event;
+    }
+    get stickToEnd(): boolean {
+        return this.getProperty<boolean | undefined>('stickToEnd') === true;
+    }
+    set stickToEnd(value: Bind<boolean>) {
+        this.assignProperty('stickToEnd', value, Boolean);
+    }
+    get endOffset(): number {
+        return this.getProperty<number | undefined>('endOffset') ?? 24;
+    }
+    set endOffset(value: Bind<number>) {
+        this.assignProperty('endOffset', value);
+    }
+    /** The view stands at the end of its content, within `endOffset`. */
+    get isAtEnd(): boolean {
+        return this.atEnd;
+    }
+    /** Occurs when the view comes to the end of its content or leaves it, by the user or by code. */
+    get onAtEndChanged(): MotifEvent<ScrollEndChangedEventArgs> {
+        return this.endChanged.event;
+    }
+    /** Scrolls to the end of the content; a view stuck to the end stays there from now on. */
+    scrollToEnd(smooth = false): void {
+        this.setAtEnd(true);
+        scrollBoxTo(this, { top: Math.max(this.contentHeight, boxOf(this).scrollHeight) }, smooth ? 'smooth' : 'instant');
+    }
+    /**
+     * Makes `change` (parts added or taken away above `part`) and keeps `part` where it was on screen, before the frame
+     * is painted: the view scrolls by as much as the part moved.
+     */
+    holdPosition(part: ComponentBase, change: () => void): void {
+        const before = this.offsetOf(part);
+        change();
+        measure(this, () => this.offsetOf(part), after => {
+            if (Math.abs(after - before) >= 0.5) scrollBoxBy(this, { top: after - before });
+        });
+        measureNow(this);
+    }
+    /** Where `part` is, from the top of the view. */
+    offsetOf(part: ComponentBase): number {
+        return rectOf(part).top - rectOf(this).top;
     }
 
     /** The current scroll position. */
@@ -287,7 +348,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         mark(this, 'data-loading', true);
         kept(this.bottomPanel, true);
         // At the very end the panel would open below the view: the view stays at the end, so it shows.
-        if (atEnd) measure(this, this.readHeight, this.scrollToEnd);
+        if (atEnd) measure(this, this.readHeight, this.writeEnd);
         let open = true;
         // Released once: a promise set beside a `release(true)` must not open the view again.
         const release = (done = false) => {
@@ -305,9 +366,41 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
 
     readonly readHeight = (): number => boxOf(this).scrollHeight;
 
-    readonly scrollToEnd = (height: number): void => {
+    readonly writeEnd = (height: number): void => {
         scrollBoxTo(this, { top: height });
     };
+    /**
+     * Content was added: a view stuck to the end goes to the new end at the end of this task, before the frame is
+     * drawn. Many calls in a task (the pieces of a streamed reply) read the height once. Call it where the content
+     * changes; growth nobody tells of follows a frame later, from the size notice.
+     */
+    stick(): void {
+        if (this.stickQueued || !this.atEnd || !this.peekProperty('stickToEnd')) return;
+        this.stickQueued = true;
+        queueMicrotask(() => {
+            this.stickQueued = false;
+            if (!this.isDisposed) this.stickNow();
+        });
+    }
+    /** As `stick`, now, with a read: for a change made where the frame is about to be drawn (a scroll handler). */
+    stickNow(): void {
+        if (this.atEnd && this.peekProperty('stickToEnd')) scrollBoxTo(this, { top: boxOf(this).scrollHeight });
+    }
+    /** The size notice told how far the end is: a view stuck to it goes there, without a read. */
+    stickTo(height: number): void {
+        if (this.atEnd && this.peekProperty('stickToEnd') && height) scrollBoxTo(this, { top: height });
+    }
+    /** Notes whether the view stands at the end, from a box read for the scroll. */
+    noteEnd(box: Box): void {
+        if (box.clientHeight === 0) return;
+        this.setAtEnd(this.roomBelow(box) <= (this.peekProperty<number | undefined>('endOffset') ?? 24));
+    }
+    setAtEnd(atEnd: boolean): void {
+        if (this.atEnd === atEnd) return;
+        this.atEnd = atEnd;
+        mark(this, 'data-at-end', atEnd);
+        this.endChanged.fire({ atEnd, source: this });
+    }
 
     /** Checks the position again after the content changes, and requests more data near the end. */
     update(): void {
@@ -339,6 +432,8 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         mark(this, 'data-scrolling', true);
         if (this.scrollTimer) clearTimeout(this.scrollTimer);
         this.scrollTimer = setTimeout(() => mark(this, 'data-scrolling', false), 800);
+        // Whether it is at the end is known before anyone hears of the scroll: a listener may act on it.
+        this.noteEnd(box);
         this.scrolled.fire({ top: box.scrollTop, left: box.rtl ? -box.scrollStart : box.scrollStart, source: this });
         this.checkRoom(box);
     }
