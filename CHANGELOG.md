@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.13] - 2026-11-17
+
+Needs `@motifx/core` 1.2.0-rc.31.
+
 ### Fixed
 
 - A template's cleanup runs with its host whole, when the item is drawn again and when its control goes (#3). The
