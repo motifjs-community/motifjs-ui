@@ -2604,12 +2604,12 @@
     text-decoration-line: var(--_datagrid-cell-missing-text-decoration, none);
   }
 
-  .mx-data-grid__row[data-status='removed'] .mx-data-grid__cell:not(.mx-data-grid__status) {
+  .mx-data-grid__row[data-status='removed'] > .mx-data-grid__cell:not(.mx-data-grid__status) {
     color: var(--_datagrid-cell-removed-color, inherit);
     text-decoration-line: var(--_datagrid-cell-removed-text-decoration, none);
   }
 
-  .mx-data-grid__row[data-status='saving'] .mx-data-grid__cell:not(.mx-data-grid__status) {
+  .mx-data-grid__row[data-status='saving'] > .mx-data-grid__cell:not(.mx-data-grid__status) {
     color: var(--_datagrid-cell-saving-color, inherit);
   }
 
@@ -2637,7 +2637,7 @@
     border-inline-start-color: var(--_datagrid-invalid-border-color, currentcolor);
   }
 
-  :is(.mx-data-grid__row[data-loading] .mx-data-grid__cell, .mx-data-grid__cell[data-lookup='loading'])::after {
+  :is(.mx-data-grid__row[data-loading] > .mx-data-grid__cell, .mx-data-grid__cell[data-lookup='loading'])::after {
     background-color: var(--_datagrid-placeholder-bg, transparent);
     border-start-start-radius: var(--_datagrid-placeholder-radius, 0px);
     border-start-end-radius: var(--_datagrid-placeholder-radius, 0px);
@@ -2725,7 +2725,7 @@
     background-color: var(--_datagrid-head-button-hover-bg, transparent);
   }
 
-  .mx-data-grid__header-cell:is(:hover, :focus-within) :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button), :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):focus-visible, .mx-data-grid[data-header-buttons='always'] :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button) {
+  .mx-data-grid__header-cell:is(:hover, :focus-within) > :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button), :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):focus-visible, .mx-data-grid[data-header-buttons='always'] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > :where(.mx-data-grid__head) > :where(.mx-data-grid__row) > :where(.mx-data-grid__header-cell) > :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button) {
     opacity: var(--_datagrid-head-button-shown-opacity, var(--_datagrid-head-button-opacity, 1));
   }
 
@@ -2744,7 +2744,7 @@
     background-color: var(--_datagrid-resize-bg, transparent);
   }
 
-  .mx-data-grid__resize:hover::after, .mx-data-grid__header-cell[data-resizing] .mx-data-grid__resize::after {
+  .mx-data-grid__resize:hover::after, .mx-data-grid__header-cell[data-resizing] > .mx-data-grid__resize::after {
     inline-size: var(--_datagrid-resize-active-width, var(--_datagrid-resize-width, auto));
     background-color: var(--_datagrid-resize-active-bg, var(--_datagrid-resize-bg, transparent));
   }
@@ -2825,7 +2825,7 @@
     background-color: var(--_datagrid-group-toggle-hover-bg, transparent);
   }
 
-  .mx-data-grid__group-row[data-locked] .mx-data-grid__group-toggle {
+  .mx-data-grid__group-row[data-locked] > :where(.mx-data-grid__group-cell) > :where(.mx-data-grid__group-content) > .mx-data-grid__group-toggle {
     cursor: var(--_datagrid-group-toggle-locked-cursor, pointer);
   }
 
@@ -3080,7 +3080,7 @@
     color: var(--_datagrid-drag-handle-color, inherit);
   }
 
-  .mx-data-grid__row[data-draggable] .mx-data-grid__drag-handle:hover {
+  .mx-data-grid__row[data-draggable] > :where(.mx-data-grid__drag) > .mx-data-grid__drag-handle:hover {
     background-color: var(--_datagrid-drag-handle-hover-bg, transparent);
   }
 

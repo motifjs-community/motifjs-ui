@@ -10,7 +10,12 @@
    chips carry data-dir and data-dragging, the panel and the header row data-drop while something
    can be dropped on them. Only the layout is here, with the tints over a row (shared by its cells), the
    cell ranges and the lines a search draws under its marks: every piece's look is a unit of the grid's
-   schema (`$units`), painted by units.css from the language's tokens. */
+   schema (`$units`), painted by units.css from the language's tokens.
+
+   A grid can hold another grid (in a row's details, in a cell). A rule that depends on a state, of the
+   grid or of one of its rows or cells, goes on from there by child combinators only, so it stops at the
+   grid's own parts; the steps between are in `:where()` and add no weight. A descendant combinator after
+   a state would reach the same parts of the grid inside. */
 @layer mx.components {
   .mx-data-grid {
     --_row-height: calc(var(--_datagrid-record-height) + var(--_datagrid-row-space));
@@ -22,6 +27,12 @@
     --_z-head: 3;
     --_z-drop: 4;
     --_z-ghost: 5;
+    /* A grid inside a cell of a range starts without that cell's edges and fill. */
+    --_edge-top: initial;
+    --_edge-bottom: initial;
+    --_edge-start: initial;
+    --_edge-end: initial;
+    --_range: initial;
 
     position: relative;
     display: flex;
@@ -34,7 +45,7 @@
   }
 
   /* Until the grid's own sheet is in the page, its rows are not shown half laid out. */
-  .mx-data-grid[data-settling] .mx-data-grid__viewport {
+  .mx-data-grid[data-settling] > :where(.mx-data-grid__main) > .mx-data-grid__viewport {
     visibility: hidden;
   }
 
@@ -91,7 +102,7 @@
   }
 
   /* A selected row's fill stands for the stripe and the new-row tint. */
-  .mx-data-grid[data-striped] .mx-data-grid__body > .mx-data-grid__row[data-odd]:not([data-selected]) {
+  .mx-data-grid[data-striped] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > .mx-data-grid__body > .mx-data-grid__row[data-odd]:not([data-selected]) {
     --_tint: var(--_datagrid-stripe-tint);
   }
 
@@ -108,7 +119,7 @@
   }
 
   /* With selection on, the active row has only the hover tint, over the selection fill too. */
-  .mx-data-grid[data-selection] .mx-data-grid__body > .mx-data-grid__row[data-active] {
+  .mx-data-grid[data-selection] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > .mx-data-grid__body > .mx-data-grid__row[data-active] {
     --_tint: var(--_datagrid-hover-tint);
   }
 
@@ -176,7 +187,7 @@
       auto;
   }
 
-  .mx-data-grid:dir(rtl) .mx-data-grid__cell:is([data-range], [data-run]) {
+  .mx-data-grid__cell:dir(rtl):is([data-range], [data-run]) {
     background-position: top, bottom, right, left, 0 0, 0 0;
   }
 
@@ -239,7 +250,7 @@
     user-select: none;
   }
 
-  .mx-data-grid[data-drag-selecting='cells'] .mx-data-grid__body {
+  .mx-data-grid[data-drag-selecting='cells'] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > .mx-data-grid__body {
     cursor: cell;
   }
 
@@ -261,7 +272,7 @@
   }
 
   /* Rows still loading, and a lookup cell whose key is still asked for: a soft bar in each cell (`placeholder`). */
-  .mx-data-grid__row[data-loading] .mx-data-grid__cell::after,
+  .mx-data-grid__row[data-loading] > .mx-data-grid__cell::after,
   .mx-data-grid__cell[data-lookup='loading']::after {
     content: '';
     position: absolute;
@@ -346,7 +357,7 @@
     scale: -1 1;
   }
 
-  .mx-data-grid__group-row[data-expanded] .mx-data-grid__group-toggle > .mx-glyph {
+  .mx-data-grid__group-row[data-expanded] > :where(.mx-data-grid__group-cell) > :where(.mx-data-grid__group-content) > .mx-data-grid__group-toggle > .mx-glyph {
     rotate: var(--_datagrid-group-toggle-rotate-open);
   }
 
@@ -494,7 +505,7 @@
   }
 
   /* The buttons wait out of sight, in their place, until their widths are measured (a frame after the rows show). */
-  .mx-data-grid[data-measuring-actions] .mx-data-grid__row > .mx-data-grid__actions > * {
+  .mx-data-grid[data-measuring-actions] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > :where(.mx-data-grid__body) > .mx-data-grid__row > .mx-data-grid__actions > * {
     visibility: hidden;
   }
 
@@ -582,7 +593,7 @@
     touch-action: none;
   }
 
-  .mx-data-grid__row[data-draggable] .mx-data-grid__drag-handle {
+  .mx-data-grid__row[data-draggable] > :where(.mx-data-grid__drag) > .mx-data-grid__drag-handle {
     display: inline-flex;
   }
 
@@ -591,7 +602,7 @@
     user-select: none;
   }
 
-  .mx-data-grid[data-row-dragging] .mx-data-grid__body > :is(.mx-data-grid__row, .mx-data-grid__group-row, .mx-data-grid__group-footer) {
+  .mx-data-grid[data-row-dragging] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > .mx-data-grid__body > :is(.mx-data-grid__row, .mx-data-grid__group-row, .mx-data-grid__group-footer) {
     transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
@@ -754,8 +765,8 @@
     display: none;
   }
 
-  .mx-data-grid__header-cell[data-sort='asc'] .mx-data-grid__sort-up,
-  .mx-data-grid__header-cell[data-sort='desc'] .mx-data-grid__sort-down {
+  .mx-data-grid__header-cell[data-sort='asc'] > :where(.mx-data-grid__sort) > .mx-data-grid__sort-up,
+  .mx-data-grid__header-cell[data-sort='desc'] > :where(.mx-data-grid__sort) > .mx-data-grid__sort-down {
     display: block;
   }
 
@@ -894,7 +905,7 @@
   }
 
   .mx-data-grid__resize:hover::after,
-  .mx-data-grid__header-cell[data-resizing] .mx-data-grid__resize::after {
+  .mx-data-grid__header-cell[data-resizing] > .mx-data-grid__resize::after {
     inset-block: 0;
   }
 
@@ -906,7 +917,7 @@
   }
 
   /* No rows to show: the body keeps room for the message, also in a grid without a height. */
-  .mx-data-grid:is([data-state='empty'], [data-state='loading'], [data-state='error']) .mx-data-grid__body {
+  .mx-data-grid:is([data-state='empty'], [data-state='loading'], [data-state='error']) > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > .mx-data-grid__body {
     min-block-size: calc(var(--_row-height) * var(--_empty-rows, 3));
   }
 

@@ -2781,7 +2781,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const settings = model.settings;
     this.class.add('mx-data-grid');
-    this.attr.add({ 'data-grid-id': this.gridId });
     this.drawRoot();
     // What the grid does about a change in its state: checked on every turn the grid tells changes, before the views draw.
     this.motif.setDisposable(
@@ -3185,13 +3184,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       else if (settings.get('tooltips')) this.tip.hovered(this.tipFrom(e));
     });
     viewport.motif.on('pointerleave', () => this.tip.hide());
+    // The parts that hold the rows carry the grid's id: its own sheet finds the rows through them (`ColumnStyles`).
+    const rowsOf = { 'data-grid-id': this.gridId };
     const head = div('mx-data-grid__head', viewport);
-    head.attr.add({ role: 'rowgroup' });
+    head.attr.add({ role: 'rowgroup', ...rowsOf });
     this.headPart = head;
     head.controls.add(this.header, this.filterRow);
+    this.body.attr.add(rowsOf);
     viewport.controls.add(this.body);
     const foot = div('mx-data-grid__foot', viewport);
-    foot.attr.add({ role: 'rowgroup' });
+    foot.attr.add({ role: 'rowgroup', ...rowsOf });
     this.footPart = foot;
     foot.controls.add(this.totalRow);
 

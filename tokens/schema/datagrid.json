@@ -312,8 +312,8 @@
           "range-selected": ".mx-data-grid__row[data-selected] > .mx-data-grid__cell[data-range]",
           "range-anchor": ".mx-data-grid__cell[data-range~='anchor']",
           "missing": ".mx-data-grid__cell[data-lookup='missing']",
-          "removed": ".mx-data-grid__row[data-status='removed'] .mx-data-grid__cell:not(.mx-data-grid__status)",
-          "saving": ".mx-data-grid__row[data-status='saving'] .mx-data-grid__cell:not(.mx-data-grid__status)"
+          "removed": ".mx-data-grid__row[data-status='removed'] > .mx-data-grid__cell:not(.mx-data-grid__status)",
+          "saving": ".mx-data-grid__row[data-status='saving'] > .mx-data-grid__cell:not(.mx-data-grid__status)"
         }
       },
       "changed": {
@@ -326,7 +326,7 @@
       },
       "placeholder": {
         "$description": "The soft bar in a cell whose row (or lookup value) is still loading.",
-        "selector": ":is(.mx-data-grid__row[data-loading] .mx-data-grid__cell, .mx-data-grid__cell[data-lookup='loading'])::after"
+        "selector": ":is(.mx-data-grid__row[data-loading] > .mx-data-grid__cell, .mx-data-grid__cell[data-lookup='loading'])::after"
       },
       "header-cell": {
         "$description": "A header: sortable, under the pointer (a layer over its fill), focused by the keys, being dragged; a band over its columns (`band`); the selection header (`bare`).",
@@ -368,7 +368,7 @@
         },
         "states": {
           "hover": ":is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):hover",
-          "shown": ".mx-data-grid__header-cell:is(:hover, :focus-within) :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button), :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):focus-visible, .mx-data-grid[data-header-buttons='always'] :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button)",
+          "shown": ".mx-data-grid__header-cell:is(:hover, :focus-within) > :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button), :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):focus-visible, .mx-data-grid[data-header-buttons='always'] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > :where(.mx-data-grid__head) > :where(.mx-data-grid__row) > :where(.mx-data-grid__header-cell) > :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button)",
           "active": ".mx-data-grid__filter-button[data-active]"
         }
       },
@@ -383,7 +383,7 @@
         "$description": "The line at a header's end where it is resized (`active`: under the pointer, or while it is resized).",
         "selector": ".mx-data-grid__resize::after",
         "states": {
-          "active": ".mx-data-grid__resize:hover::after, .mx-data-grid__header-cell[data-resizing] .mx-data-grid__resize::after"
+          "active": ".mx-data-grid__resize:hover::after, .mx-data-grid__header-cell[data-resizing] > .mx-data-grid__resize::after"
         }
       },
       "column-drop": {
@@ -443,7 +443,7 @@
         },
         "states": {
           "hover": ".mx-data-grid__group-toggle:hover",
-          "locked": ".mx-data-grid__group-row[data-locked] .mx-data-grid__group-toggle"
+          "locked": ".mx-data-grid__group-row[data-locked] > :where(.mx-data-grid__group-cell) > :where(.mx-data-grid__group-content) > .mx-data-grid__group-toggle"
         }
       },
       "group-toggle-icon": {
@@ -581,7 +581,7 @@
           "size": "var(--_datagrid-button-size)"
         },
         "states": {
-          "hover": ".mx-data-grid__row[data-draggable] .mx-data-grid__drag-handle:hover"
+          "hover": ".mx-data-grid__row[data-draggable] > :where(.mx-data-grid__drag) > .mx-data-grid__drag-handle:hover"
         }
       },
       "drag-icon": {

@@ -10,7 +10,9 @@ const escapeAttr = (v: string) => v.replace(/["\\]/g, '\\$&');
 /**
  * Per-column CSS of one grid: columns not shown, alignment and sticky offsets, written as rules keyed
  * by `data-field` (a pinned band's header by `data-band`, at the offset of its columns). Changing a width or pinning a column rewrites this sheet only; no cell gets a
- * binding of its own and no row is touched. A constructable stylesheet adopted by the document (or
+ * binding of its own and no row is touched. A rule finds the rows through the parts that hold them (the head, the body,
+ * the foot, the copy of a dragged row), which carry the grid's id, and goes on by child combinators only: the rows of a
+ * grid inside this one (in a row's details, in a cell) are that grid's. A constructable stylesheet adopted by the document (or
  * shadow root) where there is one, which also works under a strict Content Security Policy; else a
  * `<style>` element inside the grid.
  */
@@ -30,12 +32,12 @@ export class ColumnStyles<T> {
 
   /** `placed`: every column's cells get their track by number, so a row may leave out the cells of columns not drawn (virtual columns). */
   update(visible: string[], offsets: Map<string, StickyOffset>, align: Map<string, string>, bands: readonly { id: string; first: number; count: number }[] = [], placed = false) {
-    const scope = `[data-grid-id="${this.gridId}"]`;
+    const rows = `[data-grid-id="${this.gridId}"] > .mx-data-grid__row`;
     const rules: string[] = [];
     const shown = new Set(visible);
     const track = new Map(visible.map((f, i) => [f, i + 1]));
     for (const field of this.columns.state.order) {
-      const sel = `${scope} .mx-data-grid__row > [data-field="${escapeAttr(field)}"]`;
+      const sel = `${rows} > [data-field="${escapeAttr(field)}"]`;
       if (!shown.has(field)) {
         rules.push(`${sel}{display:none}`);
         continue;
@@ -44,7 +46,7 @@ export class ColumnStyles<T> {
       const a = align.get(field);
       if (a && a !== 'start') {
         rules.push(`${sel}.mx-data-grid__cell{text-align:${a}}`);
-        rules.push(`${sel} .mx-data-grid__title{text-align:${a}}`);
+        rules.push(`${sel} > .mx-data-grid__title{text-align:${a}}`);
       }
       const sticky = offsets.get(field);
       if (sticky) {
@@ -58,7 +60,7 @@ export class ColumnStyles<T> {
       if (!first || !last) continue;
       const near = first.side === 'start' ? first : last;
       const edge = first.side === 'start' ? last.edge : first.edge;
-      const sel = `${scope} .mx-data-grid__row > [data-band="${escapeAttr(band.id)}"]`;
+      const sel = `${rows} > [data-band="${escapeAttr(band.id)}"]`;
       rules.push(`${sel}{position:sticky;inset-inline-${near.side}:${near.offset}px;z-index:var(--_z-sticky)}`);
       if (edge) rules.push(`${sel}{box-shadow:var(--_sticky-${near.side})}`);
     }

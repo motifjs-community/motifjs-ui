@@ -18,6 +18,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - `DropDown` and `Lookup` draw the value once as they are built: the field was drawn, then drawn again for the data
   source given (none included), so a `fieldTemplate` ran twice and its cleanup once in between. With a data source,
   the first drawing wrote the key itself before the source was there.
+- A `DataGrid` inside another `DataGrid` (in a row's details, in a cell) keeps its own columns and its own look (#4).
+  A grid wrote the rules of its columns, and its stylesheet the rules for its states, with descendant selectors, so
+  they reached the rows of a grid inside it too. A column the outer grid does not show (its own selection column
+  among them) was hidden inside as well, and the cells after it moved into the wrong tracks; a column's alignment,
+  its pinning and, with virtual columns, its track went to the same field inside; and the outer grid's `striped`,
+  `selection`, `headerButtons: 'always'` and its loading or empty state showed on the rows, the headers and the body
+  inside. The column rules now find the rows through the parts that hold them (`data-grid-id` is on the head, the
+  body and the foot, no longer on `.mx-data-grid`), and a rule that depends on a state of the grid, a row or a cell
+  goes on by child combinators only. A grid that holds no grid looks as it did.
 
 ### Changed
 

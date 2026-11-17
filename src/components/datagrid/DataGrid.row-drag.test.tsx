@@ -153,6 +153,9 @@ describe('DataGrid row drag and drop', () => {
     expect(seen).toEqual(['start 1 2']);
     expect(ghost(grid)?.dataset.kind).toBe('row');
     expect(ghost(grid)?.textContent).toContain('Name 2');
+    // The copy is in a box that carries the grid's id, like the parts that hold its rows: the grid's sheet lays it out too.
+    expect(ghost(grid)!.querySelector('.mx-data-grid__row')!.parentElement!.getAttribute('data-grid-id')).toBe(rowEl(grid, 1).parentElement!.getAttribute('data-grid-id'));
+    expect(rowEl(grid, 1).parentElement!.hasAttribute('data-grid-id')).toBe(true);
     expect(rowEl(grid, 1).dataset.dragSource).toBe('indicate');
     // Over the lower half of row 4: it would land after it, at index 4.
     moveTo(10, yOf(grid, 4, 0.75));
