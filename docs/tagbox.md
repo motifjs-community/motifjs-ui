@@ -1,6 +1,6 @@
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.12
+> Data · @motifx-community/ui 0.1.0-beta.13
 
 Selects multiple items. Selected items appear as tags in the field, followed by a text input that searches the list. Items can come from memory or from a data source, and typed text can become a custom tag.
 
@@ -124,7 +124,7 @@ export default function Customers() {
 
 ## Custom tags
 
-With `acceptCustomValue`, pressing Enter adds text that matches no item as a tag. `customValue` transforms or rejects it, and `tagTemplate` customizes how a tag is drawn.
+With `acceptCustomValue`, pressing Enter adds text that matches no item as a tag. `customValue` transforms or rejects it, and `tagTemplate` customizes how a tag is drawn. It draws into a `host` of its own, which goes when the tag is drawn again, its value is taken out or the box goes, with everything the template added to it; a cleanup it returns runs then, for what lives outside the host.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -230,7 +230,7 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `hideSelected` | `Bind<boolean>` | `false` | Removes selected items from the list (in-memory items only). |
 | `openOnFieldClick` | `Bind<boolean>` | `true` | Clicking the field opens the list. |
 | `showDropDownButton, clearButton` | `Bind<boolean>` | `true`, `false` | The arrow that opens all items, and the button that removes all tags. |
-| `itemTemplate, tagTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how a list item or a tag is drawn. |
+| `itemTemplate, tagTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how a list item or a tag is drawn. What it adds to `host` goes with `host`; a cleanup it returns runs as `host` goes. |
 | `matchWidth` | `Bind<boolean>` | `true` | The list is at least as wide as the field. |
 | `label, labelMode, helpText, hint, prefix, icon, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup` | see TextBox |  | Field props shared by all editors. |
 

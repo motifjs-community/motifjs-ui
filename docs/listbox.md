@@ -1,6 +1,6 @@
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.12
+> Data · @motifx-community/ui 0.1.0-beta.13
 
 A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be searched and grouped, and long lists render only the visible rows.
 
@@ -31,7 +31,7 @@ export const cities = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Kon
 
 ## Objects, groups, templates
 
-Custom objects are read through `textField` and `valueField`. `groupField` places items under headers, `enabledField` disables specific items, and `itemTemplate` customizes how an item is drawn.
+Custom objects are read through `textField` and `valueField`. `groupField` places items under headers, `enabledField` disables specific items, and `itemTemplate` customizes how an item is drawn. A template draws into a `host` of its own, which goes when the item is drawn again (another template, the items given again) or the list goes, with everything the template added to it. The cleanup a template can return is for what lives outside the host, such as a subscription or a timer: it runs as the host goes, once what the host held is gone.
 
 ```tsx
 import { reactive, type ComponentBase } from '@motifx/core';
@@ -221,7 +221,7 @@ export default function Localization() {
 | `searchMode` | `Bind<'contains' \| 'startswith'>` | `'contains'` | How the search matches in-memory items. |
 | `searchDelay` | `Bind<number>` | `0` / `250` | The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source). |
 | `height` | `Bind<number \| string \| null>` | — | The height, in rows (`8`) or a CSS length (`"12rem"`). Without it, the list is as tall as its items, up to the `max-height` of the list (`list.container`). |
-| `itemTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how an item is drawn. |
+| `itemTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how an item is drawn. What it adds to `host` goes with `host`; a cleanup it returns runs as `host` goes. |
 | `noItemsText` | `Bind<string>` | — | The text for an empty list, which replaces the `uiLocale` “No items” string. |
 | `label, labelMode, helpText, hint, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup` | see TextBox |  | Field props shared by all editors. |
 

@@ -1,6 +1,6 @@
 # Chart: Zoom and large data
 
-> Charts · @motifx-community/ui 0.1.0-beta.12
+> Charts · @motifx-community/ui 0.1.0-beta.13
 
 Large data stays quick: long lines are thinned to the width with their peaks kept, and the reader zooms in for detail.
 

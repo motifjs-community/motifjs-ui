@@ -1,6 +1,6 @@
 # DataGrid: Edit forms and popups
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.12
+> DataGrid · @motifx-community/ui 0.1.0-beta.13
 
 ## Edit forms and popups
 

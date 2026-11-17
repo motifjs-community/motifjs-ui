@@ -1,6 +1,6 @@
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.12
+> Choice · @motifx-community/ui 0.1.0-beta.13
 
 Selects one item from a list. The field shows the selected item, and the list opens below it on click or from the keyboard. The list can be searched, grouped and customized, and it stays fast with thousands of items.
 
@@ -21,7 +21,7 @@ export const cities = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Kon
 
 ## Objects, groups, templates
 
-Custom objects are read through `textField` and `valueField`, each a property name or a function. `groupField` places options under headers, `enabledField` disables specific options, and a template customizes how an option is drawn.
+Custom objects are read through `textField` and `valueField`, each a property name or a function. `groupField` places options under headers, `enabledField` disables specific options, and a template customizes how an option is drawn. A template draws into a `host` of its own, which goes when the option or the value is drawn again or the box goes, with everything the template added to it. The cleanup a template can return is for what lives outside the host, such as a subscription or a timer: it runs as the host goes, once what the host held is gone.
 
 ```tsx
 import { reactive, type ComponentBase } from '@motifx/core';
@@ -212,7 +212,7 @@ export default function Localization() {
 | `searchEnabled` | `Bind<boolean>` | `false` | Adds a search box at the top of the list. |
 | `searchMode` | `Bind<'contains' \| 'startswith'>` | `'contains'` | How the search matches option text. |
 | `clearButton` | `Bind<boolean>` | `false` | Shows a button that clears the value. Escape does the same while the list is closed. |
-| `itemTemplate / fieldTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how an option or the selected item is drawn. |
+| `itemTemplate / fieldTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes how an option or the selected item is drawn. What it adds to `host` goes with `host`; a cleanup it returns runs as `host` goes. |
 | `matchWidth` | `Bind<boolean>` | `true` | The list is at least as wide as the field. |
 | `label, labelMode, helpText, hint, prefix, icon, buttons, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup` | see TextBox |  | Field props shared by all editors. |
 

@@ -1,6 +1,6 @@
 # TreeView
 
-> Data · @motifx-community/ui 0.1.0-beta.12
+> Data · @motifx-community/ui 0.1.0-beta.13
 
 Displays items in a hierarchy. Rows can be expanded and collapsed, selected individually or in groups, and searched. Check boxes can roll up to parent rows, and children can load on demand when a row is first expanded. Large trees render only the visible rows.
 
@@ -102,7 +102,7 @@ export interface Entry {
 
 ## Flat data, fields and templates
 
-Flat rows reference their parent through `parentField`, which defaults to `parentId`. Any field can be a property name or a function. `itemTemplate` customizes a row's content, and `enabledField` and `expandedField` apply per row.
+Flat rows reference their parent through `parentField`, which defaults to `parentId`. Any field can be a property name or a function. `itemTemplate` customizes a row's content: what it adds to its `host` goes with the row, and a cleanup it returns, for what lives outside the row, runs as the row goes (drawn again or the tree gone; a closed row's rows stay drawn). `enabledField` and `enabledField` and `expandedField` apply per row.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -252,7 +252,7 @@ export default function Localization() {
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`, from the density tokens. |
 | `label` | `Bind<string>` | `''` | The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work. |
 | `virtualFrom` | `Bind<number>` | `500` | When more rows than this are on screen, only the visible rows are rendered. |
-| `itemTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes the content of a row. |
+| `itemTemplate` | `Bind<(item, host: ComponentBase) => cleanup \| void>` | — | Customizes the content of a row. What it adds to `host` goes with the row; a cleanup it returns runs as the row goes. |
 | `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### Properties
