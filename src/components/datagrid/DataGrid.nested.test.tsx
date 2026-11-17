@@ -202,6 +202,43 @@ function reach(selector: string): string | null {
 
 const bare = (selector: string) => selector.replace(/::[\w-]+/g, '');
 
+/** What a selector weighs: its classes, attributes and pseudo-classes (`:where()` none, `:is()` and `:not()` their heaviest), then its pseudo-elements. */
+function weight(selector: string): [number, number] {
+  let marks = 0;
+  let pieces = 0;
+  const closing = (text: string, open: number) => {
+    let depth = 1;
+    let i = open + 1;
+    for (; i < text.length && depth; i++) {
+      if (text[i] === '(' || text[i] === '[') depth++;
+      else if (text[i] === ')' || text[i] === ']') depth--;
+    }
+    return i;
+  };
+  for (const { compound } of steps(selector)) {
+    for (let i = 0; i < compound.length; ) {
+      if (compound[i] === '[') {
+        marks++;
+        i = closing(compound, i);
+      } else if (compound.startsWith('::', i)) {
+        pieces++;
+        i += 2;
+      } else if (compound[i] === ':') {
+        const name = /^:([\w-]+)/.exec(compound.slice(i))![1];
+        const open = i + 1 + name.length;
+        const end = compound[open] === '(' ? closing(compound, open) : open;
+        if (name === 'is' || name === 'not' || name === 'has') marks += Math.max(...split(compound.slice(open + 1, end - 1)).map((part) => weight(part)[0]));
+        else if (name !== 'where') marks++;
+        i = end;
+      } else {
+        if (compound[i] === '.') marks++;
+        i++;
+      }
+    }
+  }
+  return [marks, pieces];
+}
+
 afterEach(() => {
   document.body.innerHTML = '';
   localStorage.clear();
@@ -402,5 +439,23 @@ describe("the grid's selectors", () => {
     expect(reach(':root .mx-data-grid__ghost')).toBeNull();
     expect(reach('.mx-data-grid__chip[data-dir="asc"] .mx-data-grid__sort-down')).toBeNull();
     expect(reach('.mx-data-grid[data-striped] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > .mx-data-grid__body > .mx-data-grid__row[data-odd]:not([data-selected])')).toBeNull();
+    expect([weight('.a[data-x] > :where(.b[data-y]) > .c:is(.d.e, .f):not([data-z])::after'), weight('.a:hover'), weight(':where(.a .b)')]).toEqual([[6, 1], [2, 0], [0, 0]]);
+  });
+
+  it('paint the stripe of a row under the tints of the pointer, the active row and a new row', () => {
+    // The rules that write the tint over a row, in the order they are written.
+    const tints = Array.from(gridCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g))
+      .map(([, selector, body], at) => ({ selector: selector.trim().replace(/\s+/g, ' '), value: /--_tint:\s*([^;]+);/.exec(body)?.[1].trim(), at }))
+      .filter((rule) => rule.value && rule.selector.includes('mx-data-grid__row'));
+    const stripe = tints.find((rule) => rule.selector.includes('[data-odd]'))!;
+    const over = (name: string) => tints.find((rule) => rule !== stripe && rule.selector.includes(name))!;
+    const wins = (a: typeof stripe, b: typeof stripe) => weight(a.selector)[0] > weight(b.selector)[0] || (weight(a.selector)[0] === weight(b.selector)[0] && a.at > b.at);
+    expect([':hover', '[data-active]', "[data-status='new']"].map((name) => [name, wins(over(name), stripe)])).toEqual([
+      [':hover', true],
+      ['[data-active]', true],
+      ["[data-status='new']", true],
+    ]);
+    // The stripe itself is over a row's plain tint.
+    expect(wins(stripe, tints.find((rule) => rule.selector === '.mx-data-grid__row')!)).toBe(true);
   });
 });

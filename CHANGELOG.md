@@ -27,6 +27,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   inside. The column rules now find the rows through the parts that hold them (`data-grid-id` is on the head, the
   body and the foot, no longer on `.mx-data-grid`), and a rule that depends on a state of the grid, a row or a cell
   goes on by child combinators only. A grid that holds no grid looks as it did.
+- A `striped` `DataGrid` shows the row under the pointer, the active row and a new row on its odd rows too. The
+  stripe's rule outweighed theirs, so every second row kept its stripe under the pointer and as the active row. The
+  stripe now comes first and weighs no more than they do; the even rows, a selected row and a grid without stripes
+  look as they did.
 
 ### Changed
 

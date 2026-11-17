@@ -33,6 +33,8 @@
     --_edge-start: initial;
     --_edge-end: initial;
     --_range: initial;
+    /* The tint of the odd rows: none, or the stripe (`striped`). On the root, so a grid inside reads its own. */
+    --_stripe-tint: transparent;
 
     position: relative;
     display: flex;
@@ -101,9 +103,15 @@
     will-change: transform;
   }
 
-  /* A selected row's fill stands for the stripe and the new-row tint. */
-  .mx-data-grid[data-striped] > :where(.mx-data-grid__main) > :where(.mx-data-grid__viewport) > .mx-data-grid__body > .mx-data-grid__row[data-odd]:not([data-selected]) {
-    --_tint: var(--_datagrid-stripe-tint);
+  .mx-data-grid[data-striped] {
+    --_stripe-tint: var(--_datagrid-stripe-tint);
+  }
+
+  /* The stripe comes first and weighs no more than the tints after it (`:where()` adds no weight), so a striped
+     row shows the pointer, the active row and a new row like any other. A selected row's fill stands for the
+     stripe and the new-row tint. */
+  .mx-data-grid__body > .mx-data-grid__row[data-odd]:where(:not([data-selected])) {
+    --_tint: var(--_stripe-tint);
   }
 
   .mx-data-grid__body > .mx-data-grid__row[data-status='new']:not([data-selected]) {

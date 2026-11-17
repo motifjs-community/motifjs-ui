@@ -321,6 +321,30 @@ export default async function ({ page, base, check, axeSource, box }) {
   const shown = await page.evaluate((sel) => [...document.querySelectorAll(`${sel} .mx-data-grid__menu-button`)].filter((el) => getComputedStyle(el).opacity === '1').length, switches);
   check('datagrid: header buttons always show when asked', shown >= 7, String(shown));
 
+  // Striped rows: an odd row shows the pointer and the active row as an even row does, not its stripe.
+  {
+    const row = (i) => `${shownRows(switches)}[aria-rowindex="${i + 2}"]`;
+    const tint = (i) => page.evaluate((sel) => getComputedStyle(document.querySelector(sel)).getPropertyValue('--_tint').trim(), row(i));
+    const cell = (i) => page.locator(`${row(i)} > [data-field="city"]`);
+    const odd = await page.evaluate((sel) => document.querySelector(sel).hasAttribute('data-odd'), row(1));
+    const stripe = await tint(1);
+    await cell(1).hover();
+    const hoverOdd = await tint(1);
+    await cell(2).hover();
+    const hoverEven = await tint(2);
+    await cell(1).click();
+    await page.mouse.move(5, 5);
+    const activeOdd = await tint(1);
+    await cell(2).click();
+    await page.mouse.move(5, 5);
+    const activeEven = await tint(2);
+    check(
+      'datagrid: a striped row shows the pointer and the active row like any other row',
+      odd && stripe !== 'transparent' && hoverOdd === hoverEven && hoverOdd !== stripe && activeOdd === activeEven && activeOdd !== stripe,
+      `stripe ${stripe}, under the pointer ${hoverOdd} / ${hoverEven}, active ${activeOdd} / ${activeEven}`,
+    );
+  }
+
   // Density: the rows follow it.
   const height = () => page.evaluate((sel) => document.querySelector(sel).getBoundingClientRect().height, `${shownRows(switches)}`);
   const comfortable = await height();
