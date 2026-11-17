@@ -88,6 +88,23 @@
     tab-size: 4;
   }
 
+  /* A long block, folded: its first lines (as many as the markdown's codeLines), fading out over the last one, and the
+     button under it across the block, its chevron up once the block is open. */
+  .mx-markdown__block[data-folded] .mx-markdown__code-text {
+    display: block;
+    max-block-size: calc(var(--_code-lines) * 1lh);
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 1lh), transparent);
+  }
+
+  .mx-markdown__code-more {
+    align-self: stretch;
+  }
+
+  .mx-markdown__code-more[aria-expanded='true'] .mx-glyph {
+    rotate: 180deg;
+  }
+
   .mx-markdown__table {
     border-collapse: collapse;
     max-inline-size: 100%;

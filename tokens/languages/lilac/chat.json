@@ -28,7 +28,7 @@
     },
     "jump": {
       "variant": {
-        "$value": "outline"
+        "$value": "solid"
       },
       "tone": {
         "$value": "standard"
@@ -1220,6 +1220,104 @@
     "ask-actions": {
       "gap": {
         "$value": "{space.2}"
+      }
+    },
+    "form-cancel": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
+    "form-source": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "form-message": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      }
+    },
+    "sources": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "source": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "gap": {
+        "$value": "{space.1}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "bg": {
+        "$value": "{color.fill.subtle.secondary}"
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "padding-block": {
+        "$value": "{space.0}"
+      },
+      "text-decoration": {
+        "$value": "none"
+      },
+      "hover": {
+        "bg": {
+          "$value": "{color.fill.subtle.tertiary}"
+        }
+      },
+      "focus": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.width}"
+        }
+      }
+    },
+    "source-index": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "source-title": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      }
+    },
+    "source-site": {
+      "color": {
+        "$value": "{color.fg.secondary}"
       }
     }
   }

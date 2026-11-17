@@ -25,7 +25,14 @@ export class ChatPlanEntry implements ChatEntry {
     this.row = row;
     const box = part<HTMLDivElement>(main, 'div', 'mx-chat__plan');
     this.title = part<HTMLDivElement>(box, 'div', 'mx-chat__plan-title');
-    this.markdown = new Markdown({ text: plan.text, highlighter: look.highlighter, mathRenderer: look.mathRenderer, diagramRenderer: look.diagramRenderer, linkTarget: look.linkTarget });
+    this.markdown = new Markdown({
+      text: plan.text,
+      highlighter: look.highlighter,
+      mathRenderer: look.mathRenderer,
+      diagramRenderer: look.diagramRenderer,
+      linkTarget: look.linkTarget,
+      codeLines: look.codeLines
+    });
     this.markdown.class.add('mx-chat__plan-text');
     box.controls.add(this.markdown);
     this.request = part<HTMLDivElement>(main, 'div', 'mx-chat__request');
@@ -37,6 +44,10 @@ export class ChatPlanEntry implements ChatEntry {
 
   found(index: number): ComponentBase | null {
     return this.markdown.blockAt(index);
+  }
+
+  drawing(): boolean {
+    return this.markdown.isDrawing;
   }
 
   update(): void {

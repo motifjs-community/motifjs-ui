@@ -480,3 +480,100 @@ describe('Markdown: footnotes, math and diagrams', () => {
     expect(blocks[2].dataset.drawn).toBeUndefined();
   });
 });
+
+describe('Markdown: long code blocks and long texts', () => {
+  const code = (lines: number, language = 'ts') => `\`\`\`${language}\n${Array.from({ length: lines }, (_, i) => `line ${i + 1}`).join('\n')}\n\`\`\``;
+  const more = (md: Markdown) => $(md, '.mx-markdown__code-more') as HTMLButtonElement | null;
+  const frame = (md: Markdown) => $(md, '.mx-markdown__block') as HTMLElement;
+  const shown = (el: Element | null) => !!el && (el as HTMLElement).style.display !== 'none' && !(el as HTMLElement).hidden;
+
+  async function until(done: () => boolean): Promise<void> {
+    for (let i = 0; i < 500 && !done(); i++) await new Promise((r) => setTimeout(r, 10));
+  }
+
+  it('folds a code block longer than codeLines; its button shows all the lines and folds them again', () => {
+    const md = whole(`${code(30)}\n\n${code(10)}`, { codeLines: 10 });
+    const [long, short] = $$(md, '.mx-markdown__block') as HTMLElement[];
+    const button = long.querySelector('.mx-markdown__code-more') as HTMLButtonElement;
+    expect(long.hasAttribute('data-folded')).toBe(true);
+    expect(long.style.getPropertyValue('--_code-lines')).toBe('10');
+    expect(button.textContent).toBe('Show all 30 lines');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(short.querySelector('.mx-markdown__code-more')).toBeNull();
+    expect(short.hasAttribute('data-folded')).toBe(false);
+
+    button.click();
+    expect(long.hasAttribute('data-folded')).toBe(false);
+    expect(button.textContent).toBe('Show fewer lines');
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    button.click();
+    expect(long.hasAttribute('data-folded')).toBe(true);
+    // Folded, every line is still there: the copy button copies them all.
+    expect(long.querySelector('code')!.textContent).toContain('line 30');
+    expect(whole(code(30)).element.querySelector('.mx-markdown__code-more')).toBeNull();
+  });
+
+  it('folds a streaming block once it grows past codeLines, and counts its lines as they end', () => {
+    const md = view({ streaming: true, codeLines: 3 });
+    md.append('```\na\nb\nc\n');
+    expect(more(md)).toBeNull();
+    md.append('d\n');
+    expect(frame(md).hasAttribute('data-folded')).toBe(true);
+    expect(more(md)!.textContent).toBe('Show all 4 lines');
+    md.append('e\nf');
+    expect(more(md)!.textContent).toBe('Show all 5 lines');
+    md.append('\n```\n');
+    md.end();
+    expect(more(md)!.textContent).toBe('Show all 6 lines');
+  });
+
+  it('folds nothing a door drew in the code’s place', () => {
+    const diagrams: DiagramRenderer = {
+      draws: (language) => language === 'mermaid',
+      render: (source) => Object.assign(document.createElement('div'), { className: 'diagram', textContent: source })
+    };
+    const md = whole(code(12, 'mermaid'), { codeLines: 5, diagramRenderer: diagrams });
+    expect(frame(md).dataset.drawn).toBe('diagram');
+    expect(frame(md).hasAttribute('data-folded')).toBe(false);
+    expect(shown(more(md))).toBe(false);
+  });
+
+  it('draws a very long text a piece a frame, from its start, as it draws the same text streamed', async () => {
+    const text = Array.from({ length: 3000 }, (_, i) => `Paragraph ${i} with **bold** text and \`code\`.`).join('\n\n');
+    const md = whole(text);
+    expect(md.isDrawing).toBe(true);
+    expect(md.isEnded).toBe(true);
+    expect(md.text).toBe(text);
+    const first = $$(md, 'p').length;
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBeLessThan(3000);
+    expect(md.blockAt(text.length - 5)).toBeNull();
+
+    await until(() => !md.isDrawing);
+    expect(md.isDrawing).toBe(false);
+    expect($$(md, 'p').length).toBe(3000);
+    expect(md.blockAt(text.length - 5)).not.toBeNull();
+    expect(md.element.innerHTML).toBe(streamed(text, 10_000).element.innerHTML);
+  });
+
+  it('adds what is appended after the pieces still waiting, ends after the last, and stops them on clear()', async () => {
+    const long = `${Array.from({ length: 4000 }, (_, i) => `Line ${i} *is* here.`).join('\n\n')}\n\n`;
+    const md = view({ streaming: true });
+    md.text = long;
+    md.append('**tail**');
+    md.end();
+    expect(md.isDrawing).toBe(true);
+    expect($(md, 'strong')).toBeNull();
+    expect(md.text).toBe(`${long}**tail**`);
+    await until(() => !md.isDrawing);
+    expect($(md, 'strong')!.textContent).toBe('tail');
+
+    const other = view({ streaming: true });
+    other.text = long;
+    expect(other.isDrawing).toBe(true);
+    other.clear();
+    expect(other.isDrawing).toBe(false);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(other.element.textContent).toBe('');
+  });
+});

@@ -63,6 +63,8 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     stops: (() => void)[] = [];
     /** The view stands at the end of its content (within `endOffset`). */
     atEnd = true;
+    /** Where the view stood when the end was last noted: it leaves the end only by going up from there. */
+    endTop = 0;
     /** The content's height as its last size notice told it: where the end is, without a read. */
     contentHeight = 0;
     /** A `stick` waits for the end of the task. */
@@ -386,14 +388,24 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
     stickNow(): void {
         if (this.atEnd && this.peekProperty('stickToEnd')) scrollBoxTo(this, { top: boxOf(this).scrollHeight });
     }
-    /** The size notice told how far the end is: a view stuck to it goes there, without a read. */
+    /**
+     * The size notice told how far the end is: a view stuck to it goes there, without a read. A notice comes a frame or
+     * two after the size it tells: an end above where the view already stands is an old one, and the view stays.
+     */
     stickTo(height: number): void {
-        if (this.atEnd && this.peekProperty('stickToEnd') && height) scrollBoxTo(this, { top: height });
+        if (this.atEnd && this.peekProperty('stickToEnd') && height > this.endTop) scrollBoxTo(this, { top: height });
     }
-    /** Notes whether the view stands at the end, from a box read for the scroll. */
+    /**
+     * Notes whether the view stands at the end, from a box read for the scroll. A view at the end that went down stays
+     * there: it went to the end it knew, and content that grew before the notice of that scroll came does not take it
+     * away.
+     */
     noteEnd(box: Box): void {
         if (box.clientHeight === 0) return;
-        this.setAtEnd(this.roomBelow(box) <= (this.peekProperty<number | undefined>('endOffset') ?? 24));
+        const near = this.roomBelow(box) <= (this.peekProperty<number | undefined>('endOffset') ?? 24);
+        const down = box.scrollTop > this.endTop;
+        this.endTop = box.scrollTop;
+        this.setAtEnd(near || (this.atEnd && down));
     }
     setAtEnd(atEnd: boolean): void {
         if (this.atEnd === atEnd) return;

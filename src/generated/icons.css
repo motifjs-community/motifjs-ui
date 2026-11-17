@@ -62,6 +62,8 @@
     --mx-icon-copy: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M5.75%205.25h7v8.5h-7zM3.25%2010.75v-8.5h7%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-send: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M8%2013.25V2.75M3.75%207L8%202.75%2012.25%207%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-stop: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M4%204h8v8h-8z%27%20fill%3D%27black%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-thumb-up: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M2%207h2.5v7H2zM4.5%207l2.5-4.5c1%200%201.75.75%201.5%201.75L8%206.5h4.25a1.25%201.25%200%200%201%201.2%201.6l-1.5%205A1.25%201.25%200%200%201%2010.75%2014H4.5%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-thumb-down: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M2%209h2.5V2H2zM4.5%209l2.5%204.5c1%200%201.75-.75%201.5-1.75L8%209.5h4.25a1.25%201.25%200%200%200%201.2-1.6l-1.5-5A1.25%201.25%200%200%200%2010.75%202H4.5%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
   }
 
   .mx-glyph[data-icon='arrow-start'] {
@@ -286,6 +288,14 @@
 
   .mx-glyph[data-icon='table'] {
     --_icon: var(--mx-icon-table);
+  }
+
+  .mx-glyph[data-icon='thumb-down'] {
+    --_icon: var(--mx-icon-thumb-down);
+  }
+
+  .mx-glyph[data-icon='thumb-up'] {
+    --_icon: var(--mx-icon-thumb-up);
   }
 
   .mx-glyph[data-icon='trash'] {

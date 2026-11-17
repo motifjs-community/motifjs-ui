@@ -6570,7 +6570,7 @@
     "cssVar": "--mx-chat-jump-variant",
     "type": "keyword",
     "ref": null,
-    "value": "outline"
+    "value": "solid"
   },
   {
     "name": "chat.jump.tone",
@@ -8804,6 +8804,188 @@
     "type": "dimension",
     "ref": "space.2",
     "value": "0.5rem"
+  },
+  {
+    "name": "chat.form-cancel.variant",
+    "cssVar": "--mx-chat-form-cancel-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "ghost"
+  },
+  {
+    "name": "chat.form-cancel.tone",
+    "cssVar": "--mx-chat-form-cancel-tone",
+    "type": "keyword",
+    "ref": null,
+    "value": "standard"
+  },
+  {
+    "name": "chat.form-cancel.size",
+    "cssVar": "--mx-chat-form-cancel-size",
+    "type": "keyword",
+    "ref": null,
+    "value": "sm"
+  },
+  {
+    "name": "chat.form-source.font-size",
+    "cssVar": "--mx-chat-form-source-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "chat.form-source.line-height",
+    "cssVar": "--mx-chat-form-source-line-height",
+    "type": "dimension",
+    "ref": "font.line.caption",
+    "value": "1rem"
+  },
+  {
+    "name": "chat.form-source.color",
+    "cssVar": "--mx-chat-form-source-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "chat.form-message.color",
+    "cssVar": "--mx-chat-form-message-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chat.sources.gap",
+    "cssVar": "--mx-chat-sources-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "chat.source.font-size",
+    "cssVar": "--mx-chat-source-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "chat.source.line-height",
+    "cssVar": "--mx-chat-source-line-height",
+    "type": "dimension",
+    "ref": "font.line.caption",
+    "value": "1rem"
+  },
+  {
+    "name": "chat.source.gap",
+    "cssVar": "--mx-chat-source-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "chat.source.color",
+    "cssVar": "--mx-chat-source-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chat.source.bg",
+    "cssVar": "--mx-chat-source-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "chat.source.radius",
+    "cssVar": "--mx-chat-source-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "chat.source.padding-inline",
+    "cssVar": "--mx-chat-source-padding-inline",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "chat.source.padding-block",
+    "cssVar": "--mx-chat-source-padding-block",
+    "type": "dimension",
+    "ref": "space.0",
+    "value": "0px"
+  },
+  {
+    "name": "chat.source.text-decoration",
+    "cssVar": "--mx-chat-source-text-decoration",
+    "type": "keyword",
+    "ref": null,
+    "value": "none"
+  },
+  {
+    "name": "chat.source.hover.bg",
+    "cssVar": "--mx-chat-source-hover-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.tertiary",
+    "value": "rgb(0 0 0 / 0.0241)"
+  },
+  {
+    "name": "chat.source.focus.outline-style",
+    "cssVar": "--mx-chat-source-focus-outline-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "chat.source.focus.outline-width",
+    "cssVar": "--mx-chat-source-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "chat.source.focus.outline-color",
+    "cssVar": "--mx-chat-source-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chat.source.focus.outline-offset",
+    "cssVar": "--mx-chat-source-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "chat.source-index.color",
+    "cssVar": "--mx-chat-source-index-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "chat.source-index.font-weight",
+    "cssVar": "--mx-chat-source-index-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "chat.source-title.color",
+    "cssVar": "--mx-chat-source-title-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chat.source-site.color",
+    "cssVar": "--mx-chat-source-site-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
   },
   {
     "name": "checkbox.gap",
@@ -18681,6 +18863,27 @@
   {
     "name": "markdown.copy.size",
     "cssVar": "--mx-markdown-copy-size",
+    "type": "keyword",
+    "ref": null,
+    "value": "sm"
+  },
+  {
+    "name": "markdown.code-more.variant",
+    "cssVar": "--mx-markdown-code-more-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "ghost"
+  },
+  {
+    "name": "markdown.code-more.tone",
+    "cssVar": "--mx-markdown-code-more-tone",
+    "type": "keyword",
+    "ref": null,
+    "value": "standard"
+  },
+  {
+    "name": "markdown.code-more.size",
+    "cssVar": "--mx-markdown-code-more-size",
     "type": "keyword",
     "ref": null,
     "value": "sm"

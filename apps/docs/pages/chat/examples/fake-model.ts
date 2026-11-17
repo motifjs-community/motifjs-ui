@@ -38,7 +38,13 @@ const QUESTIONS: ChatQuestion[] = [
   { text: 'Anything else to add?', header: 'Extras', multiple: true, options: [{ label: 'A cancel() method' }, { label: 'A test for many calls' }] }
 ];
 
-const TASKS = ['Read the debounce helper', 'Run its tests', 'Fix the failing case'];
+const TASKS = ['Read the debounce helper', 'Run its tests', 'Fix the failing case', 'Commit the fix'];
+
+/** What a model that searches names as its sources. */
+const SOURCES = [
+  { title: 'clearTimeout()', url: 'https://developer.mozilla.org/docs/Web/API/Window/clearTimeout', snippet: 'Cancels a timeout previously established by calling setTimeout().' },
+  { title: 'src/debounce.ts', snippet: 'The helper, as it was read.' }
+];
 
 const ANSWER = `Fixed. The returned function started a new timer on every call **without clearing the old one**, so each call ran:
 
@@ -66,9 +72,10 @@ function tasks(done: number): ChatTodoItem[] {
 /**
  * Stands in for your model: a scripted agent that answers anything the same way, one step a request, reading what its
  * calls returned. It asks two questions, shows a plan, keeps a to-do list, reads a file, runs the tests (one fails),
- * edits the file (its arguments arrive in pieces), sends a sub-agent to look around, and answers. What the user says to
- * the questions, the plan and the permission changes what it does. Its very first request is refused as busy once,
- * as a provider does at times: the agent tries it again.
+ * edits the file (its arguments arrive in pieces), sends a sub-agent to look around, commits through a git server
+ * that asks for the message, and answers, naming its sources. What the user says to the questions, the plan, the
+ * permission and the commit changes what it does. Its very first request is refused as busy once, as a provider does
+ * at times: the agent tries it again.
  */
 export class FakeModel implements Model {
   private calls = 0;
@@ -138,8 +145,17 @@ export class FakeModel implements Model {
       case 8:
         yield* this.call('todo', { items: tasks(3) }, signal);
         return;
-      default:
-        yield* this.say('text', `${ANSWER}\n\nIt now runs ${timing}.\n\n${NOTE}`, signal);
+      case 9:
+        yield* this.call('commit', {}, signal);
+        return;
+      case 10:
+        yield* this.call('todo', { items: tasks(4) }, signal);
+        return;
+      default: {
+        const commit = results.get('commit') ?? '';
+        yield* this.say('text', `${ANSWER}\n\nIt now runs ${timing}. ${commit}\n\n${NOTE}`, signal);
+        for (const source of SOURCES) yield { type: 'source', ...source };
+      }
     }
   }
 
@@ -194,7 +210,10 @@ function turn(n: number, at: Date): ChatMessage[] {
       permission: { answer: { choice: 'yes' } }
     });
   }
-  parts.push({ kind: 'text', text: `Turn ${n}: looked at **${topic}**.${n % 4 === 0 ? `\n\n- checked the cause\n- wrote the fix\n- ran the tests\n\n\`\`\`ts\nexport const answer${n} = ${n};\n\`\`\`` : ' It is fine as it is.'}` });
+  let said = `Turn ${n}: looked at **${topic}**.${n % 4 === 0 ? `\n\n- checked the cause\n- wrote the fix\n- ran the tests\n\n\`\`\`ts\nexport const answer${n} = ${n};\n\`\`\`` : ' It is fine as it is.'}`;
+  // A long block now and then: the chat shows its first lines (`codeLines`) and a button for the rest.
+  if (n % 7 === 0) said += `\n\nThe whole file:\n\n\`\`\`ts\n${Array.from({ length: 24 }, (_, i) => `export const step${i + 1} = () => check('${topic}', ${i + 1});`).join('\n')}\n\`\`\``;
+  parts.push({ kind: 'text', text: said });
   return [
     { id: `q${n}`, role: 'user', time: at, parts: [{ kind: 'text', text: `Can you check ${topic}? (${n})` }] },
     { id: `a${n}`, role: 'assistant', time: new Date(at.getTime() + 20_000), parts }

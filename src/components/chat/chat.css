@@ -230,7 +230,34 @@
     }
   }
 
-  .mx-chat__jump {
+  /* The sources of a reply: numbered chips in rows, a long title cut on its line. */
+  .mx-chat__sources {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .mx-chat__source {
+    display: inline-flex;
+    align-items: baseline;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  .mx-chat__source-index,
+  .mx-chat__source-site {
+    flex: none;
+  }
+
+  .mx-chat__source-title {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The button back to the latest message, centred over the end of the conversation: the button's own face sets its
+     margins, so this one is the more specific. */
+  .mx-chat__view > .mx-chat__jump {
     position: absolute;
     inset-block-end: var(--_chat-jump-offset);
     inset-inline: 0;

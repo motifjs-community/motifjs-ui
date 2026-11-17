@@ -17,4 +17,9 @@ export interface ChatMessage {
   status?: ChatMessageStatus;
   /** What went wrong, shown under a message whose status is `error`. */
   error?: string;
+  /** What the user said of a reply with its buttons (`onFeedback`). */
+  feedback?: ChatFeedback;
 }
+
+/** Whether a reply was good or bad, as the user said. */
+export type ChatFeedback = 'good' | 'bad';

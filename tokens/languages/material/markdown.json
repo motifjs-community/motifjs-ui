@@ -17,6 +17,17 @@
         "$value": "sm"
       }
     },
+    "code-more": {
+      "variant": {
+        "$value": "ghost"
+      },
+      "tone": {
+        "$value": "standard"
+      },
+      "size": {
+        "$value": "sm"
+      }
+    },
     "h1": {
       "font-size": {
         "$value": "{font.size.title}"

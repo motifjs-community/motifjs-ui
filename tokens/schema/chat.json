@@ -70,7 +70,7 @@
         ]
       },
       "turn-action": {
-        "$description": "A reply's action at the end of its turn: copy, try again.",
+        "$description": "A reply's action at the end of its turn: copy, good, bad, try again, regenerate.",
         "selector": ".mx-chat__turn-actions > .mx-chat__action",
         "part": "button",
         "tokens": [
@@ -172,6 +172,16 @@
       "search-close": {
         "$description": "The button that closes the search.",
         "selector": ".mx-chat__search > .mx-chat__search-close",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "form-cancel": {
+        "$description": "The form's button that dismisses it.",
+        "selector": ".mx-chat__ask-actions > .mx-chat__form-cancel",
         "part": "button",
         "tokens": [
           "variant",
@@ -602,6 +612,38 @@
       "ask-actions": {
         "$description": "The form's buttons.",
         "selector": ".mx-chat__ask-actions"
+      },
+      "form-source": {
+        "$description": "Who asks for a form, over its fields.",
+        "selector": ".mx-chat__form-source"
+      },
+      "form-message": {
+        "$description": "What a form in the flow asked for.",
+        "selector": ".mx-chat__form-message"
+      },
+      "sources": {
+        "$description": "The sources of a reply: their chips, in rows.",
+        "selector": ".mx-chat__sources"
+      },
+      "source": {
+        "$description": "A source's chip, a link when it has an address: `hover`, `focus` (the keys).",
+        "selector": ".mx-chat__source",
+        "states": {
+          "hover": ".mx-chat__source:hover",
+          "focus": ".mx-chat__source:focus-visible"
+        }
+      },
+      "source-index": {
+        "$description": "A source's number.",
+        "selector": ".mx-chat__source-index"
+      },
+      "source-title": {
+        "$description": "A source's title, on one line.",
+        "selector": ".mx-chat__source-title"
+      },
+      "source-site": {
+        "$description": "A source's site.",
+        "selector": ".mx-chat__source-site"
       }
     }
   }

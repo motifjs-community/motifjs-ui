@@ -4,10 +4,12 @@ import { ChatAskedEntry } from './chat-asked-entry';
 import { ChatAttachmentEntry } from './chat-attachment-entry';
 import { ChatCompactionEntry } from './chat-compaction-entry';
 import type { ChatEntry } from './chat-entry';
+import { ChatFormEntry } from './chat-form-entry';
 import type { ChatLook } from './chat-look';
 import { ChatNoticeEntry } from './chat-notice-entry';
 import type { ChatPart } from './chat-part';
 import { ChatPlanEntry } from './chat-plan-entry';
+import { ChatSourcesEntry } from './chat-sources-entry';
 import { ChatTextEntry } from './chat-text-entry';
 import { ChatThinkingEntry } from './chat-thinking-entry';
 import { ChatTodoEntry } from './chat-todo-entry';
@@ -48,6 +50,15 @@ export class ChatFlowView {
   found(part: ChatPart, index: number): ComponentBase | null {
     const entry = this.entries.get(part);
     return entry ? (entry.found?.(index) ?? entry.row) : null;
+  }
+
+  /** A long markdown of the flow, or of a sub-agent's, is still drawn a piece a frame. */
+  drawing(): boolean {
+    for (const entry of this.entries.values()) {
+      if (entry.drawing?.()) return true;
+      if (entry instanceof ChatToolEntry && entry.innerFlow?.drawing()) return true;
+    }
+    return false;
   }
 
   /** The flow of the sub-agent a tool call runs. */
@@ -95,6 +106,10 @@ export class ChatFlowView {
         return new ChatPlanEntry(part, this.look, this.live);
       case 'questions':
         return new ChatAskedEntry(part, this.look, this.live);
+      case 'form':
+        return new ChatFormEntry(part, this.look, this.live);
+      case 'sources':
+        return new ChatSourcesEntry(part, this.look);
       case 'attachment':
         return new ChatAttachmentEntry(part);
       case 'compaction':

@@ -893,4 +893,21 @@ export interface UiStrings {
   chatSearchNone: string;
   chatSearchPrevious: string;
   chatSearchNext: string;
+  /** A long code block: the button that shows all its lines (`{count}`), and the one that folds it again. */
+  markdownShowLines: string;
+  markdownShowFewer: string;
+  /** A reply's actions: another reply in its place, and whether it was good. */
+  chatRegenerate: string;
+  chatGood: string;
+  chatBad: string;
+  /** The sources a reply names. */
+  chatSources: string;
+  /** A form a reply asks the user to fill in: its name, who asks (`{source}`), its buttons, and what the user did. */
+  chatForm: string;
+  chatFormFrom: string;
+  chatFormSubmit: string;
+  chatFormDecline: string;
+  chatFormCancel: string;
+  chatFormDeclined: string;
+  chatFormCancelled: string;
 }

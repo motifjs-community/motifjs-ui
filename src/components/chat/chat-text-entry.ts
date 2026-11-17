@@ -22,7 +22,8 @@ export class ChatTextEntry implements ChatEntry {
       highlighter: look.highlighter,
       mathRenderer: look.mathRenderer,
       diagramRenderer: look.diagramRenderer,
-      linkTarget: look.linkTarget
+      linkTarget: look.linkTarget,
+      codeLines: look.codeLines
     });
     this.markdown.class.add('mx-chat__text');
     main.controls.add(this.markdown);
@@ -37,6 +38,10 @@ export class ChatTextEntry implements ChatEntry {
 
   found(index: number): ComponentBase | null {
     return this.markdown.blockAt(index);
+  }
+
+  drawing(): boolean {
+    return this.markdown.isDrawing;
   }
 
   /** The text is complete: what is still pending takes its form. */

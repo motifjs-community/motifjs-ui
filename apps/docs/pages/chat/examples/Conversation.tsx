@@ -25,23 +25,28 @@ const MODELS = [
 /**
  * A long conversation that opens at its end, and an agent connected the way a real one is (`connect.ts`), to a model
  * that stands in for yours: send anything and it asks two questions, shows a plan, keeps a to-do list, reads a file,
- * asks before running the tests (one fails), edits the file, sends a sub-agent and answers. Send again while it works:
- * the message waits above the box. Escape stops it. Scroll up for older turns. In the box: files to attach (the button,
- * paste or drop), the open file as context, `/` for commands, `@` for files; under it the mode (Shift+Tab; "Edit
- * automatically" runs the tests without asking), the model and its thinking, and how full the context is. Hover a
- * question to copy it, edit and send it again, go back to it, or start a new conversation from it; `/compact` sums the
- * conversation up. The model's first request is refused as busy once: the agent counts down and tries again.
+ * asks before running the tests (one fails), edits the file, sends a sub-agent, commits through a git server that
+ * asks for the message in a form, and answers with its sources. Send again while it works: the message waits above
+ * the box. Escape stops it. Scroll up for older turns; a long code block shows its first lines. In the box: files to
+ * attach (the button, paste or drop), the open file as context, `/` for commands, `@` for files; under it the mode
+ * (Shift+Tab; "Edit automatically" runs the tests without asking), the model and its thinking, and how full the
+ * context is. Hover a question to copy it, edit and send it again, go back to it, or start a new conversation from
+ * it; hover a reply to copy it, say whether it was good, or ask for another. `/compact` sums the conversation up. The
+ * model's first request is refused as busy once: the agent counts down and tries again.
  */
 export default function Conversation() {
   let chat!: Chat;
   let pages = 0;
   let agent = new Agent(new FakeModel(), tools);
+  // A real app sends what the user said of a reply to its server, with the message's id.
+  const judged = new Map<string | number, string | null>();
   return (
     <Chat
       ref={(c: Chat) => (chat = c)}
       style="block-size: 36rem"
       messages={history(200)}
       hasOlder
+      codeLines={12}
       composer={{
         attachments: true,
         contextItems: [{ label: 'debounce.ts', data: 'src/debounce.ts' }],
@@ -63,6 +68,8 @@ export default function Conversation() {
         chat.composer.value = said;
       }}
       onRetry={() => void agent.again(chat.reply())}
+      onRegenerate={() => void agent.again(chat.reply())}
+      onFeedback={(e) => judged.set(e.message.id, e.feedback)}
       onSend={(e) => {
         if (e.text.trim() === '/compact') {
           const reply = chat.reply();

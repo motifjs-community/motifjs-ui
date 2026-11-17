@@ -163,6 +163,27 @@ describe('ScrollView', () => {
         expect(changes).toEqual([false, true, false, true]);
     });
 
+    it('stays at the end when the content grew before the notice of its own scroll came, and leaves it going up', async () => {
+        const view = new ScrollView({ stickToEnd: true });
+        page(view);
+        await settle();
+        let top = 700;
+        let height = 1000;
+        Object.defineProperty(view.element, 'scrollHeight', { configurable: true, get: () => height });
+        Object.defineProperty(view.element, 'clientHeight', { configurable: true, get: () => 300 });
+        Object.defineProperty(view.element, 'scrollTop', { configurable: true, get: () => top, set: v => (top = v) });
+        view.element.dispatchEvent(new Event('scroll'));
+        expect(view.isAtEnd).toBe(true);
+        // The view went down to the end it knew; by the time its scroll is heard, much more came below.
+        height = 9000;
+        top = 760;
+        view.element.dispatchEvent(new Event('scroll'));
+        expect(view.isAtEnd).toBe(true);
+        top = 700;
+        view.element.dispatchEvent(new Event('scroll'));
+        expect(view.isAtEnd).toBe(false);
+    });
+
     it('keeps a part where it was on screen while parts are added above it', async () => {
         const first = new Component<HTMLDivElement>('div');
         const view = new ScrollView();

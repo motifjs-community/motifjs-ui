@@ -9,7 +9,9 @@ import type { ChatLoadOlderEventArgs } from './chat-load-older-event-args';
 import type { ChatLook } from './chat-look';
 import type { ChatMessage } from './chat-message';
 import type { ChatProps } from './chat-props';
+import type { ChatFormSchema } from './chat-request';
 import { ChatTurnView } from './chat-turn-view';
+import type { ChatReply } from './ChatReply';
 
 const hosts: Component[] = [];
 
@@ -38,6 +40,7 @@ const look: ChatLook = {
   mathRenderer: null,
   diagramRenderer: null,
   linkTarget: '_blank',
+  codeLines: 0,
   time: () => '10:00',
   answer: () => {},
   ask: () => {},
@@ -45,6 +48,8 @@ const look: ChatLook = {
   resend: () => {},
   fork: null,
   retry: null,
+  regenerate: null,
+  feedback: null,
   isLatest: () => true
 };
 
@@ -819,6 +824,193 @@ describe('Chat: history', () => {
     head.click();
     expect(head.getAttribute('aria-expanded')).toBe('true');
     expect($(chat, '.mx-chat__compaction-text strong')?.textContent).toBe('the timer');
+  });
+
+  const visibleActions = (chat: Chat, n = 0) => Array.from($$(chat, '.mx-chat__turn-actions')[n]?.querySelectorAll<HTMLElement>('.mx-chat__action') ?? []).filter(shown);
+  const actionNamed = (chat: Chat, said: string, n = 0) => visibleActions(chat, n).find((b) => b.textContent?.includes(said) || b.getAttribute('aria-label') === said);
+
+  it('asks for another reply in the place of the last one once it ended; a failed one is tried again when the app takes retries', () => {
+    const asked: string[] = [];
+    let current: ChatReply | null = null;
+    const chat = chatOf({
+      onRegenerate: (e) => {
+        asked.push(`regenerate ${e.message.status}`);
+        current = chat.reply();
+        current.text('Another');
+      },
+      onRetry: (e) => asked.push(`retry ${e.message.status}`)
+    });
+    chat.send('Go');
+    const reply = chat.reply();
+    reply.text('First');
+    expect(shown($(chat, '.mx-chat__turn-actions'))).toBe(false);
+    reply.done();
+    actionNamed(chat, enStrings.chatRegenerate)!.click();
+    expect(asked).toEqual(['regenerate done']);
+    expect(chat.messages.map((m) => m.role)).toEqual(['user', 'assistant']);
+    expect($(chat, '.mx-chat__text')?.textContent).toBe('Another');
+    expect(shown($(chat, '.mx-chat__turn-actions'))).toBe(false);
+    current!.fail('Overloaded');
+    expect(actionNamed(chat, enStrings.chatRetry)).toBeDefined();
+    expect(actionNamed(chat, enStrings.chatRegenerate)).toBeUndefined();
+    chat.send('Next');
+    expect(actionNamed(chat, enStrings.chatRetry)).toBeUndefined();
+    expect(actionNamed(chat, enStrings.chatRegenerate)).toBeUndefined();
+  });
+
+  it('says a reply was good or bad with its buttons, pressed while it is so, and takes it back', () => {
+    const said: (string | null)[] = [];
+    const chat = chatOf({ onFeedback: (e) => said.push(e.feedback) });
+    chat.send('Go');
+    const reply = chat.reply();
+    reply.text('Done it');
+    reply.done();
+    const good = actionNamed(chat, enStrings.chatGood)!;
+    const bad = actionNamed(chat, enStrings.chatBad)!;
+    expect(good.getAttribute('aria-pressed')).toBe('false');
+    good.click();
+    expect(reply.message.feedback).toBe('good');
+    expect(good.getAttribute('aria-pressed')).toBe('true');
+    bad.click();
+    expect(reply.message.feedback).toBe('bad');
+    expect([good.getAttribute('aria-pressed'), bad.getAttribute('aria-pressed')]).toEqual(['false', 'true']);
+    bad.click();
+    expect(reply.message.feedback).toBeUndefined();
+    expect(bad.getAttribute('aria-pressed')).toBe('false');
+    expect(said).toEqual(['good', 'bad', null]);
+
+    const view = new ChatTurnView({ messages: [say('user', 'Q'), say('assistant', 'A', { feedback: 'bad' })] }, { ...look, feedback: () => {} });
+    hosts.push(mountHost(view.row));
+    expect(view.row.element.querySelector(`[aria-label="${enStrings.chatBad}"]`)?.getAttribute('aria-pressed')).toBe('true');
+    const plain = chatOf();
+    plain.send('Go');
+    const other = plain.reply();
+    other.text('Done');
+    other.done();
+    expect(actionNamed(plain, enStrings.chatGood)).toBeUndefined();
+  });
+});
+
+describe('Chat: sources and forms', () => {
+  const form = (chat: Chat) => $(chat, '.mx-chat__ask[data-kind="form"]');
+  const inForm = (chat: Chat, selector: string) => form(chat)!.querySelector(selector) as HTMLElement;
+
+  it('draws the sources a reply names as numbered chips, links to safe addresses, each source once', () => {
+    const chat = chatOf();
+    chat.send('Find it');
+    const reply = chat.reply();
+    reply.text('It is so.');
+    reply.sources([{ title: 'Docs', url: 'https://www.example.com/docs', snippet: 'What it says' }, { title: 'Notes' }]);
+    reply.sources([{ title: 'Docs again', url: 'https://www.example.com/docs' }, { title: 'Bad', url: 'javascript:alert(1)' }]);
+    expect(kinds(chat)).toEqual(['text', 'sources']);
+    const chips = $$(chat, '.mx-chat__source');
+    expect(chips.map((c) => c.tagName)).toEqual(['A', 'SPAN', 'SPAN']);
+    expect(chips.map((c) => c.textContent)).toEqual(['1Docsexample.com', '2Notes', '3Bad']);
+    expect(chips[0].getAttribute('href')).toBe('https://www.example.com/docs');
+    expect(chips[0].getAttribute('target')).toBe('_blank');
+    expect(chips[0].getAttribute('rel')).toBe('noopener noreferrer');
+    expect(chips[0].getAttribute('title')).toBe('What it says');
+    expect($(chat, '.mx-chat__sources')?.getAttribute('aria-label')).toBe(enStrings.chatSources);
+    reply.text(' More.');
+    reply.sources([{ title: 'Later' }]);
+    reply.done();
+    expect(kinds(chat)).toEqual(['text', 'sources', 'text', 'sources']);
+    expect(reply.message.parts.flatMap((p) => (p.kind === 'sources' ? [p.items.length] : []))).toEqual([3, 1]);
+  });
+
+  it('asks for a form in the composer\'s place, checks it as its schema says, and gives what was written', async () => {
+    const chat = chatOf();
+    chat.send('Deploy');
+    const call = chat.reply().tool({ name: 'deploy' });
+    const regions = ['eu', 'us', 'asia', 'africa', 'oceania', 'arctic'];
+    const asked = call.form(
+      'Where should it go?',
+      {
+        type: 'object',
+        properties: {
+          name: { type: 'string', title: 'Name', minLength: 2 },
+          replicas: { type: 'integer', title: 'Replicas', minimum: 1, maximum: 5, default: 2 },
+          notify: { type: 'boolean', title: 'Notify', default: true },
+          env: { type: 'string', title: 'Environment', enum: ['dev', 'prod'], enumNames: ['Development', 'Production'], default: 'prod' },
+          region: { type: 'string', title: 'Region', oneOf: regions.map((r) => ({ const: r, title: r.toUpperCase() })), default: 'eu' },
+          day: { type: 'string', title: 'Day', format: 'date', default: '2026-11-20' },
+          tags: { type: 'array', title: 'Tags', items: { enum: ['a', 'b', 'c'] }, default: ['b'] }
+        },
+        required: ['name']
+      },
+      { source: 'github' }
+    );
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(false);
+    expect(shown(form(chat))).toBe(true);
+    expect(inForm(chat, '.mx-chat__form-source').textContent).toBe('github asks');
+    expect(inForm(chat, '.mx-chat__ask-text').textContent).toBe('Where should it go?');
+    expect(form(chat)!.querySelectorAll('.mx-form-layout__item').length).toBe(7);
+    let done = false;
+    void asked.then(() => (done = true));
+    inForm(chat, '.mx-chat__ask-submit').click();
+    await settled();
+    expect(done).toBe(false);
+    const name = form(chat)!.querySelector('input') as HTMLInputElement;
+    name.value = 'site';
+    name.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    inForm(chat, '.mx-chat__ask-submit').click();
+    await expect(asked).resolves.toEqual({ action: 'accept', content: { name: 'site', replicas: 2, notify: true, env: 'prod', region: 'eu', day: '2026-11-20', tags: ['b'] } });
+    expect(shown(form(chat))).toBe(false);
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(true);
+    const entry = $(chat, '.mx-chat__entry[data-kind="form"]')!;
+    expect(entry.querySelector('.mx-chat__asked-count')?.textContent).toBe('github asks');
+    expect(entry.querySelector('.mx-chat__form-message')?.textContent).toBe('Where should it go?');
+    expect(entry.querySelector('.mx-chat__asked-state')?.textContent).toBe(enStrings.chatAnswered);
+    expect(Array.from(entry.querySelectorAll('.mx-chat__asked-pair')).map((p) => p.textContent)).toEqual([
+      'Namesite',
+      'Replicas2',
+      `Notify${enStrings.yes}`,
+      'EnvironmentProduction',
+      'RegionEU',
+      'Day2026-11-20',
+      'Tagsb'
+    ]);
+  });
+
+  it('declines a form, dismisses it with Escape, and leaves it unanswered when the reply ends first', async () => {
+    const chat = chatOf();
+    chat.send('Go');
+    const reply = chat.reply();
+    const schema: ChatFormSchema = { type: 'object', properties: { name: { type: 'string' } } };
+    const first = reply.form('Name?', schema);
+    inForm(chat, '.mx-chat__ask-decline').click();
+    await expect(first).resolves.toEqual({ action: 'decline' });
+    const second = reply.form('Name again?', schema);
+    expect(shown(form(chat))).toBe(true);
+    form(chat)!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await expect(second).resolves.toEqual({ action: 'cancel' });
+    const third = reply.form('Last?', schema);
+    reply.done();
+    await expect(third).resolves.toEqual({ action: 'cancel' });
+    expect(shown(form(chat))).toBe(false);
+    expect($$(chat, '.mx-chat__entry[data-kind="form"] .mx-chat__asked-state').map((s) => s.textContent)).toEqual([
+      enStrings.chatFormDeclined,
+      enStrings.chatFormCancelled,
+      enStrings.chatUnanswered
+    ]);
+  });
+
+  it('takes questions and forms one at a time in the composer\'s place', async () => {
+    const chat = chatOf();
+    chat.send('Go');
+    const reply = chat.reply();
+    const questions = reply.questions([{ text: 'Color?', options: [{ label: 'Red' }] }]);
+    const filled = reply.form('Size?', { type: 'object', properties: { size: { type: 'number', default: 3 } } });
+    expect(shown($(chat, '.mx-chat__ask'))).toBe(true);
+    expect(shown(form(chat))).toBe(false);
+    $$(chat, '.mx-chat__ask-option')[0].click();
+    ($(chat, '.mx-chat__ask-submit') as HTMLElement).click();
+    await expect(questions).resolves.toEqual({ declined: false, answers: [{ id: '1', values: ['Red'] }] });
+    expect(shown(form(chat))).toBe(true);
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(false);
+    inForm(chat, '.mx-chat__ask-submit').click();
+    await expect(filled).resolves.toEqual({ action: 'accept', content: { size: 3 } });
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(true);
   });
 });
 

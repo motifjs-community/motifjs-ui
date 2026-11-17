@@ -30,6 +30,7 @@ const PROPS = [
   ['allowImage', '`Bind<((src: string) => boolean) | null>`', 'Every safe address', 'With `images`, decides which addresses are shown. The others stay text.'],
   ['linkTarget', '`Bind<string>`', "`'_blank'`", 'Where links open. `rel="noopener noreferrer"` comes with a target. Use `\'\'` for the same tab.'],
   ['copyButton', '`Bind<boolean>`', '`true`', 'Shows a copy button on code blocks.'],
+  ['codeLines', '`Bind<number>`', '`0`', 'A code block longer than this many lines shows that many, folded, and a button under it shows them all and folds them again. `0` shows every line.'],
   ['onLinkClick', '`(e: MarkdownLinkClickEventArgs) => void`', '', 'A link was clicked. `e.href`, `e.event`. Set `e.cancel` to handle it yourself.'],
   ['visible', 'see Control', '', 'Properties shared by all controls.'],
 ];
@@ -37,6 +38,7 @@ const PROPS = [
 const PROPERTIES = [
   ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop. A changed setting reaches what is drawn after it.'],
   ['isEnded', 'read-only', '`true` once the text is complete.'],
+  ['isDrawing', 'read-only', '`true` while a very long text given at once is still drawn, a piece a frame.'],
 ];
 
 const METHODS = [
@@ -62,6 +64,7 @@ const A11Y = [
   ['Structure', 'Real headings, lists, quotes, tables and links, so screen readers navigate them as usual.'],
   ['Task items', 'The box has the role `img` and a name in the kit language: “Done” or “Not done”.'],
   ['Copy button', 'A button named “Copy”, which says “Copied” for a moment after copying.'],
+  ['Long code', 'The button under a folded block says how many lines it shows (“Show all 40 lines”) and has `aria-expanded`. Folded, every line is still in the block: it is copied, and found by the browser’s find.'],
   ['Footnotes', 'A reference is a link named “Footnote 1”; it moves the focus to its note, and the note’s first link, “Back to reference 1”, moves it back. The page’s address does not change.'],
   ['Motion', 'Nothing moves. Text appears where it belongs.'],
 ];
@@ -70,6 +73,7 @@ const LOCALE = [
   ['markdownCopy, markdownCopied', 'The copy button and what it says after copying.'],
   ['markdownTaskDone, markdownTaskOpen', 'The names of the task boxes.'],
   ['markdownFootnote, markdownFootnoteBack', 'The names of a footnote’s reference and of the link back to it.'],
+  ['markdownShowLines, markdownShowFewer', 'The button under a folded code block, and what it says once the block is open.'],
 ];
 
 const HOOKS = [
@@ -79,6 +83,7 @@ const HOOKS = [
   ['.mx-markdown__list, __item, __task', 'Lists, their items (`data-task` on task items) and task boxes (`data-done`).'],
   ['.mx-markdown__quote, __rule', 'Quotes and horizontal rules.'],
   ['.mx-markdown__block, __code-header, __language, __copy, __pre, __code-text', 'A code block, its header, language, copy button, and code (`data-language`).'],
+  ['.mx-markdown__code-more', 'The button under a long code block; the block has `data-folded` while folded, and `--_code-lines` says how many lines it shows.'],
   ['.mx-markdown__table, __head, __body, __row, __cell', 'Tables. Cells carry `data-align` (`start`, `center`, `end`).'],
   ['.mx-markdown__image, __img', 'An image and its alternative text.'],
   ['.mx-markdown__footnote-ref, __footnote-link, __footnotes, __footnote, __footnote-back', 'A footnote’s reference, the list of notes, a note and its link back.'],
@@ -93,7 +98,7 @@ const TOKENS = [
   ['markdown.table, markdown.cell, markdown.image', 'Units: the table frame, cells (`head`) and images.'],
   ['markdown.footnote-ref, markdown.footnotes, markdown.footnote, markdown.footnote-back', 'Units: a reference’s number, the list of notes, a note (`focus`) and its link back.'],
   ['markdown.math-block, markdown.math-text', 'Units: display math, and TeX not drawn yet. `code-block` has `drawn` for math drawn in its place.'],
-  ['markdown.copy (place)', 'The variant, tone and size of the copy button.'],
+  ['markdown.copy, markdown.code-more (places)', 'The variant, tone and size of the copy button and of the button under a long code block.'],
 ];
 
 export default function MarkdownPage() {
@@ -155,6 +160,20 @@ view.end();
           <Highlighting />
         </Example>
         <ApiTable head={['Member', 'Description']} rows={HIGHLIGHTER} />
+      </Section>
+
+      <Section anchor="long" title="Long code and long texts">
+        <p>
+          <Rich text="With `codeLines`, a code block longer than that many lines shows its first ones, fading out, and a button under it shows them all, then folds them again. A block streaming in folds once it grows past the limit, and its button counts the lines as they come. Every line stays in the block: the copy button copies them all." />
+        </p>
+        <Code
+          code={`
+<Markdown text={() => this.answer.text} streaming={() => this.answer.busy} codeLines={20} />
+`}
+        />
+        <p>
+          <Rich text="A very long text given at once, a saved answer of a model, is drawn from its start a piece a frame: each piece is written for a few milliseconds, then the frame lays it out, so the page never stops for it. `isDrawing` is `true` meanwhile; what is appended waits behind the pieces, and the text ends after the last one. The result is the same as the text drawn at once." />
+        </p>
       </Section>
 
       <Section anchor="doors" title="Footnotes, math and diagrams">

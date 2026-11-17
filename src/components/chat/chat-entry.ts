@@ -15,6 +15,8 @@ export interface ChatEntry {
   focus?(): boolean;
   /** What shows the character at `index` of the part's text, for a search: the block of its markdown. */
   found?(index: number): ComponentBase | null;
+  /** Its markdown, a long one, is still drawn a piece a frame. */
+  drawing?(): boolean;
 }
 
 /** The frame every entry shares: the row (`data-kind`), its dot and the column beside it. */

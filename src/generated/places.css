@@ -187,7 +187,7 @@
     --_button-size: var(--mx-chat-question-action-size);
   }
 
-  /* chat: turn-action — A reply's action at the end of its turn: copy, try again. */
+  /* chat: turn-action — A reply's action at the end of its turn: copy, good, bad, try again, regenerate. */
   .mx-chat__turn-actions > .mx-chat__action {
     --_button-variant: var(--mx-chat-turn-action-variant);
     --_button-tone: var(--mx-chat-turn-action-tone);
@@ -262,6 +262,13 @@
     --_button-variant: var(--mx-chat-search-close-variant);
     --_button-tone: var(--mx-chat-search-close-tone);
     --_button-size: var(--mx-chat-search-close-size);
+  }
+
+  /* chat: form-cancel — The form's button that dismisses it. */
+  .mx-chat__ask-actions > .mx-chat__form-cancel {
+    --_button-variant: var(--mx-chat-form-cancel-variant);
+    --_button-tone: var(--mx-chat-form-cancel-tone);
+    --_button-size: var(--mx-chat-form-cancel-size);
   }
 
   /* checkbox: field — The field under a check box or a switch: the box and its caption side by side, no text-field frame. */
@@ -627,6 +634,13 @@
     --_button-variant: var(--mx-markdown-copy-variant);
     --_button-tone: var(--mx-markdown-copy-tone);
     --_button-size: var(--mx-markdown-copy-size);
+  }
+
+  /* markdown: code-more — The button under a long code block that shows all its lines, and folds them again. */
+  .mx-markdown__block > .mx-markdown__code-more {
+    --_button-variant: var(--mx-markdown-code-more-variant);
+    --_button-tone: var(--mx-markdown-code-more-tone);
+    --_button-size: var(--mx-markdown-code-more-size);
   }
 
   /* otp-input: field — The field under the boxes: no text-field box. */

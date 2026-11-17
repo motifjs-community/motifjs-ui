@@ -1,4 +1,4 @@
-import type { ChatPermission, ChatPlanPart, ChatQuestionsPart } from './chat-request';
+import type { ChatFormPart, ChatPermission, ChatPlanPart, ChatQuestionsPart } from './chat-request';
 import type { ChatTextPart } from './chat-text-part';
 
 /** A piece of a reply's thinking. Drawn open while it is written; then one line, "Thought for 3s", that opens. */
@@ -101,7 +101,25 @@ export interface ChatAttachmentPart {
   file?: File;
 }
 
-/** A piece of a message, drawn in order: text, thinking, tool calls, a to-do list, notices, a plan, questions, files, a summary. */
+/** A source a reply names: a page it read, a document it quotes. */
+export interface ChatSource {
+  title: string;
+  /** Where it is: its chip is a link there, and shows its site. */
+  url?: string;
+  /** What the reply took from it; the chip's hint. */
+  snippet?: string;
+}
+
+/** The sources of a reply, as numbered chips. */
+export interface ChatSourcesPart {
+  kind: 'sources';
+  items: ChatSource[];
+}
+
+/**
+ * A piece of a message, drawn in order: text, thinking, tool calls, a to-do list, notices, a plan, questions, a form,
+ * sources, files, a summary.
+ */
 export type ChatPart =
   | ChatTextPart
   | ChatThinkingPart
@@ -110,5 +128,7 @@ export type ChatPart =
   | ChatNoticePart
   | ChatPlanPart
   | ChatQuestionsPart
+  | ChatFormPart
+  | ChatSourcesPart
   | ChatAttachmentPart
   | ChatCompactionPart;

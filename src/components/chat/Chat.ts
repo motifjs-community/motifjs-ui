@@ -3,7 +3,7 @@ import { Control } from '../../core/control';
 import { glyphPart, loose, part } from '../../core/draw-parts';
 import { focusInTextField, focusOn, holdsFocus } from '../../core/focus';
 import { glyph } from '../../core/glyphs';
-import { boxOf, measure, onLayout, rectOf, reveal, viewportOf, whenMeasured, type Box } from '../../core/measure';
+import { afterDrawn, boxOf, measure, onLayout, rectOf, reveal, viewportOf, whenMeasured, type Box } from '../../core/measure';
 import { nextId } from '../../core/next-id';
 import { onLanguage } from '../../core/on-language';
 import { css, kept, mark, put, text } from '../../core/part-writes';
@@ -19,20 +19,21 @@ import { ChatReply, type ChatReplyHost } from './ChatReply';
 import { ChatAskForm } from './chat-ask-form';
 import type { ChatContextItem } from './chat-context-item';
 import type { ChatFlowView } from './chat-flow-view';
-import type { ChatForkEventArgs, ChatRetryEventArgs, ChatRewindEventArgs } from './chat-history-event-args';
+import { ChatFormView } from './chat-form-view';
+import type { ChatFeedbackEventArgs, ChatForkEventArgs, ChatRetryEventArgs, ChatRewindEventArgs } from './chat-history-event-args';
 import type { ChatLoadOlderEventArgs } from './chat-load-older-event-args';
 import type { ChatLook } from './chat-look';
-import type { ChatMessage } from './chat-message';
+import type { ChatFeedback, ChatMessage } from './chat-message';
 import type { ChatPart } from './chat-part';
 import type { ChatProps } from './chat-props';
-import type { ChatAnswer, ChatQuestionsPart, ChatRequestPart, ChatWaiting } from './chat-request';
+import type { ChatAnswer, ChatFormPart, ChatQuestionsPart, ChatRequestPart, ChatWaiting } from './chat-request';
 import { ChatSearch } from './chat-search';
 import { ChatSearchBar } from './chat-search-bar';
 import type { ChatSendEventArgs } from './chat-send-event-args';
 import type { ChatTurn } from './chat-turn';
 import { ChatTurnView } from './chat-turn-view';
 
-const OWN = ['hasOlder', 'placeholder', 'highlighter', 'mathRenderer', 'diagramRenderer', 'linkTarget', 'label'] as const;
+const OWN = ['hasOlder', 'placeholder', 'highlighter', 'mathRenderer', 'diagramRenderer', 'linkTarget', 'codeLines', 'label'] as const;
 
 /** How near the top, in pixels, asks for older messages. */
 const OLDER_OFFSET = 200;
@@ -60,10 +61,11 @@ interface Queued {
  * Near the top, older messages are asked for (`hasOlder`, `onLoadOlder`) and the view keeps its place. While a reply is
  * written a line under the conversation says what the model does and for how long, and what the user sends meanwhile
  * waits above the box until the reply ends. A reply can wait for the user: a tool call asks before it runs and a plan
- * asks to go on, their choices in the flow; questions take the composer's place until they are answered. Ctrl+F opens
- * a search over every message, the turns off the page too. The turns are the articles of a feed: Page Down and Page Up
- * go from one to the next, and screen readers hear when a reply ends or waits. The chat draws; the app talks to its
- * model and writes through `reply()`.
+ * asks to go on, their choices in the flow; questions, and a form (an MCP server's elicitation), take the composer's
+ * place until they are answered. A reply that ended can be copied, judged good or bad, and asked for again. Ctrl+F
+ * opens a search over every message, the turns off the page too. The turns are the articles of a feed: Page Down and
+ * Page Up go from one to the next, and screen readers hear when a reply ends or waits. The chat draws; the app talks
+ * to its model and writes through `reply()`.
  *
  * @example
  * <Chat onSend={async e => {
@@ -89,6 +91,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   private readonly queued: Queued[] = [];
   /** The questions waiting for the user, in the composer's place. */
   private readonly form: ChatAskForm;
+  /** A form waiting for the user to fill it in, in the composer's place. */
+  private readonly fill: ChatFormView;
   /** Tells screen readers what happened: a reply ended, or waits for the user. */
   private readonly live: Component<HTMLDivElement>;
   /** The search at the top, made the first time it opens. */
@@ -110,6 +114,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   private failed = false;
   /** Until the turns at the end are placed and the view stands at the end, the conversation is not shown. */
   private opening = true;
+  /** Takes back the next look at whether a long message at the end is all drawn. */
+  private openWait: (() => void) | null = null;
   /** Where the view stood at the last scroll: older messages are asked for on the way up. */
   private lastTop = 0;
   private said = '';
@@ -123,9 +129,13 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   private readonly rewound = new Emitter<ChatRewindEventArgs>();
   private readonly forked = new Emitter<ChatForkEventArgs>();
   private readonly retried = new Emitter<ChatRetryEventArgs>();
-  /** The app takes forks and retries: their buttons show. */
+  private readonly regenerated = new Emitter<ChatRetryEventArgs>();
+  private readonly judged = new Emitter<ChatFeedbackEventArgs>();
+  /** The app takes forks, retries, regenerations and feedback: their buttons show. */
   private forks = false;
   private retries = false;
+  private regenerations = false;
+  private feedbacks = false;
   private readonly replyHost: ChatReplyHost = {
     flowOf: (message) => this.flowOf(message),
     changed: (message) => this.messageChanged(message),
@@ -174,6 +184,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     kept(this.queue, false);
     this.form = new ChatAskForm((asked, answer) => this.answer(asked, answer), () => this.stop());
     this.controls.add(this.form.row);
+    this.fill = new ChatFormView((asked, answer) => this.answer(asked, answer));
+    this.controls.add(this.fill.row);
     this.composer = new ChatComposer({ ...own.composer, onSend: (e) => this.sendFromBox(e), onStop: () => this.stop() });
     this.composer.class.add('mx-chat__composer');
     this.controls.add(this.composer);
@@ -188,8 +200,12 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     if (own.onRewind) this.rewound.event(own.onRewind);
     if (own.onFork) this.forked.event(own.onFork);
     if (own.onRetry) this.retried.event(own.onRetry);
+    if (own.onRegenerate) this.regenerated.event(own.onRegenerate);
+    if (own.onFeedback) this.judged.event(own.onFeedback);
     this.forks = !!own.onFork;
     this.retries = !!own.onRetry;
+    this.regenerations = !!own.onRegenerate;
+    this.feedbacks = !!own.onFeedback;
 
     this.observeProperty<ChatMessage[] | undefined>('messages', (messages) => this.reconcile(messages ?? []));
     // Older messages come when the user goes up, not when the chat opens.
@@ -225,6 +241,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       this.rewound.dispose();
       this.forked.dispose();
       this.retried.dispose();
+      this.regenerated.dispose();
+      this.judged.dispose();
     });
   }
 
@@ -272,6 +290,12 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   set linkTarget(value: Bind<string>) {
     this.assignProperty('linkTarget', value);
   }
+  get codeLines(): number {
+    return Math.max(0, Math.floor(this.getProperty<number | undefined>('codeLines') ?? 0));
+  }
+  set codeLines(value: Bind<number>) {
+    this.assignProperty('codeLines', value);
+  }
   get label(): string {
     return this.getProperty<string | undefined>('label') ?? '';
   }
@@ -317,6 +341,14 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   /** Occurs when the user tries a failed or stopped reply again: it is gone, write the new one with `reply()`. */
   get onRetry(): MotifEvent<ChatRetryEventArgs> {
     return this.retried.event;
+  }
+  /** Occurs when the user asks for another reply in the place of the last one: it is gone, write the new one with `reply()`. */
+  get onRegenerate(): MotifEvent<ChatRetryEventArgs> {
+    return this.regenerated.event;
+  }
+  /** Occurs when the user says a reply was good or bad, or takes it back; it is in `message.feedback` already. */
+  get onFeedback(): MotifEvent<ChatFeedbackEventArgs> {
+    return this.judged.event;
   }
 
   /** Adds a message at the end. A message of the user takes the view to the end; another one there keeps it there. */
@@ -481,9 +513,11 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.drawJump();
   }
 
-  /** Gives the focus to where the user writes: the questions waiting, or the composer. */
+  /** Gives the focus to where the user writes: the questions or the form waiting, or the composer. */
   override focus(): boolean {
-    return this.form.part ? this.form.focus() : this.composer.focus();
+    if (this.form.part) return this.form.focus();
+    if (this.fill.part) return this.fill.focus();
+    return this.composer.focus();
   }
 
   /** Opens the search at the top, with `query` when given, and gives it the focus. Ctrl+F in the chat opens it too. */
@@ -538,15 +572,19 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       mathRenderer: this.mathRenderer,
       diagramRenderer: this.diagramRenderer,
       linkTarget: this.linkTarget,
+      codeLines: this.codeLines,
       time: this.formatTime,
       answer: (asked, answer) => this.answer(asked, answer),
       ask: (asked) => {
         if (this.form.part === asked) this.form.focus();
+        else if (this.fill.part === asked) this.fill.focus();
       },
       rewind: (message) => void this.rewind(message),
       resend: (message, said) => void this.resend(message, said),
       fork: this.forks ? (message) => this.fork(message) : null,
-      retry: this.retries ? (message) => this.retry(message) : null,
+      retry: this.retries ? (message) => this.again(message, this.retried) : null,
+      regenerate: this.regenerations ? (message) => this.again(message, this.regenerated) : null,
+      feedback: this.feedbacks ? (message, feedback) => this.judge(message, feedback) : null,
       isLatest: (turn) => this.turns[this.turns.length - 1] === turn
     };
     const view = new ChatTurnView(turn, look);
@@ -574,11 +612,24 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     else this.window.stale(turn);
   }
 
-  /** The turns at the end are placed and the view stands at the end: the conversation shows, in that frame. */
-  private opened(): void {
-    if (!this.opening) return;
+  /**
+   * The turns at the end are placed and the view stands at the end: the conversation shows, in that frame. A long
+   * message there is drawn a piece a frame first: the chat shows once it is all there, at its end.
+   */
+  private opened(waited = false): void {
+    if (!this.opening || this.openWait) return;
+    for (const view of this.views.values()) {
+      if (!view.flow.drawing()) continue;
+      this.openWait = afterDrawn(this, () => {
+        this.openWait = null;
+        this.opened(true);
+      });
+      return;
+    }
     this.opening = false;
-    this.scroller.stickNow();
+    // The message grew by thousands of pixels a frame while the chat was not shown: it goes to its end anyway.
+    if (waited) this.scroller.scrollToEnd();
+    else this.scroller.stickNow();
     mark(this, 'data-opening', false);
   }
 
@@ -599,6 +650,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.items = next;
     this.turnOf.clear();
     this.turns = this.group(next);
+    this.openWait?.();
+    this.openWait = null;
     this.opening = true;
     mark(this, 'data-opening', true);
     this.window.set(this.turns);
@@ -666,17 +719,23 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   }
 
   /**
-   * A request waits: questions take the composer's place (one form at a time, the next when it is answered); the choices
-   * of a tool call or a plan take the focus when it was in the chat and nothing is being written.
+   * A request waits: questions and forms take the composer's place (one at a time, the next when it is answered); the
+   * choices of a tool call or a plan take the focus when it was in the chat and nothing is being written.
    */
   private wait(reply: ChatReply, item: ChatWaiting): boolean {
     this.waiting.set(item.part, { reply, item });
     if (this.waiting.size === 1) this.announce(uiLocale.strings.chatWaitingYou);
     this.drawStatus();
     const inside = holdsFocus(this);
-    if (item.part.kind !== 'questions') return inside && !this.composer.value.trim();
-    if (!this.form.part) this.openForm(item.part, inside);
+    const part = item.part;
+    if (part.kind !== 'questions' && part.kind !== 'form') return inside && !this.composer.value.trim();
+    if (!this.asking) this.openForm(part, inside);
     return false;
+  }
+
+  /** The questions or the form in the composer's place; `null` while the composer is there. */
+  private get asking(): ChatQuestionsPart | ChatFormPart | null {
+    return this.form.part ?? this.fill.part;
   }
 
   /** The user answered: the reply goes on, and the focus goes back to the composer when it was on the request. */
@@ -686,23 +745,26 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     const focus = holdsFocus(this);
     this.waiting.delete(asked);
     held.item.answer(answer);
-    if (asked === this.form.part) this.closeForm(focus);
+    if (asked === this.asking) this.closeForm(focus);
     else if (focus) this.composer.focus();
     this.drawStatus();
   }
 
-  private openForm(asked: ChatQuestionsPart, focus: boolean): void {
-    this.form.open(asked);
+  private openForm(asked: ChatQuestionsPart | ChatFormPart, focus: boolean): void {
+    if (asked.kind === 'questions') this.form.open(asked);
+    else this.fill.open(asked);
     kept(this.composer, false);
-    if (focus) this.form.focus();
+    if (focus) this.focus();
   }
 
-  /** The form is done with: other questions waiting take it, or the composer comes back. */
+  /** The questions or the form are done with: others waiting take their place, or the composer comes back. */
   private closeForm(focus: boolean): void {
     this.form.close();
+    this.fill.close();
     for (const held of this.waiting.values()) {
-      if (held.item.part.kind !== 'questions') continue;
-      this.openForm(held.item.part, focus);
+      const part = held.item.part;
+      if (part.kind !== 'questions' && part.kind !== 'form') continue;
+      this.openForm(part, focus);
       return;
     }
     kept(this.composer, true);
@@ -746,14 +808,19 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     if (at >= 0) this.forked.fire({ message, messages: this.items.slice(0, at), source: this });
   }
 
-  /** The turn's reply goes, from its first message of the model on; the app writes it again. */
-  private retry(message: ChatMessage): void {
+  /** The turn's reply goes, from its first message of the model on; the app writes it again (`onRetry`, `onRegenerate`). */
+  private again(message: ChatMessage, told: Emitter<ChatRetryEventArgs>): void {
     const turn = this.turnOf.get(message);
     if (!turn || this.isBusy) return;
     const question = turn.messages[0].role === 'user' ? turn.messages[0] : null;
     const first = turn.messages.find((m) => m !== question);
     if (first) this.drop(this.items.indexOf(first));
-    this.retried.fire({ message, question, source: this });
+    told.fire({ message, question, source: this });
+  }
+
+  /** The user said a reply was good or bad, or took it back: the message has it already. */
+  private judge(message: ChatMessage, feedback: ChatFeedback | null): void {
+    this.judged.fire({ message, feedback, source: this });
   }
 
   private replyEnded(reply: ChatReply): void {
@@ -762,7 +829,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       if (held.reply !== reply) continue;
       this.waiting.delete(asked);
       held.item.answer(null);
-      if (asked === this.form.part) this.closeForm(holdsFocus(this));
+      if (asked === this.asking) this.closeForm(holdsFocus(this));
     }
     this.replies.delete(reply);
     const turn = this.turnOf.get(reply.message);
@@ -848,6 +915,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     for (const view of this.views.values()) view.drawTexts();
     for (const q of this.queued) q.remove.text = uiLocale.strings.chatRemove;
     this.form.drawTexts();
+    this.fill.drawTexts();
     this.searchBar?.drawTexts();
     this.drawOlder();
     this.drawJump();

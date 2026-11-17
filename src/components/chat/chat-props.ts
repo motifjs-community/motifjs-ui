@@ -4,7 +4,7 @@ import type { CodeHighlighter } from '../markdown/code-highlighter';
 import type { DiagramRenderer } from '../markdown/diagram-renderer';
 import type { MathRenderer } from '../markdown/math-renderer';
 import type { ChatComposerProps } from './chat-composer-props';
-import type { ChatForkEventArgs, ChatRetryEventArgs, ChatRewindEventArgs } from './chat-history-event-args';
+import type { ChatFeedbackEventArgs, ChatForkEventArgs, ChatRetryEventArgs, ChatRewindEventArgs } from './chat-history-event-args';
 import type { ChatLoadOlderEventArgs } from './chat-load-older-event-args';
 import type { ChatMessage } from './chat-message';
 import type { ChatSendEventArgs } from './chat-send-event-args';
@@ -28,8 +28,13 @@ export interface ChatProps extends ControlProps {
   mathRenderer?: Bind<MathRenderer | null>;
   /** Draws the diagrams of messages drawn after it is set (a fenced `mermaid` block). The default is none. */
   diagramRenderer?: Bind<DiagramRenderer | null>;
-  /** Where links in messages open. The default is `'_blank'`. */
+  /** Where links in messages open, and the sources' links. The default is `'_blank'`. */
   linkTarget?: Bind<string>;
+  /**
+   * A code block in a reply longer than this many lines shows that many, and a button under it shows them all; for
+   * messages drawn after it is set. The default is `0`: every line shows.
+   */
+  codeLines?: Bind<number>;
   /** The accessible name of the conversation. The default is the kit's "Conversation". */
   label?: Bind<string>;
   /**
@@ -52,4 +57,11 @@ export interface ChatProps extends ControlProps {
   onFork?: (e: ChatForkEventArgs) => void;
   /** Given, a failed or stopped last reply has a button to try again: it is gone, write the new one with `chat.reply()`. */
   onRetry?: (e: ChatRetryEventArgs) => void;
+  /**
+   * Given, the last reply has a button that asks for another in its place once it ended (a failed one too, unless
+   * `onRetry` is given): it is gone, write the new one with `chat.reply()`.
+   */
+  onRegenerate?: (e: ChatRetryEventArgs) => void;
+  /** Given, a reply that ended has buttons to say it was good or bad; what the user said is in `e.message.feedback`. */
+  onFeedback?: (e: ChatFeedbackEventArgs) => void;
 }

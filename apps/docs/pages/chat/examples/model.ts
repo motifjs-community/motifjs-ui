@@ -1,13 +1,15 @@
 /**
- * What a model's stream gives, once read. Most providers send these five things, each in its own words: your server,
- * or the provider's SDK, turns its events into them, and the chat never sees the provider.
+ * What a model's stream gives, once read. Most providers send these five things, each in its own words, and a model
+ * that searches names its sources too: your server, or the provider's SDK, turns its events into them, and the chat
+ * never sees the provider.
  */
 export type ModelEvent =
   | { type: 'thinking'; delta: string }
   | { type: 'text'; delta: string }
   | { type: 'tool-start'; id: string; name: string }
   | { type: 'tool-args'; id: string; delta: string }
-  | { type: 'tool-end'; id: string };
+  | { type: 'tool-end'; id: string }
+  | { type: 'source'; title: string; url?: string; snippet?: string };
 
 /** A call the model made: its arguments as JSON text. */
 export interface ModelCall {

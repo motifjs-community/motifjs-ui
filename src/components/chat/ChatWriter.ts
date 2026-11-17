@@ -1,7 +1,10 @@
 import { nextId } from '../../core/next-id';
 import type { ChatFlowView } from './chat-flow-view';
-import type { ChatNoticePart, ChatPart, ChatThinkingPart, ChatTodoItem, ChatToolPart } from './chat-part';
+import type { ChatNoticePart, ChatPart, ChatSource, ChatThinkingPart, ChatTodoItem, ChatToolPart } from './chat-part';
 import type {
+  ChatFormAnswer,
+  ChatFormPart,
+  ChatFormSchema,
   ChatPermission,
   ChatPermissionAnswer,
   ChatPlanAnswer,
@@ -156,6 +159,48 @@ export class ChatWriter {
       part.answer = answer;
       this.redraw(part);
     });
+  }
+
+  /**
+   * Asks the user to fill in a form, as an MCP server's elicitation asks: `message` says what for, `schema` is its
+   * `requestedSchema`, `source` who asks. The form takes the composer's place until the user sends it, declines or
+   * dismisses it; the answer is the elicitation's result. When the reply ends first it resolves as `cancel`.
+   *
+   * @example
+   * client.setRequestHandler(ElicitRequestSchema, (request) => call.form(request.params.message, request.params.requestedSchema, { source: 'github' }));
+   */
+  form(message: string, schema: ChatFormSchema, options: { source?: string } = {}): Promise<ChatFormAnswer> {
+    const unanswered: ChatFormAnswer = { action: 'cancel' };
+    if (!this.isOpen) return Promise.resolve(unanswered);
+    const part: ChatFormPart = { kind: 'form', id: nextId('chat-form'), message, schema, source: options.source };
+    this.add(part);
+    return this.wait(part, unanswered, (answer) => {
+      part.answer = answer;
+      this.redraw(part);
+    });
+  }
+
+  /**
+   * The sources the reply names, as numbered chips. Right after other sources they join them, each source once (by its
+   * address, or its title).
+   */
+  sources(items: ChatSource[]): void {
+    if (!this.isOpen || !items.length) return;
+    const last = this.last();
+    if (last?.kind !== 'sources') {
+      this.add({ kind: 'sources', items: items.map((s) => ({ ...s })) });
+      return;
+    }
+    const known = new Set(last.items.map((s) => s.url || s.title));
+    let added = false;
+    for (const s of items) {
+      const key = s.url || s.title;
+      if (known.has(key)) continue;
+      known.add(key);
+      last.items.push({ ...s });
+      added = true;
+    }
+    if (added) this.redraw(last);
   }
 
   /** Ends the thinking being written, with its seconds. */

@@ -17,6 +17,8 @@ export interface MarkdownSettings {
   readonly diagramRenderer: DiagramRenderer | null;
   readonly images: boolean;
   readonly copyButton: boolean;
+  /** A code block longer than this many lines is folded to them; `0` folds none. */
+  readonly codeLines: number;
   imageAllowed(src: string): boolean;
   /** A link was made: its address (null when it is not a safe one), target and listener are the component's. */
   linkMade(link: Component<HTMLAnchorElement>, href: string | null, title: string): void;

@@ -2791,6 +2791,63 @@
     gap: var(--_chat-ask-actions-gap, normal);
   }
 
+  .mx-chat__form-source {
+    color: var(--_chat-form-source-color, inherit);
+    font-size: var(--_chat-form-source-font-size, inherit);
+    line-height: var(--_chat-form-source-line-height, inherit);
+  }
+
+  .mx-chat__form-message {
+    color: var(--_chat-form-message-color, inherit);
+  }
+
+  .mx-chat__sources {
+    gap: var(--_chat-sources-gap, normal);
+  }
+
+  .mx-chat__source {
+    padding-block-start: var(--_chat-source-padding-block, 0px);
+    padding-inline-end: var(--_chat-source-padding-inline, 0px);
+    padding-block-end: var(--_chat-source-padding-block, 0px);
+    padding-inline-start: var(--_chat-source-padding-inline, 0px);
+    gap: var(--_chat-source-gap, normal);
+    background-color: var(--_chat-source-bg, transparent);
+    border-start-start-radius: var(--_chat-source-radius, 0px);
+    border-start-end-radius: var(--_chat-source-radius, 0px);
+    border-end-start-radius: var(--_chat-source-radius, 0px);
+    border-end-end-radius: var(--_chat-source-radius, 0px);
+    color: var(--_chat-source-color, inherit);
+    font-size: var(--_chat-source-font-size, inherit);
+    line-height: var(--_chat-source-line-height, inherit);
+    text-decoration-line: var(--_chat-source-text-decoration, none);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-chat__source:hover {
+    background-color: var(--_chat-source-hover-bg, var(--_chat-source-bg, transparent));
+  }
+
+  .mx-chat__source:focus-visible {
+    outline-style: var(--_chat-source-focus-outline-style, solid);
+    outline-width: var(--_chat-source-focus-outline-width, 0px);
+    outline-color: var(--_chat-source-focus-outline-color, currentcolor);
+    outline-offset: var(--_chat-source-focus-outline-offset, 0px);
+  }
+
+  .mx-chat__source-index {
+    color: var(--_chat-source-index-color, inherit);
+    font-weight: var(--_chat-source-index-font-weight, inherit);
+  }
+
+  .mx-chat__source-title {
+    color: var(--_chat-source-title-color, inherit);
+  }
+
+  .mx-chat__source-site {
+    color: var(--_chat-source-site-color, inherit);
+  }
+
   .mx-toggle-field.mx-field:not([data-label-mode='hidden']) > .mx-field__label {
     margin-block-start: 0px;
     margin-inline-end: 0px;

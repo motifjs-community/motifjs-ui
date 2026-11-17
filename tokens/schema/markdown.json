@@ -10,6 +10,12 @@
         "selector": ".mx-markdown__code-header > .mx-markdown__copy",
         "part": "button",
         "tokens": ["variant", "tone", "size"]
+      },
+      "code-more": {
+        "$description": "The button under a long code block that shows all its lines, and folds them again.",
+        "selector": ".mx-markdown__block > .mx-markdown__code-more",
+        "part": "button",
+        "tokens": ["variant", "tone", "size"]
       }
     },
     "$units": {

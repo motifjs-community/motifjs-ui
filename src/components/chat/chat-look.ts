@@ -1,8 +1,8 @@
 import type { CodeHighlighter } from '../markdown/code-highlighter';
 import type { DiagramRenderer } from '../markdown/diagram-renderer';
 import type { MathRenderer } from '../markdown/math-renderer';
-import type { ChatMessage } from './chat-message';
-import type { ChatAnswer, ChatQuestionsPart, ChatRequestPart } from './chat-request';
+import type { ChatFeedback, ChatMessage } from './chat-message';
+import type { ChatAnswer, ChatFormPart, ChatQuestionsPart, ChatRequestPart } from './chat-request';
 import type { ChatTurn } from './chat-turn';
 
 /** What the parts of a turn take from the chat when they are made, and where the user's answers go. */
@@ -11,12 +11,14 @@ export interface ChatLook {
   mathRenderer: MathRenderer | null;
   diagramRenderer: DiagramRenderer | null;
   linkTarget: string;
+  /** A code block longer than this many lines is folded to them; `0` folds none. */
+  codeLines: number;
   /** A time of day, as the chat writes it in the kit language. */
   time(date: Date): string;
   /** The user answered a request drawn in the flow. */
   answer(part: ChatRequestPart, answer: ChatAnswer): void;
-  /** The user wants to answer questions: the form under the conversation takes the focus. */
-  ask(part: ChatQuestionsPart): void;
+  /** The user wants to answer questions or fill in a form: what is under the conversation takes the focus. */
+  ask(part: ChatQuestionsPart | ChatFormPart): void;
   /** The user goes back to before `message`, its text back in the box. */
   rewind(message: ChatMessage): void;
   /** The user sends `text` in place of `message`. */
@@ -25,6 +27,10 @@ export interface ChatLook {
   fork: ((message: ChatMessage) => void) | null;
   /** Set when the app takes retries: the user asks again for the reply `message`, which failed or stopped. */
   retry: ((message: ChatMessage) => void) | null;
+  /** Set when the app takes regenerations: the user asks for another reply in the place of `message`. */
+  regenerate: ((message: ChatMessage) => void) | null;
+  /** Set when the app takes feedback: the user says the reply `message` was good or bad, or takes it back. */
+  feedback: ((message: ChatMessage, feedback: ChatFeedback | null) => void) | null;
   /** `turn` is the conversation's last: its reply can be tried again. */
   isLatest(turn: ChatTurn): boolean;
 }

@@ -32,5 +32,10 @@ export interface MarkdownProps extends ControlProps {
   linkTarget?: Bind<string>;
   /** Shows a copy button on code blocks. The default is `true`. */
   copyButton?: Bind<boolean>;
+  /**
+   * A code block longer than this many lines shows that many, folded, and a button under it shows them all. The
+   * default is `0`: every line shows.
+   */
+  codeLines?: Bind<number>;
   onLinkClick?: (e: MarkdownLinkClickEventArgs) => void;
 }

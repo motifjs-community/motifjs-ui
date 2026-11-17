@@ -52,7 +52,7 @@ export class Agent {
     await this.run(reply);
   }
 
-  /** Answers the user's last message again, into `reply` (the chat's `onRetry`): what the model said to it goes. */
+  /** Answers the user's last message again, into `reply` (the chat's `onRetry`, `onRegenerate`): what the model said to it goes. */
   async again(reply: ChatReply): Promise<void> {
     this.history.splice(this.lastQuestion(0) + 1);
     await this.run(reply);
@@ -129,6 +129,9 @@ export class Agent {
           c.call?.start(c.args, this.tools[c.name]?.title?.(this.parse(c.args)));
           break;
         }
+        case 'source':
+          reply.sources([{ title: e.title, url: e.url, snippet: e.snippet }]);
+          break;
       }
     }
     const made = [...calls.values()];

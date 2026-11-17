@@ -2,6 +2,7 @@ import { Emitter, errorHandler, type Bind, type Component, type ComponentBase, t
 import { Control } from '../../core/control';
 import { clearParts } from '../../core/draw-parts';
 import { functionValue } from '../../core/function-value';
+import { afterDrawn } from '../../core/measure';
 import { put } from '../../core/part-writes';
 import type { CodeHighlighter } from './code-highlighter';
 import type { DiagramRenderer } from './diagram-renderer';
@@ -11,14 +12,22 @@ import type { MarkdownProps } from './markdown-props';
 import { MarkdownWriter } from './markdown-writer';
 import type { MathRenderer } from './math-renderer';
 
-const OWN = ['streaming', 'highlighter', 'mathRenderer', 'diagramRenderer', 'images', 'linkTarget', 'copyButton'] as const;
+const OWN = ['streaming', 'highlighter', 'mathRenderer', 'diagramRenderer', 'images', 'linkTarget', 'copyButton', 'codeLines'] as const;
+
+/** A text given at once longer than this many characters is drawn a piece a frame: the page never stops for it. */
+const AT_ONCE = 50_000;
+/** How long a piece is written for, in milliseconds; the frame then lays it out. */
+const PIECE_TIME = 8;
+/** How much is written between two looks at the clock. */
+const STEP = 2_000;
 
 /**
  * Draws markdown, all of it at once or as it arrives. Every character is on screen the moment it is written: a mark
  * whose meaning is not known yet (`**`, `#`, `|`) shows as text at the end until it is, then its element is made and
  * the text goes on into it. Nothing drawn is ever drawn again, neither while the text grows nor when it ends; what a
  * door draws (math, a diagram) takes the place of its text once the text is complete. Footnotes (`[^1]`) are numbered
- * links to their notes, and back.
+ * links to their notes, and back. A very long text given at once is drawn a piece a frame, from its start, so the page
+ * never stops for it; a long code block can show its first lines alone (`codeLines`).
  *
  * @example
  * <Markdown text={() => this.answer.text} streaming={() => this.answer.busy} />
@@ -32,6 +41,10 @@ export class Markdown extends Control<HTMLDivElement, MarkdownProps> implements 
   private writer: MarkdownWriter;
   /** The text drawn so far. */
   private written = '';
+  /** The text given and not drawn yet: it is drawn a piece a frame. */
+  private waiting = '';
+  /** Takes back the next piece. */
+  private stopPiece: (() => void) | null = null;
   private ended = false;
   /** `append` is handing its text to the property: it is drawn already. */
   private appending = false;
@@ -104,10 +117,21 @@ export class Markdown extends Control<HTMLDivElement, MarkdownProps> implements 
   set copyButton(value: Bind<boolean>) {
     this.assignProperty('copyButton', value, Boolean);
   }
+  get codeLines(): number {
+    return Math.max(0, Math.floor(this.getProperty<number | undefined>('codeLines') ?? 0));
+  }
+  set codeLines(value: Bind<number>) {
+    this.assignProperty('codeLines', value);
+  }
 
   /** `true` once the text is complete: `end()` was called, or a text was given while not streaming. */
   get isEnded(): boolean {
     return this.ended;
+  }
+
+  /** `true` while a long text given at once is still being drawn, a piece a frame. */
+  get isDrawing(): boolean {
+    return this.waiting.length > 0;
   }
 
   /** Occurs when a link is clicked. Set `e.cancel` to handle it yourself. */
@@ -127,18 +151,20 @@ export class Markdown extends Control<HTMLDivElement, MarkdownProps> implements 
       errorHandler.reportSuppressed('Markdown', new Error('Markdown: append() after the text ended; call clear() to start again.'));
       return;
     }
-    this.writer.write(delta);
-    this.written += delta;
+    this.write(delta);
     this.appending = true;
-    this.changeProperty('text', this.written);
+    this.changeProperty('text', this.written + this.waiting);
     this.appending = false;
   }
 
-  /** The text is complete. What waits at the end is decided as at the end of a line; nothing drawn is drawn again. */
+  /**
+   * The text is complete. What waits at the end is decided as at the end of a line, once every piece is drawn; nothing
+   * drawn is drawn again.
+   */
   end(): void {
     if (this.ended) return;
     this.ended = true;
-    this.writer.end();
+    if (!this.waiting) this.writer.end();
   }
 
   /**
@@ -181,22 +207,58 @@ export class Markdown extends Control<HTMLDivElement, MarkdownProps> implements 
     });
   }
 
-  /** A text that goes on from the one drawn adds what is new; another text is a new one. */
+  /** A text that goes on from the one given adds what is new; another text is a new one. */
   private drawText(text: string): void {
     if (this.appending) return;
-    if (text !== this.written) {
-      if (this.ended || !text.startsWith(this.written)) {
+    const given = this.written + this.waiting;
+    if (text !== given) {
+      if (this.ended || !text.startsWith(given)) {
         this.restart();
-        this.writer.write(text);
+        this.write(text);
       } else {
-        this.writer.write(text.slice(this.written.length));
+        this.write(text.slice(given.length));
       }
-      this.written = text;
     }
     if (!this.streaming && text) this.end();
   }
 
+  /** Draws `s` after what is given: at once, or a piece a frame when it is long or pieces still wait. */
+  private write(s: string): void {
+    if (!s) return;
+    if (!this.waiting && s.length <= AT_ONCE) {
+      this.writer.write(s);
+      this.written += s;
+      return;
+    }
+    this.waiting += s;
+    if (!this.stopPiece) this.drawPiece();
+  }
+
+  /** Writes what waits for a moment, then lets the frame lay it out; the text ends after its last piece when it ended. */
+  private readonly drawPiece = (): void => {
+    this.stopPiece = null;
+    const waiting = this.waiting;
+    const start = performance.now();
+    let at = 0;
+    while (at < waiting.length && performance.now() - start < PIECE_TIME) {
+      let end = Math.min(waiting.length, at + STEP);
+      // The two halves of a character written in two code units stay together.
+      const last = waiting.charCodeAt(end - 1);
+      if (end < waiting.length && last >= 0xd800 && last <= 0xdbff) end++;
+      const piece = waiting.slice(at, end);
+      this.writer.write(piece);
+      this.written += piece;
+      at = end;
+    }
+    this.waiting = waiting.slice(at);
+    if (this.waiting) this.stopPiece = afterDrawn(this, this.drawPiece);
+    else if (this.ended) this.writer.end();
+  };
+
   private restart(): void {
+    this.stopPiece?.();
+    this.stopPiece = null;
+    this.waiting = '';
     clearParts(this);
     this.drawing.reset();
     this.writer = new MarkdownWriter(this.drawing, this);

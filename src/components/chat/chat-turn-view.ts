@@ -7,16 +7,16 @@ import { Button } from '../button/Button';
 import { ChatCopyButton } from './chat-copy-button';
 import { ChatFlowView } from './chat-flow-view';
 import type { ChatLook } from './chat-look';
-import type { ChatMessage } from './chat-message';
+import type { ChatFeedback, ChatMessage } from './chat-message';
 import type { ChatPart } from './chat-part';
 import { ChatQuestionView } from './chat-question-view';
 import type { ChatTurn } from './chat-turn';
 
 /**
  * The part of a turn: the user's question, then what the model did, then its actions once the reply ended (copy it;
- * try again when it failed or stopped). It is made from the turn's messages when the turn comes near the view and
- * disposed when it goes far; a reply streaming into it writes into its flow. It is an article of the conversation's
- * feed, named by its question, busy while its reply is written.
+ * say it was good or bad; try again when it failed or stopped, or ask for another). It is made from the turn's
+ * messages when the turn comes near the view and disposed when it goes far; a reply streaming into it writes into its
+ * flow. It is an article of the conversation's feed, named by its question, busy while its reply is written.
  */
 export class ChatTurnView {
   readonly row: Component<HTMLDivElement>;
@@ -25,6 +25,9 @@ export class ChatTurnView {
   private readonly actions: Component<HTMLDivElement>;
   private readonly copy: ChatCopyButton;
   private retryButton: Button | null = null;
+  private regenerateButton: Button | null = null;
+  private goodButton: Button | null = null;
+  private badButton: Button | null = null;
 
   constructor(readonly turn: ChatTurn, private readonly look: ChatLook) {
     this.row = loose<HTMLDivElement>('div', 'mx-chat__turn');
@@ -51,31 +54,38 @@ export class ChatTurnView {
   }
 
   /**
-   * The actions as the turn stands: none while its reply is written; copy when it wrote text; try again when its last
-   * reply failed or stopped, the turn is the latest and the app takes retries.
+   * The actions as the turn stands: none while its reply is written; copy when it wrote text; good and bad when the
+   * app takes feedback; on the latest turn, try again when its reply failed or stopped and the app takes retries, or
+   * else another reply when the app takes regenerations.
    */
   drawActions(): void {
     const messages = this.turn.messages;
     const last = messages[messages.length - 1];
     const live = last?.status === 'streaming';
     const said = this.replyText();
-    const failed = !live && !!last && last.role !== 'user' && (last.status === 'error' || last.status === 'stopped') && this.look.isLatest(this.turn);
-    const retry = this.look.retry;
-    if (failed && retry && !this.retryButton) {
-      // Its variant and size come from its place.
-      this.retryButton = new Button({ icon: glyph('repeat') });
-      this.retryButton.class.add('mx-chat__action');
-      this.retryButton.motif.on('click', () => {
-        const at = this.turn.messages[this.turn.messages.length - 1];
-        if (at) retry(at);
-      });
-      this.retryButton.text = uiLocale.strings.chatRetry;
-      this.actions.controls.add(this.retryButton);
+    const ended = !live && !!last && last.role !== 'user';
+    const latest = ended && this.look.isLatest(this.turn);
+    const failed = latest && (last.status === 'error' || last.status === 'stopped');
+    const { retry, regenerate, feedback } = this.look;
+    const retrying = failed && !!retry;
+    const again = latest && !retrying && !!regenerate;
+    const judged = ended && !!said && !!feedback;
+    const made = (judged && !this.goodButton) || (retrying && !this.retryButton) || (again && !this.regenerateButton);
+    if (judged && !this.goodButton) {
+      this.goodButton = this.feedbackButton('thumb-up', 'good');
+      this.badButton = this.feedbackButton('thumb-down', 'bad');
     }
+    if (retrying && !this.retryButton) this.retryButton = this.againButton(() => retry);
+    if (again && !this.regenerateButton) this.regenerateButton = this.againButton(() => regenerate);
+    if (made) this.drawActionTexts();
     kept(this.copy.button, !!said);
-    kept(this.retryButton, failed);
-    mark(this.actions, 'data-failed', failed && !!retry);
-    kept(this.actions, !live && (!!said || (failed && !!retry)));
+    kept(this.goodButton, judged);
+    kept(this.badButton, judged);
+    kept(this.retryButton, retrying);
+    kept(this.regenerateButton, again);
+    this.drawFeedback();
+    mark(this.actions, 'data-failed', retrying);
+    kept(this.actions, !live && (!!said || retrying || again));
     put(this.row, 'aria-busy', live ? 'true' : null);
   }
 
@@ -107,9 +117,69 @@ export class ChatTurnView {
   drawTexts(): void {
     this.question?.drawTexts();
     this.flow.drawTexts();
-    this.copy.drawTexts();
-    if (this.retryButton) this.retryButton.text = uiLocale.strings.chatRetry;
+    this.drawActionTexts();
     this.drawLabel();
+  }
+
+  private drawActionTexts(): void {
+    const strings = uiLocale.strings;
+    this.copy.drawTexts();
+    if (this.retryButton) this.retryButton.text = strings.chatRetry;
+    if (this.regenerateButton) this.regenerateButton.text = strings.chatRegenerate;
+    for (const [button, said] of [
+      [this.goodButton, strings.chatGood],
+      [this.badButton, strings.chatBad]
+    ] as const) {
+      if (!button) continue;
+      put(button, 'aria-label', said);
+      button.hint = said;
+    }
+  }
+
+  /** The reply the turn's actions speak of: its last message of the model. */
+  private get reply(): ChatMessage | undefined {
+    const messages = this.turn.messages;
+    for (let i = messages.length - 1; i >= 0; i--) if (messages[i].role !== 'user') return messages[i];
+    return undefined;
+  }
+
+  /** Try again, or another reply: the turn's reply goes, from its last message on, and the app writes it again. */
+  private againButton(run: () => ((message: ChatMessage) => void) | null): Button {
+    // Its variant and size come from its place.
+    const button = new Button({ icon: glyph('repeat') });
+    button.class.add('mx-chat__action');
+    button.motif.on('click', () => {
+      const at = this.turn.messages[this.turn.messages.length - 1];
+      const go = run();
+      if (at && go) go(at);
+    });
+    this.actions.controls.add(button);
+    return button;
+  }
+
+  /** Good or bad, its icon alone: pressed while the reply has it; pressed again, it is taken back. */
+  private feedbackButton(icon: string, value: ChatFeedback): Button {
+    // Its variant and size come from its place.
+    const button = new Button({ icon: glyph(icon), toggle: true });
+    button.class.add('mx-chat__action');
+    // The button turned itself on or off first.
+    button.motif.on('click', () => {
+      const reply = this.reply;
+      if (!reply) return;
+      const now = button.pressed ? value : null;
+      if (now) reply.feedback = now;
+      else delete reply.feedback;
+      this.drawFeedback();
+      this.look.feedback?.(reply, now);
+    });
+    this.actions.controls.add(button);
+    return button;
+  }
+
+  private drawFeedback(): void {
+    const feedback = this.reply?.feedback;
+    if (this.goodButton) this.goodButton.pressed = feedback === 'good';
+    if (this.badButton) this.badButton.pressed = feedback === 'bad';
   }
 
   /** A turn with no question text is named by who speaks in it. */

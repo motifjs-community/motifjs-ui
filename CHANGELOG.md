@@ -67,8 +67,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   text shows as it arrives and what the door draws takes its place once it is complete. Without a door, `$` is text.
   `blockAt(index)` gives the block drawn for a character of the text.
 - `WindowList.reveal(item, then?, align?)`: brings an item into view, making its part when it has none.
+- `Chat`: `onRegenerate` asks for another reply in the place of the last one once it ended, and `onFeedback` puts good
+  and bad buttons on a reply (toggles, written in `message.feedback`, `ChatFeedbackEventArgs`).
+- `Chat`: `reply.form(message, schema, { source })` asks the user to fill in a form, as an MCP server's elicitation
+  does: the `requestedSchema` is drawn as the kit's editors in the message box's place (text, email, address, date
+  and time, numbers, a choice of one as round buttons or a drop-down, several as tags, a yes or no), checked as the
+  schema says, and the answer is the elicitation's result (`accept` with its content, `decline`, `cancel`). On a tool
+  call it is kept inside the call; questions and forms come one at a time.
+- `Chat`: `reply.sources(items)` shows the sources a reply names as numbered chips, a link to each safe address, its
+  site, and what the reply took from it as its hint.
+- `Markdown`: `codeLines` folds a code block longer than that many lines to them, with a button that shows them all
+  and folds them again; `Chat` passes its own `codeLines` on. A very long text given at once is drawn a piece a frame
+  (`isDrawing`), so the page never stops for it, and a chat whose last message is one shows once it is all there.
+- The kit glyphs `thumb-up` and `thumb-down`, and the kit strings `chatRegenerate`, `chatGood`, `chatBad`,
+  `chatSources`, `chatForm` … `chatFormCancelled`, `markdownShowLines`, `markdownShowFewer`.
 - The kit glyphs `send` and `stop`, the kit strings of the chat (`chatLabel` … `chatSearchNext`) and
   `markdownFootnote`, `markdownFootnoteBack`.
+
+### Fixed
+
+- A `ScrollView` stuck to its end stays there when its content grows by much in a frame. The scroll it made to the end
+  was heard after the content had grown again, and read as the user leaving the end; a notice of the content's size,
+  which comes a frame or two late, took the view back up to an end it had passed. A view at the end that went down now
+  stays at the end, and a notice of an end above the view is not followed.
+- The button back to the latest message of a `Chat` stands in the middle, on a surface of its own: the button's own
+  margins put it at the start, and its outline let the text under it show through.
 
 ### Changed
 

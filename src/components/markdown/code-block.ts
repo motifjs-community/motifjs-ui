@@ -3,7 +3,7 @@ import { writeClipboard } from '../../core/clipboard';
 import { loose, part, removePart, textPart } from '../../core/draw-parts';
 import { glyph } from '../../core/glyphs';
 import { onLanguage } from '../../core/on-language';
-import { css, kept, put } from '../../core/part-writes';
+import { css, kept, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import type { CodeColorer } from './code-colorer';
@@ -16,9 +16,10 @@ const COPIED_FOR = 1500;
 
 /**
  * A fenced code block: a header with the language and a copy button, and the code. Its lines are written as they
- * arrive; a line that ends takes the colours of the highlighter, when there is one, and is not written again. Once it
- * is complete, `math` is drawn by the math door in the block's place, and a language the diagram door draws by that
- * door in the code's place.
+ * arrive; a line that ends takes the colours of the highlighter, when there is one, and is not written again. Past the
+ * markdown's `codeLines`, the block shows that many lines and a button under it shows them all, and folds them again.
+ * Once it is complete, `math` is drawn by the math door in the block's place, and a language the diagram door draws by
+ * that door in the code's place.
  */
 export class CodeBlock {
   /** The block's frame: its header and its code. */
@@ -28,6 +29,10 @@ export class CodeBlock {
   private readonly label: TextRun;
   private readonly code: Component<HTMLElement>;
   private readonly copyButton: Button | null = null;
+  /** The button under a long block that shows all its lines, made when the block grows past the limit. */
+  private moreButton: Button | null = null;
+  private unfolded = false;
+  private lines = 0;
   private line: TextRun | null = null;
   private lineText = '';
   private source = '';
@@ -114,6 +119,8 @@ export class CodeBlock {
     this.source += `${text}\n`;
     this.lineText = '';
     this.line = null;
+    this.lines++;
+    this.drawFold();
     const runs = this.colors(text);
     if (!runs) {
       line.value += '\n';
@@ -191,8 +198,40 @@ export class CodeBlock {
   private show(drawn: ComponentBase, kind: 'math' | 'diagram'): void {
     kept(this.pre, false);
     if (kind === 'math') kept(this.header, false);
+    kept(this.moreButton, false);
+    mark(this.frame, 'data-folded', false);
     this.frame.controls.add(drawn);
     put(this.frame, 'data-drawn', kind);
+  }
+
+  /** Past the limit, the block shows its first lines and the button under it the count of all; open, it shows them all. */
+  private drawFold(): void {
+    const limit = this.context.settings.codeLines;
+    if (!this.moreButton && (!limit || this.lines <= limit)) return;
+    if (!this.moreButton) {
+      // Its variant and size come from its place.
+      const button = new Button({ icon: glyph('chevron-down') });
+      button.class.add('mx-markdown__code-more');
+      button.motif.on('click', () => {
+        this.unfolded = !this.unfolded;
+        this.drawFold();
+      });
+      this.frame.controls.add(button);
+      this.moreButton = button;
+      css(this.frame, '--_code-lines', String(limit));
+      onLanguage(button, () => this.drawMore());
+    }
+    mark(this.frame, 'data-folded', !this.unfolded);
+    this.drawMore();
+  }
+
+  private drawMore(): void {
+    const button = this.moreButton;
+    if (!button) return;
+    const count = this.lines + (this.lineText ? 1 : 0);
+    button.text = this.unfolded ? uiLocale.strings.markdownShowFewer : uiLocale.text('markdownShowLines', { count });
+    // Its chevron turns up with it (markdown.css).
+    put(button, 'aria-expanded', String(this.unfolded));
   }
 
   private colors(text: string): readonly CodeRun[] | null {
