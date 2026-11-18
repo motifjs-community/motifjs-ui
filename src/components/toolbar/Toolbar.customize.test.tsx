@@ -294,6 +294,11 @@ describe('Toolbar customization', () => {
       rightClick(menuItems(menu)[0]);
       await settle();
       expect(commands().map(label)).toEqual(['Add to the “Format” toolbar']);
+      // The pointer crossing the menu on its way leaves the right button's menu open, focus in it.
+      menuItems(menu)[1].dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
+      await settle();
+      expect(commands().map(label)).toEqual(['Add to the “Format” toolbar']);
+      expect(customMenu()!.contains(document.activeElement)).toBe(true);
       command('Add to').click();
       await settle();
       expect(row(format)).toEqual(['Save', 'Bold']);

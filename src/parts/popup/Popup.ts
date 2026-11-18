@@ -24,6 +24,13 @@ function giveFocusTo(back: ComponentBase | FocusMark): void {
   else back.restore();
 }
 
+/** The open popup that holds focus: of several, the one opened last, in front (a menu opened inside another). */
+export function popupWithFocus(): Popup | null {
+  let found: Popup | null = null;
+  for (const popup of openPopups) if (holdsFocus(popup)) found = popup;
+  return found;
+}
+
 /**
  * A surface shown next to an anchor, above everything else (the browser's top layer): a menu, a
  * drop-down list or a picker. It follows the anchor while the page scrolls or resizes, opens on the

@@ -114,6 +114,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - `MenuBar.customization` given `null`, or a saved object, after the user changed the bar forgets or restores the
   changes each time. The bar kept the user's changes inside only, so a value given a second time looked unchanged and
   was not taken.
+- The right-click menu of an item in an open `MenuBar` menu stays open while the pointer moves to it. The menu under
+  it took focus for the item under the pointer at its first move, and the right-click menu, losing focus, closed. A
+  menu list now leaves focus where it is while a popup in front of it that is not one of its own submenus holds it.
 - A `ScrollView` stuck to its end stays there when its content grows by much in a frame. The scroll it made to the end
   was heard after the content had grown again, and read as the user leaving the end; a notice of the content's size,
   which comes a frame or two late, took the view back up to an end it had passed. A view at the end that went down now

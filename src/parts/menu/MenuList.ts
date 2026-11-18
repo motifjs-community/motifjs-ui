@@ -9,7 +9,7 @@ import { isRtl } from '../../core/measure';
 import { mark, put, text } from '../../core/part-writes';
 import { showIcon } from '../../core/show-icon';
 import type { IconSource } from '../../core/icon-source';
-import { Popup } from '../popup/Popup';
+import { Popup, popupWithFocus } from '../popup/Popup';
 import { hasLineAfter } from './line-after';
 import type { MenuItem } from './menu-item';
 import type { MenuItemClickEventArgs } from './menu-item-click-event-args';
@@ -441,7 +441,7 @@ export class MenuList extends Component<HTMLDivElement> {
 
   private onPointerMove(e: PointerEvent): void {
     const entry = this.entryFrom(e);
-    if (!entry) return;
+    if (!entry || this.coveredByPopup()) return;
     if (!isFocused(entry.button)) {
       this.pointerFocus = true;
       focusOn(entry.button, { preventScroll: true });
@@ -462,6 +462,21 @@ export class MenuList extends Component<HTMLDivElement> {
   private cancelHover(): void {
     clearTimeout(this.hoverTimer);
     this.hoverEntry = null;
+  }
+
+  /**
+   * A popup in front holds focus and is not of this menu (a context menu opened on one of its items): the pointer
+   * passing over the menu leaves focus there, as taking it would close that popup.
+   */
+  private coveredByPopup(): boolean {
+    const front = popupWithFocus();
+    if (!front) return false;
+    let root: MenuList = this;
+    while (root.parentList) root = root.parentList;
+    for (let list: MenuList | null = root; list; list = list.sub?.entry ? list.sub.list : null) {
+      if (list.hostPopup() === front) return false;
+    }
+    return true;
   }
 
   /** The keys move to another item: an open submenu of another one closes (the pointer waits for its delay). */

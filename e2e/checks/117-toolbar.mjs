@@ -144,6 +144,11 @@ export default async function ({ page, base, check, axeSource }) {
     await openMenu().locator('.mx-menu__item').filter({ hasText: 'Print' }).click({ button: 'right' });
     await page.waitForTimeout(250);
     check('a menu item that names a command offers the toolbars that take it', (await menuItems()).join(',') === 'Add to the “Quick access” toolbar', (await menuItems()).join(','));
+    // The pointer crosses the File menu on its way to the line.
+    const line = await openMenu().locator('.mx-menu__item').first().boundingBox();
+    await page.mouse.move(line.x + line.width / 2, line.y + line.height / 2, { steps: 8 });
+    await page.waitForTimeout(150);
+    check('…and the menu stays open while the pointer moves to it', (await menuItems()).join(',') === 'Add to the “Quick access” toolbar', (await menuItems()).join(','));
     await pick('Add to the “Quick access” toolbar');
     await page.keyboard.press('Escape');
     check('…and adding puts it on the toolbar', (await row(quick)).join(',') === 'Save,[Undo],Print…', (await row(quick)).join(','));
