@@ -46,7 +46,7 @@
           "margin-end": "auto"
         },
         "states": {
-          "multiple": ".mx-list[aria-multiselectable] .mx-list__item[data-selected]::before"
+          "multiple": ".mx-list[aria-multiselectable] > .mx-list__item[data-selected]::before, .mx-list[aria-multiselectable] > :where([role='group']) > .mx-list__item[data-selected]::before"
         }
       },
       "check": {

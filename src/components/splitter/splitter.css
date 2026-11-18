@@ -132,11 +132,12 @@
         justify-self: start;
     }
 
-    .mx-splitter[data-orientation='horizontal'] .mx-splitter__bar[data-resizable] {
+    /* By its own path: a splitter in a pane keeps the cursor of its own orientation. */
+    .mx-splitter[data-orientation='horizontal'] > :where(.mx-splitter__handle) > .mx-splitter__bar[data-resizable] {
         cursor: col-resize;
     }
 
-    .mx-splitter[data-orientation='vertical'] .mx-splitter__bar[data-resizable] {
+    .mx-splitter[data-orientation='vertical'] > :where(.mx-splitter__handle) > .mx-splitter__bar[data-resizable] {
         cursor: row-resize;
     }
 

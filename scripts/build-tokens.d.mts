@@ -10,11 +10,16 @@ export interface ComponentToken {
   original?: { $value?: unknown; value?: unknown };
 }
 
-/** Where a component holds another part: inside `selector`, the part's `tokens` take the place's values. */
+/**
+ * Where a component holds another part: inside `selector`, the part's `tokens` take the place's values. A context:
+ * `context` is the component's selector that gives them, `selector` the part's root, which takes them where it stands
+ * on that component's own surface.
+ */
 export interface Place {
   component: string;
   place: string;
   selector: string;
+  context?: string;
   part: string;
   tokens: string[];
   $description?: string;
@@ -50,6 +55,8 @@ export function schema(): {
   units: Unit[];
   descriptions: Map<string, string>;
   selectors: Map<string, string>;
+  /** The roots that only lay out their children (`$layout`): contexts pass through them. */
+  layouts: Set<string>;
 };
 /** The languages, the default one first. */
 export function languages(): string[];

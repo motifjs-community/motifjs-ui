@@ -117,6 +117,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The right-click menu of an item in an open `MenuBar` menu stays open while the pointer moves to it. The menu under
   it took focus for the item under the pointer at its first move, and the right-click menu, losing focus, closed. A
   menu list now leaves focus where it is while a popup in front of it that is not one of its own submenus holds it.
+- A component put inside one of its kind keeps its own look, as the `DataGrid` does since 0.1.0-beta.13. A rule
+  going down from a state of a part that holds content reached the same parts of the component inside it: a
+  horizontal `Splitter` in a vertical one took its cursor; a `Timeline` in an event took the orientation of the one
+  around it; a `MultiView` in one without animation lost its slide; a vertical `Sortable` in a horizontal one drew its
+  drop line two pixels wide and no higher; a `ScrollView` took the pull state of the one around it; a `ListBox` in an
+  item of a list box with check boxes showed its checks ticked, and one in a list of several choices lost the bar of
+  its chosen item; a `TabDocumentManager` in a document took the wrapping, the row and the size of pinned tabs, the
+  splitters, the tablet and phone layout and the window's bar of the one around it. Each rule now goes the component's
+  own way down (`>`), or the root declares a value that each root declares again. Each group of a `TabDocumentManager`
+  carries `data-pinned-size`, `data-pinned-row` and `data-wrap` as the root does, for its own rules. A component on
+  its own looks as it did.
+- A button takes the colors of an accent `AppBar` only where it stands on the bar: the bar's own, one in its content
+  (in a stack or a button group too) and the buttons of its actions. A button inside another component in the bar (a
+  `Signature`'s buttons, a field's, one in a popover, a popup or a dialog) keeps that component's colors; it took the
+  bar's light text and could not be read. Likewise a `ListBox` draws no frame of its own only where it stands on a
+  `Drawer`, a `Popup` or a `BottomSheet`: inside a card or another component there it is a field again.
 - A `ScrollView` stuck to its end stays there when its content grows by much in a frame. The scroll it made to the end
   was heard after the content had grown again, and read as the user leaving the end; a notice of the content's size,
   which comes a frame or two late, took the view back up to an end it had passed. A view at the end that went down now
@@ -129,6 +145,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The clipboard writing of `DataGrid` is shared (`core/clipboard.ts`): the Clipboard API where the page may use it,
   else the copy command. Its hidden text area is `.mx-copy-area`.
 - `LayoutAddedItem.parent` may be left out: an item added to a flat list stands at the top.
+- Token schema: a place may be a context (`context`: the component that gives it, `selector`: the part's root), and
+  a component names its roots that only lay out their children (`$layout`). `src/generated/places.css` gives a
+  context on its component, has the part read it before its own tokens and stops it at every other component's root.
+  A unit that turns may turn with its parent only (`turn.where` ending in `>`).
 - Docs: `Toolbar` has a group of its own (Overview, Customization, API reference).
 
 ## [0.1.0-beta.13] - 2026-11-17

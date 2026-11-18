@@ -2,6 +2,7 @@
   "layout": {
     "$description": "Layout containers: the spacing steps of gap and padding, the default gap, panels, group boxes and the splitter.",
     "$selector": ".mx-stack, .mx-grid, .mx-dock-panel, .mx-panel, .mx-group-box, .mx-split-container",
+    "$layout": ".mx-stack, .mx-grid, .mx-dock-panel, .mx-split-container",
     "space": {
       "xxs": { "$type": "dimension" },
       "xs": { "$type": "dimension" },

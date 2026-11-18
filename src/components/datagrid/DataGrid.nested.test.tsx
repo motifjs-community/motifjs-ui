@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount, settled } from '../../../tests/helpers';
+import { classesOf, inner, selectorsOf, split, stateful, steps } from '../../../tests/selector-steps';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumnItem } from './grid-column-item';
@@ -91,33 +92,6 @@ function rich(label: string, more: Partial<DataGridProps<Row>> = {}, cell?: () =
   } as DataGridProps<Row>;
 }
 
-/** A selector list split at its top level. */
-function split(list: string): string[] {
-  const out: string[] = [];
-  let depth = 0;
-  let at = 0;
-  for (let i = 0; i < list.length; i++) {
-    if (list[i] === '(' || list[i] === '[') depth++;
-    else if (list[i] === ')' || list[i] === ']') depth--;
-    else if (list[i] === ',' && !depth) {
-      out.push(list.slice(at, i).trim());
-      at = i + 1;
-    }
-  }
-  out.push(list.slice(at).trim());
-  return out.filter(Boolean);
-}
-
-/** Every selector of a stylesheet's rules, a list as its selectors. */
-function selectorsOf(css: string): string[] {
-  const out: string[] = [];
-  for (const [, prelude] of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{/g)) {
-    const selector = prelude.trim();
-    if (selector && !selector.startsWith('@')) out.push(...split(selector));
-  }
-  return out;
-}
-
 /** The selectors the token schema writes: of the grid, its places, its units and their states. */
 function schemaSelectors(): string[] {
   const out: string[] = [];
@@ -136,55 +110,13 @@ function schemaSelectors(): string[] {
 /** The grid's selectors: its own stylesheet, and what the generated sheets paint for it. */
 const gridSelectors = () => [...new Set([...selectorsOf(gridCss), ...[...selectorsOf(unitsCss), ...selectorsOf(placesCss)].filter((s) => s.includes('mx-data-grid')), ...schemaSelectors()])];
 
-/** A selector as its compounds, each with the combinator that leads to it (' ' for a descendant). */
-function steps(selector: string): { compound: string; by: string }[] {
-  const out: { compound: string; by: string }[] = [];
-  let depth = 0;
-  let compound = '';
-  let by = '';
-  for (const ch of selector.trim()) {
-    if (ch === '(' || ch === '[') depth++;
-    else if (ch === ')' || ch === ']') depth--;
-    if (!depth && /[\s>+~]/.test(ch)) {
-      if (compound) {
-        out.push({ compound, by });
-        compound = '';
-        by = ' ';
-      }
-      if (ch.trim()) by = ch;
-      continue;
-    }
-    compound += ch;
-  }
-  if (compound) out.push({ compound, by });
-  return out;
-}
-
-/** The arguments of the pseudo-classes that take selectors (`:is`, `:where`, `:not`, `:has`), each a selector of its own. */
-function inner(compound: string): string[] {
-  const out: string[] = [];
-  for (const m of compound.matchAll(/:(?:is|where|not|has)\(/g)) {
-    let depth = 1;
-    let i = m.index + m[0].length;
-    const from = i;
-    for (; i < compound.length && depth; i++) {
-      if (compound[i] === '(') depth++;
-      else if (compound[i] === ')') depth--;
-    }
-    out.push(...split(compound.slice(from, i - 1)));
-  }
-  return out;
-}
-
 /** The parts that can hold what the grid did not draw itself, another grid among it. */
 const HOSTS = new Set(
   ['', '__main', '__viewport', '__head', '__body', '__foot', '__row', '__row--header', '__row--band', '__row--filter', '__group-row', '__group-footer', '__total-row', '__detail-row', '__adaptive-row', '__form-row']
     .concat(['__cell', '__header-cell', '__band', '__filter-cell', '__group-cell', '__summary-cell', '__detail-cell', '__detail-content', '__form-cell', '__form', '__editor'])
     .map((part) => `mx-data-grid${part}`),
 );
-const holds = (compound: string) => Array.from(compound.replace(/:(?:is|where|not|has)\(.*\)/g, '').matchAll(/\.([\w-]+)/g)).some(([, name]) => HOSTS.has(name));
-/** Whether a compound depends on a state: an attribute, or a pseudo-class (a list of plain classes and `:root` are none). */
-const stateful = (compound: string) => /[[:]/.test(compound.replace(/::[\w-]+/g, '').replace(/:root\b/g, '').replace(/:(?:is|where)\(([^()]*)\)/g, (all, list) => (/[[:]/.test(list) ? all : '')));
+const holds = (compound: string) => classesOf(compound).some((name) => HOSTS.has(name));
 
 /** The place in a selector where it leaves a part's state by a descendant combinator, or null. */
 function reach(selector: string): string | null {

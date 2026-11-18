@@ -179,7 +179,7 @@
         "$description": "A group of documents: its fill (`second`: the second group side by side on a tablet, a line between them).",
         "selector": ".mx-tabdocs__group",
         "states": {
-          "second": ".mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='2']"
+          "second": ".mx-tabdocs__group[data-slot='2']"
         }
       },
       "bar": {
@@ -193,7 +193,7 @@
         "$description": "The pinned tabs (`row`: in a row of their own, a line under it).",
         "selector": ".mx-tabdocs__pinned",
         "states": {
-          "row": ".mx-tabdocs[data-pinned-row] .mx-tabdocs__pinned"
+          "row": ".mx-tabdocs__group[data-pinned-row] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > .mx-tabdocs__pinned"
         }
       },
       "scroll": {

@@ -34,7 +34,7 @@
         "$description": "The title and the subtitle together: `prominent` on a row of their own, lined up with the buttons above; `alone` with no button before them.",
         "selector": ".mx-app-bar__titles",
         "states": {
-          "prominent": ".mx-app-bar[data-prominent] .mx-app-bar__titles",
+          "prominent": ".mx-app-bar[data-prominent] > :where(.mx-app-bar__row) > .mx-app-bar__titles",
           "alone": ".mx-app-bar__start[hidden] + .mx-app-bar__titles"
         }
       },
@@ -42,15 +42,15 @@
         "$description": "The title: `prominent` on its own row, `accent` in the accent tone.",
         "selector": ".mx-app-bar__title",
         "states": {
-          "prominent": ".mx-app-bar[data-prominent] .mx-app-bar__title",
-          "accent": ".mx-app-bar[data-tone='accent'] .mx-app-bar__title"
+          "prominent": ".mx-app-bar[data-prominent] > :where(.mx-app-bar__row) > :where(.mx-app-bar__titles) > .mx-app-bar__title",
+          "accent": ".mx-app-bar[data-tone='accent'] > :where(.mx-app-bar__row) > :where(.mx-app-bar__titles) > .mx-app-bar__title"
         }
       },
       "subtitle": {
         "$description": "The subtitle: `accent` in the accent tone.",
         "selector": ".mx-app-bar__subtitle",
         "states": {
-          "accent": ".mx-app-bar[data-tone='accent'] .mx-app-bar__subtitle"
+          "accent": ".mx-app-bar[data-tone='accent'] > :where(.mx-app-bar__row) > :where(.mx-app-bar__titles) > .mx-app-bar__subtitle"
         }
       },
       "content": {
@@ -70,8 +70,9 @@
         ]
       },
       "button": {
-        "$description": "A button of an accent bar: its text and the fill under the pointer, against the accent color.",
-        "selector": ".mx-app-bar[data-tone='accent'] .mx-button",
+        "$description": "A button on an accent bar: its text and the fill under the pointer, against the accent color. A context: a button inside another component in the bar (a field, a popup, a dialog) stands on that one.",
+        "context": ".mx-app-bar[data-tone='accent']",
+        "selector": ".mx-button",
         "part": "button",
         "tokens": [
           "face.ghost.color",

@@ -80,7 +80,8 @@
         grid-column: 1 / -1;
     }
 
-    .mx-timeline[data-orientation='vertical'] .mx-timeline__list {
+    /* A timeline's own parts are reached by its own path: a timeline in an event's content keeps its orientation. */
+    .mx-timeline[data-orientation='vertical'] > :where(.mx-timeline__track) > .mx-timeline__list {
         --_line-w: var(--_timeline-line-thickness);
         --_line-h: auto;
 
@@ -88,52 +89,52 @@
         gap: var(--_timeline-gap);
     }
 
-    .mx-timeline[data-orientation='vertical'] .mx-timeline__list::before {
+    .mx-timeline[data-orientation='vertical'] > :where(.mx-timeline__track) > .mx-timeline__list::before {
         inset-block: calc(var(--_dot) / 2);
         inset-inline-start: calc(var(--_dot) / 2 - var(--_timeline-line-thickness) / 2);
     }
 
-    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__list::before {
+    .mx-timeline[data-orientation='vertical'][data-alternate] > :where(.mx-timeline__track) > .mx-timeline__list::before {
         inset-inline-start: calc(50% - var(--_timeline-line-thickness) / 2);
     }
 
-    .mx-timeline[data-orientation='vertical'] .mx-timeline__item {
+    .mx-timeline[data-orientation='vertical'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item {
         display: grid;
         grid-template-columns: var(--_dot) minmax(0, 1fr);
         column-gap: var(--_timeline-dot-gap);
         align-items: start;
     }
 
-    .mx-timeline[data-orientation='vertical'] .mx-timeline__item > .mx-timeline__dot {
+    .mx-timeline[data-orientation='vertical'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item > .mx-timeline__dot {
         grid-column: 1;
         grid-row: 1;
     }
 
-    .mx-timeline[data-orientation='vertical'] .mx-timeline__item > .mx-timeline__card {
+    .mx-timeline[data-orientation='vertical'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item > .mx-timeline__card {
         grid-column: 2;
         grid-row: 1;
     }
 
-    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item {
+    .mx-timeline[data-orientation='vertical'][data-alternate] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item {
         grid-template-columns: minmax(0, 1fr) var(--_dot) minmax(0, 1fr);
     }
 
-    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item > .mx-timeline__dot {
+    .mx-timeline[data-orientation='vertical'][data-alternate] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item > .mx-timeline__dot {
         grid-column: 2;
     }
 
-    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item[data-side='start'] > .mx-timeline__card {
+    .mx-timeline[data-orientation='vertical'][data-alternate] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item[data-side='start'] > .mx-timeline__card {
         grid-column: 1;
         text-align: end;
         align-items: flex-end;
     }
 
-    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item[data-side='end'] > .mx-timeline__card {
+    .mx-timeline[data-orientation='vertical'][data-alternate] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item[data-side='end'] > .mx-timeline__card {
         grid-column: 3;
     }
 
-    .mx-timeline[data-orientation='vertical'] .mx-timeline__nav,
-    .mx-timeline[data-orientation='vertical'] .mx-timeline__detail {
+    .mx-timeline[data-orientation='vertical'] > .mx-timeline__nav,
+    .mx-timeline[data-orientation='vertical'] > .mx-timeline__detail {
         display: none;
     }
 
@@ -154,7 +155,7 @@
         display: none;
     }
 
-    .mx-timeline[data-orientation='horizontal'] .mx-timeline__list {
+    .mx-timeline[data-orientation='horizontal'] > :where(.mx-timeline__track) > .mx-timeline__list {
         --_line-w: auto;
         --_line-h: var(--_timeline-line-thickness);
 
@@ -164,29 +165,29 @@
         min-inline-size: 100%;
     }
 
-    .mx-timeline[data-orientation='horizontal'] .mx-timeline__list::before {
+    .mx-timeline[data-orientation='horizontal'] > :where(.mx-timeline__track) > .mx-timeline__list::before {
         display: none;
     }
 
-    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item {
+    .mx-timeline[data-orientation='horizontal'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item {
         position: relative;
         flex: none;
         display: flex;
     }
 
-    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item:not(:first-child)::before,
-    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item:not(:last-child)::after {
+    .mx-timeline[data-orientation='horizontal'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item:not(:first-child)::before,
+    .mx-timeline[data-orientation='horizontal'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item:not(:last-child)::after {
         display: block;
         inset-block-start: calc(var(--_timeline-flag-padding, 0px) + var(--_dot) / 2 - var(--_timeline-line-thickness) / 2);
     }
 
-    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item::before {
+    .mx-timeline[data-orientation='horizontal'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item::before {
         --_line-w: calc(50% + var(--_timeline-track-gap));
 
         inset-inline-start: calc(-1 * var(--_timeline-track-gap));
     }
 
-    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item::after {
+    .mx-timeline[data-orientation='horizontal'] > :where(.mx-timeline__track) > :where(.mx-timeline__list) > .mx-timeline__item::after {
         --_line-w: 50%;
 
         inset-inline-start: 50%;

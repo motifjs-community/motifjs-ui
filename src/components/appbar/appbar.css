@@ -49,7 +49,7 @@
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     }
 
-    .mx-app-bar[data-title-align='center'] .mx-app-bar__titles {
+    .mx-app-bar[data-title-align='center'] > :where(.mx-app-bar__row) > .mx-app-bar__titles {
         text-align: center;
     }
 

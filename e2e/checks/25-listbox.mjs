@@ -45,6 +45,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await search.press('ArrowDown');
   check('Down in the search box goes to the list', await cities.evaluate((el) => document.activeElement === el));
   await multiple.getByRole('switch', { name: 'Multiple' }).click();
+  await page.waitForTimeout(50);
   check('turning multiple off makes a single list', (await cities.getAttribute('aria-multiselectable')) === null);
 
   const dataCard = page.locator('section[aria-labelledby="data"]');

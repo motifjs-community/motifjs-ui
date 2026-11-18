@@ -28,6 +28,15 @@
 // decides there; each language gives them values like any token (`<component>.<place>.<token>`), and
 // places.css points the part's slots at them inside that selector. The part's own CSS does not change.
 //
+// A place that reaches its part at any depth of the content the component holds (a button on an accent
+// bar, a list box on a drawer) is a context: `context` names the component's selector that gives it,
+// `selector` the part's root (one class), and the part takes the values only where it stands on that
+// component's own surface. The component declares them as custom properties that inherit
+// (`--_ctx-<part's root>-<slot>`), the part reads them before its own tokens, and every other
+// component's root stops them (`initial`): a part inside a field, a card or a popup in the bar stands on
+// that one instead. A root that only lays out its children passes them on (`$layout` in its schema), and
+// so does a part the component holds as its own (its other places).
+//
 // A unit is one piece of a component a design draws on its own (a slider's track before the thumb, the
 // thumb, the dot inside it, a stop at the end). The schema names it (`$units`: its selector, the states
 // it can be in, each with its own selector) and every unit has the same box: display, size, margin and
@@ -40,7 +49,8 @@
 // to the state it comes from and then to rest. The component's own CSS only places the units. What the
 // schema gives as a unit's default is always drawn (a part shown or hidden unless a language says
 // otherwise, a size the component's layout decides). A unit that turns (`turn.where`: where its
-// component stands upright, a vertical slider) is written lying: width along, height across; standing,
+// component stands upright, a vertical slider; ending in `>`, its parent, so that the same component
+// put inside does not turn with it) is written lying: width along, height across; standing,
 // the build turns what `turn.what` names a quarter (size, radius, margin, padding, border: its width
 // becomes its height, its sides and corners go round). What follows the light, such as a key's lower
 // edge, is left out of `what`. A unit's shadow and glow are drawn together (a focus halo over a shadow).
@@ -149,6 +159,24 @@ const plainReference = (value) => {
 };
 const cssName = (path) => `--${PREFIX}-${path.replace(/\./g, '-')}`;
 const slotName = (path) => `--_${path.replace(/\./g, '-')}`;
+/** A context's custom property: the part's root it is for (`.mx-list-box`) and the part's slot it decides. */
+const contextName = (root, part, token) => `--_ctx-${root.slice('.mx-'.length)}-${slotName(`${part}.${token}`).slice('--_'.length)}`;
+/** A selector list split at its top level. */
+const selectorList = (list) => {
+  const out = [];
+  let depth = 0;
+  let at = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (list[i] === '(' || list[i] === '[') depth++;
+    else if (list[i] === ')' || list[i] === ']') depth--;
+    else if (list[i] === ',' && !depth) {
+      out.push(list.slice(at, i).trim());
+      at = i + 1;
+    }
+  }
+  out.push(list.slice(at).trim());
+  return out.filter(Boolean);
+};
 
 // ---- units ---------------------------------------------------------------------------------
 
@@ -295,6 +323,7 @@ export function schema() {
   const units = [];
   const descriptions = new Map();
   const selectors = new Map();
+  const layouts = new Set();
   for (const file of jsonFiles(SCHEMA_DIR)) {
     const tree = readJson(`${SCHEMA_DIR}/${file}`);
     const name = file.replace(/\.json$/, '');
@@ -302,8 +331,15 @@ export function schema() {
     if (keys.length !== 1 || keys[0] !== name) throw new Error(`tokens/schema/${file}: holds one group, "${name}"`);
     descriptions.set(name, tree[name].$description ?? '');
     if (tree[name].$selector) selectors.set(name, tree[name].$selector);
+    for (const s of selectorList(tree[name].$layout ?? '')) {
+      if (!selectorList(tree[name].$selector ?? '').includes(s)) throw new Error(`${name}.$layout: "${s}" is not one of its roots ($selector)`);
+      layouts.add(s);
+    }
     for (const [path, leaf] of leaves({ [name]: tree[name] }, schemaLeaf)) tokens.set(path, { type: leaf.$type, description: leaf.$description ?? '' });
-    for (const [place, spec] of Object.entries(tree[name].$places ?? {})) places.push({ component: name, place, ...spec });
+    for (const [place, spec] of Object.entries(tree[name].$places ?? {})) {
+      if (spec.context && !/^\.mx-[\w-]+$/.test(spec.selector)) throw new Error(`${name}.$places.${place}: a context's selector is the part's root, one class ("${spec.selector}")`);
+      places.push({ component: name, place, ...spec });
+    }
     for (const [unit, spec] of Object.entries(tree[name].$units ?? {})) {
       if (!tree[name].$selector) throw new Error(`${name}.$units.${unit}: ${name} has no $selector, so no slots`);
       const states = Object.entries(spec.states ?? {}).map(([state, v]) => (typeof v === 'string' ? { name: state, selector: v } : { name: state, ...v }));
@@ -340,7 +376,7 @@ export function schema() {
     if (names.has(css)) throw new Error(`${path} and ${names.get(css)} are both ${css}`);
     names.set(css, path);
   }
-  schemaCache = { tokens, places, units, descriptions, selectors };
+  schemaCache = { tokens, places, units, descriptions, selectors, layouts };
   return schemaCache;
 }
 
@@ -524,12 +560,45 @@ export function renderSlots() {
   return `${HEADER}@layer ${LAYER} {\n${rules.join('\n\n')}\n}\n`;
 }
 
-/** Inside each place, the part's slots pointing at the place's tokens. */
+/**
+ * Inside each place, the part's slots pointing at the place's tokens. A context instead: the part's root reading it
+ * before its own tokens (first, so that any place of the part outweighs it), the component giving it, its other
+ * places passing it on, and every other root stopping it.
+ */
 export function renderPlaces() {
-  const rules = schema().places.map((p) => {
+  const { places, selectors, layouts } = schema();
+  const head = (p) => `  /* ${p.component}: ${p.place}${p.$description ? ` — ${p.$description}` : ''} */\n`;
+  const rule = (selector, lines) => `  ${selector} {\n${indent(lines.join('\n'), '    ')}\n  }`;
+  const contexts = places.filter((p) => p.context);
+  const reads = new Map();
+  const given = new Map();
+  for (const p of contexts) {
+    for (const t of p.tokens) {
+      const name = contextName(p.selector, p.part, t);
+      if (!reads.has(p.selector)) reads.set(p.selector, new Map());
+      reads.get(p.selector).set(name, `${slotName(`${p.part}.${t}`)}: var(${name}, var(${cssName(`${p.part}.${t}`)}));`);
+      if (!given.has(p.component)) given.set(p.component, new Set());
+      given.get(p.component).add(name);
+    }
+  }
+  const rules = [...reads].map(([root, lines]) => `  /* ${root}: what the surface it stands on gives it, else its own tokens */\n${rule(root, [...lines.values()])}`);
+  for (const p of places) {
+    if (p.context) {
+      rules.push(head(p) + rule(p.context, p.tokens.map((t) => `${contextName(p.selector, p.part, t)}: var(${cssName(`${p.component}.${p.place}.${t}`)});`)));
+      continue;
+    }
     const lines = p.tokens.map((t) => `${slotName(`${p.part}.${t}`)}: var(${cssName(`${p.component}.${p.place}.${t}`)});`);
-    return `  /* ${p.component}: ${p.place}${p.$description ? ` — ${p.$description}` : ''} */\n  ${p.selector} {\n${indent(lines.join('\n'), '    ')}\n  }`;
-  });
+    // A part the component holds as its own stands on its surface: what the component gives passes on.
+    if (p.part !== p.component) for (const name of given.get(p.component) ?? []) lines.push(`${name}: inherit;`);
+    rules.push(head(p) + rule(p.selector, lines));
+  }
+  // Every component's root (its own class: `disabled` names a state, not a component) but the part's own and those
+  // that only lay out their children is a surface of its own.
+  const roots = [...selectors.values()].flatMap(selectorList).filter((s) => s.startsWith('.mx-') && !layouts.has(s));
+  for (const [root, lines] of reads) {
+    const stops = [...lines.keys()].map((name) => `${name}: initial;`);
+    rules.push(`  /* ${root}: what a surface gives stops at another component's root */\n${rule(`:where(:is(${roots.join(', ')}):not(${root}))`, stops)}`);
+  }
   return rules.length ? `${HEADER}@layer ${LAYER} {\n${rules.join('\n\n')}\n}\n` : `${HEADER}@layer ${LAYER};\n`;
 }
 

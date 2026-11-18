@@ -2,6 +2,7 @@
   "avatar-group": {
     "$description": "Avatar group: avatars side by side or stacked over each other, with a `+N` for those not shown.",
     "$selector": ".mx-avatar-group",
+    "$layout": ".mx-avatar-group",
     "layout": { "$type": "keyword", "$description": "The layout it takes when none is given: stack, spread." },
     "overlap": {
       "xs": { "$type": "dimension", "$description": "How far each stacked avatar goes under the one before it." },

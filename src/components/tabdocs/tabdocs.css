@@ -4,9 +4,10 @@
    to the group's data-active / data-empty and the tab's aria-selected, data-dirty, data-close,
    data-pinned, data-preview, data-tone. How tabs are sized comes from each group's data-tab-size,
    data-scroll-buttons and data-title (a single document shown as a title: its dock area's or
-   window's settings, else the manager's), how they are laid out from the root's data-pinned-size,
-   data-pinned-row and data-wrap, and the widths `--_tab-min`, `--_tab-max`, `--_tab-fixed` are
-   written on each group from the props. The root is a grid: the
+   window's settings, else the manager's), how they are laid out from the group's data-pinned-size,
+   data-pinned-row and data-wrap (the manager's, on each group as on the root), and the widths
+   `--_tab-min`, `--_tab-max`, `--_tab-fixed` are written on each group from the props. A group's
+   rules reach its strip by its own path. The root is a grid: the
    documents in the middle (row 4, column 4), the dock areas and their splitters around them in the
    order they nest (each writes its own grid-area), the strips of folded areas along the edges.
    Only the layout is here: every piece's look is a unit of the manager's schema (`$units`), painted
@@ -36,12 +37,32 @@
     user-select: none;
   }
 
+  /* What the root's state decides for its splits and its layout, deep down in it: each root declares the values
+     for its own parts, so a manager in a document of another keeps its own (a rule going down from the root would
+     reach the parts of the manager inside too). `initial` leaves a part to its own rules. A strip's layout is its
+     group's (`data-pinned-size`, `data-pinned-row`, `data-wrap` on each group), reached by the group's own path. */
+  .mx-tabdocs {
+    --_sash-cursor: initial;
+    --_split-display: flex;
+    --_sash-display: block;
+    --_bar-cursor: initial;
+    --_pin-rotate: initial;
+    --_slot-solo: auto;
+    --_slot-1: auto;
+    --_slot-2: auto;
+    --_slot-bar-display: flex;
+  }
+
+  .mx-tabdocs[data-disabled] {
+    --_sash-cursor: default;
+  }
+
   .mx-tabdocs > :is(.mx-tabdocs__split, .mx-tabdocs__group) {
     grid-area: 4 / 4 / 5 / 5;
   }
 
   .mx-tabdocs__split {
-    display: flex;
+    display: var(--_split-display);
     min-inline-size: 0;
     min-block-size: 0;
   }
@@ -100,24 +121,25 @@
     scrollbar-width: none;
   }
 
-  .mx-tabdocs[data-pinned-row] .mx-tabdocs__tabs {
+  /* Pinned tabs on a row of their own, and tabs that wrap: the group's, by its own path. */
+  .mx-tabdocs__group[data-pinned-row] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > .mx-tabdocs__tabs {
     flex-direction: column;
   }
 
-  .mx-tabdocs[data-pinned-row] .mx-tabdocs__pinned {
+  .mx-tabdocs__group[data-pinned-row] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > .mx-tabdocs__pinned {
     flex-wrap: wrap;
   }
 
-  .mx-tabdocs[data-wrap] .mx-tabdocs__row {
+  .mx-tabdocs__group[data-wrap] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > .mx-tabdocs__row {
     flex-wrap: wrap;
     overflow: visible;
   }
 
-  .mx-tabdocs[data-wrap]:not([data-pinned-row]) .mx-tabdocs__tabs {
+  .mx-tabdocs__group[data-wrap]:not([data-pinned-row]) > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > .mx-tabdocs__tabs {
     flex-wrap: wrap;
   }
 
-  .mx-tabdocs[data-wrap]:not([data-pinned-row]) :is(.mx-tabdocs__pinned, .mx-tabdocs__row) {
+  .mx-tabdocs__group[data-wrap]:not([data-pinned-row]) > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > :is(.mx-tabdocs__pinned, .mx-tabdocs__row) {
     display: contents;
   }
 
@@ -130,7 +152,7 @@
     user-select: none;
   }
 
-  .mx-tabdocs:not([data-wrap]) .mx-tabdocs__group[data-scroll-buttons] > .mx-tabdocs__bar > .mx-tabdocs__strip[data-overflow] > .mx-tabdocs__scroll {
+  .mx-tabdocs__group:not([data-wrap])[data-scroll-buttons] > .mx-tabdocs__bar > .mx-tabdocs__strip[data-overflow] > .mx-tabdocs__scroll {
     display: flex;
   }
 
@@ -147,7 +169,7 @@
     transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-tabdocs:not([data-wrap]) .mx-tabdocs__group:not([data-scroll-buttons]) > .mx-tabdocs__bar > .mx-tabdocs__strip[data-overflow] > .mx-tabdocs__scrollbar {
+  .mx-tabdocs__group:not([data-wrap], [data-scroll-buttons]) > .mx-tabdocs__bar > .mx-tabdocs__strip[data-overflow] > .mx-tabdocs__scrollbar {
     display: block;
   }
 
@@ -310,7 +332,8 @@
     flex: 1 1 auto;
   }
 
-  .mx-tabdocs[data-pinned-size='shrink'] .mx-tabdocs__tab[data-pinned] {
+  /* Pinned tabs as their group lays them out (`data-pinned-size`), by its own path. */
+  .mx-tabdocs__group[data-pinned-size='shrink'] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > :where(.mx-tabdocs__pinned, .mx-tabdocs__row) > .mx-tabdocs__tab[data-pinned] {
     max-inline-size: var(--_tab-min);
   }
 
@@ -330,11 +353,11 @@
     display: none;
   }
 
-  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned]:not([data-icon]) .mx-tabdocs__letter {
+  .mx-tabdocs__group[data-pinned-size='compact'] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > :where(.mx-tabdocs__pinned, .mx-tabdocs__row) > .mx-tabdocs__tab[data-pinned]:not([data-icon]) > .mx-tabdocs__letter {
     display: inline;
   }
 
-  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned] :is(.mx-tabdocs__title, .mx-tabdocs__description) {
+  .mx-tabdocs__group[data-pinned-size='compact'] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > :where(.mx-tabdocs__pinned, .mx-tabdocs__row) > .mx-tabdocs__tab[data-pinned] > :is(.mx-tabdocs__title, .mx-tabdocs__description) {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -344,8 +367,8 @@
     white-space: nowrap;
   }
 
-  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned] :is(.mx-tabdocs__badge, .mx-tabdocs__pin),
-  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned]:not([data-dirty]) .mx-tabdocs__close {
+  .mx-tabdocs__group[data-pinned-size='compact'] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > :where(.mx-tabdocs__pinned, .mx-tabdocs__row) > .mx-tabdocs__tab[data-pinned] > :is(.mx-tabdocs__badge, .mx-tabdocs__pin),
+  .mx-tabdocs__group[data-pinned-size='compact'] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > :where(.mx-tabdocs__pinned, .mx-tabdocs__row) > .mx-tabdocs__tab[data-pinned]:not([data-dirty]) > .mx-tabdocs__close {
     display: none;
   }
 
@@ -354,7 +377,7 @@
     display: none;
   }
 
-  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab[data-pinned] :is(.mx-tabdocs__title, .mx-tabdocs__description) {
+  .mx-tabdocs__group[data-pinned-size='compact'][data-title] > .mx-tabdocs__bar > .mx-tabdocs__strip > :where(.mx-tabdocs__tabs) > :where(.mx-tabdocs__pinned, .mx-tabdocs__row) > .mx-tabdocs__tab[data-pinned] > :is(.mx-tabdocs__title, .mx-tabdocs__description) {
     position: static;
     inline-size: auto;
     block-size: auto;
@@ -363,7 +386,7 @@
     clip-path: none;
   }
 
-  .mx-tabdocs[data-pinned-size='shrink'] .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab[data-pinned] {
+  .mx-tabdocs__group[data-pinned-size='shrink'][data-title] > .mx-tabdocs__bar > .mx-tabdocs__strip > :where(.mx-tabdocs__tabs) > :where(.mx-tabdocs__pinned, .mx-tabdocs__row) > .mx-tabdocs__tab[data-pinned] {
     max-inline-size: 100%;
   }
 
@@ -471,16 +494,17 @@
 
   .mx-tabdocs__sash {
     position: relative;
+    display: var(--_sash-display);
     flex: none;
     inline-size: var(--_tabdocs-sash-thickness);
     touch-action: none;
-    cursor: col-resize;
+    cursor: var(--_sash-cursor, col-resize);
   }
 
   .mx-tabdocs__split[data-orientation='vertical'] > .mx-tabdocs__sash {
     inline-size: auto;
     block-size: var(--_tabdocs-sash-thickness);
-    cursor: row-resize;
+    cursor: var(--_sash-cursor, row-resize);
   }
 
   /* The line (the `sash-line` unit), centred in the splitter. */
@@ -490,10 +514,6 @@
     inset: 0;
     margin: auto;
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
-  }
-
-  .mx-tabdocs[data-disabled] .mx-tabdocs__sash {
-    cursor: default;
   }
 
   /* Drag and drop: the tab or group dragged, the copy under the pointer, the area a drop would take
@@ -607,12 +627,18 @@
     min-block-size: 0;
   }
 
-  .mx-tabdocs__window .mx-tabdocs__bar {
-    cursor: move;
+  /* The bars of a window's groups move it: the window declares it, and a manager in one of its documents
+     declares its own (the root, above). */
+  .mx-tabdocs__window {
+    --_bar-cursor: move;
   }
 
-  .mx-tabdocs__window[data-maximized] .mx-tabdocs__bar {
-    cursor: default;
+  .mx-tabdocs__window[data-maximized] {
+    --_bar-cursor: default;
+  }
+
+  .mx-tabdocs__group > .mx-tabdocs__bar {
+    cursor: var(--_bar-cursor);
   }
 
   .mx-tabdocs__window-frame {
@@ -621,7 +647,7 @@
     pointer-events: none;
   }
 
-  .mx-tabdocs__window[data-maximized] .mx-tabdocs__window-frame {
+  .mx-tabdocs__window[data-maximized] > .mx-tabdocs__window-frame {
     display: none;
   }
 
@@ -771,9 +797,14 @@
     }
   }
 
-  /* The pin of a dock area's group stands while the area is docked, and lies down while it is folded. */
-  .mx-tabdocs__area[data-auto-hide] .mx-tabdocs__auto-hide > :where(.mx-button__icon) > .mx-glyph {
-    rotate: var(--_tabdocs-folded-pin-rotate);
+  /* The pin of a dock area's group stands while the area is docked, and lies down while it is folded: the
+     area declares it for its groups, whatever splits them. */
+  .mx-tabdocs__area[data-auto-hide] {
+    --_pin-rotate: var(--_tabdocs-folded-pin-rotate);
+  }
+
+  .mx-tabdocs__auto-hide > :where(.mx-button__icon) > .mx-glyph {
+    rotate: var(--_pin-rotate, none);
   }
 
   /* The strip of a folded area: its documents' titles along the manager's edge, over the area sliding out from under it. */
@@ -920,35 +951,50 @@
     grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
-  .mx-tabdocs[data-presentation] > .mx-tabdocs__split,
-  .mx-tabdocs[data-presentation] > .mx-tabdocs__split .mx-tabdocs__split {
+  /* The splits of the documents (not those of the dock areas in their drawers) and their splitters: declared
+     on the outermost split for those inside it. A group has data-slot only while presented: its root's
+     presentation places it (declared on the root, above and below). */
+  .mx-tabdocs[data-presentation] > .mx-tabdocs__split {
     display: contents;
+
+    --_split-display: contents;
+    --_sash-display: none;
   }
 
-  .mx-tabdocs[data-presentation] > .mx-tabdocs__split .mx-tabdocs__sash,
   .mx-tabdocs[data-presentation] > :is(.mx-tabdocs__area, .mx-tabdocs__area-sash, .mx-tabdocs__window) {
     display: none;
   }
 
-  .mx-tabdocs[data-presentation] .mx-tabdocs__group[data-slot] {
+  .mx-tabdocs__group[data-slot] {
     min-inline-size: 0;
     min-block-size: 0;
   }
 
-  .mx-tabdocs[data-presentation] .mx-tabdocs__group[data-slot='none'] {
+  .mx-tabdocs__group[data-slot='none'] {
     display: none;
   }
 
-  .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='solo'] {
-    grid-area: 2 / 2 / 3 / 4;
+  .mx-tabdocs[data-presentation='tablet'] {
+    --_slot-solo: 2 / 2 / 3 / 4;
+    --_slot-1: 2 / 2 / 3 / 3;
+    --_slot-2: 2 / 3 / 3 / 4;
   }
 
-  .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='1'] {
-    grid-area: 2 / 2 / 3 / 3;
+  .mx-tabdocs[data-presentation='phone'] {
+    --_slot-solo: 2 / 1 / 3 / 2;
+    --_slot-bar-display: none;
   }
 
-  .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='2'] {
-    grid-area: 2 / 3 / 3 / 4;
+  .mx-tabdocs__group[data-slot='solo'] {
+    grid-area: var(--_slot-solo);
+  }
+
+  .mx-tabdocs__group[data-slot='1'] {
+    grid-area: var(--_slot-1);
+  }
+
+  .mx-tabdocs__group[data-slot='2'] {
+    grid-area: var(--_slot-2);
   }
 
   .mx-tabdocs[data-presentation='tablet'] > .mx-tabdocs__autohide[data-side='left'] {
@@ -971,13 +1017,9 @@
     display: none;
   }
 
-  .mx-tabdocs[data-presentation='phone'] .mx-tabdocs__group[data-slot='solo'] {
-    grid-area: 2 / 1 / 3 / 2;
-  }
-
-  /* On a phone the bar above the document stands for its strip. */
-  .mx-tabdocs[data-presentation='phone'] .mx-tabdocs__group[data-slot] > .mx-tabdocs__bar {
-    display: none;
+  /* On a phone the bar above the document stands for its strip (declared on the root, above). */
+  .mx-tabdocs__group[data-slot] > .mx-tabdocs__bar {
+    display: var(--_slot-bar-display);
   }
 
   /* A dock area or a window in its drawer or sheet fills it. */

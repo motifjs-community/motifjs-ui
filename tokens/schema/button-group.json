@@ -2,6 +2,7 @@
   "button-group": {
     "$description": "Button group: buttons that belong together, touching or apart; a segmented choice when it selects.",
     "$selector": ".mx-button-group",
+    "$layout": ".mx-button-group",
     "attached": { "$type": "keyword", "$description": "Whether the buttons touch, sharing their edges, when not told: true, false." },
     "gap": { "$type": "dimension", "$description": "The space between buttons that do not touch." },
     "$places": {

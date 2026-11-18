@@ -224,7 +224,7 @@
     gap: var(--_app-bar-titles-gap, normal);
   }
 
-  .mx-app-bar[data-prominent] .mx-app-bar__titles {
+  .mx-app-bar[data-prominent] > :where(.mx-app-bar__row) > .mx-app-bar__titles {
     padding-inline-end: var(--_app-bar-titles-prominent-padding-inline, 0px);
     padding-inline-start: var(--_app-bar-titles-prominent-padding-inline, 0px);
   }
@@ -240,12 +240,12 @@
     letter-spacing: var(--_app-bar-title-letter-spacing, inherit);
   }
 
-  .mx-app-bar[data-prominent] .mx-app-bar__title {
+  .mx-app-bar[data-prominent] > :where(.mx-app-bar__row) > :where(.mx-app-bar__titles) > .mx-app-bar__title {
     font-size: var(--_app-bar-title-prominent-font-size, var(--_app-bar-title-font-size, inherit));
     line-height: var(--_app-bar-title-prominent-line-height, var(--_app-bar-title-line-height, inherit));
   }
 
-  .mx-app-bar[data-tone='accent'] .mx-app-bar__title {
+  .mx-app-bar[data-tone='accent'] > :where(.mx-app-bar__row) > :where(.mx-app-bar__titles) > .mx-app-bar__title {
     color: var(--_app-bar-title-accent-color, inherit);
   }
 
@@ -255,7 +255,7 @@
     line-height: var(--_app-bar-subtitle-line-height, inherit);
   }
 
-  .mx-app-bar[data-tone='accent'] .mx-app-bar__subtitle {
+  .mx-app-bar[data-tone='accent'] > :where(.mx-app-bar__row) > :where(.mx-app-bar__titles) > .mx-app-bar__subtitle {
     color: var(--_app-bar-subtitle-accent-color, var(--_app-bar-subtitle-color, inherit));
   }
 
@@ -6037,7 +6037,7 @@
     border-end-end-radius: var(--_list-indicator-radius, 0px);
   }
 
-  .mx-list[aria-multiselectable] .mx-list__item[data-selected]::before {
+  .mx-list[aria-multiselectable] > .mx-list__item[data-selected]::before, .mx-list[aria-multiselectable] > :where([role='group']) > .mx-list__item[data-selected]::before {
     display: var(--_list-indicator-multiple-display, block);
   }
 
@@ -6093,7 +6093,7 @@
     gap: var(--_listbox-box-gap, normal);
   }
 
-  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__check {
+  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > :where(.mx-list__item) > .mx-list__check, .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > :where([role='group']) > :where(.mx-list__item) > .mx-list__check {
     inline-size: var(--_listbox-check-size, auto);
     block-size: var(--_listbox-check-size, auto);
     background-color: var(--_listbox-check-bg, transparent);
@@ -6113,7 +6113,7 @@
     color: var(--_listbox-check-color, inherit);
   }
 
-  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__item[data-selected] .mx-list__check {
+  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > .mx-list__item[data-selected] > .mx-list__check, .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > :where([role='group']) > .mx-list__item[data-selected] > .mx-list__check {
     background-color: var(--_listbox-check-checked-bg, var(--_listbox-check-bg, transparent));
     border-block-start-color: var(--_listbox-check-checked-border-color, var(--_listbox-check-border-color, currentcolor));
     border-inline-end-color: var(--_listbox-check-checked-border-color, var(--_listbox-check-border-color, currentcolor));
@@ -6122,7 +6122,7 @@
     color: var(--_listbox-check-checked-color, var(--_listbox-check-color, inherit));
   }
 
-  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__item[aria-disabled='true'] .mx-list__check {
+  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > .mx-list__item[aria-disabled='true'] > .mx-list__check, .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > :where([role='group']) > .mx-list__item[aria-disabled='true'] > .mx-list__check {
     background-color: var(--_listbox-check-disabled-bg, var(--_listbox-check-bg, transparent));
     border-block-start-color: var(--_listbox-check-disabled-border-color, var(--_listbox-check-border-color, currentcolor));
     border-inline-end-color: var(--_listbox-check-disabled-border-color, var(--_listbox-check-border-color, currentcolor));
@@ -6130,7 +6130,7 @@
     border-inline-start-color: var(--_listbox-check-disabled-border-color, var(--_listbox-check-border-color, currentcolor));
   }
 
-  .mx-list-box[data-disabled][data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__item[data-selected] .mx-list__check {
+  .mx-list-box[data-disabled][data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > .mx-list__item[data-selected] > .mx-list__check, .mx-list-box[data-disabled][data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > :where([role='group']) > .mx-list__item[data-selected] > .mx-list__check {
     background-color: var(--_listbox-check-checked-disabled-bg, var(--_listbox-check-checked-bg, var(--_listbox-check-bg, transparent)));
     border-block-start-color: var(--_listbox-check-checked-disabled-border-color, var(--_listbox-check-checked-border-color, var(--_listbox-check-border-color, currentcolor)));
     border-inline-end-color: var(--_listbox-check-checked-disabled-border-color, var(--_listbox-check-checked-border-color, var(--_listbox-check-border-color, currentcolor)));
@@ -6139,14 +6139,14 @@
     color: var(--_listbox-check-checked-disabled-color, var(--_listbox-check-checked-color, var(--_listbox-check-color, inherit)));
   }
 
-  .mx-list-box > :where(.mx-field__box) > .mx-list:is(:focus-visible, [data-keys]:focus) .mx-list__item[data-active] {
+  .mx-list-box > :where(.mx-field__box) > .mx-list:is(:focus-visible, [data-keys]:focus) > .mx-list__item[data-active], .mx-list-box > :where(.mx-field__box) > .mx-list:is(:focus-visible, [data-keys]:focus) > :where([role='group']) > .mx-list__item[data-active] {
     outline-style: solid;
     outline-width: var(--_listbox-keys-outline-width, 0px);
     outline-color: var(--_listbox-keys-outline-color, currentcolor);
     outline-offset: var(--_listbox-keys-outline-offset, 0px);
   }
 
-  .mx-list-box > :where(.mx-field__box) > .mx-list:not(:focus, :hover) .mx-list__item[data-active]:not([data-selected]) {
+  .mx-list-box > :where(.mx-field__box) > .mx-list:not(:focus, :hover) > .mx-list__item[data-active]:not([data-selected]), .mx-list-box > :where(.mx-field__box) > .mx-list:not(:focus, :hover) > :where([role='group']) > .mx-list__item[data-active]:not([data-selected]) {
     background-color: var(--_listbox-idle-bg, transparent);
   }
 
@@ -8700,7 +8700,7 @@
     font-size: var(--_scroll-view-pull-font-size, inherit);
   }
 
-  .mx-scroll-view[data-pull-state='refreshing'] .mx-scroll-view__pull {
+  .mx-scroll-view[data-pull-state='refreshing'] > :where(.mx-scroll-view__content) > .mx-scroll-view__pull {
     color: var(--_scroll-view-pull-refreshing-color, var(--_scroll-view-pull-color, inherit));
   }
 
@@ -9231,7 +9231,7 @@
     border-end-end-radius: var(--_sortable-line-radius, 0px);
   }
 
-  .mx-sortable__line:where(.mx-sortable[data-orientation='horizontal'] *) {
+  .mx-sortable__line:where(.mx-sortable[data-orientation='horizontal'] > *) {
     block-size: auto;
     inline-size: var(--_sortable-line-height, auto);
     border-start-start-radius: var(--_sortable-line-radius, 0px);
@@ -9479,7 +9479,7 @@
     background-color: var(--_splitter-grip-active-bg, var(--_splitter-grip-bg, transparent));
   }
 
-  .mx-splitter__bar:not([data-resizable]) > .mx-splitter__grip, .mx-splitter[data-disabled] .mx-splitter__grip {
+  .mx-splitter__bar:not([data-resizable]) > .mx-splitter__grip, .mx-splitter[data-disabled] > :where(.mx-splitter__handle) > :where(.mx-splitter__bar) > .mx-splitter__grip {
     background-color: var(--_splitter-grip-disabled-bg, var(--_splitter-grip-bg, transparent));
   }
 
@@ -9855,7 +9855,7 @@
     border-inline-start-color: var(--_tabdocs-group-border-color, currentcolor);
   }
 
-  .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='2'] {
+  .mx-tabdocs__group[data-slot='2'] {
     border-inline-start-width: var(--_tabdocs-group-second-border-start-width, 0px);
   }
 
@@ -9888,7 +9888,7 @@
     border-inline-start-color: var(--_tabdocs-pinned-border-color, currentcolor);
   }
 
-  .mx-tabdocs[data-pinned-row] .mx-tabdocs__pinned {
+  .mx-tabdocs__group[data-pinned-row] > :where(.mx-tabdocs__bar) > :where(.mx-tabdocs__strip) > :where(.mx-tabdocs__tabs) > .mx-tabdocs__pinned {
     border-block-end-width: var(--_tabdocs-pinned-row-border-bottom-width, 0px);
   }
 

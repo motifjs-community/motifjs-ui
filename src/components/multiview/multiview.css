@@ -29,7 +29,7 @@
         transition: translate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
     }
 
-    .mx-multi-view[data-still] .mx-multi-view__track,
+    .mx-multi-view[data-still] > :where(.mx-multi-view__viewport) > .mx-multi-view__track,
     .mx-multi-view__track[data-dragging],
     .mx-multi-view__track[data-no-motion] {
         transition: none;

@@ -16,8 +16,8 @@
         "$description": "The panel above the content, shown as it is pulled: `release` once far enough, `refreshing` while it refreshes.",
         "selector": ".mx-scroll-view__pull",
         "states": {
-          "release": ".mx-scroll-view[data-pull-state='release'] .mx-scroll-view__pull",
-          "refreshing": ".mx-scroll-view[data-pull-state='refreshing'] .mx-scroll-view__pull"
+          "release": ".mx-scroll-view[data-pull-state='release'] > :where(.mx-scroll-view__content) > .mx-scroll-view__pull",
+          "refreshing": ".mx-scroll-view[data-pull-state='refreshing'] > :where(.mx-scroll-view__content) > .mx-scroll-view__pull"
         }
       },
       "pull-text": {

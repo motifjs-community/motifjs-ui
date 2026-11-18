@@ -18,8 +18,9 @@
         ]
       },
       "list-box": {
-        "$description": "A list box inside a drawer: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow); its width there (100% to fill the drawer).",
-        "selector": ".mx-drawer .mx-list-box",
+        "$description": "A list box on a drawer: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow); its width there (100% to fill the drawer). A context: a list box inside another component in the drawer stands on that one.",
+        "context": ".mx-drawer",
+        "selector": ".mx-list-box",
         "part": "field",
         "tokens": [
           "frame.display",

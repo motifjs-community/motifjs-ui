@@ -24,7 +24,7 @@
       "line": {
         "$description": "The line where a drop would land: its thickness is `height` (lying), its colour `bg`.",
         "selector": ".mx-sortable__line",
-        "turn": { "where": ".mx-sortable[data-orientation='horizontal']", "what": ["size", "radius", "margin", "padding", "border"] }
+        "turn": { "where": ".mx-sortable[data-orientation='horizontal'] >", "what": ["size", "radius", "margin", "padding", "border"] }
       },
       "ghost": {
         "$description": "The copy of the item after the pointer.",

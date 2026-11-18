@@ -5,8 +5,9 @@
     "offset": { "$type": "dimension" },
     "$places": {
       "list-box": {
-        "$description": "A list box inside a popup: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow).",
-        "selector": ".mx-popup .mx-list-box",
+        "$description": "A list box on a popup: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow). A context: a list box inside another component in the popup stands on that one.",
+        "context": ".mx-popup",
+        "selector": ".mx-list-box",
         "part": "field",
         "tokens": [
           "frame.display",
@@ -46,8 +47,9 @@
         ]
       },
       "list-box-space": {
-        "$description": "A list box in a popup: its margin and padding there.",
-        "selector": ".mx-popup .mx-list-box",
+        "$description": "A list box on a popup: its margin and padding there (a context, as `list-box`).",
+        "context": ".mx-popup",
+        "selector": ".mx-list-box",
         "part": "listbox",
         "tokens": [
           "container.margin",

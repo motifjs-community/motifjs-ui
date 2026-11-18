@@ -21,7 +21,7 @@
         "defaults": { "width": "var(--_line-w, auto)", "height": "var(--_line-h, auto)" },
         "states": {
           "active": ".mx-splitter__bar[data-resizable]:hover::before, .mx-splitter__bar[data-dragging]::before",
-          "disabled": ".mx-splitter[data-disabled] .mx-splitter__bar::before"
+          "disabled": ".mx-splitter[data-disabled] > :where(.mx-splitter__handle) > .mx-splitter__bar::before"
         }
       },
       "grip": {
@@ -30,7 +30,7 @@
         "defaults": { "width": "var(--_grip-w)", "height": "var(--_grip-h)" },
         "states": {
           "active": ".mx-splitter__bar[data-resizable]:hover > .mx-splitter__grip, .mx-splitter__bar[data-dragging] > .mx-splitter__grip",
-          "disabled": ".mx-splitter__bar:not([data-resizable]) > .mx-splitter__grip, .mx-splitter[data-disabled] .mx-splitter__grip"
+          "disabled": ".mx-splitter__bar:not([data-resizable]) > .mx-splitter__grip, .mx-splitter[data-disabled] > :where(.mx-splitter__handle) > :where(.mx-splitter__bar) > .mx-splitter__grip"
         }
       },
       "fold": {

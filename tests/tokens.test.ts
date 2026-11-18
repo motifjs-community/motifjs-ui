@@ -103,9 +103,28 @@ describe('component tokens', { timeout: 30_000 }, () => {
 
   it("points a part's slots at a place's tokens inside its selector", () => {
     const css = renderPlaces();
-    for (const p of schema().places) {
+    for (const p of schema().places.filter((p) => !p.context)) {
       expect(css, `${p.component}.${p.place}`).toContain(`  ${p.selector} {\n`);
       for (const t of p.tokens) expect(css).toContain(`${slotOf(`${p.part}.${t}`)}: var(${varOf(`${p.component}.${p.place}.${t}`)});`);
+    }
+  });
+
+  it('gives a context on its component, reads it on the part before its own tokens, and stops it at every other root', () => {
+    const css = renderPlaces();
+    const contexts = schema().places.filter((p) => p.context);
+    expect(contexts.length).toBeGreaterThan(0);
+    const firstPlace = Math.min(...schema().places.filter((p) => !p.context).map((p) => css.indexOf(`  /* ${p.component}: ${p.place}`)));
+    for (const p of contexts) {
+      const name = (t: string) => `--_ctx-${p.selector.slice('.mx-'.length)}-${slotOf(`${p.part}.${t}`).slice('--_'.length)}`;
+      expect(css, `${p.component}.${p.place}`).toContain(`  ${p.context} {\n`);
+      for (const t of p.tokens) {
+        expect(css).toContain(`${name(t)}: var(${varOf(`${p.component}.${p.place}.${t}`)});`);
+        expect(css).toContain(`${slotOf(`${p.part}.${t}`)}: var(${name(t)}, var(${varOf(`${p.part}.${t}`)}));`);
+        expect(css).toContain(`${name(t)}: initial;`);
+      }
+      // The part reads it first: any place of the part comes after and outweighs it.
+      expect(css.indexOf(`  ${p.selector} {\n`)).toBeLessThan(firstPlace);
+      expect(css).toContain(`:not(${p.selector})) {\n`);
     }
   });
 

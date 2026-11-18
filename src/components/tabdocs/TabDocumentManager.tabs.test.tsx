@@ -251,14 +251,18 @@ describe('TabDocumentManager: the strip', () => {
     const g = m.groups[0].element;
     const group = g.style;
     expect([g.dataset.tabSize, el.dataset.pinnedSize, el.hasAttribute('data-pinned-row'), el.hasAttribute('data-wrap')]).toEqual(['fixed', 'compact', true, false]);
+    // Each group carries the strip's layout too: its own rules read it, so a manager in a document keeps its own.
+    expect([g.dataset.pinnedSize, g.hasAttribute('data-pinned-row'), g.hasAttribute('data-wrap')]).toEqual(['compact', true, false]);
     expect([group.getPropertyValue('--_tab-fixed'), group.getPropertyValue('--_tab-min'), group.getPropertyValue('--_tab-max')]).toEqual(['120px', '60px', '']);
     m.wrapTabs = true;
     m.tabMaxWidth = 200;
     m.scrollButtons = false;
     await settle();
-    expect([el.hasAttribute('data-wrap'), group.getPropertyValue('--_tab-max'), g.hasAttribute('data-scroll-buttons')]).toEqual([true, '200px', false]);
-    const made = m.split(m.groups[0], 'right')!.element.style;
+    expect([el.hasAttribute('data-wrap'), g.hasAttribute('data-wrap'), group.getPropertyValue('--_tab-max'), g.hasAttribute('data-scroll-buttons')]).toEqual([true, true, '200px', false]);
+    const split = m.split(m.groups[0], 'right')!.element;
+    const made = split.style;
     expect([made.getPropertyValue('--_tab-min'), made.getPropertyValue('--_tab-max'), made.getPropertyValue('--_min-width')]).toEqual(['60px', '200px', '160px']);
+    expect([split.dataset.pinnedSize, split.hasAttribute('data-pinned-row'), split.hasAttribute('data-wrap')]).toEqual(['compact', true, true]);
   });
 
   it('a compact pinned tab keeps its title for screen readers and shows its first letter', async () => {

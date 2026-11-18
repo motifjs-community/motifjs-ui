@@ -20,7 +20,9 @@
     overflow: hidden;
   }
 
-  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__check {
+  /* By its own rows (in a group or not): a list box in an item's drawing keeps its own checks. */
+  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > :where(.mx-list__item) > .mx-list__check,
+  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) > :where([role='group']) > :where(.mx-list__item) > .mx-list__check {
     align-items: center;
     justify-content: center;
     visibility: visible;

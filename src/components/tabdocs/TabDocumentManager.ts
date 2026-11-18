@@ -5490,8 +5490,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   /**
-   * The sizes the props give a group and its tabs. Written on each group, not on the root, whose
-   * inline style is the app's to set (`style.cssText`).
+   * The sizes the props give a group and its tabs, and how its strip lays them out. Written on each group, not on the
+   * root, whose inline style is the app's to set (`style.cssText`); the group's own rules read them, so a manager in
+   * one of its documents keeps its own.
    */
   private sizeGroup(group: TabGroup): void {
     const max = this.peekProperty<number>('tabMaxWidth') ?? 0;
@@ -5499,11 +5500,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     css(group, '--_min-height', `${this.peekProperty<number>('minGroupHeight') ?? 100}px`);
     css(group, '--_tab-fixed', `${this.peekProperty<number>('tabFixedWidth') ?? 160}px`);
     css(group, '--_tab-max', max > 0 ? `${max}px` : '');
+    put(group, 'data-pinned-size', this.peekProperty<PinnedTabSize>('pinnedTabSize') ?? 'normal');
+    mark(group, 'data-pinned-row', !!this.peekProperty('pinnedTabsOnSeparateRow'));
+    mark(group, 'data-wrap', !!this.peekProperty('wrapTabs'));
   }
 
   /** The strip's look: where pinned ones go and wrapping. Each group writes how its tabs are sized and its scroll buttons. */
   private renderStrip(): void {
-    // On the manager and on each new window's part, which stands for it there.
+    // On the manager and on each new window's part, which stands for it there (the documented attributes); each
+    // group carries them too (`sizeGroup`).
     const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
     for (const host of [this, ...(parts?.browsers ?? []).map((w) => w.part)]) {
       put(host, 'data-pinned-size', this.peekProperty<PinnedTabSize>('pinnedTabSize') ?? 'normal');
