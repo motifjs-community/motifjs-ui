@@ -1,0 +1,3 @@
+# The Gemini key for `wrangler dev`, and wrangler's own files.
+.dev.vars
+.wrangler/

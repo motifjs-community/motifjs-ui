@@ -1,0 +1,15 @@
+// The live Chat demo's model, on Cloudflare Workers: it keeps the Gemini key, fixes the model, its instructions and
+// its tools, limits each visitor, and answers only the docs site. The key is a secret (`npx wrangler secret put
+// GEMINI_API_KEY`); for `npx wrangler dev`, it is in `.dev.vars`, which git does not keep.
+{
+  "name": "motifjs-chat-demo",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "vars": {
+    // A Flash-Lite model: its free tier allows about 500 requests a day, a Flash one 20.
+    "MODEL": "gemini-3.5-flash-lite",
+    "ORIGINS": "https://ui.motifjs.com,http://localhost:4514"
+  },
+  // Requests a visitor may make in a minute, by address.
+  "ratelimits": [{ "name": "LIMIT", "namespace_id": "1001", "simple": { "limit": 8, "period": 60 } }]
+}
