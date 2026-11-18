@@ -1,13 +1,12 @@
 import type { Component } from '@motifx/core';
-import { clearParts, part, removePart } from '../../core/draw-parts';
+import { clearParts, part } from '../../core/draw-parts';
 import { kept, mark, put, text } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
-import { ChatChoices, type ChatChoice } from './chat-choices';
+import { Button } from '../button/Button';
 import { entryFrame, type ChatEntry } from './chat-entry';
 import type { ChatFlowView } from './chat-flow-view';
 import type { ChatLook } from './chat-look';
 import type { ChatToolPart } from './chat-part';
-import type { ChatPermissionAnswer } from './chat-request';
 
 /** The most characters of an output drawn: the rest is the app's to show elsewhere. */
 const MOST_DRAWN = 20000;
@@ -16,8 +15,9 @@ const MOST_DRAWN = 20000;
  * A tool call, one row from the first sign of it to its end. While its arguments arrive it is a line that says which
  * tool, the file it names, how much came and for how long; then its name, what it does, and what went in (`IN`) and
  * came out (`OUT`). How much is open is the tool's `density`; a failed call and one waiting for approval open. The
- * labels `IN` and `OUT` are markers and stay as they are in every language. A call that asks before it runs has its
- * choices under it while it waits, then what the user said. A sub-agent's text and calls are drawn inside it.
+ * labels `IN` and `OUT` are markers and stay as they are in every language. While a call that asks before it runs
+ * waits, its choices are in the composer's place and a line under it says so, with "Answer" to go there; then what the
+ * user said. A sub-agent's text and calls are drawn inside it.
  */
 export class ChatToolEntry implements ChatEntry {
   readonly row: Component<HTMLDivElement>;
@@ -31,10 +31,12 @@ export class ChatToolEntry implements ChatEntry {
   private readonly inCode: Component<HTMLPreElement>;
   private readonly outRow: Component<HTMLDivElement>;
   private readonly outCode: Component<HTMLPreElement>;
-  /** The permission: its choices while the call waits, what the user said after. */
+  /** The permission: that it waits while the call waits, what the user said after. */
   private readonly request: Component<HTMLDivElement>;
+  private readonly asking: Component<HTMLDivElement>;
+  private readonly askState: Component<HTMLSpanElement>;
+  private readonly askButton: Button;
   private readonly answer: Component<HTMLDivElement>;
-  private choices: ChatChoices | null = null;
   private inner: ChatFlowView | null = null;
   private expanded = false;
   /** What the sides show; `null` until first drawn, so a side with nothing is hidden from the start. */
@@ -47,7 +49,7 @@ export class ChatToolEntry implements ChatEntry {
   /** `live`: its message is being written; its last sub-agent text stays open, its request can be answered. */
   constructor(
     private readonly call: ChatToolPart,
-    private readonly look: ChatLook,
+    look: ChatLook,
     private readonly makeFlow: () => ChatFlowView,
     private readonly live: () => boolean
   ) {
@@ -63,6 +65,13 @@ export class ChatToolEntry implements ChatEntry {
     [this.inRow, this.inCode] = this.side('in', 'IN');
     [this.outRow, this.outCode] = this.side('out', 'OUT');
     this.request = part<HTMLDivElement>(main, 'div', 'mx-chat__request');
+    this.asking = part<HTMLDivElement>(this.request, 'div', 'mx-chat__asked-head');
+    this.askState = part<HTMLSpanElement>(this.asking, 'span', 'mx-chat__asked-state');
+    // Its variant and size come from its place.
+    this.askButton = new Button();
+    this.askButton.class.add('mx-chat__asked-button');
+    this.askButton.motif.on('click', () => look.ask(call));
+    this.asking.controls.add(this.askButton);
     this.answer = part<HTMLDivElement>(this.request, 'div', 'mx-chat__answer');
     this.head.motif.on('click', () => {
       this.expanded = !this.expanded;
@@ -100,13 +109,8 @@ export class ChatToolEntry implements ChatEntry {
 
   drawTexts(): void {
     this.drawWait();
-    this.choices?.drawTexts(this.question(), this.choiceList());
     this.drawAnswer();
     this.inner?.drawTexts();
-  }
-
-  focus(): boolean {
-    return this.choices?.focus() ?? false;
   }
 
   /** The flow of the sub-agent the call runs, made the first time it writes. */
@@ -123,46 +127,27 @@ export class ChatToolEntry implements ChatEntry {
     return this.inner;
   }
 
-  /** While the call waits for the user its choices stand under it; then what they said, or that nobody answered. */
+  /** While the call waits for the user a line says so; then what they said, or that nobody answered. */
   private drawRequest(): void {
     const asked = this.call.permission;
     kept(this.request, !!asked);
     if (!asked) return;
     const waiting = !asked.answer && this.call.status === 'waiting' && this.live();
-    if (waiting && !this.choices) {
-      this.choices = new ChatChoices(this.question(), this.choiceList(), (value, said) =>
-        this.look.answer(this.call, { choice: value as ChatPermissionAnswer['choice'], text: said })
-      );
-      this.request.controls.add(this.choices.row);
-    } else if (!waiting && this.choices) {
-      removePart(this.choices.row);
-      this.choices = null;
-    }
+    kept(this.asking, waiting);
     kept(this.answer, !waiting);
     this.drawAnswer();
   }
 
   private drawAnswer(): void {
-    const answer = this.call.permission?.answer;
-    if (!this.call.permission || this.choices) return;
+    if (!this.call.permission) return;
     const strings = uiLocale.strings;
+    text(this.askState, strings.chatWaitingAnswer);
+    this.askButton.text = strings.chatAnswer;
+    const answer = this.call.permission.answer;
     put(this.answer, 'data-answer', answer?.choice ?? 'none');
     if (!answer) text(this.answer, strings.chatUnanswered);
     else if (answer.choice === 'no') text(this.answer, answer.text ? `${strings.chatDenied}: ${answer.text}` : strings.chatDenied);
     else text(this.answer, answer.choice === 'always' ? strings.chatAllowedAlways : strings.chatAllowed);
-  }
-
-  private question(): string {
-    return uiLocale.text('chatAllowTool', { tool: this.call.label || this.call.name });
-  }
-
-  private choiceList(): ChatChoice[] {
-    const strings = uiLocale.strings;
-    const always = this.call.permission?.always;
-    const list: ChatChoice[] = [{ value: 'yes', label: strings.chatAllow }];
-    if (always) list.push({ value: 'always', label: always });
-    list.push({ value: 'no', label: strings.chatDeny, asks: strings.chatDenyHint });
-    return list;
   }
 
   private get isRunning(): boolean {

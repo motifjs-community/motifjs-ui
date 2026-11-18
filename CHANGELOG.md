@@ -24,10 +24,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   reply does, for how long, and how to stop it; a message sent meanwhile waits above the box. `signal` is aborted when
   the user stops the reply or the chat goes, and tool calls still open when a reply ends are closed as failed.
 - `Chat` asks the user and waits: `ChatToolCall.permission()` asks whether a tool may run ("Yes", "always", "No" with
-  what to do instead), `reply.plan()` asks to approve a plan, and `reply.questions()` asks questions in a form that
-  takes the message box's place (tabs, one or many choices, previews, "Other", free text, "Decide for me"). Each returns
-  a Promise and is answered with the keys too; a reply that ends first answers it as declined. The answers are written
-  into the message, and a turn drawn again shows them.
+  what to do instead), `reply.plan()` asks to approve a plan, and `reply.questions()` asks questions (tabs, one or many
+  choices, previews, "Other", free text, "Decide for me"). Each request takes the message box's place until it is
+  answered, one at a time, and the flow says which one waits, with "Answer" to go there. Each returns a Promise and is
+  answered with the keys too; a reply that ends first answers it as declined. The answers are written into the
+  message, and a turn drawn again shows them.
 - `Chat` keeps on the page only the turns in and near the view, and makes a turn again from its message when it comes
   back (`WindowList`). The view stays at the end while it is there, written before the frame is drawn; scrolled away,
   it stays put and a button counts the messages that came. `hasOlder` and `onLoadOlder` load older messages near the

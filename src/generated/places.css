@@ -208,7 +208,7 @@
     --_button-size: var(--mx-chat-edit-send-size);
   }
 
-  /* chat: asked-button — The button by waiting questions in the flow that goes to the form. */
+  /* chat: asked-button — The button by a waiting request in the flow that goes to it, in the composer's place. */
   .mx-chat__asked-head > .mx-chat__asked-button {
     --_button-variant: var(--mx-chat-asked-button-variant);
     --_button-tone: var(--mx-chat-asked-button-tone);

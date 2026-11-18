@@ -73,11 +73,6 @@ export class ChatFlowView {
     this.writing = null;
   }
 
-  /** The choices of a request waiting in `part` take the focus. */
-  focus(part: ChatPart): boolean {
-    return this.entries.get(part)?.focus?.() ?? false;
-  }
-
   /** The reply ended: every entry, a sub-agent's too, is drawn as it stands. */
   refresh(): void {
     for (const entry of this.entries.values()) {

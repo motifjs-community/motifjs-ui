@@ -100,7 +100,7 @@
         ]
       },
       "asked-button": {
-        "$description": "The button by waiting questions in the flow that goes to the form.",
+        "$description": "The button by a waiting request in the flow that goes to it, in the composer's place.",
         "selector": ".mx-chat__asked-head > .mx-chat__asked-button",
         "part": "button",
         "tokens": [
@@ -442,38 +442,8 @@
         "selector": ".mx-chat__older"
       },
       "request": {
-        "$description": "What a tool call or a plan asks of the user: its choices, then the answer.",
+        "$description": "What a tool call or a plan asks of the user, in the flow: the line that says it waits (its choices are in the composer's place), then the answer.",
         "selector": ".mx-chat__request"
-      },
-      "choices": {
-        "$description": "The choices of a request while it waits: its question and the numbered choices.",
-        "selector": ".mx-chat__choices"
-      },
-      "choices-title": {
-        "$description": "The question of the choices.",
-        "selector": ".mx-chat__choices-title"
-      },
-      "choice": {
-        "$description": "A choice: `hover`, `focus` (the keys).",
-        "selector": ".mx-chat__choice",
-        "defaults": {
-          "padding": "0px",
-          "margin": "0px",
-          "border-width": "0px",
-          "bg": "transparent"
-        },
-        "states": {
-          "hover": ".mx-chat__choice:hover",
-          "focus": ".mx-chat__choice:focus-visible"
-        }
-      },
-      "choice-key": {
-        "$description": "A choice's number, its key.",
-        "selector": ".mx-chat__choice-key"
-      },
-      "choice-label": {
-        "$description": "A choice's text.",
-        "selector": ".mx-chat__choice-label"
       },
       "answer": {
         "$description": "What the user said to a request: `yes` (allowed, approved), `no` (denied, keep planning); unanswered as it is.",
@@ -492,7 +462,7 @@
         "selector": ".mx-chat__plan-title"
       },
       "asked-head": {
-        "$description": "Questions in the flow: how many, where they stand, the button to the form.",
+        "$description": "A request in the flow: what it is (how many questions, who asks for a form), where it stands, the button to it in the composer's place.",
         "selector": ".mx-chat__asked-head"
       },
       "asked-count": {
@@ -520,7 +490,7 @@
         "selector": ".mx-chat__asked-answer"
       },
       "ask": {
-        "$description": "The form of the questions, in the composer's place.",
+        "$description": "What takes the composer's place while a request waits: the form of the questions, a form, the choices of a tool call or a plan.",
         "selector": ".mx-chat__ask"
       },
       "ask-header": {

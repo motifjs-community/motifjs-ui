@@ -1,6 +1,6 @@
 /* Chat: only the layout is here; every piece (the question's box, the dots, a tool call's line and box, the thinking,
-   the to-do list, a request's choices, a plan, the questions and their form, the line under the conversation, the
-   queue, the composer) is a unit of its schema. The conversation
+   the to-do list, a plan, a request in the flow and what takes the composer's place for it, the line under the
+   conversation, the queue, the composer) is a unit of its schema. The conversation
    scrolls in its view (a ScrollView that stays at the end while it is there), and the button back to the latest message
    stands over its end. While it opens (the turns at the end placed, the view brought to the end) the view is laid out
    but not shown, so the first frame it shows is at the end. An on-screen keyboard over its end gives it room at its
@@ -282,10 +282,9 @@
     flex: none;
   }
 
-  /* A request in the flow: its question and numbered choices (a box under the one that asks for a text), then the
-     answer. Questions in the flow: their head, then each question over its answer. */
+  /* A request in the flow: the line that says it waits (its place is the composer's), then the answer. Questions in the
+     flow: their head, then each question over its answer. */
   .mx-chat__request,
-  .mx-chat__choices,
   .mx-chat__plan,
   .mx-chat__asked-list,
   .mx-chat__asked-pair,
@@ -297,7 +296,6 @@
     min-inline-size: 0;
   }
 
-  .mx-chat__choice,
   .mx-chat__ask-option,
   .mx-chat__ask-tab {
     appearance: none;
@@ -307,15 +305,9 @@
     text-align: start;
   }
 
-  .mx-chat__choice-key,
   .mx-chat__ask-key,
   .mx-chat__ask-check {
     flex: none;
-  }
-
-  .mx-chat__choice-label {
-    flex: 1 1 auto;
-    min-inline-size: 0;
   }
 
   .mx-chat__asked-head {
@@ -328,8 +320,9 @@
     overflow-wrap: anywhere;
   }
 
-  /* The form of the questions: the tabs and where it is, the question (its options, a preview beside them), the
-     buttons with "Decide for me" and sending at the end. */
+  /* What takes the composer's place: the form of the questions (the tabs and where it is, the question with its options
+     and a preview beside them, the buttons with "Decide for me" and sending at the end), a form, and the choices of a
+     tool call or a plan (the question, the options, a box under them). */
   .mx-chat__ask-header {
     display: flex;
     align-items: center;

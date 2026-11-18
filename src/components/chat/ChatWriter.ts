@@ -33,8 +33,8 @@ export class ChatWriter {
     /** Something was written: the chat keeps the view at the end, or the height of the turn. */
     readonly changed: () => void,
     private readonly opened: () => boolean,
-    /** A request waits for the user: the chat keeps it until they answer; `true` when its choices take the focus. */
-    readonly waits: (waiting: ChatWaiting) => boolean,
+    /** A request waits for the user: the chat keeps it, in the composer's place, until they answer. */
+    readonly waits: (waiting: ChatWaiting) => void,
     /** The time shown above the first text. */
     private readonly time?: Date
   ) {
@@ -218,9 +218,9 @@ export class ChatWriter {
   }
 
   /** Hands `part` to the chat until the user answers: `write` keeps the answer, `unanswered` is what a reply ending gives. */
-  protected wait<T extends object>(part: ChatRequestPart, unanswered: T, write: (answer: T) => void, flow = this.flowOf): Promise<T> {
+  protected wait<T extends object>(part: ChatRequestPart, unanswered: T, write: (answer: T) => void): Promise<T> {
     return new Promise<T>((resolve) => {
-      const waiting: ChatWaiting = {
+      this.waits({
         part,
         answer: (value) => {
           if (value === null) {
@@ -230,8 +230,7 @@ export class ChatWriter {
           write(value as T);
           resolve(value as T);
         }
-      };
-      if (this.waits(waiting)) flow()?.focus(part);
+      });
     });
   }
 
@@ -278,8 +277,9 @@ export class ChatToolCall extends ChatWriter {
   }
 
   /**
-   * Asks the user whether the call may run: it waits open, what goes in shown, with the choices under it ("Yes", `always`
-   * when given, "No" with what to do instead). Then it runs, or is denied. When the reply ends first it resolves as `no`.
+   * Asks the user whether the call may run: it waits open, what goes in shown, and its choices take the composer's place
+   * ("Yes", `always` when given, "No" with what to do instead). Then it runs, or is denied. When the reply ends first it
+   * resolves as `no`.
    */
   permission(options: { always?: string } = {}): Promise<ChatPermissionAnswer> {
     const p = this.part;
@@ -288,16 +288,11 @@ export class ChatToolCall extends ChatWriter {
     const asked: ChatPermission = (p.permission = { always: options.always });
     p.status = 'waiting';
     this.parent.redraw(p);
-    return this.wait(
-      p,
-      unanswered,
-      (answer) => {
-        asked.answer = answer;
-        p.status = answer.choice === 'no' ? 'denied' : 'running';
-        this.parent.redraw(p);
-      },
-      this.parent.flowOf
-    );
+    return this.wait(p, unanswered, (answer) => {
+      asked.answer = answer;
+      p.status = answer.choice === 'no' ? 'denied' : 'running';
+      this.parent.redraw(p);
+    });
   }
 
   /** While the arguments arrive: the file they name, and how many bytes came. */

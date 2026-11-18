@@ -17,6 +17,7 @@ import { ScrollView } from '../scrollview/ScrollView';
 import { ChatComposer } from './ChatComposer';
 import { ChatReply, type ChatReplyHost } from './ChatReply';
 import { ChatAskForm } from './chat-ask-form';
+import { ChatChoicesView } from './chat-choices-view';
 import type { ChatContextItem } from './chat-context-item';
 import type { ChatFlowView } from './chat-flow-view';
 import { ChatFormView } from './chat-form-view';
@@ -26,7 +27,7 @@ import type { ChatLook } from './chat-look';
 import type { ChatFeedback, ChatMessage } from './chat-message';
 import type { ChatPart } from './chat-part';
 import type { ChatProps } from './chat-props';
-import type { ChatAnswer, ChatFormPart, ChatQuestionsPart, ChatRequestPart, ChatWaiting } from './chat-request';
+import type { ChatAnswer, ChatRequestPart, ChatWaiting } from './chat-request';
 import { ChatSearch } from './chat-search';
 import { ChatSearchBar } from './chat-search-bar';
 import type { ChatSendEventArgs } from './chat-send-event-args';
@@ -60,9 +61,10 @@ interface Queued {
  * view stays at the end while it is there; scrolled up, it stays where it is and a button says how many messages came.
  * Near the top, older messages are asked for (`hasOlder`, `onLoadOlder`) and the view keeps its place. While a reply is
  * written a line under the conversation says what the model does and for how long, and what the user sends meanwhile
- * waits above the box until the reply ends. A reply can wait for the user: a tool call asks before it runs and a plan
- * asks to go on, their choices in the flow; questions, and a form (an MCP server's elicitation), take the composer's
- * place until they are answered. A reply that ended can be copied, judged good or bad, and asked for again. Ctrl+F
+ * waits above the box until the reply ends. A reply can wait for the user: a tool call asks before it runs, a plan asks
+ * to go on, questions ask, a form (an MCP server's elicitation) asks to be filled in. Each takes the composer's place
+ * until it is answered, one at a time, and the flow says it waits. A reply that ended can be copied, judged good or bad,
+ * and asked for again. Ctrl+F
  * opens a search over every message, the turns off the page too. The turns are the articles of a feed: Page Down and
  * Page Up go from one to the next, and screen readers hear when a reply ends or waits. The chat draws; the app talks
  * to its model and writes through `reply()`.
@@ -93,6 +95,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   private readonly form: ChatAskForm;
   /** A form waiting for the user to fill it in, in the composer's place. */
   private readonly fill: ChatFormView;
+  /** The choices of a tool call or a plan waiting for the user, in the composer's place. */
+  private readonly choices: ChatChoicesView;
   /** Tells screen readers what happened: a reply ended, or waits for the user. */
   private readonly live: Component<HTMLDivElement>;
   /** The search at the top, made the first time it opens. */
@@ -186,6 +190,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.controls.add(this.form.row);
     this.fill = new ChatFormView((asked, answer) => this.answer(asked, answer));
     this.controls.add(this.fill.row);
+    this.choices = new ChatChoicesView((asked, answer) => this.answer(asked, answer), () => this.stop());
+    this.controls.add(this.choices.row);
     this.composer = new ChatComposer({ ...own.composer, onSend: (e) => this.sendFromBox(e), onStop: () => this.stop() });
     this.composer.class.add('mx-chat__composer');
     this.controls.add(this.composer);
@@ -513,10 +519,11 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.drawJump();
   }
 
-  /** Gives the focus to where the user writes: the questions or the form waiting, or the composer. */
+  /** Gives the focus to where the user writes: the questions, the form or the choices waiting, or the composer. */
   override focus(): boolean {
     if (this.form.part) return this.form.focus();
     if (this.fill.part) return this.fill.focus();
+    if (this.choices.part) return this.choices.focus();
     return this.composer.focus();
   }
 
@@ -574,10 +581,8 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
       linkTarget: this.linkTarget,
       codeLines: this.codeLines,
       time: this.formatTime,
-      answer: (asked, answer) => this.answer(asked, answer),
       ask: (asked) => {
-        if (this.form.part === asked) this.form.focus();
-        else if (this.fill.part === asked) this.fill.focus();
+        if (asked === this.asking) this.focus();
       },
       rewind: (message) => void this.rewind(message),
       resend: (message, said) => void this.resend(message, said),
@@ -719,26 +724,22 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
   }
 
   /**
-   * A request waits: questions and forms take the composer's place (one at a time, the next when it is answered); the
-   * choices of a tool call or a plan take the focus when it was in the chat and nothing is being written.
+   * A request waits: it takes the composer's place, one at a time, the next when it is answered; the focus goes with it
+   * when it was in the chat.
    */
-  private wait(reply: ChatReply, item: ChatWaiting): boolean {
+  private wait(reply: ChatReply, item: ChatWaiting): void {
     this.waiting.set(item.part, { reply, item });
     if (this.waiting.size === 1) this.announce(uiLocale.strings.chatWaitingYou);
     this.drawStatus();
-    const inside = holdsFocus(this);
-    const part = item.part;
-    if (part.kind !== 'questions' && part.kind !== 'form') return inside && !this.composer.value.trim();
-    if (!this.asking) this.openForm(part, inside);
-    return false;
+    if (!this.asking) this.openForm(item.part, holdsFocus(this));
   }
 
-  /** The questions or the form in the composer's place; `null` while the composer is there. */
-  private get asking(): ChatQuestionsPart | ChatFormPart | null {
-    return this.form.part ?? this.fill.part;
+  /** The request in the composer's place; `null` while the composer is there. */
+  private get asking(): ChatRequestPart | null {
+    return this.form.part ?? this.fill.part ?? this.choices.part;
   }
 
-  /** The user answered: the reply goes on, and the focus goes back to the composer when it was on the request. */
+  /** The user answered: the reply goes on, and the focus goes to what takes the request's place when it was on it. */
   private answer(asked: ChatRequestPart, answer: ChatAnswer): void {
     const held = this.waiting.get(asked);
     if (!held) return;
@@ -746,25 +747,25 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     this.waiting.delete(asked);
     held.item.answer(answer);
     if (asked === this.asking) this.closeForm(focus);
-    else if (focus) this.composer.focus();
     this.drawStatus();
   }
 
-  private openForm(asked: ChatQuestionsPart | ChatFormPart, focus: boolean): void {
+  private openForm(asked: ChatRequestPart, focus: boolean): void {
     if (asked.kind === 'questions') this.form.open(asked);
-    else this.fill.open(asked);
+    else if (asked.kind === 'form') this.fill.open(asked);
+    else this.choices.open(asked);
     kept(this.composer, false);
     if (focus) this.focus();
   }
 
-  /** The questions or the form are done with: others waiting take their place, or the composer comes back. */
+  /** The request is done with: the next one waiting takes its place, or the composer comes back. */
   private closeForm(focus: boolean): void {
     this.form.close();
     this.fill.close();
-    for (const held of this.waiting.values()) {
-      const part = held.item.part;
-      if (part.kind !== 'questions' && part.kind !== 'form') continue;
-      this.openForm(part, focus);
+    this.choices.close();
+    const [next] = this.waiting.values();
+    if (next) {
+      this.openForm(next.item.part, focus);
       return;
     }
     kept(this.composer, true);
@@ -916,6 +917,7 @@ export class Chat extends Control<HTMLDivElement, ChatProps> {
     for (const q of this.queued) q.remove.text = uiLocale.strings.chatRemove;
     this.form.drawTexts();
     this.fill.drawTexts();
+    this.choices.drawTexts();
     this.searchBar?.drawTexts();
     this.drawOlder();
     this.drawJump();

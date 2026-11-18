@@ -11,8 +11,6 @@ export interface ChatEntry {
   update(): void;
   /** The kit language changed. */
   drawTexts(): void;
-  /** A request of the part waits: its choices take the focus. */
-  focus?(): boolean;
   /** What shows the character at `index` of the part's text, for a search: the block of its markdown. */
   found?(index: number): ComponentBase | null;
   /** Its markdown, a long one, is still drawn a piece a frame. */

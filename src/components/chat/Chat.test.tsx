@@ -42,7 +42,6 @@ const look: ChatLook = {
   linkTarget: '_blank',
   codeLines: 0,
   time: () => '10:00',
-  answer: () => {},
   ask: () => {},
   rewind: () => {},
   resend: () => {},
@@ -306,10 +305,11 @@ describe('Chat: replies', () => {
 
 describe('Chat: requests', () => {
   const key = (el: HTMLElement, name: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
-  const choices = (chat: Chat) => $$(chat, '.mx-chat__choice');
+  const panel = (chat: Chat) => $(chat, '.mx-chat__ask[data-kind="choices"]');
+  const choices = (chat: Chat) => $$(chat, '.mx-chat__ask[data-kind="choices"] .mx-chat__ask-option');
   const answerOf = (chat: Chat) => $(chat, '.mx-chat__answer')?.textContent;
 
-  it('asks before a tool call runs: it waits open, the number key takes a choice, then it runs', async () => {
+  it('asks before a tool call runs: it waits open, its choices in the composer\'s place, the number key takes one, then it runs', async () => {
     const chat = chatOf();
     chat.send('Test it');
     const reply = chat.reply();
@@ -321,7 +321,12 @@ describe('Chat: requests', () => {
     // What went in shows; nothing came out yet, so that side is not there.
     expect(shown(row.querySelector('.mx-chat__tool-side[data-side="in"]'))).toBe(true);
     expect(shown(row.querySelector('.mx-chat__tool-side[data-side="out"]'))).toBe(false);
-    expect($(chat, '.mx-chat__choices-title')?.textContent).toBe('Allow Bash to run?');
+    // The flow says it waits; the choices take the composer's place.
+    expect(row.querySelector('.mx-chat__asked-state')?.textContent).toBe(enStrings.chatWaitingAnswer);
+    expect(shown(row.querySelector('.mx-chat__asked-button'))).toBe(true);
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(false);
+    expect(shown(panel(chat))).toBe(true);
+    expect(panel(chat)?.querySelector('.mx-chat__ask-text')?.textContent).toBe('Allow Bash to run?');
     expect(choices(chat).map((c) => c.textContent)).toEqual(['1Yes', '2Yes, and allow npm commands', `3${enStrings.chatDeny}`]);
     expect($(chat, '.mx-chat__status-text')?.textContent).toBe(enStrings.chatWaitingYou);
     choices(chat)[0].focus();
@@ -329,19 +334,24 @@ describe('Chat: requests', () => {
     await expect(asked).resolves.toEqual({ choice: 'always', text: undefined });
     expect(row.dataset.status).toBe('running');
     expect(choices(chat)).toEqual([]);
+    expect(shown(panel(chat))).toBe(false);
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(true);
+    expect(shown(row.querySelector('.mx-chat__asked-head'))).toBe(false);
     expect(answerOf(chat)).toBe(enStrings.chatAllowedAlways);
     expect(call.part.permission).toMatchObject({ answer: { choice: 'always' } });
     expect(chat.isWaiting).toBe(false);
   });
 
-  it('denies with what to do instead, written in the box under the choice', async () => {
+  it('denies with what to do instead, written in the box under the choices', async () => {
     const chat = chatOf();
     chat.send('Publish');
     const call = chat.reply().tool({ name: 'Bash', input: 'npm publish' });
     const asked = call.permission();
     expect(choices(chat).length).toBe(2);
     choices(chat)[1].click();
-    const input = $(chat, '.mx-chat__choice-box input') as HTMLInputElement;
+    expect(choices(chat)[1].hasAttribute('data-checked')).toBe(true);
+    const input = $(chat, '.mx-chat__ask[data-kind="choices"] .mx-chat__ask-other input') as HTMLInputElement;
+    expect(document.activeElement).toBe(input);
     input.value = 'Run the tests first';
     input.dispatchEvent(new InputEvent('input', { bubbles: true }));
     key(input, 'Enter');
@@ -350,12 +360,51 @@ describe('Chat: requests', () => {
     expect(answerOf(chat)).toBe(`${enStrings.chatDenied}: Run the tests first`);
   });
 
-  it('takes the focus to the choices when the composer had it and was empty', () => {
+  it('takes the focus to the choices when it was in the chat; "Answer" in the flow takes it back there', () => {
     const chat = chatOf();
     chat.send('Go');
     area(chat).focus();
     void chat.reply().tool({ name: 'Bash' }).permission();
     expect(document.activeElement).toBe(choices(chat)[0]);
+    ($(chat, '.mx-chat__entry[data-kind="tool"] .mx-chat__asked-button') as HTMLElement).focus();
+    ($(chat, '.mx-chat__entry[data-kind="tool"] .mx-chat__asked-button') as HTMLElement).click();
+    expect(document.activeElement).toBe(choices(chat)[0]);
+  });
+
+  it('shows one request at a time: the next takes the place when the first is answered', async () => {
+    const chat = chatOf();
+    chat.send('Go');
+    const reply = chat.reply();
+    const first = reply.tool({ name: 'Read' }).permission();
+    const second = reply.tool({ name: 'Bash' }).permission();
+    expect(panel(chat)?.querySelector('.mx-chat__ask-text')?.textContent).toBe('Allow Read to run?');
+    expect($$(chat, '.mx-chat__entry[data-kind="tool"] .mx-chat__asked-head').filter(shown).length).toBe(2);
+    choices(chat)[0].click();
+    await expect(first).resolves.toEqual({ choice: 'yes', text: undefined });
+    expect(panel(chat)?.querySelector('.mx-chat__ask-text')?.textContent).toBe('Allow Bash to run?');
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(false);
+    key(choices(chat)[0], '1');
+    await expect(second).resolves.toEqual({ choice: 'yes', text: undefined });
+    expect(shown(panel(chat))).toBe(false);
+    expect(shown($(chat, '.mx-chat-composer'))).toBe(true);
+  });
+
+  it('stops the reply with Escape among the choices; in the box, Escape goes back to its choice', async () => {
+    const chat = chatOf();
+    chat.send('Go');
+    const reply = chat.reply();
+    const asked = reply.tool({ name: 'Bash' }).permission();
+    choices(chat)[1].click();
+    const input = $(chat, '.mx-chat__ask[data-kind="choices"] .mx-chat__ask-other input') as HTMLInputElement;
+    key(input, 'Escape');
+    expect(shown($(chat, '.mx-chat__ask[data-kind="choices"] .mx-chat__ask-other'))).toBe(false);
+    expect(choices(chat)[1].hasAttribute('data-checked')).toBe(false);
+    expect(document.activeElement).toBe(choices(chat)[1]);
+    expect(reply.signal.aborted).toBe(false);
+    key(choices(chat)[1], 'Escape');
+    expect(reply.signal.aborted).toBe(true);
+    await expect(asked).resolves.toEqual({ choice: 'no' });
+    expect(shown(panel(chat))).toBe(false);
   });
 
   it('leaves a request unanswered when the reply stops: it resolves as no, and the call failed with the reply', async () => {
@@ -376,15 +425,19 @@ describe('Chat: requests', () => {
     const reply = chat.reply();
     const first = reply.plan('1. Read\n2. **Fix**');
     expect($(chat, '.mx-chat__plan-text strong')?.textContent).toBe('Fix');
+    expect($(chat, '.mx-chat__entry[data-kind="plan"] .mx-chat__asked-state')?.textContent).toBe(enStrings.chatWaitingAnswer);
+    expect(panel(chat)?.querySelector('.mx-chat__ask-text')?.textContent).toBe(enStrings.chatPlanReady);
     expect(choices(chat).map((c) => c.textContent)).toEqual([`1${enStrings.chatPlanApprove}`, `2${enStrings.chatPlanKeep}`]);
     choices(chat)[1].click();
-    const input = $(chat, '.mx-chat__choice-box input') as HTMLInputElement;
+    const input = $(chat, '.mx-chat__ask[data-kind="choices"] .mx-chat__ask-other input') as HTMLInputElement;
     input.value = 'Add tests';
     key(input, 'Enter');
     await expect(first).resolves.toEqual({ choice: 'no', text: 'Add tests' });
     expect(answerOf(chat)).toBe(`${enStrings.chatPlanKept}: Add tests`);
     const second = reply.plan('1. Read\n2. Fix\n3. Test', [{ value: 'auto', label: 'Yes, and accept the edits' }]);
-    $$(chat, '.mx-chat__entry[data-kind="plan"]')[1].querySelector<HTMLElement>('.mx-chat__choice')!.click();
+    // The box of the request before is gone.
+    expect(shown($(chat, '.mx-chat__ask[data-kind="choices"] .mx-chat__ask-other'))).toBe(false);
+    choices(chat)[0].click();
     await expect(second).resolves.toEqual({ choice: 'auto', text: undefined });
     expect($$(chat, '.mx-chat__answer')[1].textContent).toBe('Yes, and accept the edits');
   });
@@ -451,8 +504,8 @@ describe('Chat: requests', () => {
     expect($(chat, '.mx-chat__asked-state')?.textContent).toBe(enStrings.chatDeclined);
   });
 
-  it('draws a waiting request again from its turn\'s messages, answerable', () => {
-    const answer = vi.fn();
+  it('draws a waiting request again from its turn\'s messages, its "Answer" going to the composer\'s place', () => {
+    const ask = vi.fn();
     const question = say('user', 'Q');
     const reply: ChatMessage = {
       id: 'a',
@@ -460,10 +513,10 @@ describe('Chat: requests', () => {
       status: 'streaming',
       parts: [{ kind: 'tool', id: 't', name: 'Bash', status: 'waiting', input: 'ls', permission: {} }]
     };
-    const view = new ChatTurnView({ messages: [question, reply] }, { ...look, answer });
+    const view = new ChatTurnView({ messages: [question, reply] }, { ...look, ask });
     hosts.push(mountHost(view.row));
-    view.row.element.querySelector<HTMLElement>('.mx-chat__choice')!.click();
-    expect(answer).toHaveBeenCalledWith(reply.parts[0], { choice: 'yes', text: undefined });
+    view.row.element.querySelector<HTMLElement>('.mx-chat__asked-button')!.click();
+    expect(ask).toHaveBeenCalledWith(reply.parts[0]);
   });
 });
 

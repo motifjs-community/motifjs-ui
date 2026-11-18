@@ -13,8 +13,8 @@ export interface ChatReplyHost {
   changed(message: ChatMessage): void;
   /** What the model is doing now, for the line under the conversation. */
   status(reply: ChatReply, text: string): void;
-  /** A request of the reply waits for the user; `true` when its choices take the focus. */
-  wait(reply: ChatReply, waiting: ChatWaiting): boolean;
+  /** A request of the reply waits for the user. */
+  wait(reply: ChatReply, waiting: ChatWaiting): void;
   /** The reply ended: what still waits is answered with `null`. */
   ended(reply: ChatReply): void;
 }
