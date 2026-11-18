@@ -12,6 +12,7 @@ import { Toolbar } from "../../components/toolbar/Toolbar";
 import type { ToolbarItem } from "../../components/toolbar/toolbar-item";
 import { TreeView } from "../../components/treeview/TreeView";
 import type { CustomizerCommand } from "./customizer-command";
+import type { CustomizerDisplay } from "./customizer-display";
 import type { CustomizerNames } from "./customizer-names";
 import type { CustomizerNode } from "./customizer-node";
 import type { CustomizerSource } from "./customizer-source";
@@ -19,10 +20,10 @@ import { NameForm } from "./NameForm";
 import { ShortcutEditor } from "../../components/shortcuteditor/ShortcutEditor";
 
 /**
- * A window in pages. The first shows the items of a menu bar (later a ribbon or a toolbar) in a tree, each with a check
- * box that shows or hides it, and a toolbar that adds groups, renames, deletes, moves and resets items; the second lists the
- * commands the app offers, to add one to a group. It changes nothing itself: each change goes to its `source`, and the
- * items are read again.
+ * A window in pages. The first shows the items of a menu bar or a toolbar in a tree, each with a check box that shows or
+ * hides it, and a toolbar that adds groups or separators, renames, deletes, moves and resets items and chooses what an item
+ * shows; the second lists the commands the app offers, to add one. It changes nothing itself: each change goes to its
+ * `source`, and the items are read again. The source says what it offers; the buttons follow.
  */
 export class Customizer extends MxForm {
     source: CustomizerSource;
@@ -39,11 +40,13 @@ export class Customizer extends MxForm {
     commandBar: Toolbar;
     // The toolbars' items: the window's own objects, changed in place and read again with refresh().
     newGroup: ToolbarItem;
+    newSeparator: ToolbarItem;
     rename: ToolbarItem;
     remove: ToolbarItem;
     up: ToolbarItem;
     down: ToolbarItem;
     moveTo: ToolbarItem;
+    display: ToolbarItem;
     reset: ToolbarItem;
     addTo: ToolbarItem;
 
@@ -52,6 +55,7 @@ export class Customizer extends MxForm {
         super({ title: s.customizerTitle, width: '36rem', height: '32rem', resizable: true });
         this.source = source;
         this.names = names;
+        const groups = source.groups !== false;
         const button = (text: string, click: () => void): ToolbarItem => ({ text, click: () => untracked(click) });
         const menu = (text: string): ToolbarItem => ({ type: 'menu', text, menu: [] });
         const toolbar = (label: string, items: ToolbarItem[]) => {
@@ -67,11 +71,13 @@ export class Customizer extends MxForm {
         };
 
         this.newGroup = button(fillTemplate(s.customizerNewGroup, { name: names.group }), () => void this.addGroup());
+        this.newSeparator = button(s.customizerNewSeparator, () => this.addSeparator());
         this.rename = button(s.customizerRename, () => void this.renameSelected());
         this.remove = button(s.customizerDelete, () => this.removeSelected());
         this.up = button(s.customizerMoveUp, () => this.moveSelected(-1));
         this.down = button(s.customizerMoveDown, () => this.moveSelected(1));
         this.moveTo = menu(s.customizerMoveTo);
+        this.display = menu(s.customizerDisplay);
         this.reset = button(s.customizerReset, () => this.change(() => this.source.reset(this.selected!)));
         this.tree = new TreeView<CustomizerNode>({
             keyField: 'id',
@@ -95,7 +101,10 @@ export class Customizer extends MxForm {
         });
         this.tree.motif.on('keydown', (_, e) => this.treeKeyDown(e));
         const line: ToolbarItem = { type: 'separator' };
-        this.groupBar = toolbar(names.groups, [this.newGroup, this.rename, this.remove, line, this.up, this.down, this.moveTo, { ...line }, this.reset]);
+        const adding = [groups ? this.newGroup : null, source.separators ? this.newSeparator : null];
+        const placing = [this.up, this.down, groups ? this.moveTo : null, source.display ? this.display : null];
+        const tools = [...adding, this.rename, this.remove, line, ...placing, { ...line }, this.reset].filter((item): item is ToolbarItem => item !== null);
+        this.groupBar = toolbar(names.groups, tools);
         const groupsPage = page('groups', names.groups, this.groupBar, this.tree);
 
         this.commandList = new ListBox<CustomizerCommand, string>({
@@ -109,7 +118,8 @@ export class Customizer extends MxForm {
         });
         this.commandList.class.add('mx-customizer__commands');
         this.commandList.onValueChanged(() => this.drawTools());
-        this.addTo = menu(s.customizerAddTo);
+        // With groups, a menu of the places to add to; a flat list adds after the item selected on the first page.
+        this.addTo = groups ? menu(s.customizerAddTo) : button(s.customizerAdd, () => this.addCommand());
         this.commandBar = toolbar(s.customizerCommands, [this.addTo]);
         const commandsPage = page('commands', s.customizerCommands, this.commandBar, this.commandList);
 
@@ -195,14 +205,19 @@ export class Customizer extends MxForm {
     }
 
     drawTools(): void {
+        const s = uiLocale.strings;
         const node = this.selected ? this.find(this.selected) : null;
-        this.rename.enabled = !!node && !node.fixed;
+        this.rename.enabled = !!node && !node.fixed && !node.separator;
         this.remove.enabled = !!node && node.added;
         this.up.enabled = !!node && this.source.canMove(node.id, -1);
         this.down.enabled = !!node && this.source.canMove(node.id, 1);
         const targets = node && !node.fixed ? this.source.targets(node.id) : [];
         this.moveTo.enabled = targets.length > 0;
         this.moveTo.menu = targets.map(t => ({ text: t.text, click: () => this.moveInto(node!.id, t.id) }));
+        const shows = node?.display;
+        const choice = (display: CustomizerDisplay, text: string) => ({ text, group: 'display', checked: shows === display, click: () => this.change(() => this.source.display?.(node!.id, display) ?? false) });
+        this.display.enabled = !!shows;
+        this.display.menu = shows ? [choice('icon', s.customizerDisplayIcon), choice('text', s.customizerDisplayText), choice('both', s.customizerDisplayBoth)] : [];
         this.reset.enabled = !!node;
         const command = this.commandList.value as string | null;
         this.addTo.enabled = command !== null && command !== undefined;
@@ -224,12 +239,28 @@ export class Customizer extends MxForm {
         this.refresh();
     }
 
-    /** Adds a command at the end of a group, and shows it there. */
-    insertCommand(command: string, parent: string): void {
-        const id = this.source.add(parent, null, { command });
+    /** Adds a command to a group, after `after` or at the end, and shows it there. */
+    insertCommand(command: string, parent: string, after: string | null = null): void {
+        const id = this.source.add(parent, after, { command });
         if (!id) return;
         this.pages.value = 'groups';
         this.reveal(id, parent);
+    }
+
+    /** A flat list: adds the command chosen after the item selected on the first page, else at the end. */
+    addCommand(): void {
+        const command = this.commandList.value as string | null;
+        if (command === null || command === undefined) return;
+        const node = this.selected ? this.find(this.selected) : null;
+        this.insertCommand(command, '', node && !node.parent ? node.id : null);
+    }
+
+    /** Adds a separator after the selected item, else at the end. */
+    addSeparator(): void {
+        const node = this.selected ? this.find(this.selected) : null;
+        const parent = node?.parent ?? '';
+        const id = this.source.add(parent, node?.id ?? null, { separator: true });
+        if (id) this.reveal(id, parent);
     }
 
     /** Adds a group of the user's own beside the selected item. */
@@ -245,7 +276,7 @@ export class Customizer extends MxForm {
 
     async renameSelected(): Promise<void> {
         const node = this.selected ? this.find(this.selected) : null;
-        if (!node || node.fixed) return;
+        if (!node || node.fixed || node.separator) return;
         const name = await new NameForm(uiLocale.strings.customizerRename, node.text).ask(this);
         if (name) this.change(() => this.source.rename(node.id, name));
     }

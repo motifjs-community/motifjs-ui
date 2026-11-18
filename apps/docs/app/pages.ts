@@ -109,7 +109,6 @@ export const GROUPS = [
       { id: 'navigation', label: 'Overview', title: 'Navigation', path: '/navigation', related: ['appbar', 'menus', 'tabs'] },
       { id: 'appbar', label: 'AppBar', title: 'AppBar', path: '/appbar', related: ['toolbar', 'bottomnavigation', 'drawer'] },
 
-      { id: 'toolbar', label: 'Toolbar', title: 'Toolbar', path: '/toolbar', related: ['menus', 'appbar', 'button'] },
       { id: 'bottomnavigation', label: 'BottomNavigation', title: 'BottomNavigation', path: '/bottomnavigation', related: ['appbar', 'tabs', 'badge'] },
       { id: 'tabs', label: 'Tabs', title: 'Tabs', path: '/tabs', related: ['accordion', 'keyboard'] },
       { id: 'breadcrumb', label: 'Breadcrumb', title: 'Breadcrumb', path: '/breadcrumb', related: ['tabs', 'menus'] },
@@ -205,6 +204,15 @@ export const GROUPS = [
       { id: 'menus-programmatic', label: 'Programmatic changes', title: 'MenuBar: Programmatic changes', path: '/menus/programmatic', related: ['menus', 'commands', 'menus-api'] },
       { id: 'menus-merging', label: 'Merging menus', title: 'MenuBar: Merging menus', path: '/menus/merging', related: ['menus', 'tabdocs', 'window'] },
       { id: 'menus-api', label: 'API reference', title: 'MenuBar: API reference', path: '/menus/api', related: ['menus', 'menus-customization', 'menus-merging'] },
+    ],
+  },
+  {
+    title: 'Toolbar',
+    section: 'Components',
+    pages: [
+      { id: 'toolbar', label: 'Overview', title: 'Toolbar', path: '/toolbar', related: ['toolbar-customization', 'menus', 'appbar'] },
+      { id: 'toolbar-customization', label: 'Customization', title: 'Toolbar: Customization', path: '/toolbar/customization', related: ['toolbar', 'menus-customization', 'commands'] },
+      { id: 'toolbar-api', label: 'API reference', title: 'Toolbar: API reference', path: '/toolbar/api', related: ['toolbar', 'toolbar-customization', 'button'] },
     ],
   },
   {

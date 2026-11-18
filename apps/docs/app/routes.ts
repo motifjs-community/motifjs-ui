@@ -72,6 +72,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   validationsummary: () => import('../pages/validationsummary/ValidationSummaryPage'),
   wizard: () => import('../pages/wizard/WizardPage'),
   toolbar: () => import('../pages/toolbar/ToolbarPage'),
+  'toolbar-customization': () => import('../pages/toolbar/ToolbarCustomizationPage'),
+  'toolbar-api': () => import('../pages/toolbar/ToolbarApiPage'),
   menus: () => import('../pages/menus/MenusPage'),
   'menus-context': () => import('../pages/menus/MenusContextPage'),
   'menus-customization': () => import('../pages/menus/MenusCustomizationPage'),

@@ -49,6 +49,12 @@ bar.onCustomized((e) => localStorage.setItem('menu', JSON.stringify(e.customizat
         <ApiTable head={['Field', 'Type', 'Description']} rows={CUSTOMIZATION} />
       </Section>
 
+      <Section anchor="toolbars" title="Sending commands to a toolbar">
+        <p>
+          <Rich text="On an item that names a command of the app (`command: 'save'`), the menu of a right-click offers “Add to the “Quick access” toolbar” for each customizable toolbar of the page, or “Remove from…” where the command is shown already. The lines come with the bar’s own commands, or alone when the bar is not `customizable`; `toolbarTargets: false` leaves them out. See [Toolbar: Customization](/toolbar/customization#send)." />
+        </p>
+      </Section>
+
       <Section anchor="own-commands" title="Commands of your own in the menu">
         <p>
           <Rich text="`onCustomMenuOpening` occurs before the menu of a right-click opens, with the item, its path and the commands about to be shown: add commands of your own, leave some out, or set `cancel`. It occurs without `customizable` too, with no commands of the bar, so a bar can have a right-click menu of the app’s own." />

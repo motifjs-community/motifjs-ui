@@ -545,6 +545,34 @@ export interface UiStrings {
   customizerName: string;
   /** The customizer's keyboard page (`{keys}` and `{names}` are filled in). */
   customizerKeyboard: string;
+  /** The customizer of a flat list (a toolbar): adding, separators, what an item shows. */
+  customizerAdd: string;
+  customizerNewSeparator: string;
+  customizerSeparator: string;
+  customizerDisplay: string;
+  customizerDisplayIcon: string;
+  customizerDisplayText: string;
+  customizerDisplayBoth: string;
+  /** Toolbar: the menu that changes it (`{name}` is filled in), and its name in menus when it has no label. */
+  toolbarHide: string;
+  toolbarRemove: string;
+  toolbarRemoveSeparator: string;
+  toolbarAddSeparator: string;
+  toolbarMoveLeft: string;
+  toolbarMoveRight: string;
+  toolbarMoveUp: string;
+  toolbarMoveDown: string;
+  toolbarDisplay: string;
+  toolbarDisplayIcon: string;
+  toolbarDisplayText: string;
+  toolbarDisplayBoth: string;
+  toolbarShowHidden: string;
+  toolbarCustomize: string;
+  toolbarReset: string;
+  toolbarUnnamed: string;
+  /** MenuBar: sending a command to a toolbar (`{name}` is the toolbar's). */
+  menuBarAddToToolbar: string;
+  menuBarRemoveFromToolbar: string;
   /** ShortcutEditor, and the names of the kit's own keyboard shortcuts. `{keys}`, `{names}` and `{n}` are filled in. */
   shortcutEditorLabel: string;
   shortcutEditorPressKeys: string;

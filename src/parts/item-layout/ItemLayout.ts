@@ -64,7 +64,7 @@ export class ItemLayout<I extends object, C extends LayoutCustomization> {
       if (item) entries.push({ id, key: partsOf(id).pop()!, item, added: false, separator: false });
     }
     for (const a of c.added ?? []) {
-      if (a.parent !== parentId) continue;
+      if ((a.parent ?? '') !== parentId) continue;
       const item = this.addedItem(a);
       if (item) entries.push({ id: a.id, key: a.command ?? a.id, item, added: true, separator: !!a.separator });
     }
@@ -194,7 +194,7 @@ export class ItemLayout<I extends object, C extends LayoutCustomization> {
     for (let grew = true; grew; ) {
       grew = false;
       for (const a of c.added ?? []) {
-        if (!gone.has(a.id) && gone.has(a.parent)) {
+        if (!gone.has(a.id) && gone.has(a.parent ?? '')) {
           gone.add(a.id);
           grew = true;
         }

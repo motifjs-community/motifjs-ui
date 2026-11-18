@@ -84,9 +84,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `chatSources`, `chatForm` … `chatFormCancelled`, `markdownShowLines`, `markdownShowFewer`.
 - The kit glyphs `send` and `stop`, the kit strings of the chat (`chatLabel` … `chatSearchNext`) and
   `markdownFootnote`, `markdownFootnoteBack`.
+- `Toolbar`: with `customizable`, the user arranges the toolbar from the menu of the right button or Shift+F10:
+  hides an item, moves it along the bar, puts a separator before it or takes one away, chooses what a button shows
+  (`ToolbarItemDisplay`: icon, text or both), shows the hidden items again and undoes every change. An item says
+  otherwise with `customizable: false`; JSX children stay as they are and keep the browser's menu. What the user changed
+  is one object (`customization`, `onCustomized`, `ToolbarCustomization`); items are named by their new `key`, else
+  their position. The controls of the items are kept: a move, a new name or another display writes only what changed.
+  `onCustomMenuOpening` lets the app add commands of its own, also on a toolbar the user cannot change.
+- `Toolbar.openCustomizer()` and "Customize…" open the customizer for a flat list: the items with their check boxes,
+  separators instead of groups, renaming, what a button shows, the commands to add (`commands`, else the app's commands
+  that have a text) and the keyboard page (`customizerKeyboard`). `customizer: false` leaves it out of the menu.
+- An item's `display` says what its button shows; the text of a button showing only its icon names it and is its
+  tooltip.
+- Commands sent to a toolbar from a menu: on a `MenuBar` item that names a command, the menu of the right button offers
+  to add it to each customizable toolbar of the page that takes commands (`acceptCommands`), or to take it away where
+  it is shown. Adding shows the toolbar's own item of that command again, else adds it as an item of the user's; the
+  saved object keeps only the command's key. `MenuBar.toolbarTargets: false` leaves these lines out; they are there
+  also on a bar that is not `customizable`.
+- `CustomizerSource` says what its owner offers: groups (`groups`, `true` by default), separators (`separators`) and
+  what an item shows (`display`); the window shows only those buttons, and a flat list adds a command with "Add" after
+  the selected item.
+- The kit strings `customizerAdd`, `customizerNewSeparator`, `customizerSeparator`, `customizerDisplay` …
+  `customizerDisplayBoth`, `toolbarHide` … `toolbarUnnamed`, `menuBarAddToToolbar`, `menuBarRemoveFromToolbar`.
 
 ### Fixed
 
+- A `Toolbar` given its room back hides its "more" button once every item is in the bar again. When only its room
+  changed, the toolbar fitted its items from the sizes it knew, put them all back and left the empty button showing.
+- `MenuBar.customization` given `null`, or a saved object, after the user changed the bar forgets or restores the
+  changes each time. The bar kept the user's changes inside only, so a value given a second time looked unchanged and
+  was not taken.
 - A `ScrollView` stuck to its end stays there when its content grows by much in a frame. The scroll it made to the end
   was heard after the content had grown again, and read as the user leaving the end; a notice of the content's size,
   which comes a frame or two late, took the view back up to an end it had passed. A view at the end that went down now
@@ -98,6 +125,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - The clipboard writing of `DataGrid` is shared (`core/clipboard.ts`): the Clipboard API where the page may use it,
   else the copy command. Its hidden text area is `.mx-copy-area`.
+- `LayoutAddedItem.parent` may be left out: an item added to a flat list stands at the top.
+- Docs: `Toolbar` has a group of its own (Overview, Customization, API reference).
 
 ## [0.1.0-beta.13] - 2026-11-17
 

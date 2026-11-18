@@ -1,3 +1,5 @@
+import type { CustomizerDisplay } from './customizer-display';
+
 /** An item in the customizer's tree. */
 export interface CustomizerNode {
   id: string;
@@ -11,5 +13,9 @@ export interface CustomizerNode {
   holds: boolean;
   /** Added by the user, so it can be deleted. */
   added: boolean;
+  /** A separator: it has no name to change. */
+  separator?: boolean;
+  /** What it shows, when the user can choose (`CustomizerSource.display`); left out otherwise. */
+  display?: CustomizerDisplay;
   children: CustomizerNode[];
 }

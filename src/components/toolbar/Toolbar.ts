@@ -7,7 +7,17 @@ import type { IconSource } from '../../core/icon-source';
 import { focusInArrowField, rememberFocus } from '../../core/focus';
 import { givenField, givenList, givenValue } from '../../core/given-field';
 import { commands } from '../../core/command-registry';
-import { namesCommands, runItem, valueOf } from '../../core/command-fields';
+import { fieldOf, namesCommands, runItem, valueOf } from '../../core/command-fields';
+import { fillTemplate } from '../../core/fill-template';
+import { shortcuts } from '../../core/shortcut-registry';
+import { Customizer } from '../../parts/customizer/Customizer';
+import type { CustomizerDisplay } from '../../parts/customizer/customizer-display';
+import type { CustomizerNode } from '../../parts/customizer/customizer-node';
+import type { CustomizerSource } from '../../parts/customizer/customizer-source';
+import { ItemLayout } from '../../parts/item-layout/ItemLayout';
+import type { LayoutNode } from '../../parts/item-layout/layout-node';
+import { ContextMenu } from '../contextmenu/ContextMenu';
+import type { ContextMenuOpeningEventArgs } from '../contextmenu/context-menu-opening-event-args';
 import { moreMark } from '../../core/glyphs';
 import { isElement } from '../../core/node-kind';
 import { boxOf, canMeasure, isRendered, isRtl, measure, measureAfterDrawn, onLayout, readAgain, rectOf, styleOf, type Size } from '../../core/measure';
@@ -21,21 +31,43 @@ import { menuItemOf } from '../button/menu-item-of';
 import type { ButtonProps } from '../button/button-props';
 import type { ButtonVariant } from '../button/button-variant';
 import { ToolbarSeparator } from './ToolbarSeparator';
+import type { ToolbarCustomMenuOpeningEventArgs } from './toolbar-custom-menu-opening-event-args';
+import type { ToolbarCustomization } from './toolbar-customization';
+import type { ToolbarCustomizedEventArgs } from './toolbar-customized-event-args';
 import type { ToolbarItem } from './toolbar-item';
 import type { ToolbarItemClickEventArgs } from './toolbar-item-click-event-args';
+import type { ToolbarItemDisplay } from './toolbar-item-display';
 import type { ToolbarItemOverflow } from './toolbar-item-overflow';
 import type { ToolbarItemType } from './toolbar-item-type';
 import type { ToolbarOrientation } from './toolbar-orientation';
 import type { ToolbarOverflow } from './toolbar-overflow';
 import type { ToolbarProps } from './toolbar-props';
+import { toolbarTargets, type ToolbarTarget, type ToolbarTargetState } from './toolbar-targets';
 import { onLanguage } from '../../core/on-language';
 
-const OWN = ['items', 'orientation', 'size', 'buttonVariant', 'overflow'] as const;
+const OWN = ['items', 'orientation', 'size', 'buttonVariant', 'overflow', 'customizable', 'customization', 'commands', 'customizer', 'customizerKeyboard', 'acceptCommands'] as const;
 
-/** A control made for an item of `items`. */
+/**
+ * A control made for an item of `items` (or a command or separator the user added), kept by the item as given: the
+ * user's changes reach it as fields written, never as a new control.
+ */
 interface Made {
   control: Control;
   type: ToolbarItemType;
+  /** The item as given, the user's copy of it (`drawn`), and its name in the customization. */
+  item: ToolbarItem;
+  drawn: ToolbarItem;
+  id: string;
+  /** What the button shows, as drawn. */
+  display: ToolbarItemDisplay;
+}
+
+/** An item to show, as the layout read it. */
+interface Wanted {
+  node: LayoutNode<ToolbarItem>;
+  type: ToolbarItemType;
+  overflow: ToolbarItemOverflow;
+  display: ToolbarItemDisplay;
 }
 
 /** A control of the bar and how it can leave it for the "more" menu. */
@@ -105,6 +137,18 @@ interface Parts {
   /** The "more" button's size along the bar as last measured; null until it is, and after a change of look. */
   moreLength: number | null;
   itemClick: Emitter<ToolbarItemClickEventArgs>;
+  /** The items as the user arranged them, and what the user changed. */
+  layout: ItemLayout<ToolbarItem, ToolbarCustomization>;
+  custom: ToolbarCustomization;
+  /** The menu of the right button; made when the toolbar is customizable or the app listens for it. No part of the bar. */
+  menu: ContextMenu | null;
+  customizer: Customizer | null;
+  /** The toolbar as a place the menus of the page send commands to, while it takes them. */
+  target: ToolbarTarget | null;
+  /** The items made for the app's commands the user can add, kept by key. */
+  registryItems: Map<string, ToolbarItem>;
+  customized: Emitter<ToolbarCustomizedEventArgs>;
+  customMenuOpening: Emitter<ToolbarCustomMenuOpeningEventArgs>;
 }
 
 const PARTS = Symbol('mx.toolbar');
@@ -143,19 +187,33 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     this.observeProperty('size', () => this.renderLook());
     this.observeProperty('overflow', () => this.renderLook());
     this.observeProperty('items', () => this.followItems());
+    this.observeProperty('customization', () => this.takeCustomization());
+    this.observeProperty('commands', () => this.followItems());
+    this.observeProperty<boolean>('customizable', (on) => {
+      if (on) this.contextMenu();
+      this.renderTarget();
+    });
+    this.observeProperty('acceptCommands', () => this.renderTarget());
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.label !== undefined) this.bindProperty('text', own.label);
     if (own.onItemClick) this.onItemClick(own.onItemClick);
+    if (own.onCustomized) this.onCustomized(own.onCustomized);
+    if (own.onCustomMenuOpening) this.onCustomMenuOpening(own.onCustomMenuOpening);
     this.listen();
-    // Items that name commands take their fields from them: read again when the commands change.
+    // Items that name commands take their fields from them, and the commands the user added are the app's: read again
+    // when the commands change.
     const listening = commands.onChanged(() => {
-      if (namesCommands(givenList(this.peekProperty<readonly ToolbarItem[]>('items')))) this.refresh();
+      if (namesCommands(givenList(this.peekProperty<readonly ToolbarItem[]>('items'))) || parts.custom.added?.length) this.refresh();
     });
     this.motif.setDisposable(() => {
       listening.dispose();
       parts.stopItems?.();
       parts.stopMoreLabel?.();
       parts.itemClick.dispose();
+      parts.customized.dispose();
+      parts.customMenuOpening.dispose();
+      if (parts.target) toolbarTargets.remove(parts.target);
+      parts.target = null;
     });
   }
 
@@ -197,6 +255,43 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   set overflow(value: Bind<ToolbarOverflow>) {
     this.assignProperty('overflow', value);
   }
+  get customizable(): boolean {
+    return !!this.getProperty<boolean>('customizable');
+  }
+  set customizable(value: Bind<boolean>) {
+    this.assignProperty('customizable', value, Boolean);
+  }
+  /** What the user changed so far: a copy, to save. Give it back to restore the toolbar as the user left it. */
+  get customization(): ToolbarCustomization {
+    return copyOf(this.parts.custom);
+  }
+  set customization(value: Bind<ToolbarCustomization | null>) {
+    this.assignProperty('customization', value);
+  }
+  get commands(): readonly ToolbarItem[] {
+    return this.getProperty<readonly ToolbarItem[] | undefined>('commands') ?? [];
+  }
+  set commands(value: Bind<readonly ToolbarItem[]>) {
+    this.assignProperty('commands', value);
+  }
+  get customizer(): boolean {
+    return this.getProperty<boolean | undefined>('customizer') !== false;
+  }
+  set customizer(value: Bind<boolean>) {
+    this.assignProperty('customizer', value, Boolean);
+  }
+  get customizerKeyboard(): boolean {
+    return this.getProperty<boolean | undefined>('customizerKeyboard') !== false;
+  }
+  set customizerKeyboard(value: Bind<boolean>) {
+    this.assignProperty('customizerKeyboard', value, Boolean);
+  }
+  get acceptCommands(): boolean {
+    return this.getProperty<boolean | undefined>('acceptCommands') !== false;
+  }
+  set acceptCommands(value: Bind<boolean>) {
+    this.assignProperty('acceptCommands', value, Boolean);
+  }
 
   /** The controls currently in the overflow menu. Reactive. */
   get overflowed(): readonly Control[] {
@@ -208,9 +303,39 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     return this.parts.itemClick.event;
   }
 
+  /** Occurs when the user changed the toolbar, with everything changed so far. */
+  get onCustomized(): MotifEvent<ToolbarCustomizedEventArgs> {
+    return this.parts.customized.event;
+  }
+
+  /** Occurs before the menu of the right button opens: add commands of your own or leave some out. */
+  get onCustomMenuOpening(): MotifEvent<ToolbarCustomMenuOpeningEventArgs> {
+    // Listened to, the toolbar has the menu even when the user cannot change it.
+    this.contextMenu();
+    return this.parts.customMenuOpening.event;
+  }
+
   /** The control created for an item in `items`. */
   controlOf(item: ToolbarItem): Control | null {
     return this.parts.made.get(item)?.control ?? null;
+  }
+
+  /**
+   * Opens the customizer: the items of `items` with the commands and separators the user added, to show and hide, move,
+   * rename, add commands of `commands` and separators, and choose what a button shows. Returns `false` when it is
+   * already open.
+   */
+  openCustomizer(): boolean {
+    const parts = this.parts;
+    if (parts.customizer) return false;
+    const s = uiLocale.strings;
+    // The keyboard page lists the shortcuts the user can change; with none, it is left out.
+    const keyboard = this.peekProperty('customizerKeyboard') !== false && shortcuts.list().some((one) => one.customizable);
+    const customizer = new Customizer(this.customizerSource(), { group: '', groups: s.customizerItems, top: this.nameOf() }, keyboard);
+    customizer.onClosed(() => (parts.customizer = null));
+    parts.customizer = customizer;
+    customizer.open(this);
+    return true;
   }
 
   /** Recalculates which items fit, for example after their content changes size. */
@@ -223,7 +348,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
    * can be plain or reactive, and the toolbar reads them as they are.
    */
   refresh(): void {
-    for (const [item, made] of this.parts.made) this.fill(item, made);
+    for (const made of this.parts.made.values()) this.fill(made);
     this.followItems();
   }
 
@@ -273,36 +398,80 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       stopFirst: null,
       moreLength: null,
       itemClick: new Emitter(),
+      layout: new ItemLayout<ToolbarItem, ToolbarCustomization>({
+        items: () => givenList(this.peekProperty<readonly ToolbarItem[]>('items')),
+        commands: () => this.catalog(),
+        custom: () => this.parts.custom,
+        childrenField: null,
+        separator: (id) => ({ key: id, type: 'separator' }),
+      }),
+      custom: {},
+      menu: null,
+      customizer: null,
+      target: null,
+      registryItems: new Map(),
+      customized: new Emitter(),
+      customMenuOpening: new Emitter(),
     };
   }
 
-  /** Makes the controls of `items` again when the list, an item's type or its overflow changes, or on `reState()`. */
+  /**
+   * Places the items again when the list, an item's type, overflow or display changes, the user changed the toolbar,
+   * or on `reState()`.
+   */
   private followItems(): void {
     const parts = this.parts;
     parts.stopItems?.();
-    const items = this.peekProperty<readonly ToolbarItem[]>('items') ?? [];
-    // The getter and the items' own functions are tracked; the list and the fields are not.
+    // The items' own functions are tracked; the list and the fields are not.
     parts.stopItems = follow(
       this,
       'items',
       () =>
-        givenList(items).map((item) => ({
-          item,
-          type: givenField<ToolbarItemType | undefined>(item, 'type') ?? 'button',
-          overflow: givenField<ToolbarItemOverflow | undefined>(item, 'overflow') ?? 'auto',
-        })),
+        parts.layout
+          .childrenOf(null)
+          .filter((node) => !node.hidden)
+          .map((node) => ({
+            node,
+            type: givenField<ToolbarItemType | undefined>(node.drawn, 'type') ?? 'button',
+            overflow: givenField<ToolbarItemOverflow | undefined>(node.drawn, 'overflow') ?? 'auto',
+            display: this.displayOf(node),
+          })),
       (wanted) => this.place(wanted),
     );
   }
 
-  private place(wanted: readonly { item: ToolbarItem; type: ToolbarItemType; overflow: ToolbarItemOverflow }[]): void {
+  /** What a button shows: the user's choice, else its own; a part it does not have is never the only one shown. */
+  private displayOf(node: LayoutNode<ToolbarItem>): ToolbarItemDisplay {
+    const chosen = this.parts.custom.display?.[node.id] ?? givenField<ToolbarItemDisplay | undefined>(node.drawn, 'display') ?? 'both';
+    if (chosen === 'both') return 'both';
+    const has = chosen === 'icon' ? !!valueOf(node.drawn, 'icon', this) : !!this.textOf(node.drawn);
+    return has ? chosen : 'both';
+  }
+
+  /** An item's name, without its access key mark. */
+  private textOf(item: ToolbarItem): string {
+    return parseAccessKey(String(fieldOf<string | undefined>(item, 'text', this) ?? '')).text;
+  }
+
+  private place(wanted: readonly Wanted[]): void {
     const parts = this.parts;
     const made = new Map<ToolbarItem, Made>();
     parts.overflowOf.clear();
-    for (const { item, type, overflow } of wanted) {
-      const old = parts.made.get(item);
-      made.set(item, old && old.type === type ? old : { control: this.make(item, type), type });
-      parts.overflowOf.set(item, overflow);
+    for (const { node, type, overflow, display } of wanted) {
+      const old = parts.made.get(node.item);
+      if (old && old.type === type) {
+        // Kept: only what the user changed is written (a name, what it shows).
+        const renamed = givenValue(node.drawn, 'text') !== givenValue(old.drawn, 'text');
+        const shows = old.display !== display;
+        old.drawn = node.drawn;
+        old.id = node.id;
+        old.display = display;
+        if (renamed || shows) this.fill(old);
+        made.set(node.item, old);
+      } else {
+        made.set(node.item, { control: this.make(node.item, node.drawn, type, display), type, item: node.item, drawn: node.drawn, id: node.id, display });
+      }
+      parts.overflowOf.set(node.item, overflow);
     }
     for (const [item, old] of parts.made) if (made.get(item) !== old) this.controls.remove(old.control);
     parts.made = made;
@@ -318,10 +487,12 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     this.layout();
   }
 
-  private make(item: ToolbarItem, type: ToolbarItemType): Control {
-    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this, name === 'pressed' ? 'checked' : name);
+  /** Makes the control of an item: `drawn` gives its fields (the user's name too), `item` is what its clicks report. */
+  private make(item: ToolbarItem, drawn: ToolbarItem, type: ToolbarItemType, display: ToolbarItemDisplay): Control {
+    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(drawn, name, this, name === 'pressed' ? 'checked' : name);
     if (type === 'separator') return new ToolbarSeparator({ visible: field('visible') });
-    const props: ButtonProps = { text: field('text'), icon: field('icon'), hint: field('hint'), tone: field('tone'), enabled: field('enabled'), visible: field('visible') };
+    const shown = this.shownFields(drawn, display);
+    const props: ButtonProps = { text: shown.text, icon: shown.icon, hint: shown.hint, tone: field('tone'), enabled: field('enabled'), visible: field('visible') };
     if (type === 'toggle') {
       props.toggle = true;
       props.pressed = field('pressed');
@@ -333,15 +504,26 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     return button;
   }
 
+  /** The text, icon and tooltip of a button as it shows `display`: without its text, the text is its tooltip and name. */
+  private shownFields(drawn: ToolbarItem, display: ToolbarItemDisplay): { text: Bind<string> | undefined; icon: Bind<IconSource | null | undefined>; hint: Bind<string> | undefined } {
+    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(drawn, name, this);
+    return {
+      text: display === 'icon' ? '' : field('text'),
+      icon: display === 'text' ? null : field('icon'),
+      hint: display === 'icon' ? () => String(fieldOf<string | undefined>(drawn, 'hint', this) ?? '') || this.textOf(drawn) : field('hint'),
+    };
+  }
+
   /** Gives a made control the item's fields again, as they are now. */
-  private fill(item: ToolbarItem, made: Made): void {
-    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(item, name, this, name === 'pressed' ? 'checked' : name);
+  private fill(made: Made): void {
+    const field = <K extends keyof ToolbarItem>(name: K) => valueOf<ToolbarItem[K]>(made.drawn, name, this, name === 'pressed' ? 'checked' : name);
     made.control.visible = field('visible') ?? true;
     if (!(made.control instanceof Button)) return;
     const button = made.control;
-    button.text = field('text') ?? '';
-    button.icon = (field('icon') ?? null) as Bind<IconSource | null>;
-    button.hint = field('hint') ?? '';
+    const shown = this.shownFields(made.drawn, made.display);
+    button.text = shown.text ?? '';
+    button.icon = (shown.icon ?? null) as Bind<IconSource | null>;
+    button.hint = shown.hint ?? '';
     button.tone = field('tone') ?? 'standard';
     button.enabled = field('enabled') ?? true;
     const pressed = field('pressed');
@@ -405,7 +587,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   /** The parts in the bar in order, without the "more" button. For a list or a condition, the parts it holds. */
   private barContent(from: ComponentBase = this, found: ComponentBase[] = []): ComponentBase[] {
     for (const part of from.controls.items) {
-      if (part === this.parts.more || part === this.parts.reserve) continue;
+      if (this.notOfBar(part)) continue;
       if (isElement(part.element)) found.push(part);
       else this.barContent(part, found);
     }
@@ -430,9 +612,18 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     return true;
   }
 
+  /**
+   * The toolbar's own helpers among its children: the "more" button, the room keeper, the menu of the right button and
+   * the customizer window opened over it.
+   */
+  private notOfBar(part: ComponentBase): boolean {
+    const parts = this.parts;
+    return part === parts.more || part === parts.reserve || part === parts.menu || part === parts.customizer;
+  }
+
   /** A control added to the bar or taken away: the arrows and the room follow. The "more" button is no part of the bar. */
   private childChanged(control: ComponentBase): void {
-    if (control === this.parts.more || control === this.parts.reserve) return;
+    if (this.notOfBar(control)) return;
     this.queueRestyle();
     this.layout();
   }
@@ -678,6 +869,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       mark(more, 'data-idle', false);
       more.menu = this.moreItems(out);
     } else if (parts.more) {
+      // Nothing out: the button goes too. A fit from the sizes known puts no part back first, so it is hidden here.
+      mark(parts.more, 'data-idle', true);
       parts.more.menu = [];
     }
     parts.overflowed = new Set(moved.map((kid) => kid.control!));
@@ -759,6 +952,269 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     return items;
   }
 
+  // The user's changes: applied while placing the items (ItemLayout); the items given stay as they are.
+
+  /** The commands the user can add: `commands` when given, else those of the app (`commands` registry) that have a text. */
+  private catalog(): readonly ToolbarItem[] {
+    const given = this.peekProperty<readonly ToolbarItem[] | undefined>('commands');
+    if (given !== undefined) return givenList(given);
+    const made = this.parts.registryItems;
+    const out: ToolbarItem[] = [];
+    for (const command of commands.list()) {
+      if (out.some((item) => item.key === command.key) || !untracked(() => givenField(command, 'text'))) continue;
+      let item = made.get(command.key);
+      if (!item) made.set(command.key, (item = { key: command.key, command: command.key }));
+      out.push(item);
+    }
+    return out;
+  }
+
+  private takeCustomization(): void {
+    const given = this.peekProperty<ToolbarCustomization | null>('customization');
+    // The user's own change, kept as the property's value (see `remember`): nothing to take.
+    if (given && given === this.parts.custom) return;
+    this.parts.custom = given ? copyOf(given) : {};
+    this.followItems();
+    this.parts.customizer?.refresh();
+  }
+
+  private remember(custom: ToolbarCustomization): void {
+    this.parts.custom = custom;
+    // Kept as the property's value too, so that giving it back, or `null` once more, is a change the toolbar hears.
+    this.changeProperty('customization', custom);
+    this.followItems();
+    this.parts.customized.fire({ customization: copyOf(custom), source: this });
+  }
+
+  /** Whether the user changed anything: the layout's part, or what a button shows. */
+  private touched(): boolean {
+    return !this.parts.layout.untouched || Object.keys(this.parts.custom.display ?? {}).length > 0;
+  }
+
+  private contextMenu(): ContextMenu {
+    const parts = this.parts;
+    if (parts.menu) return parts.menu;
+    const menu = new ContextMenu();
+    // Known before it is added: the bar's parts never count it.
+    parts.menu = menu;
+    menu.onOpening((e) => this.customMenuOpening(e));
+    this.controls.add(menu);
+    return menu;
+  }
+
+  private customMenuOpening(e: ContextMenuOpeningEventArgs): void {
+    const parts = this.parts;
+    const more = parts.more;
+    // The open "more" menu keeps the right button for itself.
+    if (more?.opened && more.motif.isEventFrom(e.event)) {
+      e.cancel = true;
+      return;
+    }
+    const made = [...parts.made.values()].find((one) => one.control.motif.isEventFrom(e.event));
+    // A JSX child (a text field) keeps the browser's menu: the kit offers nothing there.
+    const child = !made && this.barContent().some((part) => part.motif.isEventFrom(e.event));
+    const node = made ? parts.layout.find(made.id) : null;
+    const args: ToolbarCustomMenuOpeningEventArgs = {
+      item: node?.item ?? null,
+      path: node?.id ?? null,
+      items: this.peekProperty('customizable') === true && !child ? this.customCommands(node) : [],
+      cancel: false,
+      byKeyboard: e.byKeyboard,
+      event: e.event,
+      source: this,
+    };
+    parts.customMenuOpening.fire(args);
+    e.items = args.items;
+    e.cancel = args.cancel;
+  }
+
+  private customCommands(node: LayoutNode<ToolbarItem> | null): MenuItem[] {
+    const s = uiLocale.strings;
+    const layout = this.parts.layout;
+    const items: MenuItem[] = [];
+    if (node && !node.fixed) {
+      const separator = isSeparator(node.drawn);
+      const name = this.nameOfItem(node.drawn);
+      if (separator) items.push({ text: s.toolbarRemoveSeparator, click: () => this.changeByUser(node.added ? layout.removed(node) : layout.shown(node, false), null) });
+      else if (node.added) items.push({ text: fillTemplate(s.toolbarRemove, { name }), click: () => this.changeByUser(layout.removed(node), null) });
+      else items.push({ text: fillTemplate(s.toolbarHide, { name }), click: () => this.changeByUser(layout.shown(node, false), null) });
+      const move = (step: 1 | -1) => () => this.changeByUser(layout.moved(node, step, false), node);
+      if (this.peekProperty<ToolbarOrientation>('orientation') === 'vertical') {
+        items.push(
+          { text: s.toolbarMoveUp, enabled: layout.canMove(node, -1, false), click: move(-1) },
+          { text: s.toolbarMoveDown, enabled: layout.canMove(node, 1, false), click: move(1) },
+        );
+      } else {
+        // Left is earlier in a left-to-right page, later in a right-to-left one.
+        const left: 1 | -1 = isRtl(this) ? 1 : -1;
+        items.push(
+          { text: s.toolbarMoveLeft, enabled: layout.canMove(node, left, false), click: move(left) },
+          { text: s.toolbarMoveRight, enabled: layout.canMove(node, -left as 1 | -1, false), click: move(-left as 1 | -1) },
+        );
+      }
+      if (!separator) {
+        // A line goes between two items: not first, not next to another one.
+        const shown = layout.childrenOf(null).filter((n) => !n.hidden);
+        const before = shown[shown.findIndex((n) => n.id === node.id) - 1];
+        if (before && !isSeparator(before.drawn)) {
+          items.push({ text: s.toolbarAddSeparator, click: () => this.changeByUser(layout.addedTo(null, { separator: true }, { before: node })?.custom ?? null, node) });
+        }
+        if (this.canShowEither(node.drawn)) {
+          const now = this.displayOf(node);
+          const pick = (display: ToolbarItemDisplay): MenuItem => ({
+            text: display === 'icon' ? s.toolbarDisplayIcon : display === 'text' ? s.toolbarDisplayText : s.toolbarDisplayBoth,
+            group: 'display',
+            checked: now === display,
+            click: () => this.changeByUser(this.displayed(node, display), node),
+          });
+          items.push({ text: s.toolbarDisplay, items: [pick('icon'), pick('text'), pick('both')] });
+        }
+      }
+    }
+    const custom = this.parts.custom;
+    const general: MenuItem[] = [];
+    if (custom.hidden?.length) general.push({ text: s.toolbarShowHidden, click: () => this.changeByUser({ ...custom, hidden: [] }, node) });
+    if (this.peekProperty('customizer') !== false) general.push({ text: s.toolbarCustomize, click: () => this.openCustomizer() });
+    if (this.touched()) general.push({ text: s.toolbarReset, click: () => this.changeByUser({}, node) });
+    if (items.length && general.length) general[0] = { ...general[0], beginGroup: true };
+    return [...items, ...general];
+  }
+
+  /** The name of an item as menus write it: its text, else its tooltip. */
+  private nameOfItem(item: ToolbarItem): string {
+    return this.textOf(item) || String(fieldOf<string | undefined>(item, 'hint', this) ?? '');
+  }
+
+  /** A button with both a text and an icon: the user can choose to show only one of them. */
+  private canShowEither(item: ToolbarItem): boolean {
+    return !isSeparator(item) && !!valueOf(item, 'icon', this) && !!this.textOf(item);
+  }
+
+  /** The customization with `display` for the item; `null` when that is what it shows already. */
+  private displayed(node: LayoutNode<ToolbarItem>, display: ToolbarItemDisplay): ToolbarCustomization | null {
+    const c = this.parts.custom;
+    const own = givenField<ToolbarItemDisplay | undefined>(node.item, 'display') ?? 'both';
+    const map = { ...(c.display ?? {}) };
+    if (display === own) delete map[node.id];
+    else map[node.id] = display;
+    return c.display?.[node.id] === map[node.id] ? null : { ...c, display: map };
+  }
+
+  /** Applies a change made from the menu, and puts focus back on its item, else on the bar. */
+  private changeByUser(custom: ToolbarCustomization | null, node: LayoutNode<ToolbarItem> | null): void {
+    if (!custom) return;
+    this.remember(custom);
+    const made = node ? this.parts.made.get(node.item) : undefined;
+    if (made && this.stops().includes(made.control)) made.control.focus();
+    else this.focusPart?.focus();
+  }
+
+  /** The customizer's view of the toolbar: a flat list, separators instead of groups, and what each button shows. */
+  private customizerSource(): CustomizerSource {
+    const layout = this.parts.layout;
+    const s = uiLocale.strings;
+    const view = (n: LayoutNode<ToolbarItem>): CustomizerNode => {
+      const separator = isSeparator(n.drawn);
+      return {
+        id: n.id,
+        parent: '',
+        text: separator ? s.customizerSeparator : this.nameOfItem(n.drawn),
+        shown: !n.hidden,
+        fixed: n.fixed,
+        holds: false,
+        added: n.added,
+        separator,
+        display: this.canShowEither(n.drawn) ? this.displayOf(n) : undefined,
+        children: [],
+      };
+    };
+    const apply = (custom: ToolbarCustomization | null) => {
+      if (!custom) return false;
+      this.remember(custom);
+      return true;
+    };
+    const find = (id: string) => (id ? layout.find(id) : null);
+    const reset = (node: LayoutNode<ToolbarItem>): ToolbarCustomization => {
+      const c = layout.reset(node);
+      const display = { ...(c.display ?? {}) };
+      delete display[node.id];
+      return { ...c, display };
+    };
+    return {
+      groups: false,
+      separators: true,
+      nodes: () => untracked(() => layout.childrenOf(null).map(view)),
+      commands: () => untracked(() => layout.options.commands().map((cmd) => ({ key: String(givenValue(cmd, 'key')), text: this.nameOfItem(cmd) || String(givenValue(cmd, 'key')) }))),
+      targets: () => [],
+      canMove: (id, step) => untracked(() => !!find(id) && layout.canMove(find(id)!, step, true)),
+      show: (id, on) => untracked(() => apply(find(id) && layout.shown(find(id)!, on))),
+      move: (id, step) => untracked(() => apply(find(id) && layout.moved(find(id)!, step, true))),
+      moveInto: () => false,
+      rename: (id, text) => untracked(() => apply(find(id) && layout.renamed(find(id)!, text))),
+      remove: (id) => untracked(() => apply(find(id) && layout.removed(find(id)!))),
+      add: (_parent, after, what) =>
+        untracked(() => {
+          const added = layout.addedTo(null, what, { after: after ? find(after) : null });
+          if (!added) return null;
+          this.remember(added.custom);
+          return added.id;
+        }),
+      display: (id, display) => untracked(() => apply(find(id) && this.displayed(find(id)!, display))),
+      reset: (id) => untracked(() => apply(id === null ? {} : find(id) && reset(find(id)!))),
+    };
+  }
+
+  // The toolbar as a place the menus of the page send commands to.
+
+  /** The toolbar's name in the menus: its label. */
+  private nameOf(): string {
+    return parseAccessKey(this.peekProperty<string>('text') ?? '').text || uiLocale.strings.toolbarUnnamed;
+  }
+
+  /** Takes commands from the menus while the user can change it and `acceptCommands` is on. */
+  private renderTarget(): void {
+    const parts = this.parts;
+    const on = this.peekProperty('customizable') === true && this.peekProperty('acceptCommands') !== false;
+    if (on && !parts.target) {
+      parts.target = {
+        toolbar: this,
+        name: () => this.nameOf(),
+        state: (command) => untracked(() => this.commandState(command)),
+        add: (command) => untracked(() => this.sendCommand(command, true)),
+        remove: (command) => untracked(() => this.sendCommand(command, false)),
+      };
+      toolbarTargets.add(parts.target);
+    } else if (!on && parts.target) {
+      toolbarTargets.remove(parts.target);
+      parts.target = null;
+    }
+  }
+
+  /** The item that names the command `key`, hidden or shown. */
+  private nodeOfCommand(key: string): LayoutNode<ToolbarItem> | null {
+    return this.parts.layout.childrenOf(null).find((n) => givenValue(n.drawn, 'command') === key) ?? null;
+  }
+
+  private commandState(key: string): ToolbarTargetState {
+    const layout = this.parts.layout;
+    const node = this.nodeOfCommand(key);
+    if (node) return node.fixed ? 'none' : node.hidden ? 'absent' : 'shown';
+    const offered = layout.options.commands().some((cmd) => String(givenValue(cmd, 'key')) === key);
+    return offered && !layout.childrenOf(null).some((n) => n.key === key) ? 'absent' : 'none';
+  }
+
+  /** Shows the command (its item shown again, else added) or takes it away (an item added removed, else hidden). */
+  private sendCommand(key: string, on: boolean): boolean {
+    const layout = this.parts.layout;
+    const node = this.nodeOfCommand(key);
+    let custom: ToolbarCustomization | null;
+    if (on) custom = node ? layout.shown(node, true) : (layout.addedTo(null, { command: key })?.custom ?? null);
+    else custom = !node ? null : node.added ? layout.removed(node) : layout.shown(node, false);
+    if (!custom) return false;
+    this.remember(custom);
+    return true;
+  }
+
   // Keys and observers.
 
   private listen(): void {
@@ -835,4 +1291,19 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 function fromPopup(e: Event, from: ComponentBase): boolean {
   const inside = from.controls.items.find((c) => c.motif.isEventFrom(e));
   return !!inside && (inside instanceof Popup || fromPopup(e, inside));
+}
+
+function isSeparator(item: ToolbarItem): boolean {
+  return givenField<ToolbarItemType | undefined>(item, 'type') === 'separator';
+}
+
+function copyOf(c: ToolbarCustomization): ToolbarCustomization {
+  const out: ToolbarCustomization = {};
+  if (c.hidden?.length) out.hidden = [...c.hidden];
+  if (c.order && Object.keys(c.order).length) out.order = Object.fromEntries(Object.entries(c.order).map(([k, v]) => [k, [...v]]));
+  if (c.texts && Object.keys(c.texts).length) out.texts = { ...c.texts };
+  // A flat list has no groups: an item added stands on the toolbar itself.
+  if (c.added?.length) out.added = c.added.map(({ id, command, separator }) => (command !== undefined ? { id, command } : { id, separator: !!separator }));
+  if (c.display && Object.keys(c.display).length) out.display = { ...c.display };
+  return out;
 }

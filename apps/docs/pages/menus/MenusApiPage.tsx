@@ -11,6 +11,7 @@ const BAR_PROPS = [
   ['commands', '`Bind<readonly MenuItem[]>`', 'The app’s commands', 'The commands the user can add in the customizer, each with a `key`.'],
   ['customizer', '`Bind<boolean>`', '`true`', 'The menu of a right-click offers the customizer when `customizable` is on.'],
   ['customizerKeyboard', '`Bind<boolean>`', '`true`', 'The customizer has a Keyboard page ([ShortcutEditor](/shortcuteditor)).'],
+  ['toolbarTargets', '`Bind<boolean>`', '`true`', 'On an item that names a command, the menu of a right-click offers to add it to each customizable toolbar of the page, or to take it away ([Toolbar: Customization](/toolbar/customization#send)); also when `customizable` is off.'],
   ['mergeHost', '`Bind<boolean>`', '`false`', 'The app’s bar: other bars merge their items into it.'],
   ['mergeName', '`Bind<string>`', "`'main'`", 'The name of the app’s bar, when there are several.'],
   ['mergeInto', '`Bind<string | MenuBar | null>`', '`null`', 'The app’s bar to merge into: its name or the bar itself.'],

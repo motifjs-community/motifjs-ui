@@ -40,8 +40,9 @@ import { foldText } from '../../core/fold-text';
 import { fieldOf, namesCommands, runItem } from '../../core/command-fields';
 import { commands } from '../../core/command-registry';
 import { shortcuts } from '../../core/shortcut-registry';
+import { toolbarTargets } from '../toolbar/toolbar-targets';
 
-const OWN = ['items', 'focusOnF10', 'openOnHover', 'customizable', 'customization', 'commands', 'customizer', 'customizerKeyboard', 'mergeHost', 'mergeName', 'mergeInto', 'mergeWhen', 'mergeScope', 'hideWhenMerged'] as const;
+const OWN = ['items', 'focusOnF10', 'openOnHover', 'customizable', 'customization', 'commands', 'customizer', 'customizerKeyboard', 'toolbarTargets', 'mergeHost', 'mergeName', 'mergeInto', 'mergeWhen', 'mergeScope', 'hideWhenMerged'] as const;
 
 let barCount = 0;
 
@@ -274,6 +275,12 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   }
   set customizer(value: Bind<boolean>) {
     this.assignProperty('customizer', value, Boolean);
+  }
+  get toolbarTargets(): boolean {
+    return this.getProperty<boolean | undefined>('toolbarTargets') !== false;
+  }
+  set toolbarTargets(value: Bind<boolean>) {
+    this.assignProperty('toolbarTargets', value, Boolean);
   }
 
   get mergeHost(): boolean {
@@ -975,6 +982,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
 
   private takeCustomization(): void {
     const given = this.peekProperty<MenuBarCustomization | null>('customization');
+    // The user's own change, kept as the property's value (see `remember`): nothing to take.
+    if (given && given === this.parts.custom) return;
     this.parts.custom = given ? copyOf(given) : {};
     this.followItems();
     this.parts.customizer?.refresh();
@@ -982,6 +991,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
 
   private remember(custom: MenuBarCustomization): void {
     this.parts.custom = custom;
+    // Kept as the property's value too, so that giving it back, or `null` once more, is a change the bar hears.
+    this.changeProperty('customization', custom);
     this.followItems();
     this.parts.customized.fire({ customization: copyOf(custom), source: this });
   }
@@ -1011,10 +1022,12 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       node = entry?.node ?? null;
       owner = entry?.merged?.owner ?? this;
     }
+    // The toolbars of the page that take commands, for an item that names one: with the bar's own commands, or alone.
+    const sends = node && owner.peekProperty('toolbarTargets') !== false ? owner.sendCommands(node) : [];
     const args: MenuBarCustomMenuOpeningEventArgs = {
       item: node?.item ?? null,
       path: node?.path ?? null,
-      items: owner.peekProperty('customizable') === true ? owner.customCommands(node) : [],
+      items: owner.peekProperty('customizable') === true ? owner.customCommands(node, sends) : sends,
       cancel: false,
       byKeyboard: e.byKeyboard,
       event: e.event,
@@ -1025,7 +1038,23 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     e.cancel = args.cancel;
   }
 
-  private customCommands(node: MenuNode | null): MenuItem[] {
+  /** For an item that names a command: a line for each toolbar of the page that takes commands, to add it there or take it away. */
+  private sendCommands(node: MenuNode): MenuItem[] {
+    const key = givenValue<string | undefined>(node.item, 'command');
+    if (!key) return [];
+    const s = uiLocale.strings;
+    const out: MenuItem[] = [];
+    for (const target of toolbarTargets.list()) {
+      const state = target.state(key);
+      if (state === 'none') continue;
+      const name = target.name();
+      if (state === 'shown') out.push({ text: fillTemplate(s.menuBarRemoveFromToolbar, { name }), click: () => void target.remove(key) });
+      else out.push({ text: fillTemplate(s.menuBarAddToToolbar, { name }), click: () => void target.add(key) });
+    }
+    return out;
+  }
+
+  private customCommands(node: MenuNode | null, sends: readonly MenuItem[] = []): MenuItem[] {
     const s = uiLocale.strings;
     const layout = this.parts.layout;
     const items: MenuItem[] = [];
@@ -1052,8 +1081,10 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     if (custom.hidden?.length) general.push({ text: s.menuBarShowHidden, click: () => this.changeByUser({ ...custom, hidden: [] }, node) });
     if (this.peekProperty('customizer') !== false) general.push({ text: s.menuBarCustomize, click: () => this.openCustomizer() });
     if (!layout.untouched) general.push({ text: s.menuBarReset, click: () => this.changeByUser({}, node) });
-    if (items.length && general.length) general[0] = { ...general[0], beginGroup: true };
-    return [...items, ...general];
+    const toolbars = [...sends];
+    if (items.length && toolbars.length) toolbars[0] = { ...toolbars[0], beginGroup: true };
+    if ((items.length || toolbars.length) && general.length) general[0] = { ...general[0], beginGroup: true };
+    return [...items, ...toolbars, ...general];
   }
 
   /** Applies a change made from the menu, and puts focus back on its item, else on the first item of the open menu. */

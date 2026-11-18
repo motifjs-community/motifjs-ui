@@ -36,6 +36,12 @@ export interface MenuBarProps extends ControlProps {
   customizerKeyboard?: Bind<boolean>;
   /** The menu of the right button offers the customizer when `customizable` is on. The default is `true`. */
   customizer?: Bind<boolean>;
+  /**
+   * On an item that names a command, the menu of the right button offers to add the command to each toolbar of the page
+   * that takes commands (`Toolbar.customizable` and `acceptCommands`), or to take it away from one that shows it; also
+   * when `customizable` is off. The default is `true`.
+   */
+  toolbarTargets?: Bind<boolean>;
   /** The main bar of the page: other bars merge their items into it (`mergeInto`). The default is `false`. */
   mergeHost?: Bind<boolean>;
   /** The name of the main bar, when there are several. The default is `'main'`. */

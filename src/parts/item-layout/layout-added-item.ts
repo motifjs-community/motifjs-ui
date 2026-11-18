@@ -2,8 +2,8 @@
 export interface LayoutAddedItem {
   /** Given by the owner: `user:1`, `user:2`… */
   id: string;
-  /** Where it stands: the id of a group, `''` for the top. */
-  parent: string;
+  /** Where it stands: the id of a group, `''` for the top (also when it is left out, as in a flat list). */
+  parent?: string;
   /** The key of the command. */
   command?: string;
   /** The name of a group of the user's own. */
