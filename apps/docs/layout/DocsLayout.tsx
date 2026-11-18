@@ -1,4 +1,4 @@
-import { Component, reactive, RouterView, Transport, untracked, useNavigation } from '@motifx/core';
+import { Component, reactive, RouterView, untracked, useNavigation } from '@motifx/core';
 import { defaultDesignLanguage, designLanguages, type DesignLanguageName, type ThemeChoice } from '@motifx-community/design-system';
 import { Button, TextBox } from '@motifx-community/ui';
 import { version as VERSION } from "../../../package.json";
@@ -243,7 +243,6 @@ export class DocsLayout extends Component<HTMLDivElement> {
     const outline = this.outline;
     return (
       <>
-
         <a class="docs-skip" href="#content">
           {() => tx('Skip to content')}
         </a>
@@ -367,7 +366,6 @@ export class DocsLayout extends Component<HTMLDivElement> {
           </aside>
           <div class="docs-body">
             <article class="docs-article">
-              <Transport name="issue" />
               <RouterView />
               <PageFeedback />
               <nav class="docs-pager" aria-label={() => tx('Previous and next page')}>

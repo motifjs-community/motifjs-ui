@@ -1,6 +1,6 @@
 // Building blocks for the reference pages: a section card, a live example with its code, code
 // blocks and API tables whose cells may contain `inline code`.
-import { Component, reactive, RouterView, Transport, type ComponentBase } from '@motifx/core';
+import { Component, reactive, RouterView, type ComponentBase } from '@motifx/core';
 import { Button } from '@motifx-community/ui';
 import { PageOutline } from '../app/PageOutline';
 import { tx } from '../app/texts';
@@ -132,7 +132,6 @@ export class Example extends Component<HTMLDivElement, { title?: string; files?:
     return (
       <>
         <div class="docs-example__bar">
-         
           <h3 class="docs-example__title" x-wait={() => !title}>
             {() => tx(title ?? '')}
           </h3>

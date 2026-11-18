@@ -1,4 +1,4 @@
-import { Component, reactive, TransportTo, untracked, useNavigation } from '@motifx/core';
+import { Component, reactive, untracked, useNavigation } from '@motifx/core';
 import { Button, Tab, Tabs } from '@motifx-community/ui';
 import { ISSUES_URL, loadIssues, newIssueUrl, type PageIssue } from '../app/issues';
 import { PAGES } from '../app/pages';
@@ -78,9 +78,6 @@ export class PageFeedback extends Component<HTMLElement> {
     const { state } = this;
     return (
       <>
-      <TransportTo name="issue" value={this.tag}>
-        DENEMELER
-      </TransportTo>
         <h2>{() => tx('Feedback')}</h2>
         <Button
           class="docs-feedback__submit"
