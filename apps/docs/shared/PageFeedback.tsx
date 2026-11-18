@@ -1,4 +1,4 @@
-import { Component, reactive, untracked, useNavigation } from '@motifx/core';
+import { Component, reactive, TransportTo, untracked, useNavigation } from '@motifx/core';
 import { Button, Tab, Tabs } from '@motifx-community/ui';
 import { ISSUES_URL, loadIssues, newIssueUrl, type PageIssue } from '../app/issues';
 import { PAGES } from '../app/pages';
@@ -78,6 +78,9 @@ export class PageFeedback extends Component<HTMLElement> {
     const { state } = this;
     return (
       <>
+      <TransportTo name="issue" value={this.tag}>
+        DENEMELER
+      </TransportTo>
         <h2>{() => tx('Feedback')}</h2>
         <Button
           class="docs-feedback__submit"
@@ -95,7 +98,7 @@ export class PageFeedback extends Component<HTMLElement> {
           </a>
         </p>
         <Tabs class="docs-feedback__tabs" label={() => tx('Issues for this page')} x-wait={() => state.status !== 'ready'}>
-          <Tab key="open" title={() => tx('Open Issues')}>
+          <Tab key="open" title={() => tx('Open Issues') + ` (${state.open.length})`}>
             <ul class="docs-feedback__list">
               {state.open.map((issue) => (
                 <IssueRow key={issue.id} issue={issue} />
@@ -105,7 +108,7 @@ export class PageFeedback extends Component<HTMLElement> {
               {() => tx('No open issues for this page.')}
             </p>
           </Tab>
-          <Tab key="closed" title={() => tx('Closed Issues')}>
+          <Tab key="closed" title={() => tx('Closed Issues') + ` (${state.closed.length})`}>
             <ul class="docs-feedback__list">
               {state.closed.map((issue) => (
                 <IssueRow key={issue.id} issue={issue} />
