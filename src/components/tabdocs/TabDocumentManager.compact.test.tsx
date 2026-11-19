@@ -1,6 +1,6 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mountHost, tick } from '../../../tests/helpers';
+import { mountHost, settled, tick } from '../../../tests/helpers';
 import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
@@ -272,6 +272,37 @@ describe('TabDocumentManager: tabs out of sight', () => {
     // 20 pixels of a track that shows half the tabs: 40 pixels of tabs.
     expect(floating.rowPart.element.scrollLeft).toBe(100);
     expect(dragged).toEqual([]);
+  });
+
+  it('the thin scrollbar keeps its thumb under the pointer when a scroll moves the track during a drag, the pointer at rest too', async () => {
+    const { m, floating } = await places();
+    for (const title of ['N2', 'N3', 'N4']) m.open(doc(title), { group: floating, index: 99 });
+    await settle();
+    layStrip(floating, 120, 60, 60);
+    await settle();
+    // A window that lays pages out, from here.
+    Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: class { observe() {} unobserve() {} disconnect() {} } });
+    try {
+      const bar = floating.element.querySelector<HTMLElement>('.mx-tabdocs__scrollbar')!;
+      const thumb = bar.firstElementChild as HTMLElement;
+      rects.set(bar, new DOMRect(0, 26, 120, 4));
+      pointer('pointerdown', thumb, 50, 28);
+      // The scroll watch starts a timer turn later.
+      await settled();
+      pointer('pointermove', thumb, 70, 28);
+      measureNow(m);
+      await settle();
+      expect(floating.rowPart.element.scrollLeft).toBe(100);
+      // The track goes 10 left on the screen: the pointer, at rest, is 10 further along it, 20 pixels of tabs.
+      rects.set(bar, new DOMRect(-10, 26, 120, 4));
+      document.dispatchEvent(new Event('scroll'));
+      measureNow(m);
+      await settle();
+      expect(floating.rowPart.element.scrollLeft).toBe(120);
+      pointer('pointerup', thumb, 70, 28);
+    } finally {
+      delete (window as { ResizeObserver?: unknown }).ResizeObserver;
+    }
   });
 });
 

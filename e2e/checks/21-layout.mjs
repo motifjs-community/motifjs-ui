@@ -149,6 +149,21 @@ export default async function ({ page, base, check, axeSource, box }) {
   await innerSplitter.focus();
   await page.keyboard.press('ArrowUp');
   check('a nested vertical split moves with Up and Down', near((await box(editor)).height, before - 10, 1) && (await innerSplitter.getAttribute('aria-orientation')) === 'horizontal');
+  // The page scrolls during a drag: the splitter stays under the pointer, the pointer at rest too (in the next measuring round).
+  const tall = (await box(editor)).height;
+  const bar = await box(innerSplitter);
+  await page.mouse.move(bar.left + bar.width / 2, bar.top + bar.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bar.left + bar.width / 2, bar.top + bar.height / 2 + 10, { steps: 4 });
+  const scrolled = await page.evaluate(() => {
+    const was = scrollY;
+    window.scrollBy({ top: 20, behavior: 'instant' });
+    return scrollY - was;
+  });
+  await page.waitForFunction(([el, h]) => Math.abs(el.getBoundingClientRect().height - h) <= 1, [await editor.elementHandle(), tall + 30], { timeout: 2000 }).catch(() => {});
+  const followed = (await box(editor)).height;
+  await page.mouse.up();
+  check('the page scrolled 20 during a drag: the splitter went 20 further down with the pointer, the pointer at rest', scrolled === 20 && near(followed, tall + 30, 1), `${tall} → ${followed}, scrolled ${scrolled}`);
 
   // Localization.
   const i18n = page.locator('section[aria-labelledby="i18n"]');

@@ -612,11 +612,16 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     // Right to left the track runs the other way, and so does the pointer along it.
     const ratio = (box.scrollWidth / Math.max(1, box.clientWidth)) * (box.rtl ? -1 : 1);
     mark(scrollbar, 'data-dragging', true);
+    // Counted from the track, which the strip's scroll does not move: a scroll of the page keeps the thumb under the pointer.
     followPointer(
       thumb,
       e,
       (dx) => scrollTo(row, { start: box.scrollStart + dx * ratio }),
       () => put(scrollbar, 'data-dragging', null),
+      () => {
+        const track = rectOf(scrollbar);
+        return { x: track.left, y: track.top };
+      },
     );
   }
 

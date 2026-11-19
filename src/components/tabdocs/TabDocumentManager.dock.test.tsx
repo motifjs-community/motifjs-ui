@@ -1,6 +1,6 @@
 import { Component } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mountHost, tick } from '../../../tests/helpers';
+import { mountHost, settled, tick } from '../../../tests/helpers';
 import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
@@ -480,6 +480,31 @@ describe('TabDocumentManager: dock areas', () => {
     expect(area.resize('25%')).toBe(true);
     expect(area.pixels()).toBe(200);
     expect(sash.getAttribute('aria-valuenow')).toBe('25');
+  });
+
+  it('keeps its splitter under the pointer when the page scrolls during a drag, the pointer at rest too', async () => {
+    // A window that lays pages out.
+    Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: class { observe() {} unobserve() {} disconnect() {} } });
+    try {
+      const m = managerWith([['A', 'B']], { dockAreaMinSize: 100 });
+      lay(m);
+      m.dock(m.findDocument('a')!, 'left');
+      const area = m.dockArea('left')!;
+      const sash = area.sash.part.element;
+      pointer('pointerdown', sash, 240, 100);
+      pointer('pointermove', sash, 300, 100);
+      expect(area.size).toBe(300);
+      // The scroll watch starts a timer turn later. Then the page scrolls 40 sideways: the manager goes 40 left.
+      await settled();
+      rects.set(m.element, new DOMRect(-40, 0, 800, 400));
+      document.dispatchEvent(new Event('scroll'));
+      measureNow(m);
+      expect(area.size).toBe(340);
+      pointer('pointerup', sash, 300, 100);
+      expect(area.size).toBe(340);
+    } finally {
+      delete (window as { ResizeObserver?: unknown }).ResizeObserver;
+    }
   });
 
   it('a group and a whole window dock too; a docked window closes', async () => {

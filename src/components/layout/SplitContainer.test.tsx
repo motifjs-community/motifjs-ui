@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mountHost, tick } from '../../../tests/helpers';
-import { whenMeasured } from '../../core/measure';
+import { mountHost, settled, tick } from '../../../tests/helpers';
+import { measureNow, whenMeasured } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import { Panel } from './Panel';
@@ -28,6 +28,9 @@ function sizes(split: SplitContainer, first: number, second: number) {
   split.first.element.getBoundingClientRect = rect(first);
   split.second.element.getBoundingClientRect = rect(second);
 }
+
+const pointer = (el: EventTarget, type: string, x: number, y: number) =>
+  el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: y, isPrimary: true }));
 
 function press(el: Element, key: string) {
   const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
@@ -122,6 +125,41 @@ describe('SplitContainer', () => {
     await tick();
     expect(split.position).toBe(300);
     expect(moves.at(-1)).toMatchObject({ position: 300, byUser: false });
+  });
+
+  it('keeps the splitter under the pointer when the page scrolls during a drag, the pointer at rest too', async () => {
+    // A window that lays pages out.
+    Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: class { observe() {} unobserve() {} disconnect() {} } });
+    try {
+      const moves: SplitterMovedEventArgs[] = [];
+      let split!: SplitContainer;
+      page(
+        <SplitContainer ref={(x: SplitContainer) => (split = x)} orientation="vertical" fixedPanel="first" position={200} onSplitterMoved={(e: SplitterMovedEventArgs) => moves.push(e)}>
+          <Panel />
+          <Panel />
+        </SplitContainer>,
+      );
+      await settled();
+      sizes(split, 200, 400);
+      // The page is scrolled down by `scrolled`: the container goes up on the screen.
+      let scrolled = 0;
+      split.element.getBoundingClientRect = () => ({ x: 0, y: 100 - scrolled, width: 600, height: 606, left: 0, top: 100 - scrolled, right: 600, bottom: 706 - scrolled, toJSON: () => ({}) }) as DOMRect;
+      const splitter = split.splitterPart.element;
+      pointer(splitter, 'pointerdown', 50, 303);
+      pointer(splitter, 'pointermove', 50, 323);
+      measureNow(split);
+      expect(split.position).toBe(220);
+      // The scroll watch starts a timer turn later.
+      await settled();
+      scrolled = 60;
+      document.dispatchEvent(new Event('scroll'));
+      measureNow(split);
+      expect(split.position).toBe(280);
+      pointer(splitter, 'pointerup', 50, 323);
+      expect(moves.at(-1)).toMatchObject({ position: 280, byUser: true });
+    } finally {
+      delete (window as { ResizeObserver?: unknown }).ResizeObserver;
+    }
   });
 
   it('writes a position set programmatically to x-model, and reads one over plain data again on reState', async () => {

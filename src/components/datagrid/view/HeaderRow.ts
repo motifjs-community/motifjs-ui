@@ -2,6 +2,7 @@ import { Component, ComponentBase, untracked } from '@motifx/core';
 import { glyphPart, loose, part, textPart } from '../../../core/draw-parts';
 import { css, kept, mark, put, text } from '../../../core/part-writes';
 import { isInPage, measure, rectOf } from '../../../core/measure';
+import { followPointer } from '../../../parts/window/follow-pointer';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
@@ -506,31 +507,30 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     if (e.button !== 0 || !cols.can(col.field, 'resizable')) return;
     e.stopPropagation();
     e.preventDefault();
-    handlePart.attr.add({ setPointerCapture: e.pointerId });
-    const startX = e.clientX;
     const next = cols.partnerOf(col.field);
     // From the width on screen: a flexing column is wider than its setting.
     const startWidth = this.shownWidth(col.field);
     const total = next ? startWidth + this.shownWidth(next) : 0;
-    const sign = this.host.isRtl() ? -1 : 1;
+    const rtl = this.host.isRtl();
     const cell = this.cells.get(col.field)!;
     mark(cell, 'data-resizing', true);
-    const move = (_: ComponentBase, ev: PointerEvent) => {
-      const px = startWidth + sign * (ev.clientX - startX);
+    const move = (dx: number) => {
+      const px = startWidth + (rtl ? -dx : dx);
       if (next) cols.resizeWithNext(col.field, next, total, px);
       else cols.resize(col.field, px);
     };
     const up = () => {
-      void handlePart.motif.off('pointermove', move);
-      void handlePart.motif.off('pointerup', up);
-      void handlePart.motif.off('pointercancel', up);
       mark(cell, 'data-resizing', false);
       this.suppressClick = true;
       setTimeout(() => (this.suppressClick = false));
       if (cols.width(col.field) !== startWidth) this.grid.layoutChanged();
     };
-    void handlePart.motif.on('pointermove', move);
-    void handlePart.motif.on('pointerup', up);
-    void handlePart.motif.on('pointercancel', up);
+    // Counted from what no width moves, which a scroll of the rows or the page does: where the row starts, or the edge a
+    // stuck column is held at. A column's own edges are not it: one beside a flexing column grows toward it.
+    const side = cols.sideOf(col.field);
+    followPointer(handlePart, e, move, up, () => {
+      const box = side ? rectOf(cell) : rectOf(this);
+      return { x: (side === 'end') !== rtl ? box.right : box.left, y: box.top };
+    });
   }
 }

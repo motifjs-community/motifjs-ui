@@ -5,6 +5,7 @@ import { isInPage, isRtl, measure, rectOf } from '../../core/measure';
 import { nextId } from '../../core/next-id';
 import { css, mark, put } from '../../core/part-writes';
 import { uiLocale } from '../../core/ui-locale';
+import { followPointer } from '../../parts/window/follow-pointer';
 import type { LayoutOrientation } from './layout-orientation';
 import { Panel } from './Panel';
 import type { SplitContainerProps } from './split-container-props';
@@ -27,8 +28,6 @@ interface Sizes {
 
 /** A drag reads the panes once, when it starts. */
 interface Drag extends Sizes {
-  pointer: number;
-  from: number;
   rtl: boolean;
 }
 
@@ -332,7 +331,7 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     const parts = this.parts;
     const drag = parts.drag;
     // A drag in progress keeps the event for its end; this marks the change as the user's.
-    parts.drag ??= { pointer: -1, from: 0, first: 0, room: 0, rtl: false };
+    parts.drag ??= { first: 0, room: 0, rtl: false };
     try {
       this.changeProperty('collapsed', collapsed);
       this.changeProperty('position', position);
@@ -357,9 +356,6 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     splitter.motif.on('focus', () => this.renderValue());
     splitter.motif.on('dblclick', () => this.isEnabled && this.toggleCollapsed());
     splitter.motif.on('pointerdown', (_, e) => this.dragStart(e));
-    splitter.motif.on('pointermove', (_, e) => this.dragMove(e));
-    splitter.motif.on('pointerup', (_, e) => this.dragEnd(e));
-    splitter.motif.on('pointercancel', (_, e) => this.dragEnd(e));
   }
 
   private onKey(e: KeyboardEvent): void {
@@ -389,23 +385,27 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     const { first, room } = this.readSizes();
     const rtl = this.horizontal && isRtl(this);
     e.preventDefault();
+    const horizontal = this.horizontal;
     focusOn(this.parts.splitter, { preventScroll: true });
-    this.parts.splitter.attr.add({ setPointerCapture: e.pointerId });
-    this.parts.drag = { pointer: e.pointerId, from: this.horizontal ? e.clientX : e.clientY, first, room, rtl };
+    this.parts.drag = { first, room, rtl };
     mark(this, 'data-dragging', true);
+    // Counted from the container's own box, which the panes' sizes do not move: a scroll keeps the splitter under the pointer.
+    followPointer(this.parts.splitter, e, (dx, dy) => this.dragMove(horizontal ? dx : dy), (end) => this.dragEnd(end), () => {
+      const box = rectOf(this);
+      return { x: box.left, y: box.top };
+    });
   }
 
-  private dragMove(e: PointerEvent): void {
+  private dragMove(moved: number): void {
     const drag = this.parts.drag;
-    if (!drag || drag.pointer !== e.pointerId) return;
-    const moved = (this.horizontal ? e.clientX : e.clientY) - drag.from;
+    if (!drag) return;
     this.moveTo(drag.first + (drag.rtl ? -moved : moved), drag.room, false);
   }
 
   private dragEnd(e: PointerEvent): void {
     const parts = this.parts;
     const drag = parts.drag;
-    if (!drag || drag.pointer !== e.pointerId) return;
+    if (!drag) return;
     parts.drag = null;
     parts.splitter.attr.add({ releasePointerCapture: e.pointerId });
     mark(this, 'data-dragging', false);

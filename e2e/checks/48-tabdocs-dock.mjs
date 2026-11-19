@@ -76,6 +76,25 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('starts with the files among the documents, two tools folded left, two at the bottom', flat(start) === flat({ main: ['index.ts,app.ts,router.ts'], areas: { left: ['Explorer,Outline'], bottom: ['Problems,Output'] }, windows: [] }), flat(start));
   check('…the left area shows only its titles, as a toolbar', await m.locator('.mx-tabdocs__autohide[data-side="left"]').evaluate((s) => !s.hidden && s.getAttribute('role') === 'toolbar' && s.querySelectorAll('button').length === 2));
 
+  // The page scrolls while the bottom area's splitter is dragged: it stays under the pointer, the pointer at rest too (in
+  // the next measuring round).
+  const bottomArea = m.locator('.mx-tabdocs__area[data-side="bottom"]');
+  const areaTall = (await box(bottomArea)).height;
+  const sash = centre(await box(m.locator('.mx-tabdocs__area-sash[aria-orientation="horizontal"]').first()));
+  await page.mouse.move(sash.x, sash.y);
+  await page.mouse.down();
+  await page.mouse.move(sash.x, sash.y - 20, { steps: 4 });
+  const scrolled = await page.evaluate(() => {
+    const was = scrollY;
+    window.scrollBy({ top: 30, behavior: 'instant' });
+    return scrollY - was;
+  });
+  await page.waitForFunction(([el, h]) => Math.abs(el.getBoundingClientRect().height - h) <= 1, [await bottomArea.elementHandle(), areaTall - 10], { timeout: 2000 }).catch(() => {});
+  const areaNow = (await box(bottomArea)).height;
+  await page.mouse.up();
+  check('the page scrolled 30 while the bottom area’s splitter went 20 up: it went 30 down with the pointer, the pointer at rest', scrolled === 30 && Math.abs(areaNow - (areaTall - 10)) <= 1, `${areaTall} → ${areaNow}, scrolled ${scrolled}`);
+  m = await open();
+
   // The guides while dragging over the manager, none away from it.
   const mainContent = await box(m.locator('.mx-tabdocs__group').first().locator('.mx-tabdocs__panels'));
   await drag(await grab(tabOf(m, 'app.ts')), centre(mainContent), { hold: true });

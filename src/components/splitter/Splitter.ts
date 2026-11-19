@@ -6,6 +6,7 @@ import { isInPage, isRtl, measure, rectOf } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { css, kept, mark, put } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
+import { followPointer } from "../../parts/window/follow-pointer";
 import type { LayoutOrientation } from "../layout/layout-orientation";
 import { SplitPane } from "./SplitPane";
 import type { SplitterCollapseEventArgs } from "./splitter-collapse-event-args";
@@ -32,9 +33,7 @@ interface Handle {
 }
 
 interface Drag {
-    pointer: number;
     handle: number;
-    from: number;
     a: number;
     b: number;
     rtl: boolean;
@@ -331,9 +330,6 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         const handle: Handle = { cell, bar, before, after, beforeGlyph, afterGlyph };
         bar.motif.on('keydown', (_, e) => this.keyDown(e, handle));
         bar.motif.on('pointerdown', (_, e) => this.pointerDown(e, handle));
-        bar.motif.on('pointermove', (_, e) => this.pointerMove(e));
-        bar.motif.on('pointerup', (_, e) => this.pointerUp(e));
-        bar.motif.on('pointercancel', (_, e) => this.pointerUp(e));
         bar.motif.on('dblclick', (_, e) => this.foldFromHandle(handle, 'before', e));
         before.motif.on('click', (_, e) => this.foldFromHandle(handle, 'before', e));
         after.motif.on('click', (_, e) => this.foldFromHandle(handle, 'after', e));
@@ -522,17 +518,20 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         e.preventDefault();
         const bar = handle.bar;
         focusOn(bar, { preventScroll: true });
-        bar.attr.add({ setPointerCapture: e.pointerId });
         this.freeze(panes, measured);
-        this.drag = { pointer: e.pointerId, handle: i, from: horizontal ? e.clientX : e.clientY, a: measured[i], b: measured[i + 1], rtl, measured };
+        this.drag = { handle: i, a: measured[i], b: measured[i + 1], rtl, measured };
         mark(this, 'data-dragging', true);
         mark(bar, 'data-dragging', true);
+        // Counted from the splitter's own box, which the panes' sizes do not move: a scroll keeps the handle under the pointer.
+        followPointer(bar, e, (dx, dy, ev) => this.pointerMove(horizontal ? dx : dy, ev), ev => this.pointerUp(ev), () => {
+            const box = rectOf(this);
+            return { x: box.left, y: box.top };
+        });
     }
 
-    pointerMove(e: PointerEvent): void {
+    pointerMove(moved: number, e: PointerEvent): void {
         const drag = this.drag;
-        if (!drag || drag.pointer !== e.pointerId) return;
-        const moved = (this.horizontal ? e.clientX : e.clientY) - drag.from;
+        if (!drag) return;
         const total = drag.a + drag.b;
         const size = this.apply(drag.handle, drag.a + (drag.rtl ? -moved : moved), total);
         if (size === null) return;
@@ -542,7 +541,7 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
 
     pointerUp(e: PointerEvent): void {
         const drag = this.drag;
-        if (!drag || drag.pointer !== e.pointerId) return;
+        if (!drag) return;
         this.drag = null;
         const bar = this.handles[drag.handle]?.bar;
         mark(this, 'data-dragging', false);

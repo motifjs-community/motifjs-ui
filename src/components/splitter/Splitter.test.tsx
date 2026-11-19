@@ -1,6 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mountHost, tick } from '../../../tests/helpers';
+import { mountHost, settled, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { SplitPane } from './SplitPane';
 import { Splitter } from './Splitter';
@@ -27,6 +28,7 @@ async function settle() {
 const handles = (s: Splitter) => Array.from(s.element.querySelectorAll<HTMLElement>(':scope > .mx-splitter__handle > .mx-splitter__bar'));
 const tracks = (s: Splitter) => s.element.style.gridTemplateColumns;
 const key = (el: HTMLElement, key: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+const pointer = (el: EventTarget, type: string, x: number, y: number) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: y, isPrimary: true }));
 // jsdom lays nothing out: the panes say how wide they are.
 const widths = (s: Splitter, sizes: number[]) => s.panes.forEach((pane, i) => (pane.element.getBoundingClientRect = () => ({ width: sizes[i], height: 100, top: 0, left: 0, right: sizes[i], bottom: 100, x: 0, y: 0, toJSON: () => ({}) })));
 
@@ -134,6 +136,41 @@ describe('Splitter', () => {
         expect(s.panes[1].expand()).toBe(true);
         expect(s.panes[0].collapse()).toBe(true);
         expect(s.panes[0].expand()).toBe(true);
+    });
+
+    it('keeps the handle under the pointer when the page scrolls during a drag, the pointer at rest too', async () => {
+        // A window that lays pages out.
+        Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: class { observe() {} unobserve() {} disconnect() {} } });
+        try {
+            let s!: Splitter;
+            const told: string[] = [];
+            page(
+                <Splitter ref={(x: Splitter) => (s = x)} onResized={e => told.push(e.sizes.join('/'))}>
+                    <SplitPane size={300} minSize={100} />
+                    <SplitPane minSize={100} />
+                </Splitter>
+            );
+            await settle();
+            widths(s, [300, 300]);
+            // The page is scrolled sideways by `scrolled`: the splitter goes left on the screen.
+            let scrolled = 0;
+            s.element.getBoundingClientRect = () => ({ x: -scrolled, y: 0, width: 610, height: 100, left: -scrolled, top: 0, right: 610 - scrolled, bottom: 100, toJSON: () => ({}) });
+            const [bar] = handles(s);
+            pointer(bar, 'pointerdown', 305, 50);
+            pointer(bar, 'pointermove', 325, 50);
+            measureNow(s);
+            expect(tracks(s)).toMatch(/^[a-z]*\([^)]*320px/);
+            // The scroll watch starts a timer turn later.
+            await settled();
+            scrolled = 30;
+            document.dispatchEvent(new Event('scroll'));
+            measureNow(s);
+            expect(tracks(s)).toMatch(/^[a-z]*\([^)]*350px/);
+            pointer(bar, 'pointerup', 325, 50);
+            expect(told).toEqual(['350/250']);
+        } finally {
+            delete (window as { ResizeObserver?: unknown }).ResizeObserver;
+        }
     });
 
     it('disposed with its panes, nothing is drawn again and nothing fails', async () => {

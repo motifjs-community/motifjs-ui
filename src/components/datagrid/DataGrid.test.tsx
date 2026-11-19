@@ -2,6 +2,7 @@ import { ComponentBase, disposableCore, reactive, type IDisposable } from '@moti
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, mountHost, settled, tick } from '../../../tests/helpers';
+import { measureNow } from '../../core/measure';
 import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { GridColumn } from './grid-column';
@@ -381,6 +382,57 @@ describe('DataGrid', () => {
     grid.resetLayout();
     expect(grid.layout.columns.map((c) => c.field)).toEqual(['id', 'name', 'amount']);
     await grid.dispose();
+  });
+
+  it('keeps a column’s edge under the pointer when the rows or the page scroll during a resize, the pointer at rest too', async () => {
+    const grid = mount(new DataGrid<Row>({ rowKey: 'id', columns: [columns[0], { field: 'name', title: 'Name', width: 150 }, columns[2]], rows: makeRows(5) }));
+    layout(grid);
+    await settle();
+    // A window that lays pages out, from here.
+    Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: class { observe() {} unobserve() {} disconnect() {} } });
+    try {
+      // The rows are scrolled sideways by `scrolled`: the header row goes left on the screen. The column's own edges are
+      // no guide: beside a flexing column it grows toward it.
+      let scrolled = 0;
+      const cell = header(grid, 'name');
+      const row = grid.element.querySelector<HTMLElement>('.mx-data-grid__row--header')!;
+      row.getBoundingClientRect = () => ({ x: -scrolled, y: 0, width: 600, height: 36, left: -scrolled, top: 0, right: 600 - scrolled, bottom: 36, toJSON: () => ({}) });
+      cell.getBoundingClientRect = () => ({ x: 80 - scrolled, y: 0, width: 150, height: 36, left: 80 - scrolled, top: 0, right: 230 - scrolled, bottom: 36, toJSON: () => ({}) });
+      const handle = cell.querySelector('.mx-data-grid__resize')!;
+      const pointer = (type: string, x: number) => handle.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: 10, isPrimary: true }));
+      const width = () => grid.layout.columns.find((c) => c.field === 'name')!.width;
+      pointer('pointerdown', 228);
+      pointer('pointermove', 248);
+      measureNow(grid);
+      expect(width()).toBe(170);
+      // The scroll watch starts a timer turn later.
+      await settled();
+      scrolled = 30;
+      document.dispatchEvent(new Event('scroll'));
+      measureNow(grid);
+      expect(width()).toBe(200);
+      pointer('pointerup', 248);
+      expect(width()).toBe(200);
+      // A column stuck to the start is held at the viewport's edge: a scroll of the rows leaves it, one of the page moves it.
+      const id = header(grid, 'id');
+      id.getBoundingClientRect = () => ({ x: -scrolled, y: 0, width: 80, height: 36, left: -scrolled, top: 0, right: 80 - scrolled, bottom: 36, toJSON: () => ({}) });
+      const idHandle = id.querySelector('.mx-data-grid__resize')!;
+      const press = (type: string, x: number) => idHandle.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: 10, isPrimary: true }));
+      const idWidth = () => grid.layout.columns.find((c) => c.field === 'id')!.width;
+      press('pointerdown', 48);
+      press('pointermove', 58);
+      measureNow(grid);
+      expect(idWidth()).toBe(90);
+      await settled();
+      scrolled = 50;
+      document.dispatchEvent(new Event('scroll'));
+      measureNow(grid);
+      expect(idWidth()).toBe(110);
+      press('pointerup', 58);
+    } finally {
+      delete (window as { ResizeObserver?: unknown }).ResizeObserver;
+      await grid.dispose();
+    }
   });
 
   it('follows the settings and the column values live', async () => {

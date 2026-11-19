@@ -1,6 +1,6 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mountHost, tick } from '../../../tests/helpers';
+import { mountHost, settled, tick } from '../../../tests/helpers';
 import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { Draggable } from './Draggable';
@@ -110,6 +110,52 @@ describe('Draggable', () => {
         key(d.element, 'ArrowRight');
         expect(d.element.style.translate).toBe('50px 30px');
         expect(d.element.hasAttribute('data-landing')).toBe(false);
+    });
+
+    it('stays under the pointer when the page scrolls during a drag, the pointer at rest too, and inside its room, which scrolls with it', async () => {
+        // A window that lays pages out.
+        Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: class { observe() {} unobserve() {} disconnect() {} } });
+        try {
+            let d!: Draggable;
+            const told: string[] = [];
+            page(
+                <div class="room">
+                    <Draggable ref={(x: Draggable) => (d = x)} boundary="parent" onDragging={e => told.push(`${e.x},${e.y}`)} />
+                </div>
+            );
+            await settle();
+            // The page is scrolled down by `scrolled`: the room and the draggable in it go up on the screen.
+            let scrolled = 0;
+            const room = d.element.parentElement!;
+            room.getBoundingClientRect = () => ({ x: 0, y: 100 - scrolled, width: 400, height: 400, left: 0, top: 100 - scrolled, right: 400, bottom: 500 - scrolled, toJSON: () => ({}) });
+            d.element.getBoundingClientRect = () => {
+                const { x, y } = d.currentPosition;
+                return { x, y: 100 - scrolled + y, width: 50, height: 50, left: x, top: 100 - scrolled + y, right: x + 50, bottom: 150 - scrolled + y, toJSON: () => ({}) };
+            };
+            pointer(d.element, 'pointerdown', 10, 110);
+            pointer(window, 'pointermove', 40, 120);
+            measureNow(d);
+            expect(d.currentPosition).toEqual({ x: 30, y: 10 });
+            // The scroll watch starts a timer turn later; it tells once then, and nothing moved.
+            await settled();
+            expect(told).toEqual(['30,10']);
+            scrolled = 60;
+            document.dispatchEvent(new Event('scroll'));
+            measureNow(d);
+            expect(d.currentPosition).toEqual({ x: 30, y: 70 });
+            pointer(window, 'pointermove', 50, 120);
+            measureNow(d);
+            expect(d.currentPosition).toEqual({ x: 40, y: 70 });
+            // Far down, it stops at the bottom of its room, which went up with the page.
+            scrolled = 400;
+            document.dispatchEvent(new Event('scroll'));
+            measureNow(d);
+            expect(d.currentPosition).toEqual({ x: 40, y: 350 });
+            pointer(window, 'pointerup', 50, 120);
+            expect(told).toEqual(['30,10', '30,70', '40,70', '40,350']);
+        } finally {
+            delete (window as { ResizeObserver?: unknown }).ResizeObserver;
+        }
     });
 
     it('a drag over a target of its group tells the target, which may refuse; the drop hands the data over', async () => {

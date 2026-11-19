@@ -95,6 +95,22 @@ export default async function ({ page, base, check, axeSource, box }) {
   const marked = await page.evaluate((sel) => [...document.querySelectorAll(sel)].every((r) => r.dataset.mark === '1'), `${virtual} .mx-data-grid__body > .mx-data-grid__row`);
   check('datagrid: dragging the edge resizes header and cells together', Math.abs(widthAfter - widthBefore - 77) < 6 && Math.abs(cellWidth - widthAfter) < 1, `${widthBefore} → ${widthAfter}, cell ${cellWidth}`);
   check('datagrid: resizing rebuilds no row', marked);
+  // The rows scroll sideways during a resize: the edge stays under the pointer, the pointer at rest too (in the next measuring round).
+  const edge = await box(cityHeader.locator('.mx-data-grid__resize'));
+  const wide = (await box(cityHeader)).width;
+  await page.mouse.move(edge.x + edge.width / 2, edge.y + edge.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(edge.x + edge.width / 2 + 20, edge.y + edge.height / 2, { steps: 4 });
+  const along = await page.evaluate((sel) => {
+    const vp = document.querySelector(`${sel} .mx-data-grid__viewport`);
+    const was = vp.scrollLeft;
+    vp.scrollBy({ left: 40, behavior: 'instant' });
+    return vp.scrollLeft - was;
+  }, virtual);
+  await page.waitForFunction(([el, w]) => Math.abs(el.getBoundingClientRect().width - w) <= 1, [await cityHeader.elementHandle(), wide + 20 + along], { timeout: 2000 }).catch(() => {});
+  const wider = (await box(cityHeader)).width;
+  await page.mouse.up();
+  check('datagrid: the rows scrolled 40 sideways during a resize: the edge went with them under the pointer, the pointer at rest', along === 40 && Math.abs(wider - (wide + 60)) <= 1, `${wide} → ${wider}, scrolled ${along}`);
 
   // Moving by mouse.
   const order = () => page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((h) => h.offsetParent).map((h) => h.dataset.field), `${virtual} [role=columnheader]`);

@@ -2,7 +2,7 @@ import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifE
 import { Control } from "../../core/control";
 import { compareTreeOrder } from "../../core/component-tree";
 import { part } from "../../core/draw-parts";
-import { afterDrawn, holderOf, measure, rectOf, type Rect } from "../../core/measure";
+import { afterDrawn, canMeasure, holderOf, measure, onLayout, rectOf, type Point, type Rect } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { windowOf } from "../../core/page-documents";
 import { css, mark, put, text, toggleClass } from "../../core/part-writes";
@@ -35,12 +35,24 @@ interface Session {
     // Where the draggable lay at the start, and the box it must stay in.
     rect: Rect | null;
     bound: Rect | null;
+    // Where its place started on the screen, its own move taken off: a scroll or the layout moves it, the drag does not.
+    origin: Point | null;
     /** The drop targets of its group on the screen, kept while it is dragged. */
     boxes: DragBoxes | null;
     /** The last pointer move, followed at the next frame. */
     event: PointerEvent | null;
     /** Takes back the pointer move waiting for the next frame. */
     waiting: (() => void) | null;
+    /** A scroll asked for the next frame, not the pointer: it tells only what it changed. */
+    scrolled: boolean;
+}
+
+// What a move reads in its round: the drop target under the pointer, where the draggable's place starts now and the box it
+// must stay in, both of which a scroll moves.
+interface Aim {
+    under: DropTarget | null;
+    at: Point | null;
+    bound: Rect | null;
 }
 
 /**
@@ -275,7 +287,7 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         const onField = this.fieldsInside().some(c => c.motif.isEventFrom(e));
         if (!handle && onField) return;
         const touch = e.pointerType === 'touch';
-        const session: Session = { pointerId: e.pointerId, touch, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, from: { ...this.pos }, started: false, target: null, refused: false, timer: null, rect: null, bound: null, boxes: null, event: null, waiting: null };
+        const session: Session = { pointerId: e.pointerId, touch, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, from: { ...this.pos }, started: false, target: null, refused: false, timer: null, rect: null, bound: null, origin: null, boxes: null, event: null, waiting: null, scrolled: false };
         this.session = session;
         const move = (ev: PointerEvent) => this.pointerMove(ev);
         const up = (ev: PointerEvent) => this.pointerUp(ev);
@@ -314,24 +326,39 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         }
         if (s.touch) e.preventDefault();
         s.event = e;
+        s.scrolled = false;
         s.waiting = measure(this, this.readAim, this.follow);
     }
 
-    // The drop target under the pointer, from the kept boxes.
-    readonly readAim = (): DropTarget | null => {
+    // The drop target under the pointer from the kept boxes, where the draggable's place starts now, the box it stays in.
+    readonly readAim = (): Aim => {
         const s = this.session;
         const under = s?.boxes?.at({ x: s.x, y: s.y }, this) ?? null;
-        return under instanceof DropTarget ? under : null;
+        const own = s?.origin ? rectOf(this) : null;
+        return {
+            under: under instanceof DropTarget ? under : null,
+            at: own ? { x: own.left - this.pos.x, y: own.top - this.pos.y } : null,
+            bound: s?.bound ? this.boundRect() : null,
+        };
     };
 
-    // Moves the draggable, or its copy, to the pointer and tells the target under it.
-    readonly follow = (under: DropTarget | null): void => {
+    // Moves the draggable, or its copy, to the pointer and tells the target under it. The pointer's way is counted in the
+    // draggable's place: what a scroll moved under the pointer since the start is taken off, and the box it stays in is
+    // read where it is now.
+    readonly follow = (aim: Aim): void => {
         const s = this.session;
         if (!s?.started) return;
         s.waiting = null;
         const e = s.event ?? undefined;
-        this.track(under, e);
-        const moved = this.within(s.x - s.startX, s.y - s.startY, s.rect, s.bound);
+        const shift = aim.at && s.origin ? { x: aim.at.x - s.origin.x, y: aim.at.y - s.origin.y } : { x: 0, y: 0 };
+        const b = aim.bound;
+        const bound = b ? { left: b.left - shift.x, right: b.right - shift.x, top: b.top - shift.y, bottom: b.bottom - shift.y, width: b.width, height: b.height } : s.bound;
+        const moved = this.within(s.x - s.startX - shift.x, s.y - s.startY - shift.y, s.rect, bound);
+        // The scroll watch tells once when it starts, and a scroll may move nothing here.
+        const scrolled = s.scrolled;
+        s.scrolled = false;
+        if (scrolled && aim.under === s.target && (this.clone || (s.from.x + moved.x === this.pos.x && s.from.y + moved.y === this.pos.y))) return;
+        this.track(aim.under, e);
         if (this.clone) {
             this.ghost.move(s.x, s.y, s.target && !s.refused ? 'move' : 'none');
         } else {
@@ -375,7 +402,15 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         s.started = true;
         s.rect = rect;
         s.bound = bound;
+        // Nothing moves a place where nothing is laid out (a test document); a copy follows the pointer on the screen.
+        s.origin = !this.clone && canMeasure(this) ? { x: rect.left - s.from.x, y: rect.top - s.from.y } : null;
         s.boxes = new DragBoxes(this, () => this.aimable(), stackCover);
+        // A scroll moves what is under the pointer: the drag is followed again, the pointer at rest too.
+        this.stops.push(onLayout(this, 'scroll', () => {
+            if (this.session !== s) return;
+            s.scrolled = true;
+            s.waiting = measure(this, this.readAim, this.follow);
+        }));
         if (this.clone) this.ghost.show(this, s.x, s.y, 'move');
         (this.handlePart ?? this).attr.add({ setPointerCapture: e.pointerId });
         mark(this, 'data-dragging', true);

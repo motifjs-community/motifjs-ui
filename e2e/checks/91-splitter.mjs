@@ -61,8 +61,23 @@ export default async function ({ page, base, check, axeSource }) {
     const inner = page.locator('.sp-inner');
     await inner.scrollIntoViewIfNeeded();
     check('the inner splitter is vertical with a horizontal separator', (await inner.getAttribute('data-orientation')) === 'vertical' && (await inner.locator(':scope > .mx-splitter__handle > .mx-splitter__bar').getAttribute('aria-orientation')) === 'horizontal');
-    const heights = await inner.evaluate(el => Array.from(el.querySelectorAll(':scope > .mx-splitter__pane')).map(p => Math.round(p.getBoundingClientRect().height)));
+    const innerHeights = () => inner.evaluate(el => Array.from(el.querySelectorAll(':scope > .mx-splitter__pane')).map(p => Math.round(p.getBoundingClientRect().height)));
+    const heights = await innerHeights();
     check('its second pane is 90 px tall', heights[1] === 90, heights.join('/'));
+    // The page scrolls during a drag: the handle stays under the pointer, the pointer at rest too (in the next measuring round).
+    const innerBar = await inner.locator(':scope > .mx-splitter__handle > .mx-splitter__bar').boundingBox();
+    await page.mouse.move(innerBar.x + innerBar.width / 2, innerBar.y + innerBar.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(innerBar.x + innerBar.width / 2, innerBar.y + innerBar.height / 2 - 10, { steps: 4 });
+    const scrolled = await page.evaluate(() => {
+        const was = scrollY;
+        window.scrollBy({ top: -20, behavior: 'instant' });
+        return scrollY - was;
+    });
+    await page.waitForFunction(([el, h]) => Math.round(el.querySelector(':scope > .mx-splitter__pane').getBoundingClientRect().height) === h, [await inner.elementHandle(), heights[0] - 30], { timeout: 2000 }).catch(() => {});
+    const afterScroll = await innerHeights();
+    await page.mouse.up();
+    check('the page scrolled 20 up during a drag: the handle went 20 further up with the pointer, the pointer at rest', scrolled === -20 && afterScroll[0] === heights[0] - 30 && afterScroll[1] === heights[1] + 30, `${heights.join('/')} → ${afterScroll.join('/')}, scrolled ${scrolled}`);
 
     // The sizes go out to x-model after a move and come back.
     const sizes = page.locator('.sp-sizes');

@@ -39,6 +39,21 @@ export default async function ({ page, base, check, axeSource }) {
     now = await at(free);
     check('it never leaves the room: dragged far up and left, it sits in the corner', Math.abs(now[0]) <= 1 && Math.abs(now[1]) <= 1, `${now}`);
 
+    // The page scrolls during a drag: it stays under the pointer, the pointer at rest too (in the next measuring round).
+    box = await boxOf(free);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 20, { steps: 4 });
+    const scrolled = await page.evaluate(() => {
+        const was = scrollY;
+        window.scrollBy({ top: 40, behavior: 'instant' });
+        return scrollY - was;
+    });
+    for (let i = 0; i < 10 && (await at(free)).join() !== `30,${20 + scrolled}`; i++);
+    now = await at(free);
+    await page.mouse.up();
+    check('the page scrolled 40 during a drag: it went 40 further down with the pointer, the pointer at rest', scrolled === 40 && now.join() === '30,60', `${now}, scrolled ${scrolled}`);
+
     // Sideways only; by the grip only; the keys.
     const axis = page.locator('.dg-axis');
     const axisStart = await at(axis);

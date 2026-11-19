@@ -50,6 +50,22 @@ export default async function ({ page, base, check, axeSource }) {
     check('Left and Down on the grip change the sides by 10', s.join('x') === '470x90' && (await told.textContent()) === '470 × 90, from the bottom-end', `${s.join('x')} ${await told.textContent()}`);
     check('the new size is read out', (await box.locator('[aria-live]').textContent()) === 'Width 470, height 90');
 
+    // The page scrolls during a drag: the edge stays under the pointer, the pointer at rest too (in the next measuring round).
+    const bottom = await handleBox('bottom');
+    await page.mouse.move(bottom.x + bottom.width / 2, bottom.y + bottom.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(bottom.x + bottom.width / 2, bottom.y + bottom.height / 2 + 20, { steps: 4 });
+    const scrolled = await page.evaluate(() => {
+        const was = scrollY;
+        window.scrollBy({ top: 30, behavior: 'instant' });
+        return scrollY - was;
+    });
+    await page.waitForFunction(el => Math.round(el.getBoundingClientRect().height) === 140, await box.elementHandle(), { timeout: 2000 }).catch(() => {});
+    s = await size(box);
+    await page.mouse.up();
+    await toldSays('470 × 140, from the bottom');
+    check('the page scrolled 30 during a drag: the bottom went 30 further down with the pointer, the pointer at rest', scrolled === 30 && s.join('x') === '470x140' && (await told.textContent()) === '470 × 140, from the bottom', `${s.join('x')}, scrolled ${scrolled}: ${await told.textContent()}`);
+
     // Inside an area, keeping the shape: the corner dragged far stops at the area's edge, the height following the width.
     const area = page.locator('.rs-area');
     await area.scrollIntoViewIfNeeded();

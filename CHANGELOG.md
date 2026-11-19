@@ -163,6 +163,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - A `Chip` that is a button or an option itself holds no button inside. Its remove mark is for the pointer only
   (`aria-hidden`); Delete and Backspace remove it, and the chip names them (`aria-keyshortcuts`). A chip that is only
   removable keeps its remove button.
+- What is dragged stays under the pointer when the page, or a scroller around it, scrolls during the drag (a wheel,
+  the keys, a smooth scroll), the pointer at rest too: a `Draggable`, a `Resizable`'s edges, the handles of `Splitter`
+  and `SplitContainer`, the splitters of `TabDocumentManager` and its strip's thin scrollbar, and a `DataGrid` column's
+  edge. Each moved by the pointer's way on the screen from the press, so the scrolled distance came off: a page
+  scrolled 60 px in the middle of a drag left the box 60 px from the pointer. The way is counted now from what the
+  drag does not move and a scroll does (the place a draggable or a positioned box starts from, the splitter's box,
+  the row a column starts in), read in the measuring round of each move and of each scroll.
 
 ### Changed
 

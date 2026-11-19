@@ -1,7 +1,7 @@
 import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from "@motifx/core";
 import { Control } from "../../core/control";
 import { glyphPart, part } from "../../core/draw-parts";
-import { boxOf, holderOf, measure, styleOf } from "../../core/measure";
+import { boxOf, holderOf, measure, rectOf, styleOf, type Point } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { css, kept, mark, put, text } from "../../core/part-writes";
 import { uiLocale } from "../../core/ui-locale";
@@ -300,8 +300,10 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
         mark(this, 'data-resizing', true);
         put(this, 'data-edge', edge);
         if (handle) mark(handle, 'data-active', true);
+        let drawn = from.box;
         followPointer(on, e, (dx, dy) => {
             const box = this.next(edge, from, dx, dy);
+            drawn = box;
             this.applyBox(box, from.positioned);
             this.resizing.fire(this.args(edge, box, e));
         }, () => {
@@ -309,7 +311,20 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
             put(this, 'data-edge', null);
             if (handle) mark(handle, 'data-active', false);
             this.finish(edge, e);
-        });
+        }, () => this.frameOf(from, drawn));
+    }
+
+    // Where the box's place is counted from on the screen, which a scroll or the layout moves and the resize does not: a
+    // positioned box's is where its `left` and `top` start; one in the flow is its area's, else its parent's, content.
+    frameOf(from: ResizeStart, drawn: WindowBox): Point {
+        if (from.positioned) {
+            const own = rectOf(this);
+            return { x: own.left - drawn.x, y: own.top - drawn.y };
+        }
+        const around = this.areaOf() ?? (this.parent ? holderOf(this.parent) : null);
+        if (!around) return { x: 0, y: 0 };
+        const box = boxOf(around);
+        return { x: box.left + box.clientLeft + (box.rtl ? box.scrollStart : -box.scrollStart), y: box.top + box.clientTop - box.scrollTop };
     }
 
     // The arrow keys on the grip: Left and Right change the width (the other way round right to left), Up and Down the height.
