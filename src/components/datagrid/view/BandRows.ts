@@ -86,7 +86,7 @@ export class BandRows<T> {
       if (from < 0) continue;
       const part = this.cells.get(b.id) ?? this.makeCell(b.id);
       const span = String(b.count);
-      css(part, 'grid-column', `${from + 1} / span ${to - from + 1}`);
+      css(part, 'grid-column', `${cols.lineOf(visible[from], visible)} / span ${to - from + 1}`);
       put(part, 'aria-colindex', String(b.first + 1));
       put(part, 'aria-colspan', span);
       const row = this.rows[b.depth - 1];
@@ -108,7 +108,7 @@ export class BandRows<T> {
           piece.attr.add({ 'aria-hidden': 'true', 'data-field': field });
           fillers.set(field, piece);
         }
-        css(piece, 'grid-column', String(i + 1));
+        css(piece, 'grid-column', cols.gridColumnOf(field, visible));
         if (piece.parent !== row) row.controls.add(piece);
       });
       for (const [field, piece] of fillers) {

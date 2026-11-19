@@ -54,7 +54,7 @@ const COLUMN_FIELDS = [
   ['field, title', 'The value\'s key (a dotted path reads a nested value) and the header text (`Bind<string>`).'],
   ['type', '`text`, `number`, `date`, `datetime`, `boolean`, `list`. Determines the alignment, format, sorting and editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`). `datetime` is a date with its time: shown with both, edited with a `DateBox` of `type: \'datetime\'`, filtered to the minute, and its header filter goes down to the hour.'],
   ['width, minWidth, maxWidth, flex', 'In pixels (by default, the `columnWidth` and `columnMinWidth` settings). `flex` shares the free space until the user resizes.'],
-  ['sticky, hidden, align', 'Pinned to an edge (a column in a band sticks with its band), initially hidden, and the alignment.'],
+  ['sticky, hidden, align', 'Pinned to an edge (a column in a band sticks with its band; one pinned to the end stands at the end edge, any room the columns leave coming before it), initially hidden, and the alignment.'],
   ['ownerBand, hidingPriority', 'The band of a column in a flat list (its `name` or position), and its position in the order columns hide to fit the width, lowest first.'],
   ['value, format, compare', 'Customizes how the value is read, how it is displayed (`Intl` options for a number or date column, such as `{ style: \'currency\', currency: \'EUR\' }`, which an Excel export also converts to a number format, or a function that returns the text), and how it is sorted (in-memory rows).'],
   ['cell', '`(ctx) => component`: custom content, created once per pooled cell. Read `ctx.row` and `ctx.value` in getters.'],

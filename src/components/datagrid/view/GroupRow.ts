@@ -183,7 +183,8 @@ export class GroupRow<T> {
     text(this.summary, inText.length ? separator + inText.join(separator) : '');
     let first = visible.length;
     for (const field of aligned.keys()) first = Math.min(first, visible.indexOf(field));
-    css(this.cellPart, 'grid-column', first < visible.length ? `1 / ${first + 1}` : '');
+    const cols = model.columns;
+    css(this.cellPart, 'grid-column', first < visible.length ? `1 / ${cols.lineOf(visible[first], visible)}` : '');
     put(this.cellPart, 'aria-colspan', String(Math.max(1, first)));
     for (const [field, parts] of aligned) {
       let cell = this.aligned.get(field);
@@ -195,7 +196,7 @@ export class GroupRow<T> {
       const at = visible.indexOf(field);
       // While columns are virtual, an item under a column without cells waits for it.
       kept(cell, model.columnWindow.has(field));
-      css(cell, 'grid-column', String(at + 1));
+      css(cell, 'grid-column', cols.gridColumnOf(field, visible));
       put(cell, 'aria-colindex', String(at + 1));
       fillSummaryCell(cell, parts, separator);
     }

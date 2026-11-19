@@ -5153,7 +5153,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         model.announce(model.text('gridMovedTo', { title, position: beside.indexOf(adjust.field) + 1, count: beside.length }));
       } else {
         const step = model.settings.get(e.shiftKey ? 'resizeFineStep' : 'resizeStep');
-        const px = cols.width(adjust.field) + (forward ? step : -step);
+        // The arrow moves the edge the handle is on: the start edge of a column pinned to the end.
+        const grow = forward !== (cols.sideOf(adjust.field) === 'end');
+        const px = cols.width(adjust.field) + (grow ? step : -step);
         const next = cols.partnerOf(adjust.field);
         const w = next ? cols.resizeWithNext(adjust.field, next, cols.width(adjust.field) + cols.width(next), px) : cols.resize(adjust.field, px);
         model.announce(model.text('gridWidthIs', { title, width: w }));

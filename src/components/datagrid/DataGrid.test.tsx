@@ -412,6 +412,34 @@ describe('DataGrid', () => {
     await grid.dispose();
   });
 
+  it('resizes a column pinned to the end at its start edge: it grows toward the start, a flexing column before it taking up the difference', async () => {
+    const grid = mount(new DataGrid<Row>({ rowKey: 'id', columns: [columns[0], columns[1], { field: 'amount', title: 'Amount', width: 120, sticky: 'end' }], rows: makeRows(5) }));
+    layout(grid);
+    await settle();
+    const edgeOf = (field: string) => header(grid, field).querySelector<HTMLElement>('.mx-data-grid__resize')!.dataset.edge;
+    expect([edgeOf('amount'), edgeOf('name')]).toEqual(['start', undefined]);
+    header(grid, 'amount').getBoundingClientRect = () => ({ x: 480, y: 0, width: 120, height: 36, left: 480, top: 0, right: 600, bottom: 36, toJSON: () => ({}) });
+    const handle = header(grid, 'amount').querySelector('.mx-data-grid__resize')!;
+    const pointer = (type: string, x: number) => handle.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: 10, isPrimary: true }));
+    const of = (field: string) => grid.layout.columns.find((c) => c.field === field)!;
+    pointer('pointerdown', 482);
+    pointer('pointermove', 442);
+    expect([of('amount').width, of('name').flex]).toEqual([160, 1]);
+    pointer('pointermove', 512);
+    pointer('pointerup', 512);
+    expect([of('amount').width, of('name').flex]).toEqual([90, 1]);
+    // The arrows move the same edge: Left widens it, Right narrows it.
+    vi.spyOn((grid as any).header, 'shownWidth').mockReturnValue(90);
+    (grid as any).startAdjust('resize', 'amount');
+    key(header(grid, 'amount'), 'ArrowLeft');
+    expect(of('amount').width).toBe(100);
+    key(header(grid, 'amount'), 'ArrowRight');
+    key(header(grid, 'amount'), 'ArrowRight');
+    expect(of('amount').width).toBe(80);
+    key(header(grid, 'amount'), 'Enter');
+    await grid.dispose();
+  });
+
   it('keeps a column’s edge under the pointer when the rows or the page scroll during a resize, the pointer at rest too', async () => {
     const grid = mount(new DataGrid<Row>({ rowKey: 'id', columns: [columns[0], { field: 'name', title: 'Name', width: 150 }, columns[2]], rows: makeRows(5) }));
     layout(grid);

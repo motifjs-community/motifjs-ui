@@ -8,7 +8,7 @@ import type { StickyOffset } from '../model/sticky-offset';
 const escapeAttr = (v: string) => v.replace(/["\\]/g, '\\$&');
 
 /**
- * Per-column CSS of one grid: columns not shown, alignment and sticky offsets, written as rules keyed
+ * Per-column CSS of one grid: columns not shown, the tracks of the columns pinned to the end, alignment and sticky offsets, written as rules keyed
  * by `data-field` (a pinned band's header by `data-band`, at the offset of its columns). Changing a width or pinning a column rewrites this sheet only; no cell gets a
  * binding of its own and no row is touched. A rule finds the rows through the parts that hold them (the head, the body,
  * the foot, the copy of a dragged row), which carry the grid's id, and goes on by child combinators only: the rows of a
@@ -35,20 +35,21 @@ export class ColumnStyles<T> {
     const rows = `[data-grid-id="${this.gridId}"] > .mx-data-grid__row`;
     const rules: string[] = [];
     const shown = new Set(visible);
-    const track = new Map(visible.map((f, i) => [f, i + 1]));
     for (const field of this.columns.state.order) {
       const sel = `${rows} > [data-field="${escapeAttr(field)}"]`;
       if (!shown.has(field)) {
         rules.push(`${sel}{display:none}`);
         continue;
       }
-      if (placed) rules.push(`${sel}{grid-column:${track.get(field)};grid-row:1}`);
+      const sticky = offsets.get(field);
+      // The columns pinned to the end take the last tracks, after the room before them (`template`).
+      if (placed) rules.push(`${sel}{grid-column:${this.columns.gridColumnOf(field, visible)};grid-row:1}`);
+      else if (sticky?.side === 'end') rules.push(`${sel}{grid-column:${this.columns.gridColumnOf(field, visible)}}`);
       const a = align.get(field);
       if (a && a !== 'start') {
         rules.push(`${sel}.mx-data-grid__cell{text-align:${a}}`);
         rules.push(`${sel} > .mx-data-grid__title{text-align:${a}}`);
       }
-      const sticky = offsets.get(field);
       if (sticky) {
         rules.push(`${sel}{position:sticky;inset-inline-${sticky.side}:${sticky.offset}px;z-index:var(--_z-sticky)}`);
         if (sticky.edge) rules.push(`${sel}{box-shadow:var(--_sticky-${sticky.side})}`);

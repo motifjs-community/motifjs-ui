@@ -170,6 +170,18 @@ describe('band headers', () => {
     expect(band(grid, 'person')!.getAttribute('aria-colindex')).toBe('3');
   });
 
+  it('stands a band pinned to the end at the end edge: the room before it, its header and pieces on lines counted from the end', async () => {
+    const grid = make();
+    grid.columnOption('person', 'sticky', 'end');
+    await settle();
+    expect(order(grid)).toEqual(['id', 'city', 'amount', 'first', 'last', 'email', 'phone']);
+    expect((grid.element.querySelector('.mx-data-grid__viewport') as HTMLElement).style.getPropertyValue('--_columns')).toBe('60px 100px 90px minmax(0px, 1fr) 100px 100px 160px 100px');
+    expect([band(grid, 'person')!.style.gridColumn, band(grid, 'contact')!.style.gridColumn]).toEqual(['-5 / span 4', '-3 / span 2']);
+    const pieces = Array.from(bandRows(grid)[1].querySelectorAll<HTMLElement>('.mx-data-grid__band-filler'));
+    expect(pieces.map((p) => `${p.dataset.field} ${p.style.gridColumn}`)).toEqual(['first -5 / span 1', 'last -4 / span 1']);
+    expect((grid as any).styles.css).toContain('[data-field="phone"]{grid-column:-2 / span 1}');
+  });
+
   it('a band header is not sortable; Up goes from a column to its band, Down back, Left and Right along the bands', async () => {
     const grid = make({ columns: [...columns(), { name: 'more', title: 'More', columns: [{ field: 'note' as keyof Row & string, title: 'Note' }] }] });
     await settle();

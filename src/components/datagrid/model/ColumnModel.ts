@@ -467,15 +467,33 @@ export class ColumnModel<T> {
     return Math.round(Math.min(max, Math.max(min, px)));
   }
 
-  /** `grid-template-columns` for the given visible fields. Sticky columns never flex. */
+  /**
+   * `grid-template-columns` for the given visible fields. Sticky columns never flex. The columns pinned to the end stand
+   * at the end edge: while none of the others flexes, a track before them takes the room the columns leave.
+   */
   template(visible: string[]): string {
-    return visible
-      .map((f) => {
-        const w = this.width(f);
-        const flex = this.state.flex[f] ?? 0;
-        return flex > 0 && !this.sideOf(f) ? `minmax(${w}px, ${flex}fr)` : `${w}px`;
-      })
-      .join(' ');
+    const tracks = visible.map((f) => {
+      const w = this.width(f);
+      const flex = this.state.flex[f] ?? 0;
+      return flex > 0 && !this.sideOf(f) ? `minmax(${w}px, ${flex}fr)` : `${w}px`;
+    });
+    const ends = visible.findIndex((f) => this.sideOf(f) === 'end');
+    if (ends >= 0 && !visible.some((f) => (this.state.flex[f] ?? 0) > 0 && !this.sideOf(f))) tracks.splice(ends, 0, 'minmax(0px, 1fr)');
+    return tracks.join(' ');
+  }
+
+  /**
+   * The grid line a visible column's cells start at. The columns pinned to the end count from the end, so they keep to
+   * the end edge with or without the room before them (`template`).
+   */
+  lineOf(field: string, visible: readonly string[]): number {
+    const at = visible.indexOf(field);
+    return this.sideOf(field) === 'end' ? at - visible.length - 1 : at + 1;
+  }
+
+  /** `grid-column` of a visible column's cells: one track from `lineOf`. */
+  gridColumnOf(field: string, visible: readonly string[]): string {
+    return `${this.lineOf(field, visible)} / span 1`;
   }
 
   /** Offsets of the sticky columns from their edge. */
@@ -554,13 +572,14 @@ export class ColumnModel<T> {
   }
 
   /**
-   * The column that gives or takes the width when `field` is resized in `'nextColumn'` mode: the
-   * next visible one in its zone, if it can be resized. Without one the column changes alone.
+   * The column that gives or takes the width when `field` is resized in `'nextColumn'` mode: the one beside the edge
+   * dragged in its zone, if it can be resized: the next one, or for a column pinned to the end (resized at its start
+   * edge) the one before it. Without one the column changes alone.
    */
   partnerOf(field: string): string | undefined {
     if (this.resizeModeOf(field) !== 'nextColumn') return undefined;
     const zone = this.zone(this.zoneOf(field));
-    const next = zone[zone.indexOf(field) + 1];
+    const next = zone[zone.indexOf(field) + (this.sideOf(field) === 'end' ? -1 : 1)];
     return next !== undefined && this.can(next, 'resizable') ? next : undefined;
   }
 

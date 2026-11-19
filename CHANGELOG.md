@@ -174,9 +174,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   fill. A flexing column before it gave it the room, so it grew toward the start and its edge stayed where it was. From
   the first move the flexing columns before it keep the widths they show and stop flexing, as a column resized itself
   does; the following ones move on, a flexing one among them taking up the difference first.
+- A `DataGrid` column pinned to the end is resized at its start edge. Its handle was at its end edge, which the grid's
+  end edge holds in place: dragged, the column grew toward the start and the edge dragged stayed where it was. The
+  handle and its line are at the start edge now (`data-edge="start"`) and the drag is turned round: toward the start
+  the column grows, a flexing column before it taking up the difference; with `resizeMode: 'nextColumn'` it trades
+  with the column before it in its zone. The arrow keys of “Width” in the column menu move the same edge.
 
 ### Changed
 
+- `DataGrid`: the columns pinned to the end stand at the grid's end edge also when the columns leave room, the room
+  coming before them (a track of its own while no other column flexes). They stood right after the other columns, the
+  room after them. Their cells, a band's header and the empty pieces over them, and the group summary items under them
+  are placed on grid lines counted from the end.
 - The clipboard writing of `DataGrid` is shared (`core/clipboard.ts`): the Clipboard API where the page may use it,
   else the copy command. Its hidden text area is `.mx-copy-area`.
 - `LayoutAddedItem.parent` may be left out: an item added to a flat list stands at the top.

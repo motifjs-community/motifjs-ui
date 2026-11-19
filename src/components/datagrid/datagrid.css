@@ -2,7 +2,7 @@
    data-active, data-selected, data-status (new | changed | removed | saving | failed | invalid),
    data-odd, data-loading and data-expanded (master-detail) on each body row (a group row: data-expanded, data-expand, data-locked, --_level); to data-changed, aria-invalid and data-lookup
    (loading | missing) on cells; to
-   data-sort, data-sortable, data-dragging and data-resizing on headers; to aria-checked on the
+   data-sort, data-sortable, data-dragging and data-resizing on headers, data-edge (start) on a header's resize handle; to aria-checked on the
    selection check boxes and data-active on header filter buttons. Action buttons and the filter
    row's condition buttons are plain elements with the kit button's classes. Column widths come
    from --_columns on the viewport; hidden columns, alignment and sticky offsets from the grid's own
@@ -897,6 +897,12 @@
     position: absolute;
     inset-block: 25%;
     inset-inline-end: 0;
+  }
+
+  /* A column pinned to the end keeps its end at the grid's end edge: its handle and line are at its start. */
+  .mx-data-grid__resize[data-edge='start'],
+  .mx-data-grid__resize[data-edge='start']::after {
+    inset-inline: 0 auto;
   }
 
   .mx-data-grid__resize:hover::after,

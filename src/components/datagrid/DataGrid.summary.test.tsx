@@ -268,7 +268,7 @@ describe('group summary', () => {
     expect(lines(grid).slice(0, 6)).toEqual(['City: Ankara (4) · Sum of Qty: 220', '1', '4', '7', '10', '= Count: 4 | Max: 100']);
     const ankara = groupRow(grid, 'Ankara');
     const aligned = ankara.querySelector<HTMLElement>('.mx-data-grid__summary-cell[data-field="price"]')!;
-    expect([shown(aligned), heard(aligned), aligned.style.gridColumn, aligned.getAttribute('aria-colindex')]).toEqual(['Max: 9.5', 'Max of Price: 9.5', '3', '3']);
+    expect([shown(aligned), heard(aligned), aligned.style.gridColumn, aligned.getAttribute('aria-colindex')]).toEqual(['Max: 9.5', 'Max of Price: 9.5', '3 / span 1', '3']);
     const cell = ankara.querySelector('.mx-data-grid__group-cell')!;
     expect([(cell as HTMLElement).style.gridColumn, cell.getAttribute('aria-colspan')]).toEqual(['1 / 3', '2']);
     const footer = footers(grid)[0];
@@ -280,6 +280,19 @@ describe('group summary', () => {
     grid.collapseGroup(['ank']);
     await settle();
     expect(lines(grid).slice(0, 2)).toEqual(['City: Ankara (4) · Sum of Qty: 220', 'City: Bursa (4) · Sum of Qty: 260']);
+    await grid.dispose();
+  });
+
+  it('puts an item under a column pinned to the end on its line counted from the end, the group text over the room before it', async () => {
+    const grid = await make({
+      columns: grouped().map((c) => (c.field === 'total' ? { ...c, sticky: 'end' as const } : c)),
+      summary: { groupItems: [{ column: 'total', summaryType: 'sum', alignByColumn: true }] },
+    });
+    const ankara = groupRow(grid, 'Ankara');
+    const aligned = ankara.querySelector<HTMLElement>('.mx-data-grid__summary-cell[data-field="total"]')!;
+    expect([aligned.style.gridColumn, aligned.getAttribute('aria-colindex')]).toEqual(['-2 / span 1', '5']);
+    const cell = ankara.querySelector<HTMLElement>('.mx-data-grid__group-cell')!;
+    expect([cell.style.gridColumn, cell.getAttribute('aria-colspan')]).toEqual(['1 / -2', '4']);
     await grid.dispose();
   });
 

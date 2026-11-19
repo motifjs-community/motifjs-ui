@@ -161,6 +161,22 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('datagrid: sticky columns keep their edges', Math.abs(edges.start) < 1.5 && Math.abs(edges.end) < 1.5, JSON.stringify(edges));
   await page.evaluate((sel) => (document.querySelector(sel).scrollLeft = 0), vp);
 
+  // A column pinned to the end is resized at its start edge: dragged toward the start it grows there, its end staying
+  // at the grid's end edge.
+  const amountHeader = page.locator(`${virtual} [role=columnheader][data-field="amount"]`);
+  const amountEdge = await box(amountHeader.locator('.mx-data-grid__resize'));
+  const amountWas = await box(amountHeader);
+  await page.mouse.move(amountEdge.x + amountEdge.width / 2, amountEdge.y + amountEdge.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(amountEdge.x + amountEdge.width / 2 - 40, amountEdge.y + amountEdge.height / 2, { steps: 4 });
+  await page.mouse.up();
+  const amountNow = await box(amountHeader);
+  check(
+    'datagrid: a column pinned to the end, dragged 40 at its start edge toward the start, grows there; its end stays',
+    (await amountHeader.locator('.mx-data-grid__resize').getAttribute('data-edge')) === 'start' && Math.round(amountNow.x) === Math.round(amountWas.x) - 40 && Math.round(amountNow.x + amountNow.width) === Math.round(amountWas.x + amountWas.width),
+    `${JSON.stringify(amountWas)} → ${JSON.stringify(amountNow)}`,
+  );
+
   // A cut-off note shows in the kit's tooltip.
   const local = '.dg-local';
   await page.locator(local).scrollIntoViewIfNeeded();
@@ -211,6 +227,27 @@ export default async function ({ page, base, check, axeSource, box }) {
     'datagrid: in a grid its columns fill, a column dragged 60 at its end grows there; the flexing column before it keeps its width',
     filled && grew.customer.width === was.customer.width && grew.city.left === was.city.left && grew.city.width === was.city.width + 60 && grew.date.left === was.date.left + 60,
     `filled ${filled}: ${JSON.stringify(was)} → ${JSON.stringify(grew)}`,
+  );
+  // The columns are 60 wider than the grid now, none flexes. The column pinned to the end, made 70 narrower at its start
+  // edge, leaves room: the room comes before it, and its edge stays under the pointer while the room opens.
+  const pinned = () => page.evaluate((sel) => {
+    const vp = document.querySelector(`${sel} .mx-data-grid__viewport`);
+    const a = document.querySelector(`${sel} [role=columnheader][data-field="amount"]`).getBoundingClientRect();
+    const cell = document.querySelector(`${sel} .mx-data-grid__body > .mx-data-grid__row [data-field="amount"]`).getBoundingClientRect();
+    const note = document.querySelector(`${sel} [role=columnheader][data-field="note"]`).getBoundingClientRect();
+    return { left: Math.round(a.left), right: Math.round(a.right), cell: `${Math.round(cell.left)}..${Math.round(cell.right)}`, edge: Math.round(vp.getBoundingClientRect().left + vp.clientWidth), room: Math.round(a.left - note.right), over: vp.scrollWidth - vp.clientWidth };
+  }, virtual);
+  const pinnedWas = await pinned();
+  const pin = await box(page.locator(`${virtual} [role=columnheader][data-field="amount"] .mx-data-grid__resize`));
+  await page.mouse.move(pin.x + pin.width / 2, pin.y + pin.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(pin.x + pin.width / 2 + 70, pin.y + pin.height / 2, { steps: 5 });
+  await page.mouse.up();
+  const pinnedNow = await pinned();
+  check(
+    'datagrid: a column pinned to the end stays at the end edge when the columns leave room, the room before it; its start edge follows the pointer as the room opens',
+    pinnedWas.over === 60 && pinnedWas.right === pinnedWas.edge && pinnedNow.left === pinnedWas.left + 70 && pinnedNow.right === pinnedNow.edge && pinnedNow.cell === `${pinnedNow.left}..${pinnedNow.right}` && pinnedNow.over === 0 && pinnedNow.room === 10,
+    `${JSON.stringify(pinnedWas)} → ${JSON.stringify(pinnedNow)}`,
   );
   await page.setViewportSize({ width: 1280, height: 900 });
 

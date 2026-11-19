@@ -58,7 +58,10 @@ export interface GridColumn<T = any> {
   maxWidth?: number;
   /** The share of the free space this column takes when the grid is wider than its columns. */
   flex?: number;
-  /** Pins the column to the start or end edge during horizontal scrolling. A column in a band sticks with its band. */
+  /**
+   * Pins the column to the start or end edge during horizontal scrolling. A column pinned to the end also stands at the
+   * end edge when the columns leave room, the room coming before it. A column in a band sticks with its band.
+   */
   sticky?: StickySide;
   /** The band of this column in a flat list: the band's `name`, or its position in the grid's `columns`. */
   ownerBand?: string | number;

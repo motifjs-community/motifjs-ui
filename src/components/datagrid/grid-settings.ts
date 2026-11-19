@@ -16,7 +16,9 @@ export interface GridSettings extends ColumnFeatures {
    * The result of dragging a column edge: `'widget'` resizes that column at the edge dragged, the columns before it
    * keeping their widths (flexing ones too) and the following ones moving on, a flexing one among them taking up the
    * difference first; `'nextColumn'` moves only the edge between it and the next column, which takes up the
-   * difference. A column can set its own value. The default is `'widget'`.
+   * difference. A column pinned to the end is dragged at its start edge, so the sides turn round: a flexing column
+   * before it takes up the difference, and with `'nextColumn'` the edge moved is the one with the column before it. A
+   * column can set its own value. The default is `'widget'`.
    */
   resizeMode: ColumnResizeMode;
   /** Shift+click (Shift+Enter) on a header adds the column to the sort. The default is `true`. */

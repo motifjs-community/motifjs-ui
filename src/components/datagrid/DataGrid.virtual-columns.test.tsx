@@ -75,7 +75,7 @@ describe('DataGrid virtual columns', () => {
     expect(cell.getAttribute('aria-colindex')).toBe('22');
     expect(grid.element.querySelector('.mx-data-grid__viewport')!.getAttribute('aria-colcount')).toBe(String(COLUMNS + 1));
     const sheet = (grid as any).styles.css as string;
-    expect(sheet).toContain('[data-field="c20"]{grid-column:22;grid-row:1}');
+    expect(sheet).toContain('[data-field="c20"]{grid-column:22 / span 1;grid-row:1}');
     // More extra columns, live.
     grid.settings.extraColumns = 4;
     await settle();
@@ -101,6 +101,18 @@ describe('DataGrid virtual columns', () => {
     await settle();
     expect(headerFields(grid)).toHaveLength(COLUMNS + 1);
     expect((grid as any).styles.css).not.toContain('grid-column');
+  });
+
+  it('places a column pinned to the end on its line counted from the end, after the room before it', async () => {
+    const columns = makeColumns();
+    (columns[COLUMNS] as any).sticky = 'end';
+    const { grid } = make({ columns });
+    await settle();
+    const sheet = (grid as any).styles.css as string;
+    expect(sheet).toContain('[data-field="c38"]{grid-column:40 / span 1;grid-row:1}');
+    expect(sheet).toContain('[data-field="c39"]{grid-column:-2 / span 1;grid-row:1}');
+    expect(headerFields(grid)).toContain('c39');
+    expect((grid.element.querySelector('.mx-data-grid__viewport') as HTMLElement).style.getPropertyValue('--_columns').endsWith('100px minmax(0px, 1fr) 100px')).toBe(true);
   });
 
   it('spans a band header over its columns drawn only', async () => {

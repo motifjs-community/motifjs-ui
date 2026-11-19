@@ -28,6 +28,20 @@ describe('ColumnModel', () => {
     expect(cols.template(cols.visible())).toBe('80px minmax(200px, 1fr) 140px 120px');
   });
 
+  it('stands the columns pinned to the end at the end edge: the room before them while no other column flexes, their lines counted from the end', () => {
+    const cols = new ColumnModel([...defs, { field: 'total', title: 'Total', width: 90, sticky: 'end' }]);
+    const shown = cols.visible();
+    expect(cols.template(shown)).toBe('80px minmax(200px, 1fr) 140px 120px 90px');
+    expect(shown.map((f) => cols.lineOf(f, shown))).toEqual([1, 2, 3, -3, -2]);
+    cols.resize('name', 200);
+    expect(cols.template(cols.visible())).toBe('80px 200px 140px minmax(0px, 1fr) 120px 90px');
+    // Without a column pinned to the end, the room stays after the columns.
+    cols.setSticky('amount', null);
+    cols.setSticky('total', null);
+    expect(cols.template(cols.visible())).toBe('80px 200px 140px 120px 90px');
+    expect(cols.lineOf('total', cols.visible())).toBe(5);
+  });
+
   it('computes sticky offsets from both edges', () => {
     const cols = new ColumnModel(defs);
     cols.setSticky('city', 'start');
@@ -120,6 +134,7 @@ describe('ColumnModel', () => {
         { field: 'b', title: 'B', width: 150, minWidth: 80, flex: 1 },
         { field: 'c', title: 'C', width: 120 },
         { field: 'd', title: 'D', width: 90, sticky: 'end' },
+        { field: 'e', title: 'E', width: 70, sticky: 'end' },
       ],
       undefined,
       settings,
@@ -133,6 +148,8 @@ describe('ColumnModel', () => {
     expect(cols.width('b')).toBe(80);
     // The last column of its zone has no partner and changes alone.
     expect(cols.partnerOf('c')).toBeUndefined();
+    // A column pinned to the end is resized at its start edge, against the one before it; the first has none.
+    expect(cols.partnerOf('e')).toBe('d');
     expect(cols.partnerOf('d')).toBeUndefined();
   });
 

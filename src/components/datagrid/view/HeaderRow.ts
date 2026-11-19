@@ -270,6 +270,8 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     put(parts.filter, 'aria-label', grid.text('gridFilterFor', { title }));
     mark(parts.filter, 'data-active', grid.filters.isActive(field));
     put(parts.menu, 'aria-label', grid.text('gridColumnMenu', { title }));
+    // A column pinned to the end keeps its end at the grid's end edge: it is resized at its start edge.
+    put(parts.resize, 'data-edge', cols.sideOf(field) === 'end' ? 'start' : null);
     // A button or handle that does nothing is not there at all; one that comes back takes its place again.
     present(cell, [parts.title, parts.sort], [parts.filter, parts.menu, parts.resize], [grid.hasHeaderFilter(field), this.host.hasMenu(field), cols.can(field, 'resizable')]);
   }
@@ -515,19 +517,23 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     return widths;
   }
 
-  /** Drag the edge to resize: the column alone, or against the next one. */
+  /** Drag the edge to resize: the column alone, or against the one beside the edge. */
   private pressHandle(col: GridColumn<T>, handlePart: ComponentBase, e: PointerEvent) {
     const cols = this.grid.columns;
     if (e.button !== 0 || !cols.can(col.field, 'resizable')) return;
     e.stopPropagation();
     e.preventDefault();
     const next = cols.partnerOf(col.field);
+    const side = cols.sideOf(col.field);
+    // A column pinned to the end is dragged at its start edge: it grows toward the start.
+    const atStart = side === 'end';
     // From the width on screen: a flexing column is wider than its setting.
     const startWidth = this.shownWidth(col.field);
     const total = next ? startWidth + this.shownWidth(next) : 0;
-    // Alone, it grows and shrinks at the edge dragged: from the first move the flexing columns before it keep the widths
-    // they show, or in a grid they fill they would give it room and it would grow toward them.
-    let held = next ? null : this.drawnWidths(cols.flexingBefore(col.field));
+    // Alone, it grows and shrinks at the edge dragged: from the first move the flexing columns before its end edge keep
+    // the widths they show, or in a grid they fill they would give it room and it would grow toward them. Before a start
+    // edge they are on the side that moves, and take up the difference.
+    let held = next || atStart ? null : this.drawnWidths(cols.flexingBefore(col.field));
     let changed = false;
     const rtl = this.host.isRtl();
     const cell = this.cells.get(col.field)!;
@@ -538,7 +544,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
         changed = true;
       }
       held = null;
-      const px = startWidth + (rtl ? -dx : dx);
+      const px = startWidth + (rtl !== atStart ? -dx : dx);
       if (next) cols.resizeWithNext(col.field, next, total, px);
       else cols.resize(col.field, px);
     };
@@ -549,8 +555,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       if (changed || cols.width(col.field) !== startWidth) this.grid.layoutChanged();
     };
     // Counted from what no width moves, which a scroll of the rows or the page does: where the row starts, or the edge a
-    // stuck column is held at.
-    const side = cols.sideOf(col.field);
+    // stuck column is held at (the grid's end edge for one pinned to the end).
     followPointer(handlePart, e, move, up, () => {
       const box = side ? rectOf(cell) : rectOf(this);
       return { x: (side === 'end') !== rtl ? box.right : box.left, y: box.top };
