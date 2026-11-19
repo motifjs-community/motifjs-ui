@@ -170,6 +170,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   scrolled 60 px in the middle of a drag left the box 60 px from the pointer. The way is counted now from what the
   drag does not move and a scroll does (the place a draggable or a positioned box starts from, the splitter's box,
   the row a column starts in), read in the measuring round of each move and of each scroll.
+- A `DataGrid` column dragged alone (`resizeMode: 'widget'`) grows and shrinks at the edge dragged in a grid its columns
+  fill. A flexing column before it gave it the room, so it grew toward the start and its edge stayed where it was. From
+  the first move the flexing columns before it keep the widths they show and stop flexing, as a column resized itself
+  does; the following ones move on, a flexing one among them taking up the difference first.
 
 ### Changed
 

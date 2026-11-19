@@ -15,7 +15,7 @@ const SETTINGS = [
   ['saveButtons, errorSummary', '`true`', '“Save changes” and “Discard” in the toolbar in batch mode (disabled when there is nothing to save), and “N rows with errors” and “Next error” in the bar below the rows.'],
   ['sortable, multiSort', '`true`', 'Sorts from the header, and Shift adds a column to the sort.'],
   ['resizable, movable, hideable, pinnable, menu', '`true`', 'What the user can do with the columns. A column can set its own values.'],
-  ['resizeMode', "`'widget'`", 'The result of dragging a column edge: `widget` resizes that column and shifts the following ones, and `nextColumn` moves only the edge between it and the next column, which takes up the difference. A column can set its own value.'],
+  ['resizeMode', "`'widget'`", 'The result of dragging a column edge: `widget` resizes that column at the edge dragged, the columns before it keeping their widths (flexing ones too) and the following ones moving on, a flexing one among them taking up the difference first; `nextColumn` moves only the edge between it and the next column, which takes up the difference. A column can set its own value.'],
   ['headerButtons', "`'hover'`", 'The menu button appears on hover and focus (always on touch screens), or `always`.'],
   ['columnChooser, layoutReset', '`true`', 'The column list and “Reset layout” in the column menu.'],
   ['columnChooserButton', '`false`', 'A toolbar button that opens the column list (while `columnChooser` is on).'],

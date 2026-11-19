@@ -1,7 +1,7 @@
 import { Component, ComponentBase, untracked } from '@motifx/core';
 import { glyphPart, loose, part, textPart } from '../../../core/draw-parts';
 import { css, kept, mark, put, text } from '../../../core/part-writes';
-import { isInPage, measure, rectOf } from '../../../core/measure';
+import { isInPage, measure, rectOf, styleOf } from '../../../core/measure';
 import { followPointer } from '../../../parts/window/follow-pointer';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
@@ -501,6 +501,20 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     return w ? Math.round(w) : this.grid.columns.width(field);
   }
 
+  /** The widths the columns show now: their headers', else their tracks' in the row (a column drawn only while in view). */
+  private drawnWidths(fields: string[]): Map<string, number> {
+    const widths = new Map<string, number>();
+    if (!fields.length) return widths;
+    const shown = this.grid.columns.visible();
+    const tracks = styleOf(this, ['grid-template-columns'])['grid-template-columns'].split(' ').map(parseFloat);
+    for (const f of fields) {
+      const cell = this.cellPart(f);
+      const w = cell && isInPage(cell) ? rectOf(cell).width : tracks.length === shown.length ? tracks[shown.indexOf(f)] : 0;
+      if (w > 0) widths.set(f, w);
+    }
+    return widths;
+  }
+
   /** Drag the edge to resize: the column alone, or against the next one. */
   private pressHandle(col: GridColumn<T>, handlePart: ComponentBase, e: PointerEvent) {
     const cols = this.grid.columns;
@@ -511,10 +525,19 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     // From the width on screen: a flexing column is wider than its setting.
     const startWidth = this.shownWidth(col.field);
     const total = next ? startWidth + this.shownWidth(next) : 0;
+    // Alone, it grows and shrinks at the edge dragged: from the first move the flexing columns before it keep the widths
+    // they show, or in a grid they fill they would give it room and it would grow toward them.
+    let held = next ? null : this.drawnWidths(cols.flexingBefore(col.field));
+    let changed = false;
     const rtl = this.host.isRtl();
     const cell = this.cells.get(col.field)!;
     mark(cell, 'data-resizing', true);
     const move = (dx: number) => {
+      if (held?.size) {
+        cols.hold(held);
+        changed = true;
+      }
+      held = null;
       const px = startWidth + (rtl ? -dx : dx);
       if (next) cols.resizeWithNext(col.field, next, total, px);
       else cols.resize(col.field, px);
@@ -523,10 +546,10 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       mark(cell, 'data-resizing', false);
       this.suppressClick = true;
       setTimeout(() => (this.suppressClick = false));
-      if (cols.width(col.field) !== startWidth) this.grid.layoutChanged();
+      if (changed || cols.width(col.field) !== startWidth) this.grid.layoutChanged();
     };
     // Counted from what no width moves, which a scroll of the rows or the page does: where the row starts, or the edge a
-    // stuck column is held at. A column's own edges are not it: one beside a flexing column grows toward it.
+    // stuck column is held at.
     const side = cols.sideOf(col.field);
     followPointer(handlePart, e, move, up, () => {
       const box = side ? rectOf(cell) : rectOf(this);

@@ -517,6 +517,26 @@ export class ColumnModel<T> {
     return w;
   }
 
+  /**
+   * The flexing columns before `field`: dragged alone (`'widget'`), its edge stays under the pointer only while they keep
+   * their widths, since in a grid they fill they would give it room and it would grow toward them.
+   */
+  flexingBefore(field: string): string[] {
+    const shown = this.visible();
+    const at = shown.indexOf(field);
+    return at < 0 ? [] : shown.slice(0, at).filter((f) => (this.state.flex[f] ?? 0) > 0 && !this.sideOf(f));
+  }
+
+  /** Gives each column the width it shows, as it is (nothing moves), and turns its flex off, as a resize of its own does. */
+  hold(widths: ReadonlyMap<string, number>): void {
+    if (!widths.size) return;
+    for (const [field, px] of widths) {
+      this.state.width[field] = Math.round(px);
+      this.state.flex[field] = 0;
+    }
+    this.tell();
+  }
+
   /** How the column's edge is dragged: its own mode, else the grid's. */
   resizeModeOf(field: string): ColumnResizeMode {
     return readField(this.get(field), 'resizeMode') ?? this.settings.get('resizeMode');

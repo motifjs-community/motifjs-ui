@@ -13,8 +13,9 @@ import type { GridDateInterval } from './grid-date-interval';
  */
 export interface GridSettings extends ColumnFeatures {
   /**
-   * The result of dragging a column edge: `'widget'` resizes that column and shifts the following ones,
-   * and `'nextColumn'` moves only the edge between it and the next column, which takes up the
+   * The result of dragging a column edge: `'widget'` resizes that column at the edge dragged, the columns before it
+   * keeping their widths (flexing ones too) and the following ones moving on, a flexing one among them taking up the
+   * difference first; `'nextColumn'` moves only the edge between it and the next column, which takes up the
    * difference. A column can set its own value. The default is `'widget'`.
    */
   resizeMode: ColumnResizeMode;

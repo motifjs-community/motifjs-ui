@@ -186,6 +186,34 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.waitForFunction((sel) => document.querySelectorAll(sel).length === 20, `${shownRows(paged)}:not([data-loading])`);
   check('datagrid: the last page asks for one page', (await pagedLoads()) - pagedBefore === 1, `${(await pagedLoads()) - pagedBefore} loads`);
 
+  // A grid its columns fill (a wide window): a column dragged alone grows at the edge dragged, the flexing column before
+  // it keeping its width; the ones after it move on.
+  await page.setViewportSize({ width: 2560, height: 900 });
+  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.locator(`${virtual} [role=columnheader][data-field="city"]`).waitFor();
+  await page.evaluate((sel) => document.querySelector(sel).scrollIntoView({ block: 'center', behavior: 'instant' }), virtual);
+  const heads = () => page.evaluate((sel) => Object.fromEntries(['customer', 'city', 'date'].map((f) => {
+    const r = document.querySelector(`${sel} [role=columnheader][data-field="${f}"]`).getBoundingClientRect();
+    return [f, { left: Math.round(r.left), width: Math.round(r.width) }];
+  })), virtual);
+  const filled = await page.evaluate((sel) => {
+    const vp = document.querySelector(`${sel} .mx-data-grid__viewport`);
+    return vp.scrollWidth <= vp.clientWidth;
+  }, virtual);
+  const was = await heads();
+  const cityEdge = await box(page.locator(`${virtual} [role=columnheader][data-field="city"] .mx-data-grid__resize`));
+  await page.mouse.move(cityEdge.x + cityEdge.width / 2, cityEdge.y + cityEdge.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(cityEdge.x + cityEdge.width / 2 + 60, cityEdge.y + cityEdge.height / 2, { steps: 4 });
+  await page.mouse.up();
+  const grew = await heads();
+  check(
+    'datagrid: in a grid its columns fill, a column dragged 60 at its end grows there; the flexing column before it keeps its width',
+    filled && grew.customer.width === was.customer.width && grew.city.left === was.city.left && grew.city.width === was.city.width + 60 && grew.date.left === was.date.left + 60,
+    `filled ${filled}: ${JSON.stringify(was)} → ${JSON.stringify(grew)}`,
+  );
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   // Editing: a new row at the end, the Tab chain, Escape.
   await page.goto(base + 'datagrid/editing', { waitUntil: 'load' });
   await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
