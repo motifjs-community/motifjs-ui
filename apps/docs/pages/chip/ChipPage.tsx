@@ -58,7 +58,7 @@ const KEYS = [
 const A11Y = [
   ['Selectable', 'A button with `aria-pressed`.'],
   ['In a group that selects', 'The group is a `listbox` (`aria-multiselectable` for multiple selection), and each chip is an `option` with `aria-selected`.'],
-  ['Remove', 'The remove button is named “Remove Ada” in the kit language. Keyboard users reach it with Delete on the chip.'],
+  ['Remove', 'The remove button is named “Remove Ada” in the kit language. Keyboard users reach it with Delete on the chip, which names Delete and Backspace as its shortcuts (`aria-keyshortcuts`). A chip that is a button or an option itself holds no button inside: its remove mark is then for the pointer only (`aria-hidden`), and the keys remove it.'],
   ['Disabled state', 'Removed from the Tab order and marked with `aria-disabled`.'],
 ];
 

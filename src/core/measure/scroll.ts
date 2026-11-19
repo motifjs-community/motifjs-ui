@@ -56,20 +56,40 @@ export function scrollIntoView(target: ComponentBase, options: { block?: ScrollL
   return true;
 }
 
+/** The reveal of each scroller not run yet, by axis. */
+const waitingReveals = new WeakMap<ComponentBase, Map<string, () => void>>();
+
 /**
  * Scrolls `scroller`, and nothing else, only as far as it takes to bring `target` into view: one of its parts, or a
- * stretch of its content placed by the model. Read in the next round, written after it. Returns what takes it back.
+ * stretch of its content placed by the model. Read in the next round, written after it. A reveal asked for along the
+ * same axis of the same scroller before it ran takes its place: both read before either writes, so the older one would
+ * scroll to what is no longer wanted (a tab chosen, then another before the round). Returns what takes it back.
  */
 export function reveal(scroller: ComponentBase, target: ComponentBase | RevealRange, options: RevealOptions = {}): () => void {
-  return measure(
+  const axis = options.axis ?? 'both';
+  let waiting = waitingReveals.get(scroller);
+  if (!waiting) waitingReveals.set(scroller, (waiting = new Map()));
+  const ofScroller = waiting;
+  ofScroller.get(axis)?.();
+  const forget = () => {
+    if (ofScroller.get(axis) === stop) ofScroller.delete(axis);
+  };
+  const cancel = measure(
     scroller,
     () => placeOf(scroller, target, options),
     (place) => {
+      forget();
       if (place) scrollTo(scroller, place, options.motion);
       const then = options.then;
       if (then) measure(scroller, () => true, () => then());
     },
   );
+  const stop = () => {
+    forget();
+    cancel();
+  };
+  ofScroller.set(axis, stop);
+  return stop;
 }
 
 /**

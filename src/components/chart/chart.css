@@ -87,7 +87,8 @@
         fill: currentcolor;
     }
 
-    .mx-chart__ticks {
+    .mx-chart__ticks,
+    .mx-chart__probe {
         font-variant-numeric: tabular-nums;
     }
 

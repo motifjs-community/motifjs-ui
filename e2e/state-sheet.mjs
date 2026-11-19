@@ -137,7 +137,7 @@ function mark([selector, setup, frame]) {
     el.disabled = true;
   }
   if (what === 'tabs') el.closest('.mx-tabs').dataset.variant = value;
-  el.scrollIntoView({ block: 'center' });
+  el.scrollIntoView({ block: 'center', behavior: 'instant' });
   return true;
 }
 

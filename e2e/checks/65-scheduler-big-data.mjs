@@ -50,7 +50,7 @@ export default async function ({ page, base, check, axeSource }) {
     // A box the mouse can press: only what is in view is drawn, so a box found before scrolling is gone after it.
     // An appointment brought into the middle first: by now the scrolling above may have left the boxes out of view.
     await scheduler.scrollIntoViewIfNeeded();
-    await scheduler.locator('.mx-scheduler__scroll .mx-scheduler__appointment').first().evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }));
+    await scheduler.locator('.mx-scheduler__scroll .mx-scheduler__appointment').first().evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }));
     await page.waitForTimeout(300);
     const r = await scheduler.evaluate((el) => {
       const area = (el.querySelector('.mx-scheduler__line-scroll') ?? el.querySelector('.mx-scheduler__scroll')).getBoundingClientRect();

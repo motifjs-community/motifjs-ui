@@ -164,7 +164,7 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // The compact bars example: three tools in a narrow area, one alone at the bottom.
   const ex = section('compact');
-  await ex.locator('.mx-tabdocs').first().evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await ex.locator('.mx-tabdocs').first().evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await still(ex.locator('.mx-tabdocs').first());
   const left = ex.locator('.mx-tabdocs__area[data-side="left"] .mx-tabdocs__group').first();
   const count = await left.evaluate((g) => ({

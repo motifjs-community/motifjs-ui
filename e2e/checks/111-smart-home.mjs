@@ -19,11 +19,13 @@ export default async function ({ page, base, check, axeSource }) {
     const clock = await page.locator('.sh-day').textContent();
     check('the day and the time are at the top', /\d{1,2}[:.]\d{2}/.test(clock), clock);
     const energy = () => page.locator('.sh-energy .mx-gauge').getAttribute('aria-valuenow');
+    // Both move every two seconds: the power by a random step, a room toward its target. Rounded to a tenth, either may
+    // read the same after a step, so the check waits for one to move, as one does within a few steps.
     const firstEnergy = await energy();
-    await page.waitForTimeout(4300);
-    // Both move every two seconds: the power at random, the rooms toward their targets.
     const firstIndoor = await watched();
-    await page.waitForTimeout(4300);
+    await page
+        .waitForFunction(([e, i]) => document.querySelector('.sh-energy .mx-gauge')?.getAttribute('aria-valuenow') !== e || document.querySelector('.sh-indoor')?.getAttribute('aria-valuenow') !== i, [firstEnergy, firstIndoor], { timeout: 20000, polling: 500 })
+        .catch(() => {});
     check('the devices report new values on their own', (await energy()) !== firstEnergy || (await watched()) !== firstIndoor, `power ${firstEnergy} → ${await energy()}, indoors ${firstIndoor} → ${await watched()}`);
     await page.locator('.sh-scene', { hasText: 'Away' }).click();
     await page.waitForTimeout(300);

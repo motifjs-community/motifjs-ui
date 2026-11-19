@@ -81,7 +81,7 @@ export class RadarPlot implements PlotView {
         put(this.svgPart, 'width', String(width));
         put(this.svgPart, 'height', String(height));
         this.box = { left: 0, top: 0, width, height };
-        const measure = (text: string) => input.texts.width(text, look.font);
+        const measure = (text: string) => input.texts.ticks.width(text, look.font);
         const names = model.categories.map(key => this.xText(key));
         const wide = Math.max(0, ...names.map(measure));
         this.cx = width / 2;

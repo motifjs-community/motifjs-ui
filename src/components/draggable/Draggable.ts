@@ -2,7 +2,7 @@ import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifE
 import { Control } from "../../core/control";
 import { compareTreeOrder } from "../../core/component-tree";
 import { part } from "../../core/draw-parts";
-import { holderOf, measure, rectOf, type Rect } from "../../core/measure";
+import { afterDrawn, holderOf, measure, rectOf, type Rect } from "../../core/measure";
 import { onLanguage } from "../../core/on-language";
 import { windowOf } from "../../core/page-documents";
 import { css, mark, put, text, toggleClass } from "../../core/part-writes";
@@ -67,6 +67,8 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
     handlePart: ComponentBase | null = null;
     /** The handle had no role of its own: the draggable gave it one. */
     gaveRole = false;
+    /** Takes `data-landing` away once the place the pointer let it go is drawn. */
+    stopLanding: (() => void) | null = null;
 
     constructor(props?: IBaseProp<DraggableProps>) {
         super('div', props);
@@ -412,11 +414,25 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
             this.applyPosition();
         } else {
             if (target) target.drop({ draggable: this, data: this.data, cancel: false, source: target, event: e ?? undefined });
-            // `x-model` takes the place back.
-            if (!this.clone) this.bindings.writeModel({ ...this.pos });
+            if (!this.clone) {
+                this.land();
+                // `x-model` takes the place back.
+                this.bindings.writeModel({ ...this.pos });
+            }
         }
         this.ended.fire({ ...this.args(target, e ?? undefined), dropped: !cancelled && !!target });
         if (!this.clone) this.announce();
+    }
+
+    // Dropped, it is drawn where the pointer let it go: the last move, which may land with the release when the drawing is
+    // behind the pointer, does not glide as a move by the keys or the model does (`data-landing` until it is drawn).
+    land(): void {
+        this.stopLanding?.();
+        mark(this, 'data-landing', true);
+        this.stopLanding = afterDrawn(this, () => {
+            this.stopLanding = null;
+            mark(this, 'data-landing', false);
+        });
     }
 
     // The arrow keys move it by `step`, within the boundary and along the axis.

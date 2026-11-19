@@ -1741,7 +1741,7 @@
     color: var(--_chart-axis-color, inherit);
   }
 
-  .mx-chart__ticks {
+  .mx-chart__ticks, .mx-chart__probe {
     color: var(--_chart-ticks-color, inherit);
     font-size: var(--_chart-ticks-font-size, inherit);
   }
@@ -1751,7 +1751,7 @@
     font-size: var(--_chart-axis-title-font-size, inherit);
   }
 
-  .mx-chart__labels {
+  .mx-chart__labels, .mx-chart__label-probe {
     color: var(--_chart-labels-color, inherit);
     font-size: var(--_chart-labels-font-size, inherit);
     font-weight: var(--_chart-labels-font-weight, inherit);
@@ -1890,7 +1890,7 @@
     color: var(--_chart-reference-band-color, inherit);
   }
 
-  .mx-chart__reference-label {
+  .mx-chart__reference-label, .mx-chart__reference-probe {
     color: var(--_chart-reference-label-color, inherit);
     font-size: var(--_chart-reference-label-font-size, inherit);
   }

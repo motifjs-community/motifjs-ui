@@ -14,11 +14,8 @@ export default function Handle() {
                 items={() => s.tags}
                 itemTemplate={tag => {
                     const chip = new Chip({ text: tag });
-                    const grip = document.createElement('span');
-                    grip.className = 'mx-glyph so-grip';
-                    grip.dataset.icon = 'drag-dots';
-                    grip.setAttribute('aria-label', `Move ${tag}`);
-                    chip.element.prepend(grip);
+                    // The handle is a component of the item: `handle` finds it among them and makes it the button.
+                    chip.controls.insert(0, <span class="mx-glyph so-grip" data-icon="drag-dots" aria-label={`Move ${tag}`} />);
                     return chip;
                 }}
                 onDragStarting={e => {

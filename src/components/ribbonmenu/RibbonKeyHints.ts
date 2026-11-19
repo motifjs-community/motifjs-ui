@@ -56,6 +56,9 @@ export class RibbonKeyHints {
     level: 'tabs' | 'commands' | 'inner' | null = null;
     inner: InnerHints | null = null;
     wanted: Wanted | null = null;
+    /** The letters of the level are not laid out yet: keys typed meanwhile wait in `queue` and are typed once they are. */
+    waiting = false;
+    queue: string[] = [];
 
     constructor(readonly owner: Component<HTMLElement>, readonly tabs: () => KeyHint[], readonly commands: () => KeyHint[], readonly ended: () => void) {
         this.layer = part<HTMLDivElement>(owner, 'div', 'mx-ribbon-menu__hints');
@@ -76,45 +79,55 @@ export class RibbonKeyHints {
     stop(): void {
         if (!this.level) return;
         this.level = null;
+        this.waiting = false;
+        this.queue = [];
         this.clear();
         this.closeInner();
         kept(this.layer, false);
         this.ended();
     }
 
-    // A key while the hints are shown: `true` when it was theirs.
+    // A key while the hints are shown: `true` when it was theirs. Typed before the letters of the level are laid out
+    // (Alt and a letter in one go), it waits for them: what is typed is what the letters, once drawn, say.
     key(e: KeyboardEvent): boolean {
         if (!this.level) return false;
-        if (e.key === 'Escape') {
+        if (['Alt', 'Shift', 'Control', 'Meta'].includes(e.key)) return false;
+        if (e.key !== 'Escape' && e.key !== 'Backspace' && (e.key.length !== 1 || e.ctrlKey || e.metaKey)) {
+            this.stop();
+            return false;
+        }
+        if (this.waiting) this.queue.push(e.key);
+        else this.type(e.key);
+        return true;
+    }
+
+    type(key: string): void {
+        if (key === 'Escape') {
             if (this.typed) this.filter('');
             else if (this.level === 'inner') {
                 this.closeInner();
                 this.start('commands');
             } else if (this.level === 'commands') this.start('tabs');
             else this.stop();
-            return true;
+            return;
         }
-        if (e.key === 'Backspace') {
+        if (key === 'Backspace') {
             this.filter(this.typed.slice(0, -1));
-            return true;
+            return;
         }
-        if (['Alt', 'Shift', 'Control', 'Meta'].includes(e.key)) return false;
-        if (e.key.length !== 1 || e.ctrlKey || e.metaKey) {
-            this.stop();
-            return false;
-        }
-        const typed = this.typed + e.key.toLocaleUpperCase(uiLocale.locale);
+        const typed = this.typed + key.toLocaleUpperCase(uiLocale.locale);
         const exact = this.drawn.find(d => d.keys === typed);
         if (exact) {
             const level = this.level;
             this.clear();
             exact.hint.press();
             // Nothing else drew or ended the hints while waiting for what the press changed to be laid out.
-            const waiting = this.drawn;
-            const untouched = () => this.level !== null && this.drawn === waiting;
+            const before = this.drawn;
+            const untouched = () => this.level !== null && this.drawn === before;
             const opens = exact.hint.opens;
             if (opens) {
                 // What it opened shows its own letters once it is open and laid out.
+                this.waiting = true;
                 void whenMeasured(this.owner).then(() => {
                     if (!untouched()) return;
                     this.inner = opens();
@@ -122,15 +135,16 @@ export class RibbonKeyHints {
                     this.typed = '';
                     this.draw(this.inner.hints, this.inner.host);
                 });
-                return true;
+                return;
             }
             // Pressing a tab goes on to the hints of its commands once they are laid out; pressing anything else ends them.
-            if (exact.hint.tab && level === 'tabs' && this.level === 'tabs') void whenMeasured(this.owner).then(() => untouched() && this.start('commands'));
-            else if (this.level === level) this.stop();
-            return true;
+            if (exact.hint.tab && level === 'tabs' && this.level === 'tabs') {
+                this.waiting = true;
+                void whenMeasured(this.owner).then(() => untouched() && this.start('commands'));
+            } else if (this.level === level) this.stop();
+            return;
         }
         if (this.drawn.some(d => d.keys.startsWith(typed))) this.filter(typed);
-        return true;
     }
 
     // The letters are drawn with the next measuring round, where what they stand on is read.
@@ -139,6 +153,7 @@ export class RibbonKeyHints {
         kept(this.layer, host === this.layer);
         const parts = hints.map(hint => hint.part);
         this.wanted = { hints, parts, host };
+        this.waiting = true;
         measure(this.owner, this.readSpots, this.drawBadges);
     }
 
@@ -167,6 +182,9 @@ export class RibbonKeyHints {
             css(badge, 'top', `${box.bottom - root.top}px`);
             this.drawn.push({ hint, keys: keys[i], badge });
         });
+        this.waiting = false;
+        // What was typed meanwhile, in order, until a key waits for another level to be laid out.
+        while (this.queue.length && !this.waiting && this.level) this.type(this.queue.shift()!);
     };
 
     closeInner(): void {

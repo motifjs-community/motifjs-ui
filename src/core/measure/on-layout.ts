@@ -14,7 +14,7 @@ import { Watcher } from './watcher';
  *   browser laid it out (the first one too, and the one after it is shown again or moved), so nothing is laid out to
  *   read it; where the window has no size observer (a test document), the layer reads those in the next run. A size
  *   within half a pixel of the last one told is not told again.
- * - `look`: the design language, theme or density changed, fonts finished loading, a length it reads came out another size, or it moved into
+ * - `look`: the design language, theme, density or reading direction changed, fonts finished loading, a length it reads came out another size, or it moved into
  *   another window.
  * - `page`: its window changed size. `scroll`: something scrolled in the page of its window, but inside `except`.
  * - `sight`: it came into the viewport of its window or left it; whether it is in sight comes with the call.

@@ -33,6 +33,9 @@ export default async function ({ page, base, check, axeSource }) {
     await page.keyboard.press('ArrowRight');
     w = await widths(basic);
     check('Right moves the handle 10 px', w[0] === 150, w.join('/'));
+    // The share is written from the sizes as laid out, in the next measuring round.
+    const share = Math.round((w[0] / (w[0] + w[1])) * 100);
+    await page.waitForFunction(([el, s]) => Math.abs(Number(el.getAttribute('aria-valuenow')) - s) <= 1, [await handles.nth(0).elementHandle(), share], { timeout: 2000 }).catch(() => {});
     const now = await handles.nth(0).getAttribute('aria-valuenow');
     check('aria-valuenow is the first pane’s share of the two beside the handle', Math.abs(Number(now) - Math.round((w[0] / (w[0] + w[1])) * 100)) <= 1, now);
     await page.keyboard.press('End');

@@ -101,7 +101,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await s.scrollIntoViewIfNeeded();
   const lines = () => series.locator('.sched-events li').allTextContents();
   const review = s.locator('.mx-scheduler__appointment[data-series]', { hasText: 'Design review' }).first();
-  await review.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await review.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   const a = await box(review);
   const row = await s.locator('.mx-scheduler__cells [data-cell="0:0"]').evaluate((el) => el.getBoundingClientRect().height);
   await page.mouse.move(a.left + a.width / 2, a.top + a.height / 2);

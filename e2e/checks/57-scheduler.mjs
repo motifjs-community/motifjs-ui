@@ -101,14 +101,17 @@ export default async function ({ page, base, check, axeSource, box }) {
     type.cell[0] === type.scheduler && type.cell[0] !== type.title[0] && type.cell[1] !== type.title[1],
     JSON.stringify(type),
   );
-  const target = picker.locator('.mx-calendar__cell:not([data-outside])').filter({ hasText: /^15$/ }).first();
+  // A day of another week than the one shown, whatever day the check runs on.
+  const shownDays = await s.locator('.mx-scheduler__date .mx-scheduler__day-number').allTextContents();
+  const day = ['15', '1', '28'].find((d) => !shownDays.includes(d));
+  const target = picker.locator('.mx-calendar__cell:not([data-outside])').filter({ hasText: new RegExp(`^${day}$`) }).first();
   await target.click();
   await page.waitForTimeout(200);
   const picked = await title();
   const numbers = await s.locator('.mx-scheduler__date .mx-scheduler__day-number').allTextContents();
   check(
     'the date opens a calendar; a day chosen there shows its week and closes it',
-    picked !== start && numbers.includes('15') && (await page.locator('.mx-popup:popover-open .mx-calendar').count()) === 0,
+    picked !== start && numbers.includes(day) && (await page.locator('.mx-popup:popover-open .mx-calendar').count()) === 0,
     `${picked}: ${numbers.join(' ')}`,
   );
   await s.locator('.mx-scheduler__today').click();

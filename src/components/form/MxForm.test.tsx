@@ -492,6 +492,39 @@ describe('MxForm', () => {
     expect(tools(form).map((b) => b.getAttribute('aria-label'))).toEqual(['Maximize']);
   });
 
+  it('a double click on the title bar keeps the size it had before maximizing; a move keeps where it went', async () => {
+    const host = page();
+    const form = new MxForm({ title: 'Notes', showMaximize: true, width: 256, height: 146 });
+    form.show(host);
+    await settle();
+    const el = form.element;
+    const bar = el.querySelector('.mx-form__bar')!;
+    // The box the browser draws: where it was put and the size it was given, the whole page once maximized.
+    vi.spyOn(el, 'getBoundingClientRect').mockImplementation(() => {
+      const max = form.windowState === 'maximized';
+      const x = max ? 0 : parseFloat(el.style.getPropertyValue('--_mx-x')) || 100;
+      const y = max ? 0 : parseFloat(el.style.getPropertyValue('--_mx-y')) || 80;
+      const [w, h] = max ? [1280, 900] : [256, 146];
+      return { x, y, left: x, top: y, right: x + w, bottom: y + h, width: w, height: h, toJSON: () => ({}) };
+    });
+    const fire = (type: string, x: number, y: number) => bar.dispatchEvent(Object.assign(new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 }), { pointerId: 1 }));
+    for (let i = 0; i < 2; i++) {
+      fire('pointerdown', 140, 90);
+      fire('pointerup', 140, 90);
+    }
+    bar.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(form.windowState).toBe('maximized');
+    await settle();
+    expect([form.width, form.height, form.left, form.top]).toEqual([256, 146, null, null]);
+    form.restore();
+    expect([el.style.getPropertyValue('--_mx-w'), el.style.getPropertyValue('--_mx-h')]).toEqual(['256px', '146px']);
+    fire('pointerdown', 140, 90);
+    fire('pointermove', 160, 100);
+    fire('pointerup', 160, 100);
+    await settle();
+    expect([form.left, form.top, form.width, form.height]).toEqual([120, 90, 256, 146]);
+  });
+
   it('a modal form cannot be minimized', async () => {
     const host = page();
     const form = new MxForm({ title: 'Modal', showMinimize: true });

@@ -139,6 +139,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   stays at the end, and a notice of an end above the view is not followed.
 - The button back to the latest message of a `Chat` stands in the middle, on a surface of its own: the button's own
   margins put it at the start, and its outline let the text under it show through.
+- A `Form` maximized by a double click on its title bar goes back to its own size on Restore. Each press on the bar
+  was taken as the start of a move, and its geometry was measured a frame after the release: by then the double click
+  had maximized the form, and the page's size was kept as its `width` and `height`. A press that moves nothing now
+  keeps nothing, and the geometry is kept only in the normal state.
+- A `Chart` measures each text in the font it is drawn in: the axis labels in theirs, the labels on the marks and of
+  the references in their own. The texts were measured in the chart's font, larger than the labels', so in a chart of
+  twelve months with room for each name every other month was left out. The probes take the units of the texts
+  (`.mx-chart__probe`, `.mx-chart__label-probe`, `.mx-chart__reference-probe`).
+- A `Chart` turns with the reading direction when `dir` changes on the page or on a part of it, as the docs' RTL
+  switch does. A change of `dir` is a change of the look now, as a theme's is: what was drawn for one direction is
+  drawn again.
+- `RibbonMenu` key hints take the keys typed before their letters are laid out: Alt and a letter in one go, or the
+  letter of a command typed right after the tab's. Those keys were swallowed while the letters waited for the next
+  measuring round; they now wait with them and are typed once the letters are drawn.
+- A tab chosen right after another stays in sight in a `Tabs` strip that scrolls (Home or End just after a click).
+  Each choice asked the strip to show its tab, and both were read in the same round: the first tab, out of sight by
+  then, took the strip back to the start. A reveal asked for along the same axis of the same scroller now takes the
+  place of one not run yet (`reveal` in the measuring layer), for every component that shows its chosen item.
+- A `Draggable` is drawn where the pointer let it go. When the drawing was behind the pointer, the last move landed
+  with the release and glided there as a move by the keys does, so `onDragEnded` came while it was still on its way.
+  It carries `data-landing` until that place is drawn; a move by the keys or the model still glides.
+- A `Chip` that is a button or an option itself holds no button inside. Its remove mark is for the pointer only
+  (`aria-hidden`); Delete and Backspace remove it, and the chip names them (`aria-keyshortcuts`). A chip that is only
+  removable keeps its remove button.
 
 ### Changed
 
@@ -150,6 +174,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   context on its component, has the part read it before its own tokens and stops it at every other component's root.
   A unit that turns may turn with its parent only (`turn.where` ending in `>`).
 - Docs: `Toolbar` has a group of its own (Overview, Customization, API reference).
+- Docs: the `Sortable` handle example builds its grip as a component; the `Draggable` page names `data-landing`.
+  `e2e/docs-smoke.mjs` reads the docs in English whatever the machine's language and starts each check in the same
+  window size, and the browser checks follow the kit's parts that are out of the page while hidden, the clipboard
+  written through the Clipboard API, the print mark on the app's root, boxes read in one frame and what a drag draws
+  with the next frame. A check scrolls the page into place at once (`behavior: 'instant'`), whatever `scroll-behavior`
+  the page has: a smooth one moved what it then pressed.
 
 ## [0.1.0-beta.13] - 2026-11-17
 

@@ -58,8 +58,6 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     this.textPart = part(this, 'span', 'mx-chip__text');
     this.removePart = part(this, 'span', 'mx-chip__remove');
     glyphPart(this.removePart, 'dismiss');
-    this.removePart.attr.add({ role: 'button' });
-    put(this.removePart, 'tabindex', '-1');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.onRemove) this.onRemove(own.onRemove);
     if (own.onSelectedChanged) this.onSelectedChanged(own.onSelectedChanged);
@@ -298,6 +296,13 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     mark(this, 'data-removable', removable);
     kept(this.removePart, removable);
     mark(this, 'data-pressable', this.pressable);
+    // A chip that is a control itself holds no control inside: its remove mark is for the pointer, and the keys that
+    // remove it (Delete, Backspace) are its shortcuts. Otherwise the mark is the button that removes it.
+    const inner = removable && !this.pressable;
+    put(this.removePart, 'role', inner ? 'button' : null);
+    put(this.removePart, 'tabindex', inner ? '-1' : null);
+    put(this.removePart, 'aria-hidden', removable && !inner ? 'true' : null);
+    put(this, 'aria-keyshortcuts', removable ? 'Delete Backspace' : null);
     if (!this.asOption) {
       const selectable = !!this.peekProperty('selectable');
       put(this, 'role', selectable || this.peekProperty('clickable') ? 'button' : null);

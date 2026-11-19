@@ -18,7 +18,7 @@ const STATES = ['rest', 'focus', 'open', 'past', 'hover', 'open+hover'];
  */
 export async function sweepBox(page, selector, colours) {
   const box = page.locator(selector).first();
-  await box.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await box.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await page.mouse.move(0, 0);
   const worst = { title: { ratio: Infinity }, time: { ratio: Infinity } };
   for (const state of STATES) {

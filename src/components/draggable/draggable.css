@@ -9,7 +9,8 @@
         min-inline-size: 0;
     }
 
-    .mx-draggable:not([data-dragging]) {
+    /* A move by the keys or the model glides; the place a drag lets it go is drawn at once (`data-landing`). */
+    .mx-draggable:not([data-dragging], [data-landing]) {
         transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
     }
 

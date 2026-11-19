@@ -120,6 +120,14 @@ export default async function ({ page, base, check, axeSource }) {
   const rowOf = (id) => page.locator(`${ad} .mx-data-grid__body > .mx-data-grid__row:not([hidden])`).filter({ has: page.locator('[data-field="id"]', { hasText: new RegExp(`^${id}$`) }) });
   await rowOf(2).locator('.mx-data-grid__adaptive-button').click();
   await page.waitForSelector(`${ad} .mx-data-grid__adaptive-row:not([hidden]) .mx-data-grid__form-field, ${ad} .mx-data-grid__adaptive-row:not([hidden]) .mx-data-grid__adaptive-item`);
+  // The rows below move by the detail's height as its size is told, a frame or two after it shows.
+  await page
+    .waitForFunction((g) => {
+      const d = document.querySelector(`${g} .mx-data-grid__adaptive-row:not([hidden])`);
+      const next = [...document.querySelectorAll(`${g} .mx-data-grid__body > .mx-data-grid__row:not([hidden])`)].find((el) => el.querySelector('[data-field="id"]')?.textContent === '3');
+      return !!d && !!next && Math.abs(next.getBoundingClientRect().top - d.getBoundingClientRect().bottom) < 2;
+    }, ad, { timeout: 2000 })
+    .catch(() => {});
   const detail = await page.evaluate((g) => {
     const d = document.querySelector(`${g} .mx-data-grid__adaptive-row:not([hidden])`);
     const r = [...document.querySelectorAll(`${g} .mx-data-grid__body > .mx-data-grid__row:not([hidden])`)].find((el) => el.querySelector('[data-field="id"]')?.textContent === '2');

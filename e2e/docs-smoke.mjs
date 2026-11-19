@@ -61,7 +61,8 @@ for (let i = 0; ; i++) {
 
 const browser = await chromium.launch({ executablePath: chromePath });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  // The checks read the docs in English, whatever the machine's language.
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, locale: 'en-US' });
   const pageErrors = [];
   page.on('pageerror', (e) => pageErrors.push(String(e)));
   // MotifJS reports misuse (an effect that keeps triggering itself, a lifecycle error) on the console.
@@ -79,17 +80,19 @@ try {
     await page.addScriptTag({ content: axeSource });
     for (const theme of ['light', 'dark']) {
       await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
-      // Let the 120ms color transitions settle; axe snapshots styles early in its run.
-      await page.waitForTimeout(300);
+      // Let the color transitions end; axe snapshots styles early in its run.
+      await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => {}))));
       const violations = await page.evaluate(async () => (await window.axe.run(document)).violations.map((v) => v.id));
       check(`axe clean on /${path} (${theme})`, violations.length === 0, violations.join(', '));
     }
   }
 
-  // Each page's own checks: e2e/checks/*.mjs, in name order.
+  // Each page's own checks: e2e/checks/*.mjs, in name order, each in the window size the page opened with (a check
+  // that sizes the window for itself leaves it so).
   const box = (loc) => loc.evaluate((el) => el.getBoundingClientRect().toJSON());
   for (const file of readdirSync(join(root, 'e2e', 'checks')).filter((f) => f.endsWith('.mjs')).sort()) {
     const run = (await import(pathToFileURL(join(root, 'e2e', 'checks', file)).href)).default;
+    await page.setViewportSize({ width: 1280, height: 900 });
     try {
       await run({ page, base, check, axeSource, box });
     } catch (e) {

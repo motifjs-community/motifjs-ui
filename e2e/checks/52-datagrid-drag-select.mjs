@@ -97,11 +97,15 @@ export default async function ({ page, base, check, axeSource }) {
 
   // Copy a range.
   await drag(cellsGrid, [0, 'customer'], [[1, 'city']]);
-  // What the copy put on the clipboard, read in the copy event itself.
-  await page.evaluate(() => window.addEventListener('copy', (e) => (window.__copied = e.clipboardData?.getData('text/plain') ?? ''), { once: true }));
+  // What the copy put on the clipboard, read from the clipboard: the grid writes it through the Clipboard API, and no
+  // copy event comes with that.
+  await page.evaluate(() => navigator.clipboard.writeText(''));
   await page.keyboard.press('Control+c');
-  await page.waitForTimeout(100);
-  const copied = await page.evaluate(() => window.__copied ?? '');
+  let copied = '';
+  for (let i = 0; i < 40 && !copied; i++) {
+    await page.waitForTimeout(50);
+    copied = await page.evaluate(() => navigator.clipboard.readText());
+  }
   const expected = await page.evaluate((g) => {
     const t = (i, f) => document.querySelector(`${g} .mx-data-grid__body > .mx-data-grid__row:not([hidden])[aria-rowindex="${i + 2}"] [data-field="${f}"]`).textContent;
     return `${t(0, 'customer')}\t${t(0, 'city')}\n${t(1, 'customer')}\t${t(1, 'city')}`;

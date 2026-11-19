@@ -102,7 +102,8 @@ export class ChartPlot implements PlotView {
     brush: Component<SVGPathElement>;
     /** The model of the last drawing: where a change moves its values from. The chart may hand over the next one early, for its texts. */
     drawn: ChartModel | null = null;
-    scales: { position: ChartScale & { size?: number }; value: ChartScale; measure: (text: string) => number } | null = null;
+    /** The scales of the last drawing, and the width of a label on the marks: what a move of the values draws with. */
+    scales: { position: ChartScale & { size?: number }; value: ChartScale; labelWidth: (text: string) => number } | null = null;
     /** Stops the move of the values under way, if one is. */
     stopMove: (() => void) | null = null;
 
@@ -167,7 +168,8 @@ export class ChartPlot implements PlotView {
         put(this.svgPart, 'width', String(width));
         put(this.svgPart, 'height', String(height));
 
-        const measure = (text: string) => input.texts.width(text, look.font);
+        const measure = (text: string) => input.texts.ticks.width(text, look.font);
+        const labelWidth = (text: string) => input.texts.labels.width(text, look.font);
         const line = look.line;
         const xShown = xAxis.visible !== false;
         const yShown = yAxis.visible !== false;
@@ -204,7 +206,7 @@ export class ChartPlot implements PlotView {
         // The labels of the marks need their room too: the tallest bar often reaches the top of the axis.
         const labeled = model.series.filter(s => s.shown && s.source.labels && s.source.labels !== 'none');
         const labelRoom = labeled.length ? line + look.tickPad : 0;
-        if (horizontal && labeled.length) end = Math.max(end, this.widestLabel(labeled, measure) + look.tickPad);
+        if (horizontal && labeled.length) end = Math.max(end, this.widestLabel(labeled, labelWidth) + look.tickPad);
         const top = horizontal ? 0 : Math.max(yLabelsOn ? line / 2 : 0, labelRoom);
         const left = Math.round(rtl ? end : start);
         const right = Math.round(rtl ? start : end);
@@ -226,14 +228,14 @@ export class ChartPlot implements PlotView {
         const positionScale = this.positionScale(box);
         this.placePoints(positionScale, valueScale);
         this.drawn = model;
-        this.scales = { position: positionScale, value: valueScale, measure };
+        this.scales = { position: positionScale, value: valueScale, labelWidth };
 
         this.drawGrid(value, valueScale, positions, positionScale);
         this.drawLabels(value.ticks, valueScale, positions, positionScale, measure, { xLabelsOn, yLabelsOn });
         this.drawTitles(xTitle, yTitle);
-        this.drawReferences(positionScale, valueScale, measure);
+        this.drawReferences(positionScale, valueScale, text => input.texts.references.width(text, look.font));
         this.showBrush(null, null);
-        if (!before || !this.tween(before)) this.drawSeries(positionScale, valueScale, measure);
+        if (!before || !this.tween(before)) this.drawSeries(positionScale, valueScale, labelWidth);
         this.drawSelected();
         this.showActive(null, null, false);
     }
@@ -270,7 +272,7 @@ export class ChartPlot implements PlotView {
                 if (from.rect && to.rect) this.bars.set(p, { left: mix(from.rect.left, to.rect.left, e), top: mix(from.rect.top, to.rect.top, e), width: mix(from.rect.width, to.rect.width, e), height: mix(from.rect.height, to.rect.height, e) });
             }
             const scales = this.scales!;
-            this.drawSeries(scales.position, scales.value, scales.measure);
+            this.drawSeries(scales.position, scales.value, scales.labelWidth);
         };
         const start = performance.now();
         let duration: number | null = null;

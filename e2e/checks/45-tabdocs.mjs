@@ -57,12 +57,12 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('Delete closes the focused tab; its empty group closes', (await groups.count()) === 2 && (await docs.getByRole('tab', { name: 'Page 4' }).count()) === 0);
   check('…and focus stays in the manager', await docs.evaluate((m) => m.contains(document.activeElement)));
 
-  // Maximize and restore.
+  // Maximize and restore: while one group is maximized, the others are out of the page.
+  const groupCount = await groups.count();
   await code.getByRole('button', { name: 'Maximize group' }).first().click();
-  const hidden = await groups.evaluateAll((all) => all.map((g) => g.hidden));
-  check('Maximize hides the other groups', hidden.filter(Boolean).length === 1 && (await box(docs)).width - (await box(groups.locator('visible=true').first())).width < 3);
+  check('Maximize hides the other groups', groupCount > 1 && (await groups.count()) === 1 && (await box(docs)).width - (await box(groups.first())).width < 3, `${groupCount} → ${await groups.count()}`);
   await code.getByRole('button', { name: 'Restore groups' }).first().click();
-  check('Restore shows them again', (await groups.evaluateAll((all) => all.filter((g) => g.hidden).length)) === 0);
+  check('Restore shows them again', (await groups.count()) === groupCount, `${await groups.count()} of ${groupCount}`);
 
   // Dragging a splitter.
   const overview = page.locator('section[aria-labelledby="overview"] .mx-tabdocs');
@@ -127,7 +127,12 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('the layout changed', (await layoutOf()) !== first, await layoutOf());
   await saving.getByRole('button', { name: 'Restore layout' }).click();
   check('Restore layout brings back the saved one', (await layoutOf()) === first, `${first} vs ${await layoutOf()}`);
-  check('…with the grid made again by its type', (await saved.locator('.mx-data-grid').count()) === 1);
+  // Only the shown document of a group is in the page: Orders is shown to see the grid its type made, from its state.
+  await saved.getByRole('tab', { name: 'Orders' }).click();
+  const remade = saved.locator('.mx-data-grid');
+  const rowCount = saved.locator('.mx-data-grid [role="grid"]');
+  await page.waitForFunction((el) => el?.getAttribute('aria-rowcount') !== '-1', await rowCount.elementHandle(), { timeout: 3000 }).catch(() => {});
+  check('…with the grid made again by its type', (await remade.count()) === 1 && (await rowCount.getAttribute('aria-rowcount')) === '41', String(await rowCount.getAttribute('aria-rowcount')));
 
   for (const theme of ['light', 'dark']) {
     await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);

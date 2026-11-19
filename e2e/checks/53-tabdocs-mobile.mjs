@@ -9,8 +9,10 @@ export default async function ({ page, base, check, axeSource }) {
   const settle = (p) => p.waitForTimeout(450);
 
   /** A page with touch at `width` × `height`, and a finger driven through the protocol. */
+  // In the language of the page the checks run in.
+  const locale = await page.evaluate(() => navigator.language);
   const device = async (width, height) => {
-    const context = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const context = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, locale });
     const p = await context.newPage();
     const errors = [];
     p.on('pageerror', (e) => errors.push(String(e)));
@@ -167,23 +169,30 @@ export default async function ({ page, base, check, axeSource }) {
   // Switching presentations and back keeps every content and its state.
   const P = 'section[aria-labelledby="ways"] .mx-tabdocs';
   await p.locator(P).scrollIntoViewIfNeeded();
-  const mark = () =>
+  // Each document's panel, each time it is in the page, is the one it was before (a panel not shown is not in the
+  // page, and the dock areas' panels show only in some presentations).
+  const remade = () =>
     p.evaluate((m) => {
-      const el = document.querySelector(m);
-      const panels = [...el.querySelectorAll('.mx-tabdocs__panel')];
-      for (const panel of panels) panel.__mark ??= Math.random();
-      return { marks: panels.map((x) => x.__mark).sort().join(','), json: null };
+      const seen = (window.__panels ??= new Map());
+      const out = [];
+      for (const panel of document.querySelector(m).querySelectorAll('.mx-tabdocs__panel')) {
+        const doc = panel.getAttribute('aria-labelledby');
+        if (seen.has(doc) && seen.get(doc) !== panel) out.push(doc);
+        seen.set(doc, panel);
+      }
+      return { remade: out, seen: seen.size };
     }, P);
-  const first = await mark();
+  const changed = (await remade()).remade;
   const saved = [];
   for (const kind of ['Desktop', 'Phone', 'Tablet', 'Desktop']) {
     await p.locator('section[aria-labelledby="ways"] .mx-radio-group__text', { hasText: kind }).click();
     await settle(p);
+    changed.push(...(await remade()).remade);
     await p.locator('section[aria-labelledby="ways"]').getByRole('button', { name: 'Save the layout' }).click();
     saved.push(await p.locator('section[aria-labelledby="ways"] output').last().textContent());
   }
-  const after = await mark();
-  check('desktop → phone → tablet → desktop: the same panels, never made again', after.marks === first.marks, `${first.marks.length} / ${after.marks.length}`);
+  const panels = (await remade()).seen;
+  check('desktop → phone → tablet → desktop: the same panels, never made again', changed.length === 0 && panels > 3, `${changed.join(',')} of ${panels}`);
   check('…and the layout saves the same in each', saved.every((t) => t.includes('the same as the first save')), JSON.stringify(saved));
   check('no errors or MotifJS warnings on the phone', phone.errors.length === 0, phone.errors.slice(0, 3).join(' | '));
   await phone.context.close();
@@ -211,7 +220,7 @@ export default async function ({ page, base, check, axeSource }) {
   check('on a touch screen its tabs are taller (control.height.lg)', tabletTargets.every((h) => h >= 40), JSON.stringify(tabletTargets));
   const guest = p.locator(P + ' [role="tab"][data-guest]').first();
   // In sight in its strip first (the strip scrolls, it is not under the toolbar).
-  await guest.evaluate((el) => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  await guest.evaluate((el) => el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' }));
   await tablet.tap(centre(await guest.boundingBox()));
   t = await tab();
   check('a tap on a folded tab shows its own group in that place', t.slots.length === 2 && /2:router\.ts,README\.md\*|2:router\.ts/.test(t.slots[1]), JSON.stringify(t));

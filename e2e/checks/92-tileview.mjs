@@ -49,12 +49,16 @@ export default async function ({ page, base, check, axeSource }) {
     check('the steps in their first order', (await orderTold.textContent()) === 'Plan, Design, Build, Test, Ship, Rest');
     const first = await steps.nth(0).boundingBox();
     const third = await steps.nth(2).boundingBox();
+    // What a drag draws comes with the next frame; on a busy page the pointer gets frames ahead of it.
+    const drawn = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
     await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2);
     await page.mouse.down();
     await page.mouse.move(first.x + first.width / 2 + 10, first.y + first.height / 2, { steps: 2 });
+    await drawn();
     const ghost = page.locator('.mx-tile-view__ghost');
     check('after a few pixels the drag starts: the tile is marked and a copy follows the pointer', (await steps.nth(0).getAttribute('data-dragging')) === '' && (await ghost.isVisible()));
     await page.mouse.move(third.x + third.width * 0.8, third.y + third.height / 2, { steps: 6 });
+    await drawn();
     check('the tile where the drop would land is marked, after it', (await steps.nth(2).getAttribute('data-drop')) === 'after');
     await page.mouse.up();
     await page.waitForTimeout(100);

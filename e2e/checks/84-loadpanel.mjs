@@ -6,9 +6,14 @@ export default async function ({ page, base, check, axeSource, box }) {
     await panel.waitFor();
     const load = ways.getByRole('button', { name: 'Load orders' });
     await load.focus();
+    // Seen by the page itself half way through the delay (200 ms): a timer set at the click runs before the panel's own.
+    await page.evaluate(() => {
+        window.__early = null;
+        document.addEventListener('click', () => setTimeout(() => (window.__early = [...document.querySelectorAll('section[aria-labelledby="ways"] .mx-load-panel')].filter(el => el.checkVisibility()).length), 100), { capture: true, once: true });
+    });
     await load.click();
-    await page.waitForTimeout(100);
-    check('nothing shows before the delay', (await ways.locator('.mx-load-panel').evaluateAll(els => els.filter(el => !el.hidden).length)) === 0);
+    await page.waitForFunction(() => window.__early !== null);
+    check('nothing shows before the delay', (await page.evaluate(() => window.__early)) === 0);
     const layer = panel.locator('.mx-load-panel');
     await layer.waitFor({ timeout: 3000 });
     check('after the delay the layer is in the panel, which is busy', (await panel.getAttribute('aria-busy')) === 'true' && (await panel.evaluate(el => getComputedStyle(el).position === 'relative')));
@@ -25,19 +30,23 @@ export default async function ({ page, base, check, axeSource, box }) {
     await page.waitForFunction(() => document.querySelector('.lp-result')?.textContent === 'Orders loaded.', null, { timeout: 4000 }).catch(() => {});
     check('when the work ends it hides and focus comes back', (await layer.isHidden()) && (await load.evaluate(el => document.activeElement === el)) && (await panel.getAttribute('aria-busy')) === null);
 
-    // Over the page: the rest is inert; Cancel tells and hides.
+    // Over the page: the rest is inert; Cancel tells and hides. A panel with a place of its own stays in it, fixed over
+    // the page, and what is around it on the way up is inert.
     const pageSection = page.locator('section[aria-labelledby="page"]');
+    const inertBefore = await page.evaluate(() => document.querySelectorAll('[inert]').length);
     await pageSection.getByRole('button', { name: 'Build the report' }).click();
-    const whole = page.locator('body > .mx-load-panel');
+    const whole = page.locator('.mx-load-panel[data-page]');
     await whole.waitFor();
-    check('the whole page is covered, fixed', (await whole.getAttribute('data-page')) === '' && (await whole.evaluate(el => getComputedStyle(el).position === 'fixed')));
-    check('the app is inert under it', await page.evaluate(() => [...document.body.children].filter(c => !c.classList.contains('mx-load-panel') && c.tagName !== 'SCRIPT').every(c => c.hasAttribute('inert'))));
+    check('the whole page is covered, fixed', await whole.evaluate(el => getComputedStyle(el).position === 'fixed'));
+    // What holds the panel cannot be inert (the panel would be too): everything else is.
+    const reachable = await whole.evaluate(panel => [...document.querySelectorAll('button, a[href], input, select, textarea, [tabindex]')].filter(el => !panel.contains(el) && !el.contains(panel) && !el.closest('[inert]')).map(el => el.textContent.trim().slice(0, 20) || el.tagName));
+    check('the app is inert under it', reachable.length === 0, reachable.slice(0, 5).join(', '));
     const cancel = whole.getByRole('button', { name: 'Cancel' });
     check('Cancel has focus', await cancel.evaluate(el => document.activeElement === el));
     await cancel.click();
     await page.waitForFunction(() => document.querySelector('.lp-told')?.textContent === 'Cancelled.', null, { timeout: 2000 }).catch(() => {});
     check('Cancel told and hid it', (await pageSection.locator('.lp-told').textContent()) === 'Cancelled.' && (await whole.isHidden()));
-    check('the app can be used again', await page.evaluate(() => ![...document.body.children].some(c => c.hasAttribute('inert'))));
+    check('the app can be used again', (await page.evaluate(() => document.querySelectorAll('[inert]').length)) === inertBefore);
 
     // Options: the shade and the pane left out.
     const options = page.locator('section[aria-labelledby="options"]');

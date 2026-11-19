@@ -59,20 +59,20 @@ export default async function ({ page, base, check, axeSource }) {
     check('a PNG twice the size, in color', facts.src === 'data:image/png;base64,' && facts.width > 900 && facts.colors > 4, JSON.stringify(facts));
 
     // Right to left.
-    const mirrored = await basic.evaluate(async el => {
-        el.setAttribute('dir', 'rtl');
-        el.querySelector('.mx-chart__plot').style.paddingRight = '1px';
-        await new Promise(resolve => setTimeout(resolve, 150));
-        el.querySelector('.mx-chart__plot').style.paddingRight = '';
-        return el;
-    }).then(() => basic.evaluate(async el => {
-        await new Promise(resolve => setTimeout(resolve, 150));
+    // A change of direction is a change of the look: the chart draws again on its own.
+    const ends = () => basic.evaluate(el => {
         const texts = [...el.querySelectorAll('.mx-chart__ticks text')];
         const place = name => texts.find(t => t.textContent === name)?.getBoundingClientRect().left;
         return { jan: place('Jan'), dec: place('Dec') };
-    }));
+    });
+    await basic.evaluate(el => el.setAttribute('dir', 'rtl'));
+    await page.waitForTimeout(300);
+    const mirrored = await ends();
     await basic.evaluate(el => el.removeAttribute('dir'));
+    await page.waitForTimeout(300);
+    const back = await ends();
     check('right to left runs the other way', mirrored.jan !== undefined && mirrored.dec !== undefined && mirrored.jan > mirrored.dec, JSON.stringify(mirrored));
+    check('…and back again when the direction is taken away', back.jan < back.dec, JSON.stringify(back));
 
     // Every language and theme.
     await page.addScriptTag({ content: axeSource });

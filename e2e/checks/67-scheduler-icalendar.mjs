@@ -96,18 +96,20 @@ export default async function ({ page, base, check, axeSource }) {
   const back = await ps.evaluate((el) => ({ printing: el.hasAttribute('data-printing'), bar: !!el.querySelector('.mx-scheduler__bar') }));
   check('after printing it is as it was', !back.printing && back.bar, JSON.stringify(back));
   check('onPrinted says the dialog closed', /closed/.test(await pr.locator('output').textContent()), await pr.locator('output').textContent());
-  // print(): only this scheduler, marked while the dialog is open.
+  // print(): only this scheduler, marked while the dialog is open. The page's mark is on the app's root in the window,
+  // which holds the scheduler.
   const alone = await page.evaluate(async () => {
     let seen = null;
     const real = window.print;
     window.print = () => {
       const el = document.querySelector('section[aria-labelledby="print"] .mx-scheduler');
-      seen = { page: document.documentElement.hasAttribute('data-mx-print-one'), one: el.hasAttribute('data-print-one'), printing: el.hasAttribute('data-printing') };
+      const root = document.querySelector('[data-mx-print-one]');
+      seen = { page: !!root && root.contains(el), one: el.hasAttribute('data-print-one'), printing: el.hasAttribute('data-printing') };
     };
     [...document.querySelectorAll('section[aria-labelledby="print"] button')].find((b) => b.textContent.trim() === 'Print').click();
     await new Promise((r) => setTimeout(r, 300));
     window.print = real;
-    return { seen, after: document.documentElement.hasAttribute('data-mx-print-one') };
+    return { seen, after: !!document.querySelector('[data-mx-print-one]') };
   });
   check('print() marks the page and the scheduler while the dialog is open, and clears them after', !!alone.seen && alone.seen.page && alone.seen.one && alone.seen.printing && !alone.after, JSON.stringify(alone));
   // A timeline on paper: built whole.

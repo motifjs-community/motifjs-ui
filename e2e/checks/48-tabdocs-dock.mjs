@@ -52,7 +52,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   const axe = async (label) => {
     for (const theme of ['light', 'dark']) {
       await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
-      await page.waitForTimeout(150);
+      // The colors change over a short transition: axe reads them once it is over, however slow the machine.
+      await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => {}))));
       await page.addScriptTag({ content: axeSource });
       const violations = await page.evaluate(async () => (await window.axe.run(document)).violations.map((v) => `${v.id}: ${v.nodes.slice(0, 2).map((n) => n.target.join(' ')).join(' | ')}`));
       check(`${label}: axe clean in ${theme}`, violations.length === 0, violations.join(' ;; '));
@@ -63,7 +64,7 @@ export default async function ({ page, base, check, axeSource, box }) {
     await page.goto(base + 'tabdocs/dock', { waitUntil: 'load' });
     await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
     const m = page.locator(`section[aria-labelledby="${anchor}"] .mx-tabdocs`).first();
-    await m.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await m.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await still(m);
     return m;
   };
@@ -157,7 +158,10 @@ export default async function ({ page, base, check, axeSource, box }) {
     await drag(from, to);
     let r2 = await box(w);
     check('the window moves by the empty part of its strip', Math.abs(r2.x - (r.x + to.x - from.x)) <= 1 && Math.abs(r2.y - (r.y + to.y - from.y)) <= 1, `${JSON.stringify(r)} → ${JSON.stringify(r2)}`);
-    await drag({ x: r2.right - 3, y: r2.bottom - 3 }, { x: r2.right + 47, y: r2.bottom + 27 });
+    // By the corner's grip, where it shows: a rounded corner leaves the box's very corner outside the window.
+    const grip = await box(w.locator('.mx-tabdocs__window-edge[data-edge="bottom-end"]'));
+    const g = { x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 };
+    await drag(g, { x: g.x + 50, y: g.y + 30 });
     const r3 = await box(w);
     check('…and resizes from its corner', Math.abs(r3.width - (r2.width + 50)) <= 1 && Math.abs(r3.height - (r2.height + 30)) <= 1, `${JSON.stringify(r2)} → ${JSON.stringify(r3)}`);
     // The popups of a window lie over it, and the tab gets focus back.

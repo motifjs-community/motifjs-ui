@@ -89,7 +89,7 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // A drag along the row: two cells later, the same box; then to the next row.
   const box0 = s.locator('.mx-scheduler__line').nth(4).locator('.mx-scheduler__appointment').first();
-  await box0.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }));
+  await box0.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }));
   const job = await box0.evaluate((el) => ({ text: el.querySelector('.mx-scheduler__appointment-text').textContent, from: Number(el.style.getPropertyValue('--_from')), piece: el.dataset.piece }));
   const tick = await scroller.evaluate((el) => parseFloat(getComputedStyle(el.closest('.mx-scheduler__timeline')).getPropertyValue('--_tick')));
   let r = await box(box0);
@@ -117,7 +117,7 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // Its end: a cell on.
   const resized = boxOf(5);
-  await resized.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }));
+  await resized.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }));
   // The scroll builds what came into view first.
   await page.waitForTimeout(150);
   const span = Number(await resized.evaluate((el) => el.style.getPropertyValue('--_span')));

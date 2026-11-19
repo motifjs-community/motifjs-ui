@@ -111,7 +111,7 @@ export class PartsPlot implements PlotView {
 
     drawPie(series: ModelSeries): void {
         const { width, height, look, locale, model, texts } = this.input!;
-        const measure = (text: string) => texts.width(text, look.font);
+        const measure = (text: string) => texts.labels.width(text, look.font);
         this.cx = width / 2;
         this.cy = height / 2;
         this.radius = Math.max(1, Math.min(width, height) / 2 - look.sliceLift);
@@ -147,11 +147,12 @@ export class PartsPlot implements PlotView {
 
     drawFunnel(series: ModelSeries): void {
         const { width, height, look, locale, texts } = this.input!;
-        const measure = (text: string) => texts.width(text, look.font);
+        const nameWidth = (text: string) => texts.ticks.width(text, look.font);
+        const measure = (text: string) => texts.labels.width(text, look.font);
         const shown = series.points.filter(p => p.share !== null);
         if (!shown.length) return;
         const names = shown.map(p => this.xText(p.key));
-        const nameWide = Math.min(width * 0.35, Math.max(...names.map(measure)) + look.tickPad);
+        const nameWide = Math.min(width * 0.35, Math.max(...names.map(nameWidth)) + look.tickPad);
         const left = nameWide + look.tickPad;
         const room = Math.max(1, width - left);
         const gap = look.barGap;

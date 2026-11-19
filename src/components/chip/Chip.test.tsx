@@ -98,6 +98,25 @@ describe('Chip', () => {
     expect(asked.length).toBe(2);
   });
 
+  it('holds no control inside when it is a control itself: its remove mark is for the pointer, Delete for the keys', async () => {
+    const asked: boolean[] = [];
+    const chip = new Chip({ text: 'Ada', removable: true, onRemove: (e) => asked.push(e.byKeyboard) });
+    page(chip);
+    await settle();
+    const remove = part(chip, 'remove');
+    // Removable only: the mark is the button that removes it.
+    expect([chip.element.getAttribute('role'), remove.getAttribute('role'), remove.getAttribute('tabindex'), remove.getAttribute('aria-hidden')]).toEqual([null, 'button', '-1', null]);
+    expect(chip.element.getAttribute('aria-keyshortcuts')).toBe('Delete Backspace');
+    chip.selectable = true;
+    expect([chip.element.getAttribute('role'), remove.getAttribute('role'), remove.getAttribute('tabindex'), remove.getAttribute('aria-hidden')]).toEqual(['button', null, null, 'true']);
+    remove.click();
+    key(chip.element, 'Backspace');
+    expect(asked).toEqual([false, true]);
+    expect(chip.selected).toBe(false);
+    chip.removable = false;
+    expect(chip.element.hasAttribute('aria-keyshortcuts')).toBe(false);
+  });
+
   it('puts an icon or an avatar before the text', async () => {
     const icon = new Component('svg');
     const chip = new Chip({ text: 'Ada', icon });

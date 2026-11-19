@@ -26,8 +26,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('…which reads as disabled', (await page.getByRole('button', { name: 'Focusable', exact: true }).getAttribute('aria-disabled')) === 'true');
 
   const file = page.getByRole('button', { name: 'File', exact: true });
-  await file.evaluate((el) => el.scrollIntoView({ block: 'start' }));
-  await page.evaluate(() => window.scrollBy(0, -160));
+  await file.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await page.evaluate(() => window.scrollBy({ top: -160, behavior: 'instant' }));
   await file.click();
   const menuPopup = page.locator('.mx-popup:popover-open');
   check('the menu opens in the top layer', (await menuPopup.count()) === 1);
@@ -38,7 +38,7 @@ export default async function ({ page, base, check, axeSource, box }) {
     JSON.stringify([fileBox.bottom, popBox.top, fileBox.left, popBox.left]),
   );
   check('…with focus on its first item', (await page.evaluate(() => document.activeElement?.textContent)) === 'New');
-  await page.evaluate(() => window.scrollBy(0, 40));
+  await page.evaluate(() => window.scrollBy({ top: 40, behavior: 'instant' }));
   await page.waitForTimeout(100);
   const [fileScrolled, popScrolled] = [await box(file), await box(menuPopup)];
   check(
@@ -59,7 +59,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('a press outside closes it', (await menuPopup.count()) === 0);
 
   // Near the bottom of the window there is no room: it opens above.
-  await file.evaluate((el) => el.scrollIntoView({ block: 'end' }));
+  await file.evaluate((el) => el.scrollIntoView({ block: 'end', behavior: 'instant' }));
   await file.click();
   const [lowFile, lowPop] = [await box(file), await box(menuPopup)];
   check('with no room below it opens above', (await menuPopup.getAttribute('data-side')) === 'top' && lowPop.bottom <= lowFile.top, JSON.stringify([lowPop.bottom, lowFile.top]));

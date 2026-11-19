@@ -1,5 +1,5 @@
 import { Component, reactive } from '@motifx/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { measureNow } from '../../core/measure';
 import { enStrings, uiLocale } from '../../core/ui-locale';
@@ -90,6 +90,26 @@ describe('Draggable', () => {
         m.at = { x: 40, y: 10 };
         await settle();
         expect(d.currentPosition).toEqual({ x: 40, y: 10 });
+    });
+
+    it('is drawn where a drag lets it go, the last move landing with the release, without gliding; a move by the keys glides', async () => {
+        let d!: Draggable;
+        const told: string[] = [];
+        page(<Draggable ref={(x: Draggable) => (d = x)} onDragEnded={e => told.push(`${e.x},${e.y}`)} />);
+        await settle();
+        rect(d.element, 0, 0, 50, 50);
+        pointer(d.element, 'pointerdown', 10, 10);
+        pointer(window, 'pointermove', 30, 30);
+        measureNow(d);
+        // The drawing is behind the pointer: the last move is not drawn yet when the pointer lets go.
+        pointer(window, 'pointermove', 50, 40);
+        pointer(window, 'pointerup', 50, 40);
+        expect([d.element.style.translate, told]).toEqual(['40px 30px', ['40,30']]);
+        expect(d.element.hasAttribute('data-landing')).toBe(true);
+        await vi.waitFor(() => expect(d.element.hasAttribute('data-landing')).toBe(false));
+        key(d.element, 'ArrowRight');
+        expect(d.element.style.translate).toBe('50px 30px');
+        expect(d.element.hasAttribute('data-landing')).toBe(false);
     });
 
     it('a drag over a target of its group tells the target, which may refuse; the drop hands the data over', async () => {

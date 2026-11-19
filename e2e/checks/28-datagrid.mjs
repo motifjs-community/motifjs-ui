@@ -618,25 +618,34 @@ async function copyExportLayout({ page, base, check, axeSource }) {
   await page.waitForFunction(() => /2 saved, 0 failed/.test(document.querySelector('.dg-batch-note').textContent));
   check('datagrid batch: edits on two pages are kept and saved together', (await page.textContent('.dg-batch-note')).startsWith('0 unsaved'), await page.textContent('.dg-batch-note'));
 
-  // Copy and paste through the real clipboard: the copy event carries the text and a table.
+  // Copy and paste through the real clipboard: the grid writes the text and a table through the Clipboard API (no copy
+  // event comes with that), read back from the clipboard itself.
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
   await page.goto(base + 'datagrid/selection', { waitUntil: 'load' });
   const clip = '.dg-clipboard';
   await page.locator(clip).scrollIntoViewIfNeeded();
   await page.waitForSelector(cellAt(clip, 2, 'customer'));
-  await page.evaluate(() => {
-    window.__copied = [];
-    window.addEventListener('copy', (e) => window.__copied.push({ text: e.clipboardData.getData('text/plain'), html: e.clipboardData.getData('text/html') }));
-  });
-  const lastCopy = () => page.evaluate(() => window.__copied.at(-1) ?? null);
+  const lastCopy = async () => {
+    await page.evaluate(() => navigator.clipboard.writeText(''));
+    await page.keyboard.press('Control+C');
+    for (let i = 0; i < 40; i++) {
+      const found = await page.evaluate(async () => {
+        const out = {};
+        for (const item of await navigator.clipboard.read()) for (const type of item.types) out[type] = await (await item.getType(type)).text();
+        return out['text/plain'] ? { text: out['text/plain'], html: out['text/html'] ?? '' } : null;
+      });
+      if (found) return found;
+      await page.waitForTimeout(50);
+    }
+    return null;
+  };
   await page.click(cellAt(clip, 3, 'customer'));
   await page.click(cellAt(clip, 4, 'customer'), { modifiers: ['Control'] });
-  await page.keyboard.press('Control+C');
   let copied = await lastCopy();
   const lines = copied?.text.split('\r\n') ?? [];
   check('datagrid clipboard: Ctrl+C copies the selected rows as tab-separated text and an HTML table', lines.length === 2 && lines[0].startsWith('2\t') && lines[1].startsWith('3\t') && lines[0].split('\t').length === 8 && /^<table><tbody><tr><td>2<\/td>/.test(copied.html), JSON.stringify(copied).slice(0, 160));
   await page.click(cellAt(clip, 4, 'customer'), { modifiers: ['Control'] });
   await page.click(cellAt(clip, 3, 'customer'), { modifiers: ['Control'] });
-  await page.keyboard.press('Control+C');
   copied = await lastCopy();
   const source = await page.textContent(cellAt(clip, 3, 'customer'));
   check('datagrid clipboard: without a selection Ctrl+C copies the active cell', copied?.text === source, `${copied?.text} / ${source}`);

@@ -108,15 +108,17 @@ export default async function ({ page, base, check, axeSource }) {
   const half = await panelBox(frameSel);
   await touch('touchEnd');
   await settle();
-  const back = await page.evaluate((sel) => document.querySelector(sel).hasAttribute('data-open'), frameSel);
+  // Closed, a drawer in a frame is not in the page.
+  const isOpen = () => page.evaluate((sel) => document.querySelector(sel)?.hasAttribute('data-open') === true, frameSel);
+  const back = await isOpen();
   check('a finger from the edge brings it in with it, and let go early it goes back', half && half.right - f.x > 80 && half.right - f.x < 160 && !back, JSON.stringify(half));
   await stroke({ x: f.x + 6, y }, { x: f.x + 260, y }, 12, 30);
   await settle();
   let b = await panelBox(frameSel);
-  check('…and far enough, it stays open', await page.evaluate((sel) => document.querySelector(sel).hasAttribute('data-open'), frameSel) && Math.abs(b.left - f.x) <= 2, JSON.stringify([b, f]));
+  check('…and far enough, it stays open', (await isOpen()) && Math.abs(b.left - f.x) <= 2, JSON.stringify([b, f]));
   await stroke({ x: b.right - 20, y }, { x: b.right - 200, y }, 4, 0);
   await settle();
-  check('a quick swipe back towards its edge closes it', await page.evaluate((sel) => !document.querySelector(sel).hasAttribute('data-open'), frameSel));
+  check('a quick swipe back towards its edge closes it', !(await isOpen()));
   await options.getByRole('switch', { name: 'Swipe in from the edge' }).click();
   // Off, nothing takes the swipe (a real one would be the browser's own back gesture here): touch events made in the page.
   const taken = await page.evaluate((frameX) => {
@@ -132,7 +134,7 @@ export default async function ({ page, base, check, axeSource }) {
     send('touchend', frameX + 200);
     return moved.some(Boolean);
   }, f.x);
-  check('with edgeSwipe off a swipe from the edge is left alone', !taken && (await page.evaluate((sel) => !document.querySelector(sel).hasAttribute('data-open'), frameSel)));
+  check('with edgeSwipe off a swipe from the edge is left alone', !taken && !(await isOpen()));
 
   // Events.
   const events = section('events');

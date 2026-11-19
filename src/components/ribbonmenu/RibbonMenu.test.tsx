@@ -377,7 +377,9 @@ describe('RibbonMenu', () => {
         // jsdom has no layout: the hints are drawn for elements with a size.
         expect(menu.element.querySelector('.mx-ribbon-menu__hints')).not.toBeNull();
         expect(hints()).toEqual([]);
+        // Typed before the letters are laid out, Escape waits for them, then ends the hints.
         document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        await whenMeasured(menu);
         expect(menu.element.querySelector('.mx-ribbon-menu__hints')).toBeNull();
         menu.keyHints = false;
         await settle();
@@ -428,6 +430,31 @@ describe('RibbonMenu', () => {
             await drawn();
             expect(shown()).toEqual(['F', 'H', 'I']);
             key('Escape');
+            expect(menu.hints.active).toBe(false);
+        } finally {
+            proto.getBoundingClientRect = original;
+        }
+    });
+
+    it('types the keys pressed before the letters are laid out once they are: Alt, H and P in one go press Paste', async () => {
+        ran.length = 0;
+        const proto = HTMLElement.prototype;
+        const original = proto.getBoundingClientRect;
+        proto.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 20, bottom: 20, width: 20, height: 20, toJSON: () => ({}) }) as DOMRect;
+        try {
+            const menu = await make({ items: tabs() });
+            const key = (k: string) => document.body.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+            tab(menu, 'home').focus();
+            key('Alt');
+            document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true }));
+            // Nothing is laid out yet: the keys are the hints' all the same, and wait.
+            expect(key('h')).toBe(false);
+            expect(key('p')).toBe(false);
+            for (let i = 0; i < 4; i++) {
+                await whenMeasured(menu);
+                await settle();
+            }
+            expect(ran).toEqual(['paste']);
             expect(menu.hints.active).toBe(false);
         } finally {
             proto.getBoundingClientRect = original;

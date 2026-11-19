@@ -51,8 +51,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('the forward button scrolls the strip', (await months.evaluate((el) => el.scrollLeft)) > before);
   await months.getByRole('tab', { name: 'January' }).click();
   await page.keyboard.press('End');
-  await page.waitForTimeout(100);
-  const [strip, last] = [await box(months), await box(months.getByRole('tab', { name: 'December' }))];
+  // The forward button glided the strip and End shows the tab in the next measuring round: read it once it rests.
+  await months.evaluate((el) => new Promise((done) => {
+    let last = -1;
+    const still = () => (el.scrollLeft === last ? done() : ((last = el.scrollLeft), setTimeout(still, 100)));
+    setTimeout(still, 100);
+  }));
+  const [strip, last] = await months.evaluate((el) => [el.getBoundingClientRect().toJSON(), [...el.querySelectorAll('[role="tab"]')].find((t) => t.textContent.includes('December')).getBoundingClientRect().toJSON()]);
   check('the selected tab scrolls into view', last.right <= strip.right + 1 && last.left >= strip.left - 1, `${last.left}-${last.right} in ${strip.left}-${strip.right}`);
   await overflow.getByRole('button', { name: 'Scroll buttons' }).click();
   check('scrollButtons turns the buttons off', !(await forward.isVisible()));

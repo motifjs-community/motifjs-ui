@@ -5,6 +5,8 @@ export default async function ({ page, base, check, axeSource }) {
     await box.waitFor();
     const size = loc => loc.evaluate(el => [Math.round(el.getBoundingClientRect().width), Math.round(el.getBoundingClientRect().height)]);
     const told = page.locator('.rs-box-told');
+    // What is told comes with the size as laid out, in the next measuring round after the release.
+    const toldSays = async text => page.waitForFunction(([el, t]) => el.textContent === t, [await told.elementHandle(), text], { timeout: 2000 }).catch(() => {});
     // The mouse only reaches what is on screen, and the box grows as it is dragged.
     const handleBox = async edge => {
         await box.scrollIntoViewIfNeeded();
@@ -20,6 +22,7 @@ export default async function ({ page, base, check, axeSource }) {
     await page.mouse.move(end.x + end.width / 2 + 60, end.y + end.height / 2, { steps: 6 });
     check('while dragging the box says so, and which side', (await box.getAttribute('data-resizing')) === '' && (await box.getAttribute('data-edge')) === 'end');
     await page.mouse.up();
+    await toldSays('340 × 140, from the end');
     s = await size(box);
     check('the end side dragged 60 px makes it 340 wide, as tall as before', s.join('x') === '340x140' && (await told.textContent()) === '340 × 140, from the end', `${s.join('x')} ${await told.textContent()}`);
     const corner = await handleBox('bottom-end');
@@ -41,8 +44,10 @@ export default async function ({ page, base, check, axeSource }) {
     await box.locator('.mx-resizable__grip').focus();
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowDown');
+    await toldSays('470 × 90, from the bottom-end');
+    await page.waitForFunction((el) => el.textContent === 'Width 470, height 90', await box.locator('[aria-live]').elementHandle(), { timeout: 2000 }).catch(() => {});
     s = await size(box);
-    check('Left and Down on the grip change the sides by 10', s.join('x') === '470x90' && (await told.textContent()) === '470 × 90, from the bottom-end', s.join('x'));
+    check('Left and Down on the grip change the sides by 10', s.join('x') === '470x90' && (await told.textContent()) === '470 × 90, from the bottom-end', `${s.join('x')} ${await told.textContent()}`);
     check('the new size is read out', (await box.locator('[aria-live]').textContent()) === 'Width 470, height 90');
 
     // Inside an area, keeping the shape: the corner dragged far stops at the area's edge, the height following the width.
@@ -69,7 +74,9 @@ export default async function ({ page, base, check, axeSource }) {
     check('a size set from a button is applied', (await size(coded)).join('x') === '280x120' && (await page.locator('.rs-coded-told').textContent()) === 'size: {"width":280,"height":120}');
     await coded.locator('.mx-resizable__grip').focus();
     await page.keyboard.press('ArrowRight');
-    check('a key writes the size to the model', (await page.locator('.rs-coded-told').textContent()) === 'size: {"width":290,"height":120}');
+    // The model takes the size as laid out, with the next measuring round.
+    await page.waitForFunction(() => document.querySelector('.rs-coded-told')?.textContent === 'size: {"width":290,"height":120}', null, { timeout: 2000 }).catch(() => {});
+    check('a key writes the size to the model', (await page.locator('.rs-coded-told').textContent()) === 'size: {"width":290,"height":120}', await page.locator('.rs-coded-told').textContent());
 
     await page.addScriptTag({ content: axeSource });
     const violations = await page.evaluate(async () => (await window.axe.run(document)).violations.map(v => v.id));

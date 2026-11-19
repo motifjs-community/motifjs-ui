@@ -98,7 +98,8 @@ export default async function ({ page, base, check, axeSource }) {
   await page.waitForTimeout(150);
   const tabsDetail = await box(page.locator(detailRows(tabs)).first());
   const after = await box(rowOf(tabs, 2));
-  const noArrow = await rowOf(tabs, 7).locator('.mx-data-grid__expand-button').evaluate((el) => el.hidden);
+  // A part the grid does not show is not in the page: the row is there, its arrow is not seen.
+  const noArrow = (await rowOf(tabs, 7).count()) === 1 && !(await rowOf(tabs, 7).locator('.mx-data-grid__expand-button').isVisible());
   check(
     'datagrid master-detail: a tab made in the details resizes the row, the rows below follow; a row without details has no arrow',
     Math.abs(after.top - tabsDetail.bottom) < 2 && after.top !== before.top && noArrow,

@@ -81,22 +81,29 @@ export default async function ({ page, base, check, axeSource, box }) {
   // DockPanel.
   const dockCard = page.locator('section[aria-labelledby="dock"]');
   const shell = page.locator('.layout-shell');
-  const part = (cls) => box(shell.locator(cls));
-  let [frame, header, side, status, content, help] = [await box(shell), await part('> .mx-stack[data-mx-dock="top"]'), await part('.layout-side'), await part('.layout-status'), await part('.layout-content'), await part('.layout-help')];
+  // Read together, in one frame: a click scrolls the page, smoothly while focus is in it (the design system's
+  // scroll-behavior), and boxes read one by one would each be from another moment of that scroll.
+  const parts = () =>
+    shell.evaluate((el) => {
+      const rect = (sel) => el.querySelector(sel)?.getBoundingClientRect().toJSON() ?? null;
+      const all = { header: ':scope > .mx-stack[data-mx-dock="top"]', side: '.layout-side', status: '.layout-status', content: '.layout-content', help: '.layout-help', notes: '.layout-notes' };
+      return { frame: el.getBoundingClientRect().toJSON(), ...Object.fromEntries(Object.entries(all).map(([name, sel]) => [name, rect(sel)])) };
+    });
+  let { frame, header, side, status, content, help } = await parts();
   check('the header is docked on top across the whole width', near(header.top, frame.top, 2) && near(header.width, frame.width, 3));
   check('the sidebar is docked at the start, under the header and down to the bottom', near(side.left, frame.left, 2) && near(side.top, header.bottom, 1) && near(side.bottom, frame.bottom, 2));
   check('the status bar, docked after it, spans what the sidebar left', near(status.bottom, frame.bottom, 2) && near(status.left, side.right, 1) && near(status.right, frame.right, 2));
   check('the content fills what is left', near(content.left, side.right, 1) && near(content.right, frame.right, 2) && near(content.top, header.bottom, 1) && near(content.bottom, status.top, 1));
   check('a float child sits at its anchors', near(frame.right - help.right, 17, 2) && near(frame.bottom - help.bottom, 49, 2), `${frame.right - help.right}, ${frame.bottom - help.bottom}`);
   await dockCard.getByRole('button', { name: 'Sidebar: start' }).click();
-  [side, content] = [await part('.layout-side'), await part('.layout-content')];
+  ({ frame, side, content } = await parts());
   check('a getter dock moves the sidebar to the end', near(side.right, frame.right, 2) && near(content.right, side.left, 1));
   await dockCard.getByRole('button', { name: 'Notes panel programmatically' }).click();
-  const notes = await part('.layout-notes');
-  [side, content] = [await part('.layout-side'), await part('.layout-content')];
+  let notes;
+  ({ side, content, notes } = await parts());
   check('a panel added programmatically docks too', near(notes.right, side.left, 1) && near(content.right, notes.left, 1));
   await page.evaluate(() => (document.documentElement.dir = 'rtl'));
-  [frame, side] = [await box(shell), await part('.layout-side')];
+  ({ frame, side } = await parts());
   check('start and end follow the reading direction', near(side.left, frame.left, 2));
   await page.evaluate(() => (document.documentElement.dir = 'ltr'));
   await dockCard.getByRole('button', { name: 'Sidebar: end' }).click();

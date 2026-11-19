@@ -5,7 +5,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const open = async (anchor) => {
     await page.goto(base + 'tabdocs/windows', { waitUntil: 'load' });
     const m = page.locator(`section[aria-labelledby="${anchor}"] .mx-tabdocs`).first();
-    await m.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await m.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await page.waitForTimeout(250);
     return m;
   };
@@ -97,7 +97,7 @@ export default async function ({ page, base, check, axeSource, box }) {
     };
     // A second manager on the page, with the same tabs, to compare with.
     const other = page.locator('section[aria-labelledby="layout"] .mx-tabdocs').first();
-    await other.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await other.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     const differences = [];
     for (const [designLanguage, theme] of COMBOS) {
       await page.evaluate(([i, t]) => {

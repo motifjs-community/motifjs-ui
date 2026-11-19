@@ -28,7 +28,7 @@ export default async function ({ page, base, check, axeSource }) {
     );
   const open = async (id, text) => {
     const target = section(id).locator('.mx-scheduler__appointment', { hasText: text }).first();
-    await target.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await target.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await target.dblclick();
     await form.waitFor();
     await page.waitForTimeout(150);
@@ -117,7 +117,7 @@ export default async function ({ page, base, check, axeSource }) {
   // A form of your own, opened by the keys.
   const ownSection = section('own');
   const target = ownSection.locator('.mx-scheduler__appointment', { hasText: 'Budget' }).first();
-  await target.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await target.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await target.focus();
   await page.keyboard.press('Enter');
   const quick = page.locator('.mx-form[open]', { hasText: 'Quick edit' });

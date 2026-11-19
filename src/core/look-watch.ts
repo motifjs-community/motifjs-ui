@@ -1,18 +1,19 @@
 import { eachDocument } from './page-documents';
 
-// The look changes with the design language, the theme and the density, on the root or on any part
-// of a page, and when fonts finish loading: sizes a control measured once (a row's height, the room
-// in a bar, a text's width) are stale then. One observer per document tells everyone who asked.
+// The look changes with the design language, the theme, the density and the reading direction, on the
+// root or on any part of a page, and when fonts finish loading: sizes a control measured once (a row's
+// height, the room in a bar, a text's width) and what it drew for one direction (a chart) are stale then.
+// One observer per document tells everyone who asked.
 
 const listeners = new Set<() => void>();
 let stop: (() => void) | null = null;
 let queued = false;
 
-const ATTRIBUTES = ['data-design-language', 'data-theme', 'data-density'];
+const ATTRIBUTES = ['data-design-language', 'data-theme', 'data-density', 'dir'];
 
 /**
- * Calls `changed` (once per microtask) after a design language, theme or density changes anywhere, or fonts of a
- * document of the page finish loading. Returns the function that stops it.
+ * Calls `changed` (once per microtask) after a design language, theme, density or reading direction (`dir`) changes
+ * anywhere, or fonts of a document of the page finish loading. Returns the function that stops it.
  */
 export function onLookChanged(changed: () => void): () => void {
   listeners.add(changed);

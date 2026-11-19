@@ -26,14 +26,14 @@ export default async function ({ page, base, check, axeSource, box }) {
     return a;
   };
   const inView = async (loc) => {
-    await loc.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await loc.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await still(loc);
   };
   /** The group (its index) that has a document of that title. */
   const groupWith = async (m, title) => (await names(m)).findIndex((titles) => titles.includes(title));
   /** A tab brought into sight in its strip: the middle of the part of it that shows. */
   const grab = async (tab) => {
-    await tab.evaluate((el) => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+    await tab.evaluate((el) => el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' }));
     const t = await still(tab);
     const row = await tab.evaluate((el) => el.parentElement.getBoundingClientRect().toJSON());
     return { x: (Math.max(t.left, row.left) + Math.min(t.right, row.right)) / 2, y: t.y + t.height / 2 };

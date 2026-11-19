@@ -1148,17 +1148,28 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     });
   }
 
-  /** Follows the pointer from `e` until it is released, then keeps the new place and size. */
+  /** Follows the pointer from `e` until it is released, then keeps the new place and size; a press that moved nothing keeps nothing. */
   private drag(on: ComponentBase, e: PointerEvent, move: (dx: number, dy: number) => void): void {
+    let moved = false;
     mark(this, 'data-dragging', true);
-    followPointer(on, e, move, () => {
-      mark(this, 'data-dragging', false);
-      measure(this, this.readBox, this.keepGeometry);
-    });
+    followPointer(
+      on,
+      e,
+      (dx, dy) => {
+        moved = true;
+        move(dx, dy);
+      },
+      () => {
+        mark(this, 'data-dragging', false);
+        if (moved) measure(this, this.readBox, this.keepGeometry);
+      },
+    );
   }
 
   /** After a move or a resize, the props say where the form is and how big. */
   private readonly keepGeometry = (b: WindowBox): void => {
+    // Measured a frame after the release: a double click on the bar may have maximized it in between, and that box is not its own.
+    if (this.windowState !== 'normal') return;
     const size = this.parts.size;
     this.syncProperty('left', Math.round(b.x));
     this.syncProperty('top', Math.round(b.y));

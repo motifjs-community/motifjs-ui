@@ -3,8 +3,14 @@ export default async function ({ page, base, check, axeSource }) {
     await page.goto(base + 'draggable', { waitUntil: 'load' });
     const free = page.locator('.dg-free');
     await free.waitFor();
-    // Where it lies in its room, so a scrolled page does not change the numbers.
-    const at = loc => loc.evaluate(el => { const b = el.getBoundingClientRect(); const p = el.parentElement.getBoundingClientRect(); return [Math.round(b.x - p.x), Math.round(b.y - p.y)]; });
+    // Where it lies in its room, so a scrolled page does not change the numbers. Read once the move is drawn: the
+    // draggable draws a move with the next frame, and on a busy page the pointer gets frames ahead of it.
+    const at = loc => loc.evaluate(async el => {
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const b = el.getBoundingClientRect();
+        const p = el.parentElement.getBoundingClientRect();
+        return [Math.round(b.x - p.x), Math.round(b.y - p.y)];
+    });
     const told = page.locator('.dg-free-told');
     // The mouse only reaches what is on screen.
     const boxOf = async loc => {

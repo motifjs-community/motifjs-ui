@@ -5,6 +5,16 @@ import type { ChartLook } from './chart-look';
 import type { ChartModel, ModelPoint, ModelSlot } from './chart-model';
 import type { ChartReference } from './chart-reference';
 
+/** The texts a plot lays out, each measured in the font it is drawn in: estimates until measured, then drawn again. */
+export interface PlotTexts {
+    /** The labels of the axes (`.mx-chart__ticks`). */
+    ticks: DrawnTexts;
+    /** The labels on the marks (`.mx-chart__labels`). */
+    labels: DrawnTexts;
+    /** The labels of the reference lines and bands (`.mx-chart__reference-label`). */
+    references: DrawnTexts;
+}
+
 /** What a plot is drawn from. */
 export interface PlotInput {
     model: ChartModel;
@@ -15,8 +25,7 @@ export interface PlotInput {
     width: number;
     height: number;
     look: ChartLook;
-    /** The widths of the plot's texts in the chart's font: estimates until measured, then drawn again. */
-    texts: DrawnTexts;
+    texts: PlotTexts;
     locale: string;
     /** The part of the positions in view, once zoomed or following live data; null for all of them. */
     window?: { from: number; to: number } | null;

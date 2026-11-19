@@ -62,6 +62,21 @@ describe('look changes', () => {
     inner.remove();
   });
 
+  it('tells when the reading direction changes, on the root or on a part: what was drawn for one direction is stale', async () => {
+    let told = 0;
+    const stop = onLookChanged(() => told++);
+    document.documentElement.dir = 'rtl';
+    await new Promise((done) => setTimeout(done, 0));
+    expect(told).toBe(1);
+    const inner = document.body.appendChild(document.createElement('div'));
+    inner.setAttribute('dir', 'ltr');
+    await new Promise((done) => setTimeout(done, 0));
+    expect(told).toBe(2);
+    stop();
+    document.documentElement.removeAttribute('dir');
+    inner.remove();
+  });
+
   it('tells when fonts finish loading, where the browser can say so', async () => {
     const fonts = new EventTarget();
     Object.defineProperty(document, 'fonts', { value: fonts, configurable: true });

@@ -73,7 +73,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('placement bottom puts it below', (await open.getAttribute('data-side')) === 'bottom' && below.top >= targetBox.bottom, `${await open.textContent()}`);
   await away();
   await placement.getByRole('button', { name: 'top', exact: true }).click();
-  await target.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 4));
+  await target.evaluate((el) => window.scrollBy({ top: el.getBoundingClientRect().top - 4, behavior: 'instant' }));
   await page.waitForTimeout(100);
   await page.keyboard.press('Shift');
   await target.focus();

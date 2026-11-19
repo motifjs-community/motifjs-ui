@@ -132,9 +132,14 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.addScriptTag({ content: axeSource });
   const violations = await page.evaluate(async () => (await window.axe.run(document)).violations.map((v) => v.id));
   check('axe clean with nested modal forms open', violations.length === 0, violations.join(', '));
+  // A form closes, and gives focus back, in the next measuring round of its window.
   await page.keyboard.press('Escape');
-  check('Escape closes the top one and focus goes back to the one below', (await level2.count()) === 0 && (await level1.getByRole('button', { name: 'Open level 2' }).evaluate((el) => document.activeElement === el)));
+  await level2.waitFor({ state: 'detached', timeout: 2000 }).catch(() => {});
+  const opener = level1.getByRole('button', { name: 'Open level 2' });
+  await page.waitForFunction((el) => document.activeElement === el, await opener.elementHandle(), { timeout: 2000 }).catch(() => {});
+  check('Escape closes the top one and focus goes back to the one below', (await level2.count()) === 0 && (await opener.evaluate((el) => document.activeElement === el)));
   await page.keyboard.press('Escape');
+  await level1.waitFor({ state: 'detached', timeout: 2000 }).catch(() => {});
   check('…then the first', (await level1.count()) === 0);
 
   // onClosing keeps a form with changes open.

@@ -47,7 +47,7 @@ const A11Y = [
 ];
 
 const HOOKS = [
-    ['.mx-draggable', 'The draggable. `data-dragging`, `data-handle`, `data-clone`, `data-axis`.'],
+    ['.mx-draggable', 'The draggable. `data-dragging`, `data-handle`, `data-clone`, `data-axis`, and `data-landing` until the place a drag let it go is drawn (a move by the keys or the model glides, a drop does not).'],
     ['.mx-draggable__handle, .mx-draggable__ghost', 'The handle specified by `handle`, and the copy that follows the pointer.'],
     ['.mx-drop-target', 'A target. `data-drop-active` during a drag from its group, `data-drop-over`, `data-drop-refused`.']
 ];

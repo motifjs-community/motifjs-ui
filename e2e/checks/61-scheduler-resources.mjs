@@ -81,7 +81,7 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // A drag by the mouse to another person: only that person changes.
   const standup = g.locator('.mx-scheduler__appointment', { hasText: 'Design review' }).first();
-  await standup.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await standup.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   const from = await box(standup);
   const target = await box(g.locator('.mx-scheduler__cells [data-cell="1:4"]'));
   await page.mouse.move(from.left + from.width / 2, from.top + from.height / 2);

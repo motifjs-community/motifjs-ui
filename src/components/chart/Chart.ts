@@ -41,7 +41,7 @@ import { ChartTooltip } from "./ChartTooltip";
 import type { LegendEntry } from "./legend-entry";
 import { PartsPlot } from "./PartsPlot";
 import type { PlotRoom } from "./plot-room";
-import type { PlotView } from "./plot-view";
+import type { PlotTexts, PlotView } from "./plot-view";
 import { RadarPlot } from "./RadarPlot";
 import { formatNumber } from "../../parts/chart/chart-text";
 
@@ -100,8 +100,15 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     tablePart: ChartTable;
     model: ChartModel | null = null;
     look: ChartLook | null = null;
-    /** The plot's texts, measured in the chart's font; one that comes out another size than estimated draws again. */
-    readonly texts: DrawnTexts = new DrawnTexts(this, () => this.again());
+    /**
+     * The plot's texts, each measured in the font it is drawn in: the probe classes take the same units as the texts
+     * (chart tokens). One that comes out another size than estimated draws again.
+     */
+    readonly texts: PlotTexts = {
+        ticks: new DrawnTexts(this, () => this.again(), 'mx-chart__probe'),
+        labels: new DrawnTexts(this, () => this.again(), 'mx-chart__label-probe'),
+        references: new DrawnTexts(this, () => this.again(), 'mx-chart__reference-probe')
+    };
     hidden = new Set<number>();
     activeSlot: ModelSlot | null = null;
     activePoint: ModelPoint | null = null;
@@ -571,7 +578,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const animate = this.animation && this.drawnOnce && size === this.lastSize;
         this.lastSize = size;
         this.plot.draw({ model, xAxis, yAxis, horizontal: this.horizontal, rtl, width, height, look, texts: this.texts, locale: uiLocale.locale, window, references: this.references, selected: this.selection, animate });
-        this.texts.ask();
+        for (const texts of Object.values(this.texts)) texts.ask();
         const pending = this.pendingActive;
         this.pendingActive = null;
         if (pending) {

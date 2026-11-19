@@ -9,8 +9,10 @@ export default async function ({ page, base, check, axeSource }) {
   const settle = (p, ms = 350) => p.waitForTimeout(ms);
 
   /** A page with touch at `width` × `height`, a finger driven through the protocol. */
+  // In the language of the page the checks run in.
+  const locale = await page.evaluate(() => navigator.language);
   const device = async (width, height) => {
-    const context = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const context = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, locale });
     const p = await context.newPage();
     await p.clock.install({ time: new Date(2026, 2, 18, 10, 0) });
     await p.clock.resume();

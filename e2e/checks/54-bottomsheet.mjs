@@ -153,7 +153,8 @@ export default async function ({ page, base, check, axeSource }) {
   check('with draggable off a finger on the handle moves nothing', s.open && s.detent === before.detent && s.height === before.height, JSON.stringify([before, s]));
   await detents.getByText('Draggable', { exact: true }).click();
   await detents.getByText('Handle', { exact: true }).click();
-  check('the handle can be turned off', await page.evaluate((sel) => document.querySelector(sel + ' .mx-bottom-sheet__handle').hidden, inFrame));
+  // Off, the handle is not in the sheet at all.
+  check('the handle can be turned off', await page.evaluate((sel) => !document.querySelector(sel + ' .mx-bottom-sheet__handle')?.checkVisibility(), inFrame));
   await axe('the frame sheet open');
 
   // Events, in order, and a refusal.

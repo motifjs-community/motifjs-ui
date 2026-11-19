@@ -1,9 +1,9 @@
 import { errorHandler, untracked, type ComponentBase } from '@motifx/core';
 import { onLookChanged } from '../look-watch';
 
-// Where the layer hears that the look changed. Today that is look-watch.ts: the design language, theme and density
-// attributes and the fonts that finish loading, watched in every document of the page and told once per microtask. When the design system sends a look
-// event of its own, this file is the one to change.
+// Where the layer hears that the look changed. Today that is look-watch.ts: the design language, theme, density and
+// reading direction attributes and the fonts that finish loading, watched in every document of the page and told once
+// per microtask. When the design system sends a look event of its own, this file is the one to change.
 
 const listeners = new Set<{ heard: () => void }>();
 const byComponent = new WeakMap<ComponentBase, Set<{ heard: () => void }>>();
@@ -11,7 +11,7 @@ let hearing = false;
 let version = 0;
 
 /**
- * Calls `heard` after each change of the look (a design language, a theme, a density, fonts that finished loading) and when a length `component` reads
+ * Calls `heard` after each change of the look (a design language, a theme, a density, a reading direction, fonts that finished loading) and when a length `component` reads
  * came out another size. Nothing is followed per component: `heard` runs while it is out of the page too, so read through
  * `measure` and leave out what is not laid out. Returns what stops it.
  */
